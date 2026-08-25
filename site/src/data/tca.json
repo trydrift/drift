@@ -6,10 +6,10 @@
   "language": "Swift",
   "repo": "https://github.com/pointfreeco/swift-composable-architecture",
   "blurb": "The state-management library much of the Swift app ecosystem builds on.",
-  "capturedAt": "2026-08-24T16:21:12.988Z",
+  "capturedAt": "2026-08-25T18:26:52.631Z",
   "commit": "269d6457986d163557ea2601275b1117e4dee3c0",
-  "engine": "e6437573203d54a5",
-  "durationMs": 2799,
+  "engine": "833292abc0cde7ce",
+  "durationMs": 11347,
   "packagesChecked": 17,
   "manifests": [
     "Package.swift",
@@ -21,7 +21,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 26,
+      "at": 74,
       "phase": "Looking for manifests",
       "detail": "pointfreeco/swift-composable-architecture",
       "done": 0,
@@ -29,7 +29,7 @@
     },
     {
       "type": "progress",
-      "at": 34,
+      "at": 100,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -37,7 +37,7 @@
     },
     {
       "type": "progress",
-      "at": 35,
+      "at": 104,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
@@ -45,7 +45,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#apple/swift-collections@1.6.0",
         "name": "apple/swift-collections",
@@ -72,7 +72,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/combine-schedulers@1.2.0",
         "name": "pointfreeco/combine-schedulers",
@@ -99,7 +99,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -126,7 +126,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -153,7 +153,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -180,7 +180,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -207,7 +207,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -234,7 +234,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-identified-collections@1.1.1",
         "name": "pointfreeco/swift-identified-collections",
@@ -261,7 +261,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -288,7 +288,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -315,7 +315,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -342,7 +342,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -369,7 +369,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
         "name": "pointfreeco/xctest-dynamic-overlay",
@@ -396,7 +396,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-docc-plugin@1.5.0",
         "name": "swiftlang/swift-docc-plugin",
@@ -423,7 +423,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 106,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
         "name": "swiftlang/swift-syntax",
@@ -450,7 +450,7 @@
     },
     {
       "type": "progress",
-      "at": 36,
+      "at": 106,
       "phase": "Reading manifest",
       "detail": "Benchmarks/Package.swift",
       "done": 0,
@@ -458,7 +458,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 107,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -485,7 +485,7 @@
     },
     {
       "type": "progress",
-      "at": 36,
+      "at": 107,
       "phase": "Reading manifest",
       "detail": "Examples/Package.swift",
       "done": 0,
@@ -493,7 +493,7 @@
     },
     {
       "type": "progress",
-      "at": 36,
+      "at": 109,
       "phase": "Reading manifest",
       "detail": "Examples/TicTacToe/tic-tac-toe/Package.swift",
       "done": 0,
@@ -501,7 +501,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 110,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -528,7 +528,7 @@
     },
     {
       "type": "progress",
-      "at": 36,
+      "at": 110,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -536,7 +536,7 @@
     },
     {
       "type": "progress",
-      "at": 36,
+      "at": 110,
       "phase": "Checking registries",
       "detail": "17 direct dependencies",
       "done": 0,
@@ -544,7 +544,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 110,
       "candidate": {
         "id": "Package.swift#apple/swift-collections@1.6.0",
         "name": "apple/swift-collections",
@@ -571,7 +571,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 110,
       "candidate": {
         "id": "Package.swift#pointfreeco/combine-schedulers@1.2.0",
         "name": "pointfreeco/combine-schedulers",
@@ -598,7 +598,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 110,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -625,7 +625,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 110,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -652,7 +652,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 110,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -679,7 +679,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -706,7 +706,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -733,7 +733,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-identified-collections@1.1.1",
         "name": "pointfreeco/swift-identified-collections",
@@ -760,7 +760,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -787,7 +787,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -814,7 +814,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -841,7 +841,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -868,7 +868,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38,
+      "at": 111,
       "candidate": {
         "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
         "name": "pointfreeco/xctest-dynamic-overlay",
@@ -895,7 +895,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38,
+      "at": 112,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-docc-plugin@1.5.0",
         "name": "swiftlang/swift-docc-plugin",
@@ -922,7 +922,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38,
+      "at": 112,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
         "name": "swiftlang/swift-syntax",
@@ -949,7 +949,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38,
+      "at": 112,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -975,43 +975,21 @@
       }
     },
     {
-      "type": "candidate-upsert",
-      "at": 325,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
-        "name": "pointfreeco/swift-macro-testing",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.6.5",
-        "latest": "0.7.0",
-        "selected": "0.7.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
+      "type": "candidate-drop",
+      "at": 1306,
+      "id": "Package.swift#apple/swift-collections@1.6.0"
     },
     {
       "type": "progress",
-      "at": 325,
-      "phase": "Outdated",
-      "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
+      "at": 1306,
+      "phase": "Up to date",
+      "detail": "apple/swift-collections@1.6.0",
       "done": 1,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 325,
+      "at": 1306,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -1037,8 +1015,56 @@
       }
     },
     {
+      "type": "candidate-drop",
+      "at": 1307,
+      "id": "Package.swift#pointfreeco/combine-schedulers@1.2.0"
+    },
+    {
+      "type": "progress",
+      "at": 1307,
+      "phase": "Up to date",
+      "detail": "pointfreeco/combine-schedulers@1.2.0",
+      "done": 2,
+      "total": 17
+    },
+    {
       "type": "candidate-upsert",
-      "at": 336,
+      "at": 1378,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
+        "name": "pointfreeco/swift-case-paths",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.7.3",
+        "latest": "1.9.2",
+        "selected": "1.9.2",
+        "safeLatest": "1.9.2",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1378,
+      "phase": "Outdated",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
+      "done": 3,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1415,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -1065,63 +1091,15 @@
     },
     {
       "type": "progress",
-      "at": 336,
+      "at": 1415,
       "phase": "Outdated",
       "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
-      "done": 2,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 341,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
-        "name": "pointfreeco/swift-navigation",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.8.0",
-        "latest": "2.11.0",
-        "selected": "2.11.0",
-        "safeLatest": "2.11.0",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 341,
-      "phase": "Outdated",
-      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
-      "done": 3,
-      "total": 17
-    },
-    {
-      "type": "candidate-drop",
-      "at": 341,
-      "id": "Package.swift#pointfreeco/swift-identified-collections@1.1.1"
-    },
-    {
-      "type": "progress",
-      "at": 341,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-identified-collections@1.1.1",
       "done": 4,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 342,
+      "at": 1416,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -1148,7 +1126,7 @@
     },
     {
       "type": "progress",
-      "at": 342,
+      "at": 1416,
       "phase": "Outdated",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 5,
@@ -1156,31 +1134,31 @@
     },
     {
       "type": "candidate-drop",
-      "at": 352,
-      "id": "Package.swift#swiftlang/swift-docc-plugin@1.5.0"
+      "at": 1416,
+      "id": "Package.swift#pointfreeco/swift-identified-collections@1.1.1"
     },
     {
       "type": "progress",
-      "at": 352,
+      "at": 1416,
       "phase": "Up to date",
-      "detail": "swiftlang/swift-docc-plugin@1.5.0",
+      "detail": "pointfreeco/swift-identified-collections@1.1.1",
       "done": 6,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 355,
+      "at": 1416,
       "candidate": {
-        "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
-        "name": "pointfreeco/swift-perception",
+        "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
+        "name": "pointfreeco/swift-macro-testing",
         "ecosystem": "swift",
         "manifestPath": "Package.swift",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.0.10",
-        "latest": "2.0.11",
-        "selected": "2.0.11",
-        "safeLatest": "2.0.11",
+        "current": "0.6.5",
+        "latest": "0.7.0",
+        "selected": "0.7.0",
+        "safeLatest": null,
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -1196,63 +1174,28 @@
     },
     {
       "type": "progress",
-      "at": 355,
+      "at": 1416,
       "phase": "Outdated",
-      "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
+      "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 7,
       "total": 17
     },
     {
-      "type": "candidate-upsert",
-      "at": 355,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
-        "name": "pointfreeco/swift-custom-dump",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.6.0",
-        "latest": "1.7.0",
-        "selected": "1.7.0",
-        "safeLatest": "1.7.0",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
+      "type": "candidate-drop",
+      "at": 1418,
+      "id": "Package.swift#swiftlang/swift-docc-plugin@1.5.0"
     },
     {
       "type": "progress",
-      "at": 355,
-      "phase": "Outdated",
-      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
+      "at": 1418,
+      "phase": "Up to date",
+      "detail": "swiftlang/swift-docc-plugin@1.5.0",
       "done": 8,
       "total": 17
     },
     {
-      "type": "candidate-drop",
-      "at": 355,
-      "id": "Package.swift#pointfreeco/combine-schedulers@1.2.0"
-    },
-    {
-      "type": "progress",
-      "at": 355,
-      "phase": "Up to date",
-      "detail": "pointfreeco/combine-schedulers@1.2.0",
-      "done": 9,
-      "total": 17
-    },
-    {
       "type": "candidate-upsert",
-      "at": 358,
+      "at": 1429,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -1279,26 +1222,61 @@
     },
     {
       "type": "progress",
-      "at": 358,
+      "at": 1429,
       "phase": "Outdated",
       "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1430,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
+        "name": "pointfreeco/swift-custom-dump",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.6.0",
+        "latest": "1.7.0",
+        "selected": "1.7.0",
+        "safeLatest": "1.7.0",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1430,
+      "phase": "Outdated",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 10,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 359,
+      "at": 1430,
       "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
+        "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
+        "name": "pointfreeco/swift-perception",
         "ecosystem": "swift",
         "manifestPath": "Package.swift",
         "workspace": "",
         "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.11.0",
-        "selected": "1.11.0",
-        "safeLatest": "1.11.0",
+        "current": "2.0.10",
+        "latest": "2.0.11",
+        "selected": "2.0.11",
+        "safeLatest": "2.0.11",
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -1314,50 +1292,15 @@
     },
     {
       "type": "progress",
-      "at": 359,
+      "at": 1430,
       "phase": "Outdated",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
+      "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
       "done": 11,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 360,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
-        "name": "pointfreeco/swift-case-paths",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.7.3",
-        "latest": "1.9.1",
-        "selected": "1.9.1",
-        "safeLatest": "1.9.1",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 360,
-      "phase": "Outdated",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
-      "done": 12,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 360,
+      "at": 1448,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -1366,9 +1309,9 @@
         "workspace": "",
         "workspaceName": null,
         "current": "1.13.0",
-        "latest": "1.16.0",
-        "selected": "1.16.0",
-        "safeLatest": "1.16.0",
+        "latest": "1.17.0",
+        "selected": "1.17.0",
+        "safeLatest": "1.17.0",
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -1384,15 +1327,15 @@
     },
     {
       "type": "progress",
-      "at": 360,
+      "at": 1448,
       "phase": "Outdated",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
-      "done": 13,
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
+      "done": 12,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 360,
+      "at": 1448,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -1401,9 +1344,9 @@
         "workspace": "Examples/TicTacToe/tic-tac-toe",
         "workspaceName": null,
         "current": "1.0.0",
-        "latest": "1.16.0",
-        "selected": "1.16.0",
-        "safeLatest": "1.16.0",
+        "latest": "1.17.0",
+        "selected": "1.17.0",
+        "safeLatest": "1.17.0",
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -1419,15 +1362,85 @@
     },
     {
       "type": "progress",
-      "at": 360,
+      "at": 1448,
       "phase": "Outdated",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
+      "done": 13,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1448,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.13.0",
+        "selected": "1.13.0",
+        "safeLatest": "1.13.0",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1449,
+      "phase": "Outdated",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
       "done": 14,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 367,
+      "at": 1452,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
+        "name": "pointfreeco/swift-navigation",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.8.0",
+        "latest": "2.11.0",
+        "selected": "2.11.0",
+        "safeLatest": "2.11.0",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1452,
+      "phase": "Outdated",
+      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
+      "done": 15,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1694,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
         "name": "swiftlang/swift-syntax",
@@ -1454,28 +1467,15 @@
     },
     {
       "type": "progress",
-      "at": 367,
+      "at": 1694,
       "phase": "Outdated",
       "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
-      "done": 15,
-      "total": 17
-    },
-    {
-      "type": "candidate-drop",
-      "at": 369,
-      "id": "Package.swift#apple/swift-collections@1.6.0"
-    },
-    {
-      "type": "progress",
-      "at": 369,
-      "phase": "Up to date",
-      "detail": "apple/swift-collections@1.6.0",
       "done": 16,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 1275,
+      "at": 1698,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -1502,7 +1502,7 @@
     },
     {
       "type": "progress",
-      "at": 1275,
+      "at": 1698,
       "phase": "Outdated",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 17,
@@ -1510,7 +1510,7 @@
     },
     {
       "type": "progress",
-      "at": 1275,
+      "at": 1698,
       "phase": "Reading release notes and changelog",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -1518,7 +1518,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1275,
+      "at": 1698,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -1545,7 +1545,7 @@
     },
     {
       "type": "progress",
-      "at": 1275,
+      "at": 1698,
       "phase": "Checking package metadata",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -1553,7 +1553,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1275,
+      "at": 1698,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -1580,15 +1580,15 @@
     },
     {
       "type": "progress",
-      "at": 1275,
+      "at": 1699,
       "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1275,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -1615,15 +1615,15 @@
     },
     {
       "type": "progress",
-      "at": 1275,
+      "at": 1699,
       "phase": "Checking package metadata",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1275,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -1650,7 +1650,7 @@
     },
     {
       "type": "progress",
-      "at": 1275,
+      "at": 1699,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
@@ -1658,7 +1658,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1275,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -1685,7 +1685,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Checking package metadata",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
@@ -1693,7 +1693,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -1720,7 +1720,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
       "done": 0,
@@ -1728,7 +1728,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -1755,7 +1755,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Checking package metadata",
       "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
       "done": 0,
@@ -1763,7 +1763,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -1790,7 +1790,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
@@ -1798,7 +1798,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -1825,7 +1825,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Checking package metadata",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
@@ -1833,7 +1833,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -1860,15 +1860,15 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -1895,15 +1895,15 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Checking package metadata",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -1930,15 +1930,15 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -1965,15 +1965,15 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Checking package metadata",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -2000,7 +2000,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 0,
@@ -2008,7 +2008,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -2035,7 +2035,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1699,
       "phase": "Checking package metadata",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 0,
@@ -2043,7 +2043,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1699,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -2070,7 +2070,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1703,
       "phase": "Checking repository status",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -2078,7 +2078,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1703,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -2105,15 +2105,15 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1703,
       "phase": "Checking repository status",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1703,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -2140,7 +2140,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1704,
       "phase": "Checking repository status",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
@@ -2148,7 +2148,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1704,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -2175,7 +2175,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1704,
       "phase": "Checking repository status",
       "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
       "done": 0,
@@ -2183,7 +2183,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1704,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -2210,7 +2210,7 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1704,
       "phase": "Checking repository status",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
@@ -2218,7 +2218,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1704,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -2245,15 +2245,15 @@
     },
     {
       "type": "progress",
-      "at": 1276,
+      "at": 1708,
       "phase": "Checking repository status",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1276,
+      "at": 1708,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -2280,15 +2280,15 @@
     },
     {
       "type": "progress",
-      "at": 1277,
+      "at": 1708,
       "phase": "Checking repository status",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 1277,
+      "at": 1708,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -2315,7 +2315,7 @@
     },
     {
       "type": "progress",
-      "at": 1277,
+      "at": 1708,
       "phase": "Checking repository status",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 0,
@@ -2323,7 +2323,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1277,
+      "at": 1708,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -2350,25 +2350,25 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3996,
       "phase": "Checking security advisories",
-      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
+      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3996,
       "candidate": {
-        "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
-        "name": "pointfreeco/swift-custom-dump",
+        "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
+        "name": "pointfreeco/swift-clocks",
         "ecosystem": "swift",
         "manifestPath": "Package.swift",
         "workspace": "",
         "workspaceName": null,
-        "current": "1.6.0",
-        "latest": "1.6.0",
-        "selected": "1.6.0",
+        "current": "1.0.6",
+        "latest": "1.0.6",
+        "selected": "1.0.6",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking security advisories",
@@ -2385,25 +2385,25 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3996,
       "phase": "Checking license",
-      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
+      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3996,
       "candidate": {
-        "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
-        "name": "pointfreeco/swift-custom-dump",
+        "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
+        "name": "pointfreeco/swift-clocks",
         "ecosystem": "swift",
         "manifestPath": "Package.swift",
         "workspace": "",
         "workspaceName": null,
-        "current": "1.6.0",
-        "latest": "1.6.0",
-        "selected": "1.6.0",
+        "current": "1.0.6",
+        "latest": "1.0.6",
+        "selected": "1.0.6",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking license",
@@ -2420,77 +2420,7 @@
     },
     {
       "type": "progress",
-      "at": 2103,
-      "phase": "Checking security advisories",
-      "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2103,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
-        "name": "pointfreeco/swift-macro-testing",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.6.5",
-        "latest": "0.6.5",
-        "selected": "0.6.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2103,
-      "phase": "Checking license",
-      "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2103,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
-        "name": "pointfreeco/swift-macro-testing",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.6.5",
-        "latest": "0.6.5",
-        "selected": "0.6.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2103,
+      "at": 3996,
       "phase": "Checking security advisories",
       "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
       "done": 0,
@@ -2498,7 +2428,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3996,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -2525,7 +2455,7 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3996,
       "phase": "Checking license",
       "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
       "done": 0,
@@ -2533,7 +2463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3996,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
         "name": "pointfreeco/swift-concurrency-extras",
@@ -2560,15 +2490,15 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3997,
       "phase": "Checking security advisories",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3997,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -2595,15 +2525,15 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3997,
       "phase": "Checking security advisories",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3997,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -2630,15 +2560,15 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3997,
       "phase": "Checking license",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3997,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
         "name": "pointfreeco/swift-dependencies",
@@ -2665,15 +2595,15 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3997,
       "phase": "Checking license",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3997,
       "candidate": {
         "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
         "name": "pointfreeco/swift-dependencies",
@@ -2700,15 +2630,155 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3997,
       "phase": "Checking security advisories",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3997,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
+        "name": "pointfreeco/swift-custom-dump",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.6.0",
+        "latest": "1.6.0",
+        "selected": "1.6.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3997,
+      "phase": "Checking license",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3997,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
+        "name": "pointfreeco/swift-custom-dump",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.6.0",
+        "latest": "1.6.0",
+        "selected": "1.6.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3997,
+      "phase": "Checking security advisories",
+      "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3997,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
+        "name": "pointfreeco/swift-macro-testing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.6.5",
+        "latest": "0.6.5",
+        "selected": "0.6.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3997,
+      "phase": "Checking license",
+      "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3997,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
+        "name": "pointfreeco/swift-macro-testing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.6.5",
+        "latest": "0.6.5",
+        "selected": "0.6.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3997,
+      "phase": "Checking security advisories",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3997,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -2735,15 +2805,15 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 3997,
       "phase": "Checking license",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 3997,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -2770,77 +2840,7 @@
     },
     {
       "type": "progress",
-      "at": 2103,
-      "phase": "Checking security advisories",
-      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2103,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
-        "name": "pointfreeco/swift-clocks",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.6",
-        "latest": "1.0.6",
-        "selected": "1.0.6",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2103,
-      "phase": "Checking license",
-      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2103,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
-        "name": "pointfreeco/swift-clocks",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.6",
-        "latest": "1.0.6",
-        "selected": "1.0.6",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2103,
+      "at": 4885,
       "phase": "Checking security advisories",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -2848,7 +2848,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 4885,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -2875,7 +2875,7 @@
     },
     {
       "type": "progress",
-      "at": 2103,
+      "at": 4885,
       "phase": "Checking license",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -2883,7 +2883,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2103,
+      "at": 4885,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -2910,15 +2910,15 @@
     },
     {
       "type": "progress",
-      "at": 2199,
+      "at": 5302,
       "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2199,
+      "at": 5302,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -2945,15 +2945,15 @@
     },
     {
       "type": "progress",
-      "at": 2199,
+      "at": 5302,
       "phase": "Comparing the public API surface",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1 · 1 evidence source",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2 · 1 evidence source",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2199,
+      "at": 5302,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -2980,15 +2980,15 @@
     },
     {
       "type": "progress",
-      "at": 2199,
+      "at": 5302,
       "phase": "No breaking changes to look for",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2199,
+      "at": 5302,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -3015,7 +3015,7 @@
     },
     {
       "type": "progress",
-      "at": 2201,
+      "at": 5313,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 0,
@@ -3023,7 +3023,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2201,
+      "at": 5314,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -3050,7 +3050,7 @@
     },
     {
       "type": "progress",
-      "at": 2201,
+      "at": 5314,
       "phase": "Comparing the public API surface",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0 · 1 evidence source",
       "done": 0,
@@ -3058,7 +3058,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2201,
+      "at": 5314,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -3085,7 +3085,7 @@
     },
     {
       "type": "progress",
-      "at": 2201,
+      "at": 5314,
       "phase": "No breaking changes to look for",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 0,
@@ -3093,7 +3093,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2201,
+      "at": 5314,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -3120,322 +3120,7 @@
     },
     {
       "type": "progress",
-      "at": 2201,
-      "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2201,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
-        "name": "pointfreeco/swift-concurrency-extras",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.0",
-        "selected": "1.4.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2201,
-      "phase": "Comparing the public API surface",
-      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1 · 1 evidence source",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2201,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
-        "name": "pointfreeco/swift-concurrency-extras",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.0",
-        "selected": "1.4.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2201,
-      "phase": "No breaking changes to look for",
-      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2201,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
-        "name": "pointfreeco/swift-concurrency-extras",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.0",
-        "selected": "1.4.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2203,
-      "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2203,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.13.0",
-        "latest": "1.13.0",
-        "selected": "1.13.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2203,
-      "phase": "Comparing the public API surface",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0 · 1 evidence source",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2203,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.13.0",
-        "latest": "1.13.0",
-        "selected": "1.13.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2203,
-      "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2203,
-      "candidate": {
-        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
-        "workspace": "Examples/TicTacToe/tic-tac-toe",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2203,
-      "phase": "Comparing the public API surface",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0 · 4 evidence sources",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2203,
-      "candidate": {
-        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
-        "workspace": "Examples/TicTacToe/tic-tac-toe",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2203,
-      "phase": "No breaking changes to look for",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2203,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.13.0",
-        "latest": "1.13.0",
-        "selected": "1.13.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2203,
-      "phase": "No breaking changes to look for",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2203,
-      "candidate": {
-        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
-        "workspace": "Examples/TicTacToe/tic-tac-toe",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2285,
+      "at": 5319,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
@@ -3443,7 +3128,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2285,
+      "at": 5319,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -3470,7 +3155,7 @@
     },
     {
       "type": "progress",
-      "at": 2285,
+      "at": 5319,
       "phase": "Comparing the public API surface",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0 · 1 evidence source",
       "done": 0,
@@ -3478,7 +3163,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2285,
+      "at": 5319,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -3505,7 +3190,7 @@
     },
     {
       "type": "progress",
-      "at": 2285,
+      "at": 5319,
       "phase": "No breaking changes to look for",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
@@ -3513,7 +3198,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2285,
+      "at": 5319,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -3540,7 +3225,112 @@
     },
     {
       "type": "progress",
-      "at": 2292,
+      "at": 5320,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5320,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
+        "name": "pointfreeco/swift-concurrency-extras",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.4.0",
+        "latest": "1.4.0",
+        "selected": "1.4.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5320,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1 · 1 evidence source",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5320,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
+        "name": "pointfreeco/swift-concurrency-extras",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.4.0",
+        "latest": "1.4.0",
+        "selected": "1.4.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5323,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5323,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
+        "name": "pointfreeco/swift-concurrency-extras",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.4.0",
+        "latest": "1.4.0",
+        "selected": "1.4.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5323,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
@@ -3548,7 +3338,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2292,
+      "at": 5323,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -3575,7 +3365,7 @@
     },
     {
       "type": "progress",
-      "at": 2292,
+      "at": 5323,
       "phase": "Comparing the public API surface",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0 · 1 evidence source",
       "done": 0,
@@ -3583,7 +3373,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2292,
+      "at": 5323,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -3610,7 +3400,7 @@
     },
     {
       "type": "progress",
-      "at": 2292,
+      "at": 5323,
       "phase": "No breaking changes to look for",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
@@ -3618,7 +3408,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2292,
+      "at": 5323,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -3645,7 +3435,217 @@
     },
     {
       "type": "progress",
-      "at": 2311,
+      "at": 5346,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5346,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.13.0",
+        "latest": "1.13.0",
+        "selected": "1.13.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5346,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0 · 1 evidence source",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5346,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.13.0",
+        "latest": "1.13.0",
+        "selected": "1.13.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5346,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5346,
+      "candidate": {
+        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+        "workspace": "Examples/TicTacToe/tic-tac-toe",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5346,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0 · 3 evidence sources",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5346,
+      "candidate": {
+        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+        "workspace": "Examples/TicTacToe/tic-tac-toe",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5346,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5346,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.13.0",
+        "latest": "1.13.0",
+        "selected": "1.13.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5346,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5346,
+      "candidate": {
+        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+        "workspace": "Examples/TicTacToe/tic-tac-toe",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 6505,
       "phase": "Reading release notes and changelog",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -3653,7 +3653,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2311,
+      "at": 6505,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -3680,7 +3680,7 @@
     },
     {
       "type": "progress",
-      "at": 2311,
+      "at": 6505,
       "phase": "Comparing the public API surface",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2 · 1 evidence source",
       "done": 0,
@@ -3688,7 +3688,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2311,
+      "at": 6505,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -3715,7 +3715,7 @@
     },
     {
       "type": "progress",
-      "at": 2311,
+      "at": 6505,
       "phase": "No breaking changes to look for",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -3723,7 +3723,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2311,
+      "at": 6505,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -3750,7 +3750,7 @@
     },
     {
       "type": "progress",
-      "at": 2360,
+      "at": 9087,
       "phase": "Indexing your code",
       "detail": "799 files indexed · 17 direct dependencies to check",
       "done": 0,
@@ -3758,15 +3758,15 @@
     },
     {
       "type": "progress",
-      "at": 2385,
+      "at": 9121,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2386,
+      "at": 9121,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -3793,7 +3793,7 @@
     },
     {
       "type": "progress",
-      "at": 2386,
+      "at": 9122,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 0,
@@ -3801,7 +3801,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2386,
+      "at": 9122,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -3828,112 +3828,7 @@
     },
     {
       "type": "progress",
-      "at": 2387,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2387,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
-        "name": "pointfreeco/swift-concurrency-extras",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.0",
-        "selected": "1.4.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2387,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2387,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.13.0",
-        "latest": "1.13.0",
-        "selected": "1.13.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2391,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2391,
-      "candidate": {
-        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
-        "workspace": "Examples/TicTacToe/tic-tac-toe",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2392,
+      "at": 9123,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
@@ -3941,7 +3836,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2392,
+      "at": 9123,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -3968,7 +3863,42 @@
     },
     {
       "type": "progress",
-      "at": 2393,
+      "at": 9123,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9123,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
+        "name": "pointfreeco/swift-concurrency-extras",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.4.0",
+        "latest": "1.4.0",
+        "selected": "1.4.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9124,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
@@ -3976,7 +3906,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2393,
+      "at": 9124,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -4003,7 +3933,77 @@
     },
     {
       "type": "progress",
-      "at": 2394,
+      "at": 9125,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9125,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.13.0",
+        "latest": "1.13.0",
+        "selected": "1.13.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9126,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9126,
+      "candidate": {
+        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+        "workspace": "Examples/TicTacToe/tic-tac-toe",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9127,
       "phase": "Weighing what this upgrade is worth",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -4011,7 +4011,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2394,
+      "at": 9127,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -4038,15 +4038,15 @@
     },
     {
       "type": "progress",
-      "at": 2394,
+      "at": 9129,
       "phase": "Checking maintenance signals",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2",
       "done": 0,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2394,
+      "at": 9129,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -4073,7 +4073,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9129,
       "phase": "Checking maintenance signals",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0",
       "done": 0,
@@ -4081,7 +4081,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9129,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -4108,112 +4108,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
-      "phase": "Checking maintenance signals",
-      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2395,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
-        "name": "pointfreeco/swift-concurrency-extras",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.0",
-        "selected": "1.4.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2395,
-      "phase": "Checking maintenance signals",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2395,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.13.0",
-        "latest": "1.13.0",
-        "selected": "1.13.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2395,
-      "phase": "Checking maintenance signals",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0",
-      "done": 0,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2395,
-      "candidate": {
-        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
-        "workspace": "Examples/TicTacToe/tic-tac-toe",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2395,
+      "at": 9131,
       "phase": "Checking maintenance signals",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
       "done": 0,
@@ -4221,7 +4116,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9131,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -4248,7 +4143,42 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9131,
+      "phase": "Checking maintenance signals",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9131,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
+        "name": "pointfreeco/swift-concurrency-extras",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.4.0",
+        "latest": "1.4.0",
+        "selected": "1.4.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9131,
       "phase": "Checking maintenance signals",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
       "done": 0,
@@ -4256,7 +4186,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9131,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -4283,7 +4213,77 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
+      "phase": "Checking maintenance signals",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9132,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.13.0",
+        "latest": "1.13.0",
+        "selected": "1.13.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9132,
+      "phase": "Checking maintenance signals",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0",
+      "done": 0,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9132,
+      "candidate": {
+        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+        "workspace": "Examples/TicTacToe/tic-tac-toe",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9132,
       "phase": "Checking maintenance signals",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
       "done": 0,
@@ -4291,7 +4291,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -4318,7 +4318,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-case-paths@1.7.3",
         "name": "pointfreeco/swift-case-paths",
@@ -4327,35 +4327,35 @@
         "workspace": "",
         "workspaceName": null,
         "current": "1.7.3",
-        "latest": "1.9.1",
-        "selected": "1.9.1",
-        "safeLatest": "1.9.1",
+        "latest": "1.9.2",
+        "selected": "1.9.2",
+        "safeLatest": "1.9.2",
         "status": "clean",
         "phase": null,
         "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes ([1.9.2 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.2), [1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "recommendation": "safe-to-upgrade",
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
         "evidenceCount": 1,
         "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes ([1.9.2 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.2), [1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
         ],
         "breaking": []
       }
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checked",
-      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1 · safe for your code · no breaking changes found — not deeply verified",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 1,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-macro-testing@0.6.5",
         "name": "pointfreeco/swift-macro-testing",
@@ -4384,7 +4384,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checked",
       "detail": "pointfreeco/swift-macro-testing 0.6.5 → 0.7.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 2,
@@ -4392,118 +4392,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
-        "name": "pointfreeco/swift-concurrency-extras",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.1",
-        "selected": "1.4.1",
-        "safeLatest": "1.4.1",
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes ([1.4.1 release notes](https://github.com/pointfreeco/swift-concurrency-extras/releases/tag/1.4.1)) for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "recommendation": "safe-to-upgrade",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes ([1.4.1 release notes](https://github.com/pointfreeco/swift-concurrency-extras/releases/tag/1.4.1)) for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2395,
-      "phase": "Checked",
-      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 3,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2395,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.13.0",
-        "latest": "1.16.0",
-        "selected": "1.16.0",
-        "safeLatest": "1.16.0",
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes ([1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.16.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "recommendation": "safe-to-upgrade",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes ([1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.16.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2395,
-      "phase": "Checked",
-      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.16.0 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 4,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2395,
-      "candidate": {
-        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
-        "name": "pointfreeco/swift-dependencies",
-        "ecosystem": "swift",
-        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
-        "workspace": "Examples/TicTacToe/tic-tac-toe",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.16.0",
-        "selected": "1.16.0",
-        "safeLatest": "1.16.0",
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone.",
-        "recommendation": "safe-to-upgrade",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 4,
-        "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2395,
-      "phase": "Checked",
-      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.16.0 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 5,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-custom-dump@1.6.0",
         "name": "pointfreeco/swift-custom-dump",
@@ -4532,15 +4421,52 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checked",
       "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 6,
+      "done": 3,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-concurrency-extras@1.4.0",
+        "name": "pointfreeco/swift-concurrency-extras",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.4.0",
+        "latest": "1.4.1",
+        "selected": "1.4.1",
+        "safeLatest": "1.4.1",
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes ([1.4.1 release notes](https://github.com/pointfreeco/swift-concurrency-extras/releases/tag/1.4.1)) for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "recommendation": "safe-to-upgrade",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes ([1.4.1 release notes](https://github.com/pointfreeco/swift-concurrency-extras/releases/tag/1.4.1)) for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9132,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 4,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-clocks@1.0.6",
         "name": "pointfreeco/swift-clocks",
@@ -4569,15 +4495,89 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checked",
       "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 5,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9132,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-dependencies@1.13.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.13.0",
+        "latest": "1.17.0",
+        "selected": "1.17.0",
+        "safeLatest": "1.17.0",
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 6 sets of release notes ([1.17.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.17.0), [1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.17.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "recommendation": "safe-to-upgrade",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 6 sets of release notes ([1.17.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.17.0), [1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.17.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9132,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.17.0 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 6,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9132,
+      "candidate": {
+        "id": "Examples/TicTacToe/tic-tac-toe/Package.swift#pointfreeco/swift-dependencies@1.0.0",
+        "name": "pointfreeco/swift-dependencies",
+        "ecosystem": "swift",
+        "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+        "workspace": "Examples/TicTacToe/tic-tac-toe",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.17.0",
+        "selected": "1.17.0",
+        "safeLatest": "1.17.0",
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone.",
+        "recommendation": "safe-to-upgrade",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 3,
+        "gaps": [
+          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9132,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.17.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 7,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Benchmarks/Package.swift#ordo-one/package-benchmark@1.25.0",
         "name": "ordo-one/package-benchmark",
@@ -4606,7 +4606,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checked",
       "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 8,
@@ -4614,7 +4614,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
       "done": 8,
@@ -4622,7 +4622,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -4649,7 +4649,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checking package metadata",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
       "done": 8,
@@ -4657,7 +4657,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -4684,7 +4684,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
       "done": 8,
@@ -4692,7 +4692,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -4719,7 +4719,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checking package metadata",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
       "done": 8,
@@ -4727,7 +4727,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -4754,7 +4754,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
       "done": 8,
@@ -4762,7 +4762,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -4789,7 +4789,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checking package metadata",
       "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
       "done": 8,
@@ -4797,7 +4797,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -4824,15 +4824,15 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
       "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
         "name": "pointfreeco/xctest-dynamic-overlay",
@@ -4859,15 +4859,15 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checking package metadata",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
       "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
         "name": "pointfreeco/xctest-dynamic-overlay",
@@ -4894,7 +4894,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Reading release notes and changelog",
       "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
       "done": 8,
@@ -4902,7 +4902,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
         "name": "swiftlang/swift-syntax",
@@ -4929,7 +4929,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9132,
       "phase": "Checking package metadata",
       "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
       "done": 8,
@@ -4937,7 +4937,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9132,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
         "name": "swiftlang/swift-syntax",
@@ -4964,7 +4964,7 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9133,
       "phase": "Checking repository status",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
       "done": 8,
@@ -4972,7 +4972,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9133,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -4999,7 +4999,7 @@
     },
     {
       "type": "progress",
-      "at": 2396,
+      "at": 9133,
       "phase": "Checking repository status",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
       "done": 8,
@@ -5007,7 +5007,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2396,
+      "at": 9133,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5034,7 +5034,7 @@
     },
     {
       "type": "progress",
-      "at": 2396,
+      "at": 9133,
       "phase": "Checking repository status",
       "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
       "done": 8,
@@ -5042,7 +5042,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2396,
+      "at": 9133,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -5069,15 +5069,15 @@
     },
     {
       "type": "progress",
-      "at": 2396,
+      "at": 9133,
       "phase": "Checking repository status",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
       "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2396,
+      "at": 9133,
       "candidate": {
         "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
         "name": "pointfreeco/xctest-dynamic-overlay",
@@ -5104,7 +5104,7 @@
     },
     {
       "type": "progress",
-      "at": 2396,
+      "at": 9134,
       "phase": "Checking repository status",
       "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
       "done": 8,
@@ -5112,7 +5112,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2396,
+      "at": 9134,
       "candidate": {
         "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
         "name": "swiftlang/swift-syntax",
@@ -5139,147 +5139,7 @@
     },
     {
       "type": "progress",
-      "at": 2592,
-      "phase": "Checking security advisories",
-      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
-      "done": 8,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2592,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
-        "name": "pointfreeco/swift-sharing",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2592,
-      "phase": "Checking license",
-      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
-      "done": 8,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2592,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
-        "name": "pointfreeco/swift-sharing",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2595,
-      "phase": "Checking security advisories",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
-      "done": 8,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2595,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "603.0.2",
-        "selected": "603.0.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2595,
-      "phase": "Checking license",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
-      "done": 8,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2595,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "603.0.2",
-        "selected": "603.0.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2612,
+      "at": 9786,
       "phase": "Checking security advisories",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
       "done": 8,
@@ -5287,7 +5147,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2612,
+      "at": 9786,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -5314,7 +5174,7 @@
     },
     {
       "type": "progress",
-      "at": 2612,
+      "at": 9786,
       "phase": "Checking license",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
       "done": 8,
@@ -5322,7 +5182,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2612,
+      "at": 9786,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -5349,7 +5209,7 @@
     },
     {
       "type": "progress",
-      "at": 2649,
+      "at": 9786,
       "phase": "Checking security advisories",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
       "done": 8,
@@ -5357,7 +5217,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2649,
+      "at": 9786,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5384,7 +5244,7 @@
     },
     {
       "type": "progress",
-      "at": 2649,
+      "at": 9786,
       "phase": "Checking license",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
       "done": 8,
@@ -5392,7 +5252,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2649,
+      "at": 9786,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5419,15 +5279,15 @@
     },
     {
       "type": "progress",
-      "at": 2651,
-      "phase": "Reading release notes and changelog",
+      "at": 9874,
+      "phase": "Checking security advisories",
       "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
       "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2651,
+      "at": 9874,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -5440,7 +5300,7 @@
         "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
-        "phase": "Reading release notes and changelog",
+        "phase": "Checking security advisories",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -5454,50 +5314,15 @@
     },
     {
       "type": "progress",
-      "at": 2651,
-      "phase": "Comparing the public API surface",
-      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1 · 1 evidence source",
-      "done": 8,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2651,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
-        "name": "pointfreeco/swift-sharing",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2651,
-      "phase": "No breaking changes to look for",
+      "at": 9874,
+      "phase": "Checking license",
       "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
       "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2651,
+      "at": 9874,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
         "name": "pointfreeco/swift-sharing",
@@ -5510,7 +5335,7 @@
         "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
-        "phase": "No breaking changes to look for",
+        "phase": "Checking license",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -5524,28 +5349,28 @@
     },
     {
       "type": "progress",
-      "at": 2651,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "at": 9884,
+      "phase": "Checking security advisories",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
       "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2651,
+      "at": 9884,
       "candidate": {
-        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
-        "name": "pointfreeco/swift-sharing",
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
         "ecosystem": "swift",
         "manifestPath": "Package.swift",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
+        "current": "1.9.0",
+        "latest": "1.9.0",
+        "selected": "1.9.0",
         "safeLatest": null,
         "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
+        "phase": "Checking security advisories",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -5559,28 +5384,28 @@
     },
     {
       "type": "progress",
-      "at": 2652,
-      "phase": "Checking maintenance signals",
-      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "at": 9884,
+      "phase": "Checking license",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
       "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2652,
+      "at": 9884,
       "candidate": {
-        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
-        "name": "pointfreeco/swift-sharing",
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
         "ecosystem": "swift",
         "manifestPath": "Package.swift",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
+        "current": "1.9.0",
+        "latest": "1.9.0",
+        "selected": "1.9.0",
         "safeLatest": null,
         "status": "pending",
-        "phase": "Checking maintenance signals",
+        "phase": "Checking license",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -5593,53 +5418,86 @@
       }
     },
     {
+      "type": "progress",
+      "at": 9906,
+      "phase": "Checking security advisories",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 8,
+      "total": 13
+    },
+    {
       "type": "candidate-upsert",
-      "at": 2652,
+      "at": 9906,
       "candidate": {
-        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
-        "name": "pointfreeco/swift-sharing",
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
         "ecosystem": "swift",
         "manifestPath": "Package.swift",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.8.1",
-        "latest": "2.9.1",
-        "selected": "2.9.1",
-        "safeLatest": "2.9.1",
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([2.9.1 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.1), [2.9.0 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.0), [2.8.2 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.8.2)) for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "recommendation": "safe-to-upgrade",
+        "current": "603.0.2",
+        "latest": "603.0.2",
+        "selected": "603.0.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([2.9.1 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.1), [2.9.0 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.0), [2.8.2 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.8.2)) for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-        ],
+        "evidenceCount": 0,
+        "gaps": [],
         "breaking": []
       }
     },
     {
       "type": "progress",
-      "at": 2652,
-      "phase": "Checked",
-      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 9,
+      "at": 9906,
+      "phase": "Checking license",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 8,
       "total": 13
     },
     {
+      "type": "candidate-upsert",
+      "at": 9906,
+      "candidate": {
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "603.0.2",
+        "latest": "603.0.2",
+        "selected": "603.0.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
       "type": "progress",
-      "at": 2660,
+      "at": 10195,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
-      "done": 9,
+      "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2660,
+      "at": 10195,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5666,15 +5524,15 @@
     },
     {
       "type": "progress",
-      "at": 2660,
+      "at": 10195,
       "phase": "Comparing the public API surface",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11 · 1 evidence source",
-      "done": 9,
+      "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2660,
+      "at": 10195,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5701,15 +5559,15 @@
     },
     {
       "type": "progress",
-      "at": 2660,
+      "at": 10195,
       "phase": "No breaking changes to look for",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
-      "done": 9,
+      "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2660,
+      "at": 10195,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5736,15 +5594,15 @@
     },
     {
       "type": "progress",
-      "at": 2661,
+      "at": 10195,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
-      "done": 9,
+      "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2661,
+      "at": 10195,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5771,15 +5629,15 @@
     },
     {
       "type": "progress",
-      "at": 2661,
+      "at": 10197,
       "phase": "Checking maintenance signals",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
-      "done": 9,
+      "done": 8,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2661,
+      "at": 10197,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5806,7 +5664,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2662,
+      "at": 10197,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-perception@2.0.10",
         "name": "pointfreeco/swift-perception",
@@ -5835,517 +5693,23 @@
     },
     {
       "type": "progress",
-      "at": 2662,
+      "at": 10197,
       "phase": "Checked",
       "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 10,
+      "done": 9,
       "total": 13
     },
     {
       "type": "progress",
-      "at": 2675,
-      "phase": "Checking security advisories",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
-      "done": 10,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.9.0",
-        "selected": "1.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2675,
-      "phase": "Checking license",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
-      "done": 10,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.9.0",
-        "selected": "1.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2675,
-      "phase": "Reading release notes and changelog",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
-      "done": 10,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.9.0",
-        "selected": "1.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2675,
-      "phase": "Comparing the public API surface",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0 · 1 evidence source",
-      "done": 10,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.9.0",
-        "selected": "1.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2675,
-      "phase": "No breaking changes to look for",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
-      "done": 10,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.9.0",
-        "selected": "1.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2675,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
-      "done": 10,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.9.0",
-        "selected": "1.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2675,
-      "phase": "Checking maintenance signals",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
-      "done": 10,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.9.0",
-        "selected": "1.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2675,
-      "candidate": {
-        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
-        "name": "pointfreeco/xctest-dynamic-overlay",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.11.0",
-        "selected": "1.11.0",
-        "safeLatest": "1.11.0",
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0.",
-        "recommendation": "safe-to-upgrade",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2675,
-      "phase": "Checked",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 11,
-      "total": 13
-    },
-    {
-      "type": "progress",
-      "at": 2741,
-      "phase": "Reading release notes and changelog",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
-      "done": 11,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2741,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "603.0.2",
-        "selected": "603.0.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2741,
-      "phase": "Comparing the public API surface",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0 · 1 evidence source",
-      "done": 11,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2741,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "603.0.2",
-        "selected": "603.0.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2741,
-      "phase": "No breaking changes to look for",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
-      "done": 11,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2741,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "603.0.2",
-        "selected": "603.0.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2741,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
-      "done": 11,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2741,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "603.0.2",
-        "selected": "603.0.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2742,
-      "phase": "Checking maintenance signals",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
-      "done": 11,
-      "total": 13
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2742,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "603.0.2",
-        "selected": "603.0.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2742,
-      "candidate": {
-        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
-        "name": "swiftlang/swift-syntax",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "603.0.2",
-        "latest": "2026.0.0",
-        "selected": "2026.0.0",
-        "safeLatest": null,
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes ([605.0.0-prerelease-2026-06-26 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-26), [605.0.0-prerelease-2026-06-08 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-08), [604.0.0-prerelease-2026-06-05 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-06-05), [604.0.0-prerelease-2026-04-21 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-04-21), [604.0.0-prerelease-2026-03-31 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-31), [604.0.0-prerelease-2026-03-24 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-24), [604.0.0-prerelease-2026-01-20 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-01-20), [604.0.0-prerelease-2025-12-15 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2025-12-15)) for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "recommendation": "safe-to-upgrade",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes ([605.0.0-prerelease-2026-06-26 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-26), [605.0.0-prerelease-2026-06-08 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-08), [604.0.0-prerelease-2026-06-05 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-06-05), [604.0.0-prerelease-2026-04-21 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-04-21), [604.0.0-prerelease-2026-03-31 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-31), [604.0.0-prerelease-2026-03-24 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-24), [604.0.0-prerelease-2026-01-20 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-01-20), [604.0.0-prerelease-2025-12-15 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2025-12-15)) for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2742,
-      "phase": "Checked",
-      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 12,
-      "total": 13
-    },
-    {
-      "type": "progress",
-      "at": 2748,
+      "at": 10197,
       "phase": "Reading release notes and changelog",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
-      "done": 12,
+      "done": 9,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2748,
+      "at": 10197,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -6372,15 +5736,15 @@
     },
     {
       "type": "progress",
-      "at": 2748,
+      "at": 10197,
       "phase": "Comparing the public API surface",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0 · 3 evidence sources",
-      "done": 12,
+      "done": 9,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2748,
+      "at": 10197,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -6407,15 +5771,15 @@
     },
     {
       "type": "progress",
-      "at": 2748,
+      "at": 10197,
       "phase": "Searching your code for 1 breaking change",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
-      "done": 12,
+      "done": 9,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2748,
+      "at": 10197,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -6442,15 +5806,439 @@
     },
     {
       "type": "progress",
-      "at": 2798,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
-      "done": 12,
+      "at": 10203,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 9,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2798,
+      "at": 10203,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
+        "name": "pointfreeco/swift-sharing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10203,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1 · 1 evidence source",
+      "done": 9,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10203,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
+        "name": "pointfreeco/swift-sharing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10203,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 9,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10203,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
+        "name": "pointfreeco/swift-sharing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10204,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 9,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10204,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
+        "name": "pointfreeco/swift-sharing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10205,
+      "phase": "Checking maintenance signals",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 9,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10205,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
+        "name": "pointfreeco/swift-sharing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10205,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/swift-sharing@2.8.1",
+        "name": "pointfreeco/swift-sharing",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.8.1",
+        "latest": "2.9.1",
+        "selected": "2.9.1",
+        "safeLatest": "2.9.1",
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([2.9.1 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.1), [2.9.0 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.0), [2.8.2 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.8.2)) for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "recommendation": "safe-to-upgrade",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([2.9.1 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.1), [2.9.0 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.9.0), [2.8.2 release notes](https://github.com/pointfreeco/swift-sharing/releases/tag/2.8.2)) for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10205,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 10,
+      "total": 13
+    },
+    {
+      "type": "progress",
+      "at": 10324,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
+      "done": 10,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10324,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.9.0",
+        "selected": "1.9.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10324,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0 · 2 evidence sources",
+      "done": 10,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10324,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.9.0",
+        "selected": "1.9.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10324,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
+      "done": 10,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10324,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.9.0",
+        "selected": "1.9.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10324,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
+      "done": 10,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10324,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.9.0",
+        "selected": "1.9.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10325,
+      "phase": "Checking maintenance signals",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0",
+      "done": 10,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10325,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.9.0",
+        "selected": "1.9.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10325,
+      "candidate": {
+        "id": "Package.swift#pointfreeco/xctest-dynamic-overlay@1.9.0",
+        "name": "pointfreeco/xctest-dynamic-overlay",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.13.0",
+        "selected": "1.13.0",
+        "safeLatest": "1.13.0",
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone.",
+        "recommendation": "safe-to-upgrade",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 2,
+        "gaps": [
+          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 10325,
+      "phase": "Checked",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.13.0 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 11,
+      "total": 13
+    },
+    {
+      "type": "progress",
+      "at": 10523,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
+      "done": 11,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 10523,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -6477,15 +6265,15 @@
     },
     {
       "type": "progress",
-      "at": 2799,
+      "at": 10524,
       "phase": "Checking maintenance signals",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
-      "done": 12,
+      "done": 11,
       "total": 13
     },
     {
       "type": "candidate-upsert",
-      "at": 2799,
+      "at": 10524,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -6512,7 +6300,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2799,
+      "at": 10525,
       "candidate": {
         "id": "Package.swift#pointfreeco/swift-navigation@2.8.0",
         "name": "pointfreeco/swift-navigation",
@@ -6565,9 +6353,221 @@
     },
     {
       "type": "progress",
-      "at": 2799,
+      "at": 10525,
       "phase": "Checked",
       "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0 · safe for your code · 1 upstream change, none used here — not deeply verified",
+      "done": 12,
+      "total": 13
+    },
+    {
+      "type": "progress",
+      "at": 11346,
+      "phase": "Reading release notes and changelog",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 12,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11346,
+      "candidate": {
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "603.0.2",
+        "latest": "603.0.2",
+        "selected": "603.0.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11346,
+      "phase": "Comparing the public API surface",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0 · 1 evidence source",
+      "done": 12,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11346,
+      "candidate": {
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "603.0.2",
+        "latest": "603.0.2",
+        "selected": "603.0.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11346,
+      "phase": "No breaking changes to look for",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 12,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11346,
+      "candidate": {
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "603.0.2",
+        "latest": "603.0.2",
+        "selected": "603.0.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11346,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 12,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11346,
+      "candidate": {
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "603.0.2",
+        "latest": "603.0.2",
+        "selected": "603.0.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11347,
+      "phase": "Checking maintenance signals",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 12,
+      "total": 13
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11347,
+      "candidate": {
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "603.0.2",
+        "latest": "603.0.2",
+        "selected": "603.0.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11347,
+      "candidate": {
+        "id": "Package.swift#swiftlang/swift-syntax@603.0.2",
+        "name": "swiftlang/swift-syntax",
+        "ecosystem": "swift",
+        "manifestPath": "Package.swift",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "603.0.2",
+        "latest": "2026.0.0",
+        "selected": "2026.0.0",
+        "safeLatest": null,
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes ([605.0.0-prerelease-2026-06-26 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-26), [605.0.0-prerelease-2026-06-08 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-08), [604.0.0-prerelease-2026-06-05 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-06-05), [604.0.0-prerelease-2026-04-21 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-04-21), [604.0.0-prerelease-2026-03-31 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-31), [604.0.0-prerelease-2026-03-24 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-24), [604.0.0-prerelease-2026-01-20 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-01-20), [604.0.0-prerelease-2025-12-15 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2025-12-15)) for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "recommendation": "safe-to-upgrade",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes ([605.0.0-prerelease-2026-06-26 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-26), [605.0.0-prerelease-2026-06-08 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/605.0.0-prerelease-2026-06-08), [604.0.0-prerelease-2026-06-05 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-06-05), [604.0.0-prerelease-2026-04-21 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-04-21), [604.0.0-prerelease-2026-03-31 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-31), [604.0.0-prerelease-2026-03-24 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-03-24), [604.0.0-prerelease-2026-01-20 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2026-01-20), [604.0.0-prerelease-2025-12-15 release notes](https://github.com/swiftlang/swift-syntax/releases/tag/604.0.0-prerelease-2025-12-15)) for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11347,
+      "phase": "Checked",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 13,
       "total": 13
     }
@@ -6655,20 +6655,20 @@
       "workspace": "",
       "workspaceName": null,
       "current": "1.7.3",
-      "latest": "1.9.1",
-      "selected": "1.9.1",
-      "safeLatest": "1.9.1",
+      "latest": "1.9.2",
+      "selected": "1.9.2",
+      "safeLatest": "1.9.2",
       "status": "clean",
       "phase": null,
       "risk": "none",
-      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes ([1.9.2 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.2), [1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes ([1.9.2 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.2), [1.9.1 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.1), [1.9.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.9.0), [1.8.0 release notes](https://github.com/pointfreeco/swift-case-paths/releases/tag/1.8.0)) for pointfreeco/swift-case-paths 1.9.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
@@ -6755,9 +6755,9 @@
       "workspace": "Examples/TicTacToe/tic-tac-toe",
       "workspaceName": null,
       "current": "1.0.0",
-      "latest": "1.16.0",
-      "selected": "1.16.0",
-      "safeLatest": "1.16.0",
+      "latest": "1.17.0",
+      "selected": "1.17.0",
+      "safeLatest": "1.17.0",
       "status": "clean",
       "phase": null,
       "risk": "none",
@@ -6766,7 +6766,7 @@
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
-      "evidenceCount": 4,
+      "evidenceCount": 3,
       "gaps": [
         "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
       ],
@@ -6780,20 +6780,20 @@
       "workspace": "",
       "workspaceName": null,
       "current": "1.13.0",
-      "latest": "1.16.0",
-      "selected": "1.16.0",
-      "safeLatest": "1.16.0",
+      "latest": "1.17.0",
+      "selected": "1.17.0",
+      "safeLatest": "1.17.0",
       "status": "clean",
       "phase": null,
       "risk": "none",
-      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes ([1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.16.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 6 sets of release notes ([1.17.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.17.0), [1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.17.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes ([1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.16.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 6 sets of release notes ([1.17.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.17.0), [1.16.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.16.0), [1.15.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.15.0), [1.14.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.1), [1.14.0 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.14.0), [1.13.1 release notes](https://github.com/pointfreeco/swift-dependencies/releases/tag/1.13.1)) for pointfreeco/swift-dependencies 1.17.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
@@ -6880,20 +6880,20 @@
       "workspace": "",
       "workspaceName": null,
       "current": "1.9.0",
-      "latest": "1.11.0",
-      "selected": "1.11.0",
-      "safeLatest": "1.11.0",
+      "latest": "1.13.0",
+      "selected": "1.13.0",
+      "safeLatest": "1.13.0",
       "status": "clean",
       "phase": null,
       "risk": "none",
-      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0.",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
-      "evidenceCount": 1,
+      "evidenceCount": 2,
       "gaps": [
-        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0."
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
       ],
       "breaking": []
     },

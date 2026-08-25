@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-08-24T16:21:55.532Z",
+  "capturedAt": "2026-08-25T18:27:06.729Z",
   "commit": "9772c540279cc84b8c5be5442c50ccb00b399a6e",
-  "engine": "e6437573203d54a5",
-  "durationMs": 41217,
+  "engine": "833292abc0cde7ce",
+  "durationMs": 14089,
   "packagesChecked": 4,
   "manifests": [
     "vcpkg.json",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 401,
+      "at": 98,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 404,
+      "at": 101,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 405,
+      "at": 101,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 405,
+      "at": 101,
       "phase": "Reading manifest",
       "detail": "pages/package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 415,
+      "at": 104,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -78,7 +78,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 415,
+      "at": 104,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -105,7 +105,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 415,
+      "at": 104,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -132,7 +132,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 415,
+      "at": 104,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -159,7 +159,7 @@
     },
     {
       "type": "progress",
-      "at": 415,
+      "at": 104,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -167,7 +167,7 @@
     },
     {
       "type": "progress",
-      "at": 415,
+      "at": 105,
       "phase": "Checking registries",
       "detail": "4 direct dependencies",
       "done": 0,
@@ -175,7 +175,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 415,
+      "at": 105,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -202,7 +202,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 417,
+      "at": 105,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -229,7 +229,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 417,
+      "at": 105,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -256,7 +256,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 417,
+      "at": 105,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -283,7 +283,7 @@
     },
     {
       "type": "progress",
-      "at": 631,
+      "at": 331,
       "phase": "Indexing your code",
       "detail": "73 files indexed · 4 direct dependencies to check",
       "done": 0,
@@ -291,12 +291,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 638,
+      "at": 463,
       "id": "pages/package.json#pretty-bytes@7.1.1"
     },
     {
       "type": "progress",
-      "at": 638,
+      "at": 463,
       "phase": "Up to date",
       "detail": "pretty-bytes@7.1.1",
       "done": 1,
@@ -304,12 +304,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1025,
+      "at": 862,
       "id": "pages/package.json#@octokit/rest@22.0.1"
     },
     {
       "type": "progress",
-      "at": 1025,
+      "at": 862,
       "phase": "Up to date",
       "detail": "@octokit/rest@22.0.1",
       "done": 2,
@@ -317,7 +317,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 7907,
+      "at": 2361,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -326,8 +326,8 @@
         "workspace": "pages",
         "workspaceName": "obs-backgroundremoval-pages",
         "current": "6.4.8",
-        "latest": "7.2.5",
-        "selected": "7.2.5",
+        "latest": "7.2.6",
+        "selected": "7.2.6",
         "safeLatest": null,
         "status": "pending",
         "phase": "Waiting to be checked",
@@ -344,20 +344,20 @@
     },
     {
       "type": "progress",
-      "at": 7907,
+      "at": 2361,
       "phase": "Outdated",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 3,
       "total": 4
     },
     {
       "type": "candidate-drop",
-      "at": 8666,
+      "at": 4670,
       "id": "pages/package.json#typescript@7.0.2"
     },
     {
       "type": "progress",
-      "at": 8666,
+      "at": 4670,
       "phase": "Up to date",
       "detail": "typescript@7.0.2",
       "done": 4,
@@ -365,15 +365,15 @@
     },
     {
       "type": "progress",
-      "at": 8673,
+      "at": 4672,
       "phase": "Reading release notes and changelog",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 8673,
+      "at": 4672,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -400,15 +400,15 @@
     },
     {
       "type": "progress",
-      "at": 8673,
+      "at": 4672,
       "phase": "Checking package metadata",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 8673,
+      "at": 4672,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -435,15 +435,15 @@
     },
     {
       "type": "progress",
-      "at": 9411,
+      "at": 5452,
       "phase": "Checking repository status",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 9411,
+      "at": 5452,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -470,15 +470,15 @@
     },
     {
       "type": "progress",
-      "at": 10281,
+      "at": 5788,
       "phase": "Checking security advisories",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 10281,
+      "at": 5788,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -505,15 +505,15 @@
     },
     {
       "type": "progress",
-      "at": 10281,
+      "at": 5923,
       "phase": "Checking license",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 10281,
+      "at": 5923,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -540,15 +540,15 @@
     },
     {
       "type": "progress",
-      "at": 41108,
+      "at": 14003,
       "phase": "Reading release notes and changelog",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 41108,
+      "at": 14003,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -575,15 +575,15 @@
     },
     {
       "type": "progress",
-      "at": 41108,
+      "at": 14003,
       "phase": "Comparing the public API surface",
-      "detail": "astro 6.4.8 → 7.2.5 · 6 evidence sources",
+      "detail": "astro 6.4.8 → 7.2.6 · 6 evidence sources",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 41108,
+      "at": 14003,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -610,15 +610,15 @@
     },
     {
       "type": "progress",
-      "at": 41130,
+      "at": 14014,
       "phase": "Searching your code for 43 breaking changes",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 41130,
+      "at": 14014,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -645,15 +645,15 @@
     },
     {
       "type": "progress",
-      "at": 41142,
+      "at": 14043,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 41142,
+      "at": 14043,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -680,15 +680,15 @@
     },
     {
       "type": "progress",
-      "at": 41152,
+      "at": 14044,
       "phase": "Checking maintenance signals",
-      "detail": "astro 6.4.8 → 7.2.5",
+      "detail": "astro 6.4.8 → 7.2.6",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 41152,
+      "at": 14044,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -715,7 +715,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 41217,
+      "at": 14089,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -724,8 +724,8 @@
         "workspace": "pages",
         "workspaceName": "obs-backgroundremoval-pages",
         "current": "6.4.8",
-        "latest": "7.2.5",
-        "selected": "7.2.5",
+        "latest": "7.2.6",
+        "selected": "7.2.6",
         "safeLatest": null,
         "status": "ready",
         "phase": null,
@@ -756,8 +756,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -780,8 +780,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -804,8 +804,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -828,8 +828,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -839,9 +839,9 @@
     },
     {
       "type": "progress",
-      "at": 41217,
+      "at": 14089,
       "phase": "Checked",
-      "detail": "astro 6.4.8 → 7.2.5 · safe for your code · 43 upstream changes, none used here — not deeply verified",
+      "detail": "astro 6.4.8 → 7.2.6 · safe for your code · 43 upstream changes, none used here — not deeply verified",
       "done": 1,
       "total": 1
     }
@@ -855,8 +855,8 @@
       "workspace": "pages",
       "workspaceName": "obs-backgroundremoval-pages",
       "current": "6.4.8",
-      "latest": "7.2.5",
-      "selected": "7.2.5",
+      "latest": "7.2.6",
+      "selected": "7.2.6",
       "safeLatest": null,
       "status": "ready",
       "phase": null,
@@ -887,8 +887,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -911,8 +911,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -935,8 +935,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -959,8 +959,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.5/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.5:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
