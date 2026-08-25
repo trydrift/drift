@@ -26,17 +26,13 @@ import obsBackgroundRemoval from "@/data/obs-backgroundremoval.json";
  * common ecosystem goes first, and the ones with the most interesting findings
  * follow it, so a visitor who only plays one recording plays a good one.
  *
- * All sixteen supported ecosystems are here, including the ones whose
- * recordings are thin. A page that showed seven and said nothing about the
- * other nine was making a claim by omission — a Dart developer had no way to
- * learn Drift reads pubspec.yaml — and the thin recordings are informative in
- * their own right: an OCaml project whose dependencies are all open floors
- * genuinely has nothing to upgrade, and Drift saying so is the answer.
+ * Every ecosystem whose artifact includes the extension's candidate lifecycle
+ * is here. An obsolete recording is omitted rather than rendered as a
+ * misleading compatibility view; the refresh workflow restores it after a
+ * current capture is committed.
  *
- * `as unknown as Recording` is doing something narrow: the JSON's inferred
- * literal types are structurally compatible but far more specific than the
- * interface (every string becomes its own literal type), and widening them here
- * is what lets `recordings.ts` stay the single description of the shape.
+ * JSON imports are intentionally treated as unknown at this boundary: the
+ * schema check decides whether they are safe for the replay UI.
  */
 export function loadRecordings(): Recording[] {
   return [
@@ -56,5 +52,7 @@ export function loadRecordings(): Recording[] {
     flexlayout,
     tca,
     cohttp,
-  ].map(normalizeRecording) as Recording[];
+  ]
+    .map(normalizeRecording)
+    .filter((recording): recording is Recording => recording !== null);
 }
