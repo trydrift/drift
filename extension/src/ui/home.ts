@@ -5988,7 +5988,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private startDetailTransfer(surface: Surface, id: string, requestId: string, section?: string): void {
     const candidate = this.candidates.get(id);
-    if (!candidate || this.busy) return;
+    if (!candidate) return;
+    if (this.busy) {
+      void surface.webview.postMessage({
+        type: 'candidateDetailRetry',
+        id,
+        requestId,
+        ...(section ? { section } : {}),
+        retryAfterMs: 1_000,
+      });
+      return;
+    }
     const span = startSpan('extension.detail-render', { candidateId: id, ...(section ? { section } : {}) });
     const html = section ? renderCandidateSection(candidate, section) : renderCandidateBody(candidate, true);
     if (html === null) {

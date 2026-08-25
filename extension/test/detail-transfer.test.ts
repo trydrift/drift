@@ -7,6 +7,7 @@ type Controller = {
   retryDetailChunk(surface: never, transfer: never, index: number, delay?: number): void;
   cancelDetailTransfer(surface: never, startNext?: boolean): void;
   queueDetailRequest(surface: never, request: { id: string; requestId: string; section?: string }): void;
+  startDetailTransfer(surface: never, id: string, requestId: string, section?: string): void;
 };
 
 function surface(postMessage: (message: unknown) => Promise<boolean>) {
@@ -96,4 +97,28 @@ test('reload cancellation clears transfer payloads, pending requests, and timers
   assert.equal(target.detailTransfer, null);
   assert.equal(target.detailAckTimer, null);
   assert.deepEqual(target.pendingDetailRequests, []);
+});
+
+test('a detail opened during a scan is deferred instead of abandoned', async () => {
+  const messages: unknown[] = [];
+  const target = surface(async (message) => { messages.push(message); return true; });
+  target.detailTransfer = null as never;
+  const busy = Object.create(DriftHomeView.prototype) as Controller & {
+    running: object;
+    candidates: Map<string, object>;
+  };
+  busy.running = {};
+  busy.candidates = new Map([['react', { id: 'react' }]]);
+
+  busy.startDetailTransfer(target as never, 'react', 'opened-during-scan', 'evidence:1');
+  await wait(0);
+
+  assert.deepEqual(messages, [{
+    type: 'candidateDetailRetry',
+    id: 'react',
+    requestId: 'opened-during-scan',
+    section: 'evidence:1',
+    retryAfterMs: 1_000,
+  }]);
+  assert.equal(target.detailTransfer, null);
 });
