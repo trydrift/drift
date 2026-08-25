@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyTimelineEvent, createReplayAccumulator, visibleCandidates } from "./replay";
-import type { Candidate, RecordingTimelineEvent } from "./recordings";
+import { applyTimelineEvent, createReplayAccumulator, finalReplayState, visibleCandidates } from "./replay.ts";
+import type { Candidate, RecordingTimelineEvent } from "./recordings.ts";
 
 const candidate = (id: string, status: string): Candidate => ({ id, status } as Candidate);
 const upsert = (id: string, status: string): RecordingTimelineEvent => ({ type: "candidate-upsert", at: 100, candidate: candidate(id, status) });
@@ -41,4 +41,16 @@ test("progress does not create candidates and persists through candidate events"
 test("same-timestamp events retain array order", () => {
   const state = apply([upsert("A", "pending"), upsert("A", "checking"), upsert("A", "ready")]);
   assert.equal(visibleCandidates(state)[0]!.status, "ready");
+});
+
+test("final replay state uses the last lifecycle update and removes dropped candidates", () => {
+  const state = finalReplayState([
+    progress(10),
+    upsert("A", "checking"),
+    upsert("B", "ready"),
+    upsert("A", "ready"),
+    { type: "candidate-drop", at: 100, id: "B" },
+  ]);
+  assert.deepEqual(visibleCandidates(state).map((entry) => [entry.id, entry.status]), [["A", "ready"]]);
+  assert.equal(state.currentProgress?.done, 10);
 });

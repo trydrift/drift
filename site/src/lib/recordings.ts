@@ -104,17 +104,26 @@ export interface Recording {
   nestedGitRepos?: string[];
   timeline: RecordingTimelineEvent[];
   candidates: Candidate[];
-  legacy?: boolean;
 }
 
-export function normalizeRecording(raw: any): Recording {
-  if (raw?.schemaVersion === 2) return raw as Recording;
-  const candidates = (raw.candidates ?? []).map((candidate: any, index: number) => ({
-    ...candidate,
-    id: candidate.id ?? `legacy:${raw.ecosystem}:${candidate.manifestPath ?? ""}:${candidate.name}:${candidate.current}:${candidate.selected}:${index}`,
-    phase: null,
-  }));
-  return { ...raw, schemaVersion: 1, candidates, timeline: (raw.events ?? []).map((event: any) => ({ type: "progress", ...event })), legacy: true } as Recording;
+/**
+ * Whether a capture has the candidate lifecycle that the extension shows.
+ *
+ * Older captures stored every intermediate update in their final `candidates`
+ * array. Replaying one as though it were a finished report duplicates rows and
+ * makes old `checking` states look like verdicts, so it is not a safe fallback.
+ */
+export function normalizeRecording(raw: unknown): Recording | null {
+  if (!raw || typeof raw !== "object") return null;
+  const recording = raw as Partial<Recording>;
+  if (
+    recording.schemaVersion !== RECORDING_SCHEMA_VERSION ||
+    !Array.isArray(recording.timeline) ||
+    !Array.isArray(recording.candidates)
+  ) {
+    return null;
+  }
+  return recording as Recording;
 }
 
 /**
@@ -135,7 +144,7 @@ import {
   describeSeverity as coreDescribeSeverity,
   type SeverityInput,
   type UpgradeSeverity,
-} from "./severity";
+} from "./severity.ts";
 
 export type { UpgradeSeverity };
 

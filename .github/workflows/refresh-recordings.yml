@@ -48,6 +48,8 @@ on:
       - 'src/pipeline.ts'
       - 'src/types.ts'
       - 'site/scripts/capture.mjs'
+      - 'site/scripts/recording-validation.mjs'
+      - 'site/src/lib/recordings.ts'
       - 'site/scripts/engine-fingerprint.mjs'
       - '.github/workflows/refresh-recordings.yml'
   schedule:
