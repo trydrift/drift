@@ -49,6 +49,7 @@ on:
       - 'src/types.ts'
       - 'site/scripts/capture.mjs'
       - 'site/scripts/recording-validation.mjs'
+      - 'site/scripts/validate-recordings.mjs'
       - 'site/src/lib/recordings.ts'
       - 'site/scripts/engine-fingerprint.mjs'
       - '.github/workflows/refresh-recordings.yml'
@@ -215,6 +216,9 @@ jobs:
           }
           console.log(`${index.length} recording(s), ${index.reduce((sum, e) => sum + e.packagesChecked, 0)} packages checked.`);
           NODE
+
+      - name: Validate recording corpus
+        run: node site/scripts/validate-recordings.mjs
 
       - name: Open a pull request
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8

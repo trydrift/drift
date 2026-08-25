@@ -40,6 +40,13 @@ export interface EvidenceRef {
   locator: string | null;
 }
 
+export interface RuntimeRequirement {
+  kind: "runtime-requirement";
+  runtime: "node" | "python" | "go" | "ruby" | "java" | "rust";
+  requirement: string;
+  sourceText: string;
+}
+
 /** The single customer-facing number — see `deriveOverallConfidence` in core. */
 export interface OverallConfidence {
   score: number;
@@ -59,6 +66,7 @@ export interface BreakingChange {
    * rather than a fabricated number.
    */
   overall?: OverallConfidence | null;
+  runtime?: RuntimeRequirement | null;
   symbols: string[];
   evidence?: EvidenceRef[];
   sites: ImpactSite[];

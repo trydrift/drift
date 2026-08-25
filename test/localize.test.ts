@@ -621,6 +621,12 @@ const other = require('@scope/other/features/foo');`,
       ...removedExport,
       kind: 'runtime-requirement' as const,
       symbols: ['Node.js'],
+      runtime: {
+        kind: 'runtime-requirement' as const,
+        runtime: 'node' as const,
+        requirement: '>=14',
+        sourceText: 'Requires Node.js 14 or later',
+      },
     };
 
     const sites = localize([runtimeChange], [dependencyChange], buildIndex(files), files, { logger });

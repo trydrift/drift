@@ -553,6 +553,7 @@ function slimCandidate(candidate) {
         summary: change.summary,
         remediation: change.remediation,
         confidence: change.confidence,
+        runtime: change.runtime ?? null,
         // The single customer-facing number, computed from the same
         // assessment the extension and the Markdown report read. `null` for
         // the rare finding with no assessment at all, so the page can fall

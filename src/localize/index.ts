@@ -883,6 +883,7 @@ function searchFiles(
       // every unrelated C++ string call.
       if (
         derivedOwner &&
+        !importedNames.has(symbol) &&
         (isPrimitiveLeaf(symbol) || !relevantImports.some((record) => record.bindings.includes(derivedOwner)))
       ) continue;
 
