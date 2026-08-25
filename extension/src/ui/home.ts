@@ -17,7 +17,7 @@ import { deepVerify, type AnalysisOptions } from '../../../src/analysis.js';
 import { describeVerification } from '../../../src/verification/apply.js';
 import { envWithShellPath } from '../shell-path.js';
 import { clearedByCompiler, runFix, type FixResult } from '../fix.js';
-import type { DriftState, RepoRoot } from '../state.js';
+import type { CandidateStateChange, DriftState, RepoRoot } from '../state.js';
 import type { NestedProject } from '../../../src/detect/nested.js';
 import {
   DriftSession,
@@ -89,6 +89,8 @@ import { runRepoDiagnostic } from '../run-diagnostics.js';
 import {
   makeNonce,
   renderBody,
+  renderCandidateBody,
+  renderCandidateSummary,
   renderPanel,
   SLASH_COMMANDS,
   type AgentChoice,
@@ -114,6 +116,9 @@ import {
 
 type Incoming =
   | { type: 'ready' }
+  | { type: 'uiAck'; sequence: number }
+  | { type: 'candidateDetailRequest'; id: string; requestId: string }
+  | { type: 'detailChunkAck'; requestId: string; index: number }
   | { type: 'submit'; text: string }
   | { type: 'draft'; text: string }
   | { type: 'answer'; id: string; value: string }
@@ -208,6 +213,12 @@ interface Surface {
   webview: vscode.Webview;
   /** Set once the document's script has announced itself. */
   ready: boolean;
+  nextSequence: number;
+  awaitingSequence: number | null;
+  pendingBody: string | null;
+  pendingCandidates: Map<string, string>;
+  detailTransfer: { requestId: string; chunks: string[]; next: number } | null;
+  pendingDetailRequests: { id: string; requestId: string }[];
 }
 
 export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -215,6 +226,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private badge: vscode.ViewBadge | undefined;
   private surfaces: Surface[] = [];
   private candidates = new Map<string, UpgradeCandidate>();
+  private candidatePresentation = new Map<string, string>();
   private agents: DiscoveredAgent[] = [];
   /** Models each subscription is currently offering, keyed by agent id. */
   private models = new Map<string, AgentModel[]>();
@@ -280,7 +292,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     this.disposables.push(
       state.onDidChange(() => this.render()),
-      state.onDidChangeCandidates(() => this.render()),
+      state.onDidChangeCandidates((change) => this.candidatesChanged(change)),
       session.onDidChange(() => {
         this.render();
         this.autosave();
@@ -397,14 +409,48 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * in the panel felt like it was thinking about it.
    */
   private attach(webview: vscode.Webview): void {
-    const surface: Surface = { webview, ready: false };
+    const surface: Surface = {
+      webview,
+      ready: false,
+      nextSequence: 0,
+      awaitingSequence: null,
+      pendingBody: null,
+      pendingCandidates: new Map(),
+      detailTransfer: null,
+      pendingDetailRequests: [],
+    };
     this.surfaces.push(surface);
 
     this.disposables.push(
       webview.onDidReceiveMessage((message: Incoming) => {
         if (message.type === 'ready') {
           surface.ready = true;
-          void webview.postMessage({ type: 'render', body: renderBody(this.viewModel()) });
+          this.sendBody(surface, renderBody(this.viewModel()));
+          return;
+        }
+        if (message.type === 'uiAck') {
+          if (surface.awaitingSequence !== message.sequence) return;
+          surface.awaitingSequence = null;
+          const pending = surface.pendingBody;
+          surface.pendingBody = null;
+          if (pending !== null) this.sendBody(surface, pending);
+          else if (surface.pendingCandidates.size > 0) this.sendCandidateBatch(surface);
+          return;
+        }
+        if (message.type === 'candidateDetailRequest') {
+          if (surface.detailTransfer) {
+            if (surface.pendingDetailRequests.length < 8) {
+              surface.pendingDetailRequests.push({ id: message.id, requestId: message.requestId });
+            }
+          } else {
+            this.startDetailTransfer(surface, message.id, message.requestId);
+          }
+          return;
+        }
+        if (message.type === 'detailChunkAck') {
+          const transfer = surface.detailTransfer;
+          if (!transfer || transfer.requestId !== message.requestId || transfer.next - 1 !== message.index) return;
+          this.sendDetailChunk(surface);
           return;
         }
         void this.handle(message);
@@ -1465,6 +1511,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               this.session.updatePackages(
                 headline(found, checked, unlooked.length),
                 [...found].sort(bySeverity).map((c) => c.id),
+                false,
               );
               this.state.setCandidates([...found].sort(bySeverity));
             },
@@ -5650,8 +5697,121 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const body = renderBody(this.viewModel());
     for (const surface of this.surfaces) {
-      if (surface.ready) void surface.webview.postMessage({ type: 'render', body });
+      if (surface.ready) this.sendBody(surface, body);
     }
+  }
+
+  /** Keep exactly one renderer update in flight; intermediate revisions collapse. */
+  private sendBody(surface: Surface, body: string): void {
+    if (surface.awaitingSequence !== null) {
+      surface.pendingBody = body;
+      surface.pendingCandidates.clear();
+      return;
+    }
+    const sequence = ++surface.nextSequence;
+    surface.detailTransfer = null;
+    surface.pendingDetailRequests = [];
+    surface.pendingCandidates.clear();
+    surface.awaitingSequence = sequence;
+    void surface.webview.postMessage({ type: 'render', sequence, body }).then(
+      (accepted) => {
+        if (accepted) return;
+        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+      },
+      () => {
+        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+      },
+    );
+  }
+
+  private candidatesChanged(change: CandidateStateChange): void {
+    let requiresLayout = change.added.length > 0 || change.removed.length > 0;
+    for (const id of [...change.added, ...change.updated]) {
+      const candidate = this.candidates.get(id);
+      if (!candidate) continue;
+      const presentation = candidatePresentationOf(candidate);
+      const previous = this.candidatePresentation.get(id);
+      if (previous !== undefined && previous !== presentation) requiresLayout = true;
+      this.candidatePresentation.set(id, presentation);
+    }
+    for (const id of change.removed) this.candidatePresentation.delete(id);
+
+    if (requiresLayout) {
+      this.render();
+      return;
+    }
+
+    const showRepo = new Set([...this.candidates.values()].map((candidate) => candidate.repoRoot).filter(Boolean)).size > 1;
+    for (const surface of this.surfaces) {
+      if (!surface.ready) continue;
+      for (const id of change.updated) {
+        const candidate = this.candidates.get(id);
+        if (candidate) {
+          surface.pendingCandidates.set(
+            id,
+            renderCandidateSummary(candidate, showRepo, this.busy),
+          );
+        }
+      }
+      if (surface.awaitingSequence === null) this.sendCandidateBatch(surface);
+    }
+  }
+
+  private sendCandidateBatch(surface: Surface): void {
+    if (surface.awaitingSequence !== null || surface.pendingBody !== null) return;
+    const operations: { id: string; summary: string }[] = [];
+    let bytes = 0;
+    for (const [id, summary] of surface.pendingCandidates) {
+      const operationBytes = Buffer.byteLength(id) + Buffer.byteLength(summary) + 96;
+      if (operations.length >= 50 || (operations.length > 0 && bytes + operationBytes > 64 * 1024)) break;
+      operations.push({ id, summary });
+      bytes += operationBytes;
+      surface.pendingCandidates.delete(id);
+    }
+    if (operations.length === 0) return;
+    const sequence = ++surface.nextSequence;
+    surface.awaitingSequence = sequence;
+    void surface.webview.postMessage({ type: 'candidateBatch', sequence, operations }).then(
+      (accepted) => {
+        if (accepted) return;
+        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+        this.render();
+      },
+      () => {
+        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+        this.render();
+      },
+    );
+  }
+
+  private sendDetailChunk(surface: Surface): void {
+    const transfer = surface.detailTransfer;
+    if (!transfer) return;
+    if (transfer.next >= transfer.chunks.length) {
+      surface.detailTransfer = null;
+      const pending = surface.pendingDetailRequests.shift();
+      if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId);
+      return;
+    }
+    const index = transfer.next++;
+    void surface.webview.postMessage({
+      type: 'candidateDetailChunk',
+      requestId: transfer.requestId,
+      index,
+      total: transfer.chunks.length,
+      chunk: transfer.chunks[index],
+    });
+  }
+
+  private startDetailTransfer(surface: Surface, id: string, requestId: string): void {
+    const candidate = this.candidates.get(id);
+    if (!candidate || this.busy) return;
+    surface.detailTransfer = {
+      requestId,
+      chunks: chunkText(renderCandidateBody(candidate), 16_000),
+      next: 0,
+    };
+    this.sendDetailChunk(surface);
   }
 
   private viewModel(): ViewModel {
@@ -5687,8 +5847,31 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // Scopes the typewriter's bookkeeping to one conversation, so reopening an
       // old thread does not retype a message it already typed months ago.
       conversationId: this.conversationId,
+      lazyCandidateDetails: true,
     };
   }
+}
+
+/** 16k UTF-16 units are at most 64KiB as UTF-8, including all-surrogate text. */
+export function chunkText(value: string, characters: number): string[] {
+  if (value.length === 0) return [''];
+  const chunks: string[] = [];
+  for (let offset = 0; offset < value.length;) {
+    let end = Math.min(value.length, offset + characters);
+    const last = value.charCodeAt(end - 1);
+    if (end < value.length && last >= 0xd800 && last <= 0xdbff) end--;
+    chunks.push(value.slice(offset, end));
+    offset = end;
+  }
+  return chunks;
+}
+
+function candidatePresentationOf(candidate: UpgradeCandidate): string {
+  if (candidate.status === 'pending' || candidate.status === 'checking' || candidate.status === 'upgrading') {
+    return 'checking';
+  }
+  const severity = severityOf(candidate);
+  return severity === 'upstream-only' ? 'clean' : severity;
 }
 
 /**

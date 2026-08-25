@@ -1137,6 +1137,20 @@ test('evidence content from a third party is escaped, not injected', () => {
   assert.match(html, /&lt;img src=x/);
 });
 
+test('the live scan renders candidate summaries without eager evidence bodies', () => {
+  const c = candidate({ summary: 'DETAIL_SENTINEL', plan: plan() });
+  const html = renderPanel(
+    model({
+      lazyCandidateDetails: true,
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One result.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /data-candidate-detail="lodash@4\.17\.21-&gt;5\.0\.0"/);
+  assert.doesNotMatch(html, /DETAIL_SENTINEL/);
+});
+
 test('a markdown link folded into the one-line verdict renders as a link, not literal brackets', () => {
   // `summarize()` folds rationale gap text (which can carry `[label](url)` links,
   // e.g. release-notes citations) straight into `candidate.summary` when there is
