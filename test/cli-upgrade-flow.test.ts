@@ -15,6 +15,7 @@ import {
   selectorFor,
 } from '../dist/cli.js';
 import { createLogger } from '../dist/util/logger.js';
+import type { UpgradeCandidate } from '../src/upgrade/scan.js';
 
 const run = promisify(execFile);
 
@@ -138,7 +139,7 @@ describe('commitWorkingTreeManifests: making an uncommitted upgrade analysable',
  * the scan sorted first is a write to a manifest the developer did not name.
  */
 const candidate = (name: string, manifestPath: string, workspace?: string) =>
-  ({ name, manifestPath, ecosystem: 'npm', packageManager: 'npm', ...(workspace ? { workspace } : {}) }) as never;
+  ({ name, manifestPath, ecosystem: 'npm', packageManager: 'npm', ...(workspace ? { workspace } : {}) }) as unknown as UpgradeCandidate;
 
 describe('CLI package selection in a monorepo', () => {
   const logger = createLogger('error');
