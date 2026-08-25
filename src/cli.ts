@@ -246,11 +246,27 @@ Usage:
   drift telemetry print       Print the exact telemetry event shape
   drift --version             Print the version
 
-Options for \`outdated\` and \`upgrade\`:
+Options shared by \`outdated\` and \`upgrade\`:
   --repo <owner/name>         Repository label for output. Default: git remote
   --dir <path>                Local checkout to scan.    Default: cwd
   --no-dev                    Skip dev/optional/peer dependencies (checked by
                               default alongside runtime ones)
+  --token <token>             Optional, only to raise the public API rate
+                              limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
+  --config <path>             Config file. Default: .github/drift.yml
+  --verify                    Deep Verification: after the static (Quick
+                              Scan) report, install each candidate in a
+                              throwaway worktree and run this project's own
+                              checks before reporting it. Off by default —
+                              a scan without it reports static predictions
+                              only, clearly labelled as not deeply verified.
+                              Requires verify.enabled: true in drift.yml
+                              (the default)
+  --log-level <level>         debug | info | warn | error. Default: info
+  --log                       Persist a redacted diagnostic run log under
+                              .git/drift for this run. Off by default
+
+Additional options for \`outdated\`:
   --upgrade <selector>        Install the recommended version for one package
                               found by the scan (writes the manifest/lockfile
                               locally — run \`drift fix\` afterwards). The
@@ -265,21 +281,7 @@ Options for \`outdated\` and \`upgrade\`:
                               force flag (\`npm install --force\`). This does
                               NOT change which version is installed; only
                               --latest does that. Alias: --force
-  --token <token>             Optional, only to raise the public API rate
-                              limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
-  --config <path>             Config file. Default: .github/drift.yml
   --json                      Emit the full scan result as JSON
-  --verify                    Deep Verification: after the static (Quick
-                              Scan) report, install each candidate in a
-                              throwaway worktree and run this project's own
-                              checks before reporting it. Off by default —
-                              a scan without it reports static predictions
-                              only, clearly labelled as not deeply verified.
-                              Requires verify.enabled: true in drift.yml
-                              (the default)
-  --log-level <level>         debug | info | warn | error. Default: info
-  --log                       Persist a redacted diagnostic run log under
-                              .git/drift for this run. Off by default
 
 Options for \`analyze\`:
   --repo <owner/name>         Repository to analyse. Default: the git remote
@@ -1029,14 +1031,15 @@ async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } 
  * unrestricted alias for npm update.
  */
 async function upgradeCommand(flags: Flags): Promise<number> {
-  if (
-    typeof flags.upgrade === 'string' ||
-    flags.latest === true ||
-    flags['force-install'] === true ||
-    flags.force === true ||
-    flags.json === true
-  ) {
-    console.error('`drift upgrade` installs the scan’s safe selected versions. Use `drift outdated --upgrade <selector>` for --latest, --force-install, or --json.');
+  const unsupported = ['upgrade', 'latest', 'force-install', 'force', 'json'].find((flag) =>
+    Object.prototype.hasOwnProperty.call(flags, flag),
+  );
+  if (unsupported) {
+    console.error(
+      '`drift upgrade` installs only the scan’s safe selected versions. ' +
+        'Use `drift outdated --upgrade <selector>` for package-specific upgrades, --latest, or --force-install; ' +
+        'use `drift outdated --json` for JSON output.',
+    );
     return 1;
   }
   return outdatedCommand(flags, { installSafe: true });
