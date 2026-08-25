@@ -729,7 +729,7 @@ export function parsePythonSurface(json: string): SurfaceApi | null {
  * to inspect it runs its module-level code, and Drift will not run a
  * dependency's code to describe it.
  */
-export const SURFACE_SCRIPT = `import ast, json, os, sys
+export const SURFACE_SCRIPT = `import ast, json, os, re, sys
 
 def public(name):
     return not name.startswith('_') or (name.startswith('__') and name.endswith('__'))
@@ -789,13 +789,36 @@ def declared_all(tree):
                         return None
     return None
 
+# A source distribution normally has one archive wrapper, such as
+# itemloaders-1.0.1/. It is a transport detail, not part of Python's import
+# identity. Only strip a wrapper that is recognisably versioned; blindly
+# removing the first path segment would corrupt a real top-level package.
+def source_root(root):
+    entries = os.listdir(root)
+    if len(entries) != 1 or not os.path.isdir(os.path.join(root, entries[0])):
+        return root
+    if not re.search(r'[-_.]v?\\d+(?:[.-]\\d+)+$', entries[0], re.I):
+        return root
+    return os.path.join(root, entries[0])
+
+root = source_root(sys.argv[1])
+
 # Prefer a stub over the implementation: a .pyi is the author's own statement
-# of the public interface, which beats inferring one.
+# of the public interface, which beats inferring one. A Python sdist also
+# contains documentation, examples, build scripts and metadata beside the
+# package. Those are not consumer import identity, even when they happen to
+# define a public-looking function.
 sources = {}
-for base, dirs, files in os.walk(sys.argv[1]):
-    dirs[:] = [d for d in dirs if d not in ('test', 'tests', '.git', '__pycache__')]
+excluded_dirs = {
+    'test', 'tests', '.git', '__pycache__', 'docs', 'doc', 'examples',
+    'example', 'bench', 'benchmarks', 'demos', 'demo', 'scripts',
+}
+excluded_files = {'setup.py', 'conftest.py', 'tox.ini', 'noxfile.py', 'build.py'}
+for base, dirs, files in os.walk(root):
+    dirs[:] = [d for d in dirs if d not in excluded_dirs]
     for name in files:
         if not (name.endswith('.py') or name.endswith('.pyi')): continue
+        if name in excluded_files: continue
         path = os.path.join(base, name)
         key = path[:-1] if name.endswith('.pyi') else path
         if key in sources and name.endswith('.py'): continue
@@ -810,7 +833,7 @@ for path in sorted(sources.values()):
         continue
 
     exported = declared_all(tree)
-    module = module_name(sys.argv[1], path)
+    module = module_name(root, path)
     prefix = '' if module in ('', '__init__', '__main__') else module + '.'
 
     for node in tree.body:

@@ -67,7 +67,8 @@ describe('recording audit: Python public surface identity', () => {
   test('sdist archive roots and docs are not Python API identity', async () => {
     const root = await mkdtemp(join(tmpdir(), 'drift-python-surface-'));
     const script = join(root, 'surface.py');
-    const archiveRoot = join(root, 'itemloaders-1.0.1');
+    const extraction = join(root, 'extraction');
+    const archiveRoot = join(extraction, 'itemloaders-1.0.1');
 
     try {
       await mkdir(join(archiveRoot, 'itemloaders'), { recursive: true });
@@ -80,7 +81,7 @@ describe('recording audit: Python public surface identity', () => {
       );
       await writeFile(join(archiveRoot, 'docs', 'conf.py'), 'def failure(error): pass\n', 'utf8');
 
-      const result = await execFile('python3', [script, root]);
+      const result = await execFile('python3', [script, extraction]);
       const symbols = JSON.parse(result.stdout) as { name: string }[];
       const names = symbols.map((symbol) => symbol.name);
 
