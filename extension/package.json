@@ -732,6 +732,12 @@
           "description": "How much Drift writes to its output channel.",
           "order": 90
         },
+        "drift.diagnostics.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Persist redacted per-run diagnostics under the repository's `.git/drift` directory. Disabled by default.",
+          "order": 91
+        },
         "drift.agent.fast": {
           "type": "object",
           "default": {},

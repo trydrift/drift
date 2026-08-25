@@ -35,6 +35,13 @@ async function onlyCompletedLog(root: string): Promise<{ path: string; contents:
 }
 
 describe('runRepoDiagnostic', () => {
+  test('does not persist a repository log unless enabled', async () => {
+    await withGitRepo(async (root) => {
+      await runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan' }, async () => undefined);
+      await assert.rejects(readdir(join(resolveGitDir(root), 'drift')), { code: 'ENOENT' });
+    });
+  });
+
   test('keeps repository diagnostics isolated', async () => {
     const root = await mkdtemp(join(tmpdir(), 'drift-extension-diag-roots-'));
     const repoA = join(root, 'a');
@@ -47,10 +54,10 @@ describe('runRepoDiagnostic', () => {
         await run('git', ['config', 'user.email', 'test@example.com'], { cwd: repo });
         await run('git', ['config', 'user.name', 'Test'], { cwd: repo });
       }
-      await runRepoDiagnostic({ command: 'test:a', mode: 'quick', repoRoot: repoA, spanName: 'dependency.scan' }, async () => {
+      await runRepoDiagnostic({ command: 'test:a', mode: 'quick', repoRoot: repoA, spanName: 'dependency.scan', enabled: true }, async () => {
         startSpan('package', { package: 'only-a' }).end();
       });
-      await runRepoDiagnostic({ command: 'test:b', mode: 'quick', repoRoot: repoB, spanName: 'dependency.scan' }, async () => {
+      await runRepoDiagnostic({ command: 'test:b', mode: 'quick', repoRoot: repoB, spanName: 'dependency.scan', enabled: true }, async () => {
         startSpan('package', { package: 'only-b' }).end();
       });
       const logA = (await onlyCompletedLog(repoA)).contents;
@@ -67,11 +74,11 @@ describe('runRepoDiagnostic', () => {
   test('preserves every completed run with a typed timestamped filename', async () => {
     await withGitRepo(async (root) => {
       await runRepoDiagnostic(
-        { command: 'test:first', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan' },
+        { command: 'test:first', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan', enabled: true },
         async () => startSpan('package', { package: 'first' }).end(),
       );
       await runRepoDiagnostic(
-        { command: 'test:second', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan' },
+        { command: 'test:second', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan', enabled: true },
         async () => startSpan('package', { package: 'second' }).end(),
       );
 
@@ -91,7 +98,7 @@ describe('runRepoDiagnostic', () => {
 
   test('records cancellation instead of success', async () => {
     await withGitRepo(async (root) => {
-      await runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan', isCancelled: () => true }, async () => undefined);
+      await runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan', isCancelled: () => true, enabled: true }, async () => undefined);
       const { path, contents } = await onlyCompletedLog(root);
       assert.match(path.split('/').pop()!, /^run-scan-quick-/);
       assert.match(contents, /status=cancelled/);
@@ -102,7 +109,7 @@ describe('runRepoDiagnostic', () => {
   test('records and rethrows failures with redacted errors', async () => {
     await withGitRepo(async (root) => {
       await assert.rejects(
-        runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan' }, async () => {
+        runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan', enabled: true }, async () => {
           throw new Error('Bearer secret-token-value');
         }),
         /Bearer secret-token-value/,
@@ -116,7 +123,7 @@ describe('runRepoDiagnostic', () => {
 
   test('records deep mode and type in the header and filename', async () => {
     await withGitRepo(async (root) => {
-      await runRepoDiagnostic({ command: 'test', mode: 'deep', repoRoot: root, spanName: 'verification' }, async () => undefined);
+      await runRepoDiagnostic({ command: 'test', mode: 'deep', repoRoot: root, spanName: 'verification', enabled: true }, async () => undefined);
       const { path, contents } = await onlyCompletedLog(root);
       assert.match(path.split('/').pop()!, /^run-scan-deep-/);
       assert.match(contents, /type: scan-deep/);

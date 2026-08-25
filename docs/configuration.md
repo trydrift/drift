@@ -1119,6 +1119,15 @@ mid-session.
 | `drift.analysis.concurrency` | `0` | Packages checked at once. `0` sizes it from your machine's cores and memory |
 | `drift.ui.showInlineDiagnostics` | `true` | Flag affected lines in the Problems panel |
 | `drift.logLevel` | `info` | Output channel verbosity |
+| `drift.diagnostics.enabled` | `false` | Persist redacted per-run diagnostics under the repository's `.git/drift` directory |
+
+### Repository run logs
+
+Persistent diagnostics are opt-in. Pass `--log` to a CLI `analyze`, `outdated`,
+`fix`, or `pr` run to write its redacted report under `.git/drift`. In VS Code,
+set `drift.diagnostics.enabled` to `true` to persist the same reports for
+extension operations. Without either opt-in, Drift still writes normal CLI
+output and VS Code Output-channel messages, but creates no `.git/drift` files.
 
 ---
 
