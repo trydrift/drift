@@ -1,5 +1,5 @@
 /**
- * A hash of the engine that produced the recordings.
+ * A hash of the engine and recording contract that produced the recordings.
  *
  * The landing page replays real analyses of real repositories, and those
  * recordings are committed output — which means they go stale in two different
@@ -9,16 +9,17 @@
  * a change to how impact is localized, and the page is now showing what Drift
  * said last month next to a claim that this is what Drift does.
  *
- * That second kind cannot be noticed by looking at the recordings, so this makes
- * it checkable: hash everything the scan's *output* depends on, store it beside
- * the recordings, and let CI compare the two. A mismatch means the recordings
- * were produced by an engine that no longer exists.
+ * The recording pipeline itself is part of that contract too. A lifecycle or
+ * capture change can make an otherwise current artifact obsolete even when the
+ * scan engine and upstream repository did not move. Hashing those inputs makes
+ * the refresh workflow's path triggers meaningful: if a producer or lifecycle
+ * contract changes, `--check` sees a different fingerprint and re-captures.
  *
  * What is hashed is deliberately narrower than "the repository". A change to the
  * CLI's colours or the extension's panel cannot alter a single byte of a
  * recording, and re-capturing seventeen real projects over an hour because
  * somebody renamed a variable in `src/cli.ts` is how a freshness check gets
- * turned off. Only the directories a scan actually reaches are counted.
+ * turned off. Only scan-output code and the recording contract are counted.
  */
 
 import { createHash } from 'node:crypto';
@@ -28,10 +29,10 @@ import { join, relative, sep } from 'node:path';
 /**
  * The engine, as far as a recording is concerned.
  *
- * Every one of these is on the path from "here is a repository" to "here is
- * what this upgrade would do to it". `cli/`, `runners/`, `github/`, `dispatch/`
- * and the extension are all deliberately absent: they decide how a result is
- * presented or delivered, never what it is.
+ * Core paths determine the analysis result. The site paths determine how that
+ * result is captured, validated, and interpreted as a lifecycle-valid artifact.
+ * `cli/`, `runners/`, `github/`, `dispatch/` and the extension remain absent:
+ * they decide how a result is presented or delivered, never what is recorded.
  */
 const ENGINE_PATHS = [
   'src/analyze',
@@ -49,11 +50,15 @@ const ENGINE_PATHS = [
   'src/config/schema.ts',
   'src/pipeline.ts',
   'src/types.ts',
+  'site/scripts/capture.mjs',
+  'site/scripts/recording-validation.mjs',
+  'site/scripts/engine-fingerprint.mjs',
+  'site/src/lib/recordings.ts',
 ];
 
-/** Files whose contents change what a scan finds. */
+/** Source files whose contents can change a recording or its lifecycle contract. */
 function counts(path) {
-  return path.endsWith('.ts') && !path.endsWith('.d.ts');
+  return (path.endsWith('.ts') && !path.endsWith('.d.ts')) || path.endsWith('.mjs');
 }
 
 async function filesUnder(root, relPath) {
