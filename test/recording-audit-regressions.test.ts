@@ -132,6 +132,20 @@ describe('recording audit: C and C++ public surface identity', () => {
     assert.ok(after.has('RUN_ALL_TESTS'));
     assert.equal(diffSurfaces(before, after).some((change) => change.symbol === 'RUN_ALL_TESTS'), false);
   });
+
+  test('common C declaration annotations do not hide surviving OpenSSL APIs', () => {
+    const before = parseHeaderSurface([{
+      path: 'openssl/ssl.h',
+      content: '__owur int SSL_get_error(const SSL *s, int ret);\nvoid OPENSSL_cleanup(void);\n',
+    }]);
+    const after = parseHeaderSurface([{
+      path: 'openssl/ssl.h',
+      content: 'int SSL_get_error(const SSL *s, int ret);\nvoid OPENSSL_cleanup(void);\n',
+    }]);
+    assert.ok(after.has('SSL_get_error'));
+    assert.ok(after.has('OPENSSL_cleanup'));
+    assert.equal(diffSurfaces(before, after).length, 0);
+  });
 });
 
 describe('recording audit: owner-aware localization', () => {

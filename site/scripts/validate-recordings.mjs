@@ -158,7 +158,7 @@ function validateKnownSurvivors(recording, candidate) {
 
 function versionFamily(raw) {
   const value = String(raw ?? '').trim().replace(/^[^\d]*/, '');
-  if (/^\d{4}[.-]\d{1,2}[.-]\d{1,2}(?:$|[-+])/.test(value)) return 'calendar';
+  if (/^\d{4}[.-]\d{1,2}[.-]\d{1,2}(?:[.-]\d+)?(?:$|[-+])/.test(value)) return 'calendar';
   return /^\d+(?:\.\d+){0,3}(?:[-+].*)?$/.test(value) ? 'semver' : 'unknown';
 }
 

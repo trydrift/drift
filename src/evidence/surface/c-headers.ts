@@ -483,7 +483,7 @@ function parseDeclaration(statement: string, namespacePath: readonly string[] = 
   }
 
   const fn =
-    /^(?:(?:extern|static|inline|constexpr|virtual|explicit|friend|\w+_API|\w+_EXPORT|EXTERN_C|__declspec\([^)]*\))\s+)*((?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|class\s+)*[\w:]+(?:\s*<[^>]*>)?[\s*&]+)(\w+)\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept)?\s*[;{]$/.exec(
+    /^(?:(?:extern|static|inline|constexpr|virtual|explicit|friend|\w+_API|\w+_EXPORT|EXTERN_C|__\w+|__declspec\([^)]*\))\s+)*((?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|class\s+)*[\w:]+(?:\s*<[^>]*>)?[\s*&]+)(\w+)\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept)?\s*[;{]$/.exec(
       text,
     );
   if (fn) {

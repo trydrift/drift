@@ -202,7 +202,7 @@ type VersionFamily = 'semver' | 'calendar' | 'unknown';
 /** Classify tag schemes before normalization puts incompatible versions together. */
 function versionFamily(raw: string): VersionFamily {
   const value = raw.trim().replace(/^[^\d]*/, '');
-  if (/^\d{4}[.-]\d{1,2}[.-]\d{1,2}(?:$|[-+])/.test(value)) return 'calendar';
+  if (/^\d{4}[.-]\d{1,2}[.-]\d{1,2}(?:[.-]\d+)?(?:$|[-+])/.test(value)) return 'calendar';
   return normalizeVersion(raw) ? 'semver' : 'unknown';
 }
 
