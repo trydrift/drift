@@ -87,6 +87,7 @@ import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '
 import { OperationGate } from './scan-start.js';
 import { runRepoDiagnostic } from '../run-diagnostics.js';
 import { countWork, startSpan } from '../../../src/util/diagnostics.js';
+import { clearHttpCache } from '../../../src/util/http.js';
 import { chunkDetail, takeCandidateSummaryBatch } from './update-protocol.js';
 import {
   makeNonce,
@@ -220,10 +221,20 @@ interface Surface {
   awaitingSequence: number | null;
   pendingBody: string | null;
   pendingCandidates: Map<string, string>;
-  detailTransfer: { requestId: string; chunks: string[]; next: number } | null;
+  detailTransfer: {
+    id: string;
+    requestId: string;
+    section?: string;
+    chunks: string[];
+    next: number;
+    awaitingIndex: number | null;
+    retries: number;
+  } | null;
   pendingDetailRequests: { id: string; requestId: string; section?: string }[];
+  detailAckTimer: ReturnType<typeof setTimeout> | null;
   ackTimer: ReturnType<typeof setTimeout> | null;
   resyncAttempted: boolean;
+  postFailures: number;
   stalled: boolean;
 }
 
@@ -424,8 +435,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       pendingCandidates: new Map(),
       detailTransfer: null,
       pendingDetailRequests: [],
+      detailAckTimer: null,
       ackTimer: null,
       resyncAttempted: false,
+      postFailures: 0,
       stalled: false,
     };
     this.surfaces.push(surface);
@@ -433,6 +446,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.disposables.push(
       webview.onDidReceiveMessage((message: Incoming) => {
         if (message.type === 'ready') {
+          this.cancelDetailTransfer(surface);
           surface.ready = true;
           if (surface.ackTimer) clearTimeout(surface.ackTimer);
           surface.ackTimer = null;
@@ -441,6 +455,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           surface.pendingCandidates.clear();
           surface.stalled = false;
           surface.resyncAttempted = false;
+          surface.postFailures = 0;
           this.sendBody(surface, renderBody(this.viewModel()));
           return;
         }
@@ -449,6 +464,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           if (surface.ackTimer) clearTimeout(surface.ackTimer);
           surface.ackTimer = null;
           surface.resyncAttempted = false;
+          surface.postFailures = 0;
           surface.awaitingSequence = null;
           const pending = surface.pendingBody;
           surface.pendingBody = null;
@@ -457,22 +473,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           return;
         }
         if (message.type === 'candidateDetailRequest') {
-          if (surface.detailTransfer) {
-            if (surface.pendingDetailRequests.length < 8) {
-              surface.pendingDetailRequests.push({
-                id: message.id,
-                requestId: message.requestId,
-                ...(message.section ? { section: message.section } : {}),
-              });
-            }
-          } else {
-            this.startDetailTransfer(surface, message.id, message.requestId, message.section);
-          }
+          this.queueDetailRequest(surface, message);
           return;
         }
         if (message.type === 'detailChunkAck') {
           const transfer = surface.detailTransfer;
-          if (!transfer || transfer.requestId !== message.requestId || transfer.next - 1 !== message.index) return;
+          if (!transfer || transfer.requestId !== message.requestId || transfer.awaitingIndex !== message.index) return;
+          if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+          surface.detailAckTimer = null;
+          transfer.awaitingIndex = null;
+          transfer.next = message.index + 1;
+          transfer.retries = 0;
           this.sendDetailChunk(surface);
           return;
         }
@@ -496,6 +507,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private detach(webview: vscode.Webview): void {
     const surface = this.surfaces.find((entry) => entry.webview === webview);
     if (surface?.ackTimer) clearTimeout(surface.ackTimer);
+    if (surface) this.cancelDetailTransfer(surface);
     this.surfaces = this.surfaces.filter((surface) => surface.webview !== webview);
   }
 
@@ -1485,7 +1497,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               },
               isCancelled: () => token.isCancellationRequested,
             },
-            async () => scanUpgrades({
+            async () => scanWithTransientHttpCache({
             root: ctx.root,
             repo: ctx.repo,
             managers,
@@ -5721,11 +5733,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private paint(): void {
     if (this.surfaces.length === 0) return;
 
+    const memory = process.memoryUsage();
     const span = startSpan('extension.summary-render', {
       candidates: this.candidates.size,
       surfaces: this.surfaces.length,
-      heapUsed: process.memoryUsage().heapUsed,
-      rss: process.memoryUsage().rss,
+      heapUsed: memory.heapUsed,
+      external: memory.external,
+      arrayBuffers: memory.arrayBuffers,
+      rss: memory.rss,
     });
     const body = renderBody(this.viewModel());
     const bytes = Buffer.byteLength(body);
@@ -5750,8 +5765,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
     const sequence = ++surface.nextSequence;
-    surface.detailTransfer = null;
-    surface.pendingDetailRequests = [];
+    this.cancelDetailTransfer(surface);
     surface.pendingCandidates.clear();
     surface.awaitingSequence = sequence;
     this.armAckTimeout(surface, sequence);
@@ -5762,19 +5776,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       (accepted) => {
         span.end({ accepted });
         if (accepted) return;
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
+        this.recoverSummaryPost(surface, sequence, surface.pendingBody ?? body);
       },
       () => {
         span.fail(new Error('webview rejected render message'));
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
+        this.recoverSummaryPost(surface, sequence, surface.pendingBody ?? body);
       },
     );
   }
@@ -5786,6 +5792,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       updated: change.updated.length,
       removed: change.removed.length,
     });
+    const invalidated = new Set([...change.updated, ...change.removed]);
+    for (const surface of this.surfaces) {
+      surface.pendingDetailRequests = surface.pendingDetailRequests.filter((request) => !invalidated.has(request.id));
+      if (surface.detailTransfer && invalidated.has(surface.detailTransfer.id)) this.cancelDetailTransfer(surface, true);
+    }
     let requiresLayout = change.added.length > 0 || change.removed.length > 0;
     for (const id of [...change.added, ...change.updated]) {
       const candidate = this.candidates.get(id);
@@ -5842,23 +5853,38 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       (accepted) => {
         span.end({ accepted });
         if (accepted) return;
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
-        this.render();
+        this.recoverSummaryPost(surface, sequence, renderBody(this.viewModel()));
       },
       () => {
         span.fail(new Error('webview rejected candidate batch'));
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
-        this.render();
+        this.recoverSummaryPost(surface, sequence, renderBody(this.viewModel()));
       },
     );
+  }
+
+  private recoverSummaryPost(surface: Surface, sequence: number, latest: string): void {
+    if (surface.awaitingSequence !== sequence) return;
+    if (surface.ackTimer) clearTimeout(surface.ackTimer);
+    surface.ackTimer = null;
+    surface.pendingBody = latest;
+    surface.pendingCandidates.clear();
+    surface.postFailures += 1;
+    if (surface.postFailures >= 2) {
+      surface.awaitingSequence = null;
+      surface.stalled = true;
+      return;
+    }
+
+    // Keep the failed sequence reserved during the short retry delay so state
+    // changes continue to collapse into `pendingBody` instead of overtaking it.
+    surface.ackTimer = setTimeout(() => {
+      if (surface.awaitingSequence !== sequence) return;
+      surface.awaitingSequence = null;
+      surface.ackTimer = null;
+      const body = surface.pendingBody;
+      surface.pendingBody = null;
+      if (body !== null) this.sendBody(surface, body);
+    }, 250);
   }
 
   private armAckTimeout(surface: Surface, sequence: number): void {
@@ -5884,15 +5910,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private sendDetailChunk(surface: Surface): void {
     const transfer = surface.detailTransfer;
-    if (!transfer) return;
+    if (!transfer || transfer.awaitingIndex !== null) return;
     if (transfer.next >= transfer.chunks.length) {
-      surface.detailTransfer = null;
-      const pending = surface.pendingDetailRequests.shift();
-      if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId, pending.section);
+      this.cancelDetailTransfer(surface, true);
       return;
     }
-    const index = transfer.next++;
+    const index = transfer.next;
     const chunk = transfer.chunks[index]!;
+    transfer.awaitingIndex = index;
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    surface.detailAckTimer = setTimeout(() => this.retryDetailChunk(surface, transfer, index), 2_000);
     countWork('extension.detail-chunks');
     countWork('extension.detail-payload-bytes', Buffer.byteLength(chunk));
     void surface.webview.postMessage({
@@ -5901,12 +5928,77 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       index,
       total: transfer.chunks.length,
       chunk,
+    }).then(
+      (accepted) => {
+        if (!accepted) this.retryDetailChunk(surface, transfer, index, 100);
+      },
+      () => this.retryDetailChunk(surface, transfer, index, 100),
+    );
+  }
+
+  private queueDetailRequest(
+    surface: Surface,
+    request: { id: string; requestId: string; section?: string },
+  ): void {
+    if (
+      surface.detailTransfer?.requestId === request.requestId
+      || surface.pendingDetailRequests.some((pending) => pending.requestId === request.requestId)
+    ) return;
+    if (!surface.detailTransfer) {
+      this.startDetailTransfer(surface, request.id, request.requestId, request.section);
+      return;
+    }
+    if (surface.pendingDetailRequests.length < 8) {
+      surface.pendingDetailRequests.push(request);
+      return;
+    }
+    void surface.webview.postMessage({
+      type: 'candidateDetailRetry',
+      ...request,
+      retryAfterMs: 250,
     });
+  }
+
+  private retryDetailChunk(surface: Surface, transfer: NonNullable<Surface['detailTransfer']>, index: number, delay = 250): void {
+    if (surface.detailTransfer !== transfer || transfer.awaitingIndex !== index) return;
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    transfer.awaitingIndex = null;
+    transfer.retries += 1;
+    // One timer and one message remain in flight regardless of how long the
+    // renderer is unavailable. A duplicate chunk is safe: the webview ACKs it
+    // again without appending it twice.
+    const backoff = Math.min(2_000, delay * Math.max(1, transfer.retries));
+    surface.detailAckTimer = setTimeout(() => {
+      surface.detailAckTimer = null;
+      this.sendDetailChunk(surface);
+    }, backoff);
+  }
+
+  private cancelDetailTransfer(surface: Surface, startNext = false): void {
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    surface.detailAckTimer = null;
+    surface.detailTransfer = null;
+    if (!startNext) {
+      surface.pendingDetailRequests = [];
+      return;
+    }
+    const pending = surface.pendingDetailRequests.shift();
+    if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId, pending.section);
   }
 
   private startDetailTransfer(surface: Surface, id: string, requestId: string, section?: string): void {
     const candidate = this.candidates.get(id);
-    if (!candidate || this.busy) return;
+    if (!candidate) return;
+    if (this.busy) {
+      void surface.webview.postMessage({
+        type: 'candidateDetailRetry',
+        id,
+        requestId,
+        ...(section ? { section } : {}),
+        retryAfterMs: 1_000,
+      });
+      return;
+    }
     const span = startSpan('extension.detail-render', { candidateId: id, ...(section ? { section } : {}) });
     const html = section ? renderCandidateSection(candidate, section) : renderCandidateBody(candidate, true);
     if (html === null) {
@@ -5916,9 +6008,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     span.end({ bytes: Buffer.byteLength(html) });
     countWork('extension.detail-requests');
     surface.detailTransfer = {
+      id,
       requestId,
+      ...(section ? { section } : {}),
       chunks: chunkDetail(html),
       next: 0,
+      awaitingIndex: null,
+      retries: 0,
     };
     this.sendDetailChunk(surface);
   }
@@ -5968,6 +6064,30 @@ function candidatePresentationOf(candidate: UpgradeCandidate): string {
   }
   const severity = severityOf(candidate);
   return severity === 'upstream-only' ? 'clean' : severity;
+}
+
+async function scanWithTransientHttpCache(
+  options: Parameters<typeof scanUpgrades>[0],
+): Promise<Awaited<ReturnType<typeof scanUpgrades>>> {
+  try {
+    return await scanUpgrades(options);
+  } finally {
+    const before = process.memoryUsage();
+    const release = startSpan('extension.http-memory-release', {
+      heapUsed: before.heapUsed,
+      external: before.external,
+      arrayBuffers: before.arrayBuffers,
+      rss: before.rss,
+    });
+    clearHttpCache();
+    const after = process.memoryUsage();
+    release.end({
+      heapUsed: after.heapUsed,
+      external: after.external,
+      arrayBuffers: after.arrayBuffers,
+      rss: after.rss,
+    });
+  }
 }
 
 /**

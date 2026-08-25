@@ -4634,7 +4634,14 @@ window.addEventListener('message', (event) => {
   }
   if (data?.type === 'candidateDetailChunk') {
     const chunks = detailChunks.get(data.requestId);
-    if (!chunks || data.index !== chunks.length) return;
+    if (!chunks) return;
+    if (data.index < chunks.length) {
+      // The host did not receive the first ACK. Confirm the duplicate without
+      // appending it again so its bounded retry loop can advance.
+      vscode.postMessage({ type: 'detailChunkAck', requestId: data.requestId, index: data.index });
+      return;
+    }
+    if (data.index !== chunks.length) return;
     chunks.push(data.chunk);
     vscode.postMessage({ type: 'detailChunkAck', requestId: data.requestId, index: data.index });
     if (chunks.length === data.total) {
@@ -4654,6 +4661,20 @@ window.addEventListener('message', (event) => {
       }
       detailChunks.delete(data.requestId);
     }
+    return;
+  }
+  if (data?.type === 'candidateDetailRetry') {
+    window.setTimeout(() => {
+      const target = document.querySelector('[data-detail-request="' + data.requestId + '"]');
+      const disclosure = target?.closest('details');
+      if (!target || (disclosure && !disclosure.open)) return;
+      vscode.postMessage({
+        type: 'candidateDetailRequest',
+        id: data.id,
+        requestId: data.requestId,
+        section: data.section,
+      });
+    }, Math.max(50, Number(data.retryAfterMs) || 250));
     return;
   }
   if (data?.type === 'openMenu') { openMenu(data.anchor || 'context'); return; }
