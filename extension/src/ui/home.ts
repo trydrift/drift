@@ -234,6 +234,7 @@ interface Surface {
   detailAckTimer: ReturnType<typeof setTimeout> | null;
   ackTimer: ReturnType<typeof setTimeout> | null;
   resyncAttempted: boolean;
+  postFailures: number;
   stalled: boolean;
 }
 
@@ -437,6 +438,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       detailAckTimer: null,
       ackTimer: null,
       resyncAttempted: false,
+      postFailures: 0,
       stalled: false,
     };
     this.surfaces.push(surface);
@@ -453,6 +455,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           surface.pendingCandidates.clear();
           surface.stalled = false;
           surface.resyncAttempted = false;
+          surface.postFailures = 0;
           this.sendBody(surface, renderBody(this.viewModel()));
           return;
         }
@@ -461,6 +464,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           if (surface.ackTimer) clearTimeout(surface.ackTimer);
           surface.ackTimer = null;
           surface.resyncAttempted = false;
+          surface.postFailures = 0;
           surface.awaitingSequence = null;
           const pending = surface.pendingBody;
           surface.pendingBody = null;
@@ -5772,19 +5776,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       (accepted) => {
         span.end({ accepted });
         if (accepted) return;
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
+        this.recoverSummaryPost(surface, sequence, surface.pendingBody ?? body);
       },
       () => {
         span.fail(new Error('webview rejected render message'));
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
+        this.recoverSummaryPost(surface, sequence, surface.pendingBody ?? body);
       },
     );
   }
@@ -5857,23 +5853,38 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       (accepted) => {
         span.end({ accepted });
         if (accepted) return;
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
-        this.render();
+        this.recoverSummaryPost(surface, sequence, renderBody(this.viewModel()));
       },
       () => {
         span.fail(new Error('webview rejected candidate batch'));
-        if (surface.awaitingSequence === sequence) {
-          surface.awaitingSequence = null;
-          if (surface.ackTimer) clearTimeout(surface.ackTimer);
-          surface.ackTimer = null;
-        }
-        this.render();
+        this.recoverSummaryPost(surface, sequence, renderBody(this.viewModel()));
       },
     );
+  }
+
+  private recoverSummaryPost(surface: Surface, sequence: number, latest: string): void {
+    if (surface.awaitingSequence !== sequence) return;
+    if (surface.ackTimer) clearTimeout(surface.ackTimer);
+    surface.ackTimer = null;
+    surface.pendingBody = latest;
+    surface.pendingCandidates.clear();
+    surface.postFailures += 1;
+    if (surface.postFailures >= 2) {
+      surface.awaitingSequence = null;
+      surface.stalled = true;
+      return;
+    }
+
+    // Keep the failed sequence reserved during the short retry delay so state
+    // changes continue to collapse into `pendingBody` instead of overtaking it.
+    surface.ackTimer = setTimeout(() => {
+      if (surface.awaitingSequence !== sequence) return;
+      surface.awaitingSequence = null;
+      surface.ackTimer = null;
+      const body = surface.pendingBody;
+      surface.pendingBody = null;
+      if (body !== null) this.sendBody(surface, body);
+    }, 250);
   }
 
   private armAckTimeout(surface: Surface, sequence: number): void {
