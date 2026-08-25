@@ -249,6 +249,18 @@ export type BreakingChangeKind =
   | 'runtime-requirement'
   | 'unknown';
 
+/** Runtime names understood by the structured prose and declaration paths. */
+export type RuntimeName = 'node' | 'python' | 'go' | 'ruby' | 'java' | 'rust';
+
+/** A parseable runtime floor announced by an upstream release. */
+export interface RuntimeRequirement {
+  kind: 'runtime-requirement';
+  runtime: RuntimeName;
+  requirement: string;
+  /** The exact prose fragment from which the requirement was parsed. */
+  sourceText: string;
+}
+
 export type ModuleSystem = 'commonjs' | 'esm' | 'dual';
 export type ModuleIncompatibleUsage = 'require' | 'static-import' | 'dynamic-import' | 're-export';
 
@@ -285,6 +297,8 @@ export interface BreakingChange {
    */
   workspace?: string;
   kind: BreakingChangeKind;
+  /** Present for structured `runtime-requirement` changes. */
+  runtime?: RuntimeRequirement;
   /** One-line statement of what broke. */
   summary: string;
   /**

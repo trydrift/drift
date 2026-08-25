@@ -1,4 +1,10 @@
-import type { BreakingChangeKind, ModuleIncompatibleUsage, StructuredFinding } from '../types.js';
+import type {
+  BreakingChangeKind,
+  ModuleIncompatibleUsage,
+  RuntimeName,
+  RuntimeRequirement,
+  StructuredFinding,
+} from '../types.js';
 import { specCodeFor } from '../evidence/spec/index.js';
 
 /**
@@ -316,7 +322,7 @@ const PROSE_RULES: ProseRule[] = [
     id: 'prose-min-runtime',
     kind: 'runtime-requirement',
     pattern:
-      /\b(?:requires?|required|now requires?|minimum(?: supported)?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?([>=^~]*\s*[\d.]+)/i,
+      /\b(?:requires?|required|now requires?|minimum(?: supported)?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?(?:raised\s+to\s*)?([<>=^~]*\s*\d+(?:\.\d+){0,3})/i,
     symbolGroup: 1,
     summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
   },
@@ -347,13 +353,6 @@ const PROSE_RULES: ProseRule[] = [
     moduleSystem: { from: 'dual', to: 'esm', incompatibleUsage: ['require'] },
   },
   {
-    id: 'prose-dropped-support',
-    kind: 'runtime-requirement',
-    pattern: /\b(?:dropped|drops|removed)\s+support\s+for\s+(.{3,60}?)(?:[.;]|$)/i,
-    symbolGroup: 1,
-    summarize: (m) => `Dropped support for ${m[1]?.trim()}`,
-  },
-  {
     /**
      * Conventional Commits' standardised breaking-change footer/trailer.
      *
@@ -380,6 +379,7 @@ export interface ProseMatch {
   summary: string;
   symbols: string[];
   replacementSymbols: string[];
+  runtime?: RuntimeRequirement;
   moduleSystem?: {
     from?: 'commonjs' | 'esm' | 'dual';
     to?: 'commonjs' | 'esm' | 'dual';
@@ -403,6 +403,9 @@ export function matchProse(passage: string): ProseMatch[] {
     const symbol = rule.symbolGroup === 0 ? null : match[rule.symbolGroup];
     if (rule.symbolGroup !== 0 && !symbol) continue;
 
+    const runtime = rule.id === 'prose-min-runtime' ? parseRuntimeRequirement(match) : undefined;
+    if (rule.kind === 'runtime-requirement' && !runtime) continue;
+
     const replacement = rule.replacementGroup ? match[rule.replacementGroup] : undefined;
 
     out.push({
@@ -410,6 +413,7 @@ export function matchProse(passage: string): ProseMatch[] {
       kind: rule.kind,
       summary: rule.summarize(match),
       symbols: symbol ? [symbol] : [],
+      ...(runtime ? { runtime } : {}),
       replacementSymbols: replacement ? [replacement] : [],
       ...(rule.moduleSystem
         ? {
@@ -424,6 +428,23 @@ export function matchProse(passage: string): ProseMatch[] {
   }
 
   return out;
+}
+
+function parseRuntimeRequirement(match: RegExpMatchArray): RuntimeRequirement | null {
+  const rawRuntime = match[1]?.toLowerCase().replace(/\.js$/, '') as RuntimeName | undefined;
+  const rawRequirement = match[2]?.trim();
+  if (!rawRuntime || !rawRequirement) return null;
+  if (!['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(rawRuntime)) return null;
+
+  const version = /^([<>=^~]*)(\d+(?:\.\d+){0,3})$/.exec(rawRequirement);
+  if (!version) return null;
+  const operator = version[1] || '>=';
+  return {
+    kind: 'runtime-requirement',
+    runtime: rawRuntime,
+    requirement: `${operator}${version[2]}`,
+    sourceText: match[0]!.trim(),
+  };
 }
 
 /** Remediation text for a prose-derived change. */

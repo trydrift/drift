@@ -307,8 +307,9 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
         workspace,
         kind: match.kind,
         summary: match.summary,
-        remediation: remediationForProse(match, dependency),
-        symbols,
+      remediation: remediationForProse(match, dependency),
+      symbols,
+      ...(match.runtime ? { runtime: match.runtime } : {}),
         replacementSymbols: match.replacementSymbols.length ? match.replacementSymbols : undefined,
         ...(match.moduleSystem ? { moduleSystem: match.moduleSystem } : {}),
         // Provisional; `scoreUpstream` decides the real value.

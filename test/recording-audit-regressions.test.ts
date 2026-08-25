@@ -171,7 +171,7 @@ describe('recording audit: structured runtime requirements', () => {
       kind: 'runtime-requirement',
       runtime: 'node',
       requirement: '>=18',
-      sourceText: 'requires Node.js >=18',
+      sourceText: 'now requires Node.js >=18',
     });
   });
 

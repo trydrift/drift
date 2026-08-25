@@ -2,6 +2,7 @@ import semver from 'semver';
 import { isRuntimeConfigPath } from '../index/walk.js';
 import { memberOf } from '../detect/workspace.js';
 import { intersectsInterval, isSubsetInterval, parseSpecifierSet } from './pep440.js';
+import type { RuntimeName } from '../types.js';
 
 /**
  * Where this repository itself declares a runtime version.
@@ -17,6 +18,67 @@ export interface RuntimeDeclaration {
 
 export interface RuntimeCompatibility extends RuntimeDeclaration {
   verdict: 'compatible' | 'incompatible' | 'partial';
+}
+
+/** Find declarations for any runtime named by structured upstream evidence. */
+export function findRuntimeDeclarations(
+  files: readonly { path: string; content: string }[],
+  runtime: RuntimeName,
+): RuntimeDeclaration[] {
+  if (runtime === 'node') return findNodeDeclarations(files);
+  if (runtime === 'python') return findPythonDeclarations(files);
+
+  const out: RuntimeDeclaration[] = [];
+  for (const { path, content } of files) {
+    if (!isRuntimeConfigPath(path)) continue;
+    const base = (path.split('/').pop() ?? '').toLowerCase();
+    const expected = runtime === 'ruby' ? '.ruby-version' : undefined;
+    if (expected && base === expected) {
+      const requirement = content.trim().split('\n')[0]?.replace(/^v/i, '').trim();
+      if (requirement) out.push({ file: path, line: 1, requirement });
+      continue;
+    }
+    if (base !== '.tool-versions') continue;
+    const keys: Record<RuntimeName, string[]> = {
+      node: ['node', 'nodejs'],
+      python: ['python', 'python3'],
+      go: ['go', 'golang'],
+      ruby: ['ruby'],
+      java: ['java'],
+      rust: ['rust'],
+    };
+    for (const [i, line] of content.split('\n').entries()) {
+      const match = /^\s*([\w-]+)\s+([^\s#]+)/.exec(line);
+      if (match && keys[runtime].includes(match[1]!.toLowerCase())) {
+        out.push({ file: path, line: i + 1, requirement: match[2]! });
+      }
+    }
+  }
+  return out;
+}
+
+/** Compare declarations for runtimes without a language-specific grammar. */
+export function checkRuntimeCompatibility(
+  runtime: RuntimeName,
+  declarations: readonly RuntimeDeclaration[],
+  requirement: string,
+): RuntimeCompatibility[] {
+  if (runtime === 'node') return checkNodeCompatibility(declarations, requirement);
+  if (runtime === 'python') return checkPythonCompatibility(declarations, requirement);
+  const out: RuntimeCompatibility[] = [];
+  for (const declaration of declarations) {
+    if (!semver.validRange(declaration.requirement, { loose: true })) continue;
+    let verdict: RuntimeCompatibility['verdict'];
+    try {
+      if (semver.subset(declaration.requirement, requirement, { loose: true })) verdict = 'compatible';
+      else if (!semver.intersects(declaration.requirement, requirement, { loose: true })) verdict = 'incompatible';
+      else verdict = 'partial';
+    } catch {
+      continue;
+    }
+    out.push({ ...declaration, verdict });
+  }
+  return out;
 }
 
 /**
@@ -58,6 +120,14 @@ export function findNodeDeclarations(
         const match = /^\s*FROM\s+node:([^\s@]+)/i.exec(lines[i]!);
         const tag = match?.[1]?.split('-')[0];
         if (tag) out.push({ file: path, line: i + 1, requirement: tag });
+      }
+      continue;
+    }
+
+    if (base === '.tool-versions') {
+      for (const [i, line] of content.split('\n').entries()) {
+        const match = /^\s*(node|nodejs)\s+([^\s#]+)/i.exec(line);
+        if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
       }
       continue;
     }
@@ -245,6 +315,14 @@ export function findPythonDeclarations(
     if (base === 'runtime.txt') {
       const requirement = content.trim().split('\n')[0]?.replace(/^python-/i, '').trim();
       if (requirement) out.push({ file: path, line: 1, requirement });
+      continue;
+    }
+
+    if (base === '.tool-versions') {
+      for (const [i, line] of content.split('\n').entries()) {
+        const match = /^\s*(python|python3)\s+([^\s#]+)/i.exec(line);
+        if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
+      }
     }
   }
 

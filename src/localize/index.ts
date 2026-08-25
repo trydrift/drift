@@ -12,6 +12,10 @@ import { isRuntimeConfigPath, type SourceFile } from '../index/walk.js';
 import { withinMember } from '../detect/workspace.js';
 import { moduleMapKey, type ModuleMaps } from './modules.js';
 import { acceptsCallOfArity, callCannotResolveTo } from '../evidence/type-surface.js';
+import {
+  checkRuntimeCompatibility,
+  findRuntimeDeclarations,
+} from '../rationale/runtime.js';
 
 /**
  * Localization: where does this breaking change actually bite?
@@ -323,55 +327,24 @@ function localizeRuntimeRequirement(
   change: BreakingChange,
   contentByPath: Map<string, string>,
 ): ImpactSite[] {
-  const runtime = (change.symbols[0] ?? 'node').toLowerCase().replace('.js', '');
-  const declaration = DECLARATION_MATCHERS[runtime] ?? DECLARATION_MATCHERS.node!;
+  const runtime = change.runtime?.runtime;
+  const requirement = change.runtime?.requirement;
+  if (!runtime || !requirement) return [];
 
-  const sites: ImpactSite[] = [];
-
-  for (const [path, content] of contentByPath) {
-    if (!isRuntimeConfigPath(path)) continue;
-
-    const bare = /(^|\/)\.(nvmrc|node-version|ruby-version|python-version|tool-versions)$/.test(path);
-    if (bare) {
-      sites.push({
-        breakingChangeId: change.id,
-        file: path,
-        line: 1,
-        excerpt: content.trim().split('\n')[0]?.slice(0, 200) ?? '',
-        matchedSymbol: change.symbols[0] ?? runtime,
-        confidence: 'high',
-      });
-      continue;
-    }
-
-    const lines = content.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]!;
-      if (!declaration.test(line)) continue;
-
-      sites.push({
-        breakingChangeId: change.id,
-        file: path,
-        line: i + 1,
-        excerpt: line.trim().slice(0, 200),
-        matchedSymbol: change.symbols[0] ?? runtime,
-        confidence: 'high',
-      });
-    }
-  }
-
-  return sites;
+  const files = [...contentByPath].map(([path, content]) => ({ path, content }));
+  const declarations = findRuntimeDeclarations(files, runtime);
+  const compatibility = checkRuntimeCompatibility(runtime, declarations, requirement);
+  return compatibility
+    .filter((declaration) => declaration.verdict !== 'compatible')
+    .map((declaration) => ({
+      breakingChangeId: change.id,
+      file: declaration.file,
+      line: declaration.line,
+      excerpt: files.find((file) => file.path === declaration.file)?.content.split('\n')[declaration.line - 1]?.trim().slice(0, 200) ?? '',
+      matchedSymbol: runtime,
+      confidence: 'high' as const,
+    }));
 }
-
-/** Where each runtime's version is declared, per file convention. */
-const DECLARATION_MATCHERS: Record<string, RegExp> = {
-  node: /node[-_]?version\s*:|"node"\s*:|FROM\s+node:|engines/i,
-  python: /python[-_]?version\s*:|requires-python|python_requires|FROM\s+python:/i,
-  ruby: /ruby[-_]?version\s*:|^\s*ruby\s+["']|FROM\s+ruby:/i,
-  go: /go[-_]?version\s*:|^go\s+\d|FROM\s+golang:/i,
-  java: /java[-_]?version\s*:|<maven\.compiler|FROM\s+(?:openjdk|eclipse-temurin):/i,
-  rust: /rust[-_]?version\s*:|channel\s*=|FROM\s+rust:/i,
-};
 
 /**
  * Files worth searching for a given breaking change.
