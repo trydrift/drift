@@ -69,7 +69,7 @@ export async function discoverNestedProjects(
     if (dir !== '' && !excluded.has(dir)) {
       hasOwnGit = entries.includes('.git');
       const manifest = entries.find((entry) => ALL_MANIFESTS.has(entry));
-      if (manifest) {
+      if (manifest && !isFixtureOwned(dir)) {
         found.push({
           dir,
           ecosystem: MANIFEST_ECOSYSTEM.get(manifest)!,
@@ -93,6 +93,26 @@ export async function discoverNestedProjects(
 
   await visit('', 0);
   return found;
+}
+
+/**
+ * Test registries and checked-in fixtures often contain complete package
+ * manifests. They are inputs to the repository's tests, not projects the
+ * repository owns for dependency scanning. Keep walking the tree so a real
+ * sibling project is still found, but do not surface manifests below these
+ * explicit fixture roots.
+ */
+function isFixtureOwned(dir: string): boolean {
+  const segments = dir.split('/').filter(Boolean).map((segment) => segment.toLowerCase());
+  if (segments.some((segment) => segment === 'fixture' || segment === 'fixtures' || segment === 'testdata')) {
+    return true;
+  }
+
+  return segments.some((segment, index) => {
+    if (segment !== 'test' && segment !== 'tests') return false;
+    const next = segments[index + 1];
+    return next === 'registry' || next === 'testdata';
+  });
 }
 
 /** `/`-joined, skipping empty segments — these are all repo-relative paths. */
