@@ -207,7 +207,12 @@ export function parseHeader(content: string): SurfaceEntry[] {
     if (namespace) {
       const name = namespace[2];
       const isInline = Boolean(namespace[1]);
-      if (name && PRIVATE_NAMESPACE.test(name) && privateAt === null) {
+      if (!name && privateAt === null) {
+        // An anonymous namespace has internal linkage even inside a shipped
+        // public header. Its declarations cannot be named or linked by a
+        // consumer and therefore are not public surface.
+        privateAt = depth;
+      } else if (name && PRIVATE_NAMESPACE.test(name) && privateAt === null) {
         privateAt = depth;
       } else if (name) {
         // Inline namespaces are deliberately transparent to consumer lookup:
