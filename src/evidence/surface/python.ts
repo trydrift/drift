@@ -398,6 +398,7 @@ async function computeSurfaceOf(
     // subtree cannot be confidently identified is deliberate — see
     // `packageSubtree`.
     let selected = entries;
+    let selectedPrefix = '';
     if (usedGitHubFallback) {
       const subtree = packageSubtree(entries.map((entry) => entry.path), request.name);
       if (!subtree) {
@@ -412,10 +413,16 @@ async function computeSurfaceOf(
       }
       const prefix = `${subtree}/`;
       selected = entries.filter((entry) => entry.path.startsWith(prefix));
+      // `subtree` is the proved import package itself. Materialize it at the
+      // extraction root instead of retaining codeload's owner/revision and
+      // optional src/ transport parents. This is explicit fallback scoping,
+      // not the Python reader guessing that an arbitrary sole directory is a
+      // wrapper (which would break PEP 420 namespace packages).
+      selectedPrefix = subtree.slice(0, subtree.lastIndexOf('/') + 1);
     }
 
     for (const entry of selected) {
-      const path = safeRelativePath(entry.path);
+      const path = safeRelativePath(selectedPrefix ? entry.path.slice(selectedPrefix.length) : entry.path);
       if (!path) continue;
       const target = join(dir, path);
       await mkdir(dirname(target), { recursive: true });
@@ -498,20 +505,26 @@ async function computeSurfaceOf(
  * Two jobs. The safety one: an entry may name `../../etc/passwd`, and an
  * archive from a third party is exactly where that shows up, so anything that
  * escapes the extraction directory is dropped rather than reasoned about. The
- * cheap one: only `.py` and `.pyi` are ever read, and only outside the
- * directories the reader prunes, so nothing else is worth the write.
+ * cheap one: only Python sources and the small packaging metadata files used
+ * to establish import roots are ever read, and only outside the directories
+ * the reader prunes, so nothing else is worth the write.
  */
 const PRUNED_DIRECTORIES = new Set(['test', 'tests', '.git', '__pycache__']);
 
 export function safeRelativePath(entryPath: string): string | null {
-  if (!entryPath.endsWith('.py') && !entryPath.endsWith('.pyi')) return null;
-
   const parts = entryPath.split('/').filter((part) => part !== '' && part !== '.');
   if (parts.length === 0) return null;
   if (parts.some((part) => part === '..')) return null;
   // An absolute path in the archive, or a Windows drive letter.
   if (entryPath.startsWith('/') || /^[a-zA-Z]:/.test(entryPath)) return null;
   if (parts.slice(0, -1).some((part) => PRUNED_DIRECTORIES.has(part))) return null;
+
+  const base = parts.at(-1)!;
+  const pythonSource = base.endsWith('.py') || base.endsWith('.pyi');
+  const projectMetadata = ['pyproject.toml', 'setup.cfg', 'setup.py'].includes(base);
+  const topLevelMetadata =
+    base === 'top_level.txt' && parts.some((part) => part.endsWith('.dist-info') || part.endsWith('.egg-info'));
+  if (!pythonSource && !projectMetadata && !topLevelMetadata) return null;
 
   return parts.join('/');
 }
@@ -789,21 +802,8 @@ def declared_all(tree):
                         return None
     return None
 
-# An extracted artifact normally has one transport wrapper (an sdist name or a
-# GitHub owner/revision directory). It is not import identity. A sole directory
-# that is itself a Python package is different and must stay: stripping it
-# would turn mypackage.client into client.
-def source_root(root):
-    entries = os.listdir(root)
-    if len(entries) != 1 or not os.path.isdir(os.path.join(root, entries[0])):
-        return root
-    candidate = os.path.join(root, entries[0])
-    if os.path.exists(os.path.join(candidate, '__init__.py')) or os.path.exists(os.path.join(candidate, '__init__.pyi')):
-        return root
-    return candidate
-
-root = source_root(sys.argv[1])
 distribution = sys.argv[2] if len(sys.argv) > 2 else ''
+extraction_root = sys.argv[1]
 
 # Prefer a stub over the implementation: a .pyi is the author's own statement
 # of the public interface, which beats inferring one. A Python sdist also
@@ -815,6 +815,50 @@ excluded_dirs = {
     'example', 'bench', 'benchmarks', 'demos', 'demo', 'scripts',
 }
 excluded_files = {'setup.py', 'conftest.py', 'tox.ini', 'noxfile.py', 'build.py'}
+
+def normalized_distribution(name):
+    return name.lower().replace('-', '_').replace('.', '_')
+
+def declared_project_name(path):
+    pyproject = os.path.join(path, 'pyproject.toml')
+    if os.path.isfile(pyproject):
+        try:
+            text = open(pyproject, encoding='utf-8', errors='replace').read()
+            project = re.search(r'(?ms)^\\s*\\[project\\]\\s*(.*?)(?=^\\s*\\[|\\Z)', text)
+            name = re.search(r'(?m)^\\s*name\\s*=\\s*[\\x22\\x27]([^\\x22\\x27]+)', project.group(1)) if project else None
+            if name: return name.group(1)
+        except OSError:
+            pass
+    setup_cfg = os.path.join(path, 'setup.cfg')
+    if os.path.isfile(setup_cfg):
+        try:
+            text = open(setup_cfg, encoding='utf-8', errors='replace').read()
+            metadata = re.search(r'(?ms)^\\s*\\[metadata\\]\\s*(.*?)(?=^\\s*\\[|\\Z)', text)
+            name = re.search(r'(?m)^\\s*name\\s*=\\s*([^\\n#]+)', metadata.group(1)) if metadata else None
+            if name: return name.group(1).strip()
+        except OSError:
+            pass
+    return None
+
+# Locate the project through packaging metadata. A sole directory without an
+# __init__.py may be a PEP 420 namespace package such as google/, so directory
+# cardinality is not evidence that the directory is an archive wrapper.
+def project_root(root):
+    candidates = []
+    for base, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in excluded_dirs]
+        if any(marker in files for marker in ('pyproject.toml', 'setup.cfg', 'setup.py')):
+            candidates.append(base)
+        if any(d.endswith(('.dist-info', '.egg-info')) for d in dirs):
+            candidates.append(base)
+    candidates = sorted(set(candidates), key=lambda path: (path.count(os.sep), path))
+    wanted = normalized_distribution(distribution)
+    named = [path for path in candidates if normalized_distribution(declared_project_name(path) or '') == wanted]
+    if len(named) == 1: return named[0]
+    if len(candidates) == 1: return candidates[0]
+    return root
+
+root = project_root(extraction_root)
 
 def metadata_top_levels(root):
     names = set()
@@ -853,16 +897,9 @@ def declared_modules(root):
 def has_package_marker(path):
     return os.path.isfile(os.path.join(path, '__init__.py')) or os.path.isfile(os.path.join(path, '__init__.pyi'))
 
-def has_descendant_package(path):
-    for base, dirs, files in os.walk(path):
-        dirs[:] = [d for d in dirs if d not in excluded_dirs]
-        if '__init__.py' in files or '__init__.pyi' in files:
-            return True
-    return False
-
 def package_roots(root):
     metadata = metadata_top_levels(root)
-    normalized = distribution.lower().replace('-', '_').replace('.', '_')
+    normalized = normalized_distribution(distribution)
     hinted = metadata | ({normalized} if re.match(r'^[A-Za-z_]\\w*$', normalized) else set())
     bases = []
     src = os.path.join(root, 'src')
@@ -886,7 +923,7 @@ def package_roots(root):
                     continue
                 if base == root and name == 'src':
                     continue
-                if has_package_marker(path) or name in hinted or has_descendant_package(path):
+                if has_package_marker(path) or name in hinted:
                     package_names.add(name)
             elif name.endswith(('.py', '.pyi')):
                 stem = name.rsplit('.', 1)[0]
