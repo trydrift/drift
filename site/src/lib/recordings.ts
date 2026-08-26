@@ -88,6 +88,21 @@ export interface Candidate {
   risk: string;
   summary: string;
   recommendation: string | null;
+  /**
+   * What Drift established about this repository's runtime for this upgrade's
+   * runtime requirements. `null` when it announced none — deliberately not
+   * `"compatible"`, since "nothing asked" is not "asked and satisfied".
+   * Absent in recordings captured before the state existed.
+   */
+  runtimeCompatibility?: "compatible" | "incompatible" | "partial" | "unknown" | null;
+  /** The per-requirement breakdown behind {@link runtimeCompatibility}. */
+  runtimeAnalyses?: {
+    changeId: string;
+    runtime: string;
+    state: "compatible" | "incompatible" | "partial" | "unknown";
+    reason: string;
+    siteCount: number;
+  }[];
   breakingCount: number;
   impactCount: number;
   impactFiles: number;
@@ -177,7 +192,16 @@ function asSeverityInput(candidate: Candidate): SeverityInput {
       : confidences.includes("low")
         ? "low"
         : "none";
-  return { ...candidate, recommendation: candidate.recommendation ?? undefined, impactConfidence };
+  // Same `null`-for-absent translation as `recommendation`: an upgrade with
+  // no runtime requirement records `null`, and `severityOf` must see an
+  // absent field rather than a state it would have to interpret.
+  const { runtimeCompatibility, ...rest } = candidate;
+  return {
+    ...rest,
+    recommendation: candidate.recommendation ?? undefined,
+    impactConfidence,
+    ...(runtimeCompatibility ? { runtimeCompatibility } : {}),
+  };
 }
 
 /** Mirrors `OVERALL_LABEL` in `src/confidence/types.ts`, for recordings with no stored score to read a label from. */

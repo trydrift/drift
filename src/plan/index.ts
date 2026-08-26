@@ -111,7 +111,12 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     fixPlans: input.fixPlans,
   });
   const commits = graph.commits;
-  const risk = assessRisk(changes, breakingChanges, impactSites);
+  const risk = assessRisk(
+    changes,
+    breakingChanges,
+    impactSites,
+    (input.rationale ?? []).map((entry) => entry.assessment.runtimeCompatibility),
+  );
   const gaps = collectGaps(input, breakingChanges, commits);
   const { blockers, warnings } = evaluateGuardrails(input, breakingChanges, commits, risk, gaps);
 
@@ -370,8 +375,18 @@ export function assessRisk(
   changes: readonly DependencyChange[],
   breakingChanges: readonly BreakingChange[],
   impactSites: readonly ImpactSite[],
+  /**
+   * Runtime compatibility states from the rationale, when one was computed.
+   *
+   * Passed in because `'none'` — the strongest thing this function says — is
+   * otherwise reached purely by `impactSites` being empty, which a runtime
+   * requirement Drift could not resolve produces just as readily as an
+   * upgrade that provably touches nothing.
+   */
+  runtimeStates: readonly (string | undefined)[] = [],
 ): RiskLevel {
-  if (breakingChanges.length === 0 || impactSites.length === 0) return 'none';
+  const runtimeUnresolved = runtimeStates.some((state) => state === 'unknown' || state === 'partial');
+  if (breakingChanges.length === 0 || impactSites.length === 0) return runtimeUnresolved ? 'low' : 'none';
 
   let risk: RiskLevel = 'low';
   const raise = (level: RiskLevel) => {

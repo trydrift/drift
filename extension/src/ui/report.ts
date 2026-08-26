@@ -256,6 +256,22 @@ function renderEmpty(state: DriftState): string {
     </div>`);
 }
 
+/**
+ * Did any dependency in this plan leave a runtime compatibility question
+ * unanswered?
+ *
+ * Read off the rationale's recorded state rather than counted from impact
+ * sites, because `unknown` and `partial` both routinely produce none — which
+ * is the whole reason the state exists.
+ */
+function runtimeUnresolved(plan: RemediationPlan): boolean {
+  return (plan.rationale ?? []).some(
+    (entry) =>
+      entry.assessment.runtimeCompatibility === 'unknown' ||
+      entry.assessment.runtimeCompatibility === 'partial',
+  );
+}
+
 function renderPlan(plan: RemediationPlan, state: DriftState, focus?: FocusTarget): string {
   const files = new Set(plan.impactSites.map((s) => s.file)).size;
   const status = state.status;
@@ -299,7 +315,15 @@ ${
   // Lead with the verdict for *this* repository. A page that opens with a
   // breaking-change count reads as an alarm even when the answer is "nothing to
   // do", and an alarm that turns out to be nothing gets ignored next time.
-  plan.impactSites.length === 0
+  //
+  // "Safe to upgrade" is the strongest thing this page says, so it is gated on
+  // compatibility having actually been established. A runtime requirement
+  // Drift could not resolve against this repository has no file to point at
+  // and therefore reaches here with zero impact sites, exactly as a genuinely
+  // unaffected upgrade does -- the two must not read the same.
+  runtimeUnresolved(plan)
+    ? `<p class="verdict-hit">Drift could not establish this repository's runtime compatibility with these changes. Check the declared runtime before upgrading.</p>`
+    : plan.impactSites.length === 0
     ? `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
     : pendingUpgrade
       ? `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here would use an API that changes in the selected upgrade.</p>`

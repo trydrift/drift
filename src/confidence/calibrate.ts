@@ -266,16 +266,24 @@ export function assessLocalImpact(input: LocalImpactInput): ConfidenceScore {
     // the surfaces a search can cover. An endpoint change has no import edge,
     // so finding nothing says almost nothing.
     const unprovable = isLocallyUnprovable(taxonomy);
+    // A runtime requirement has no symbol and no call site, so "searched the
+    // importers and found no usage" is not merely unhelpful here -- it is
+    // false, and it is the sentence that made an unresolved runtime condition
+    // read as a clean search. The runtime scope gets its own honest wording:
+    // where the answer lives is the declared runtime, not the source tree.
+    const runtimeScoped = taxonomy.scope === 'runtime';
     return {
       score: 0,
       band: 'none',
       evidence: [],
       penalties: [
         {
-          code: unprovable ? 'not-locally-checkable' : 'no-usage-found',
-          detail: unprovable
-            ? 'This change is only observable at runtime, so a source search cannot establish whether this repository is affected.'
-            : 'Drift searched the files that import this dependency and found no usage of the affected symbols.',
+          code: runtimeScoped ? 'runtime-compatibility-unresolved' : unprovable ? 'not-locally-checkable' : 'no-usage-found',
+          detail: runtimeScoped
+            ? "This is a requirement on the runtime this repository builds and deploys on, not on any code it calls. No source search can answer it; the repository's own declared runtime version is what decides."
+            : unprovable
+              ? 'This change is only observable at runtime, so a source search cannot establish whether this repository is affected.'
+              : 'Drift searched the files that import this dependency and found no usage of the affected symbols.',
           delta: 0,
         },
       ],

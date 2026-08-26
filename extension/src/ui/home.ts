@@ -3225,8 +3225,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     if (plan.commits.length === 0 || plan.impactSites.length === 0) {
+      // "Upgrading is all that is needed" is a compatibility claim, and a
+      // runtime requirement Drift could not resolve produces exactly this
+      // shape -- no commits, no sites -- without having established it.
+      const runtimeUnresolved = (plan.rationale ?? []).some(
+        (entry) =>
+          entry.assessment.runtimeCompatibility === 'unknown' ||
+          entry.assessment.runtimeCompatibility === 'partial',
+      );
       this.session.say(
-        'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
+        runtimeUnresolved
+          ? 'There is nothing for an agent to edit, but this upgrade carries a runtime requirement Drift could not check against this repository. Confirm the runtime version you build and deploy on before upgrading.'
+          : 'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
       );
       return;
     }
