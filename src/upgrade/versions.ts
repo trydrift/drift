@@ -140,6 +140,13 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
     return { outcome: 'unchecked', reason: `Drift could not reach ${source} for ${name}.` };
   }
 
+  if (published.complete === false) {
+    return {
+      outcome: 'unchecked',
+      reason: `Drift could not enumerate all of ${source} for ${name}, so it cannot establish whether a newer compatible version exists.`,
+    };
+  }
+
   if (published.versions.length === 0) {
     return {
       outcome: 'unchecked',
@@ -158,7 +165,12 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
   // Versions came back and not one of them parsed. That is a source Drift
   // cannot read, not a package that is current.
   if (normalized.length === 0) {
-    if (ecosystem === 'swift') return { outcome: 'up-to-date' };
+    if (ecosystem === 'swift') {
+      return {
+        outcome: 'unchecked',
+        reason: `${source} returned no tags in the installed version's ${versionFamily(current)} family for ${name}.`,
+      };
+    }
     return {
       outcome: 'unchecked',
       reason: `Drift could not read any of the ${published.versions.length} version numbers ${source} published for ${name}.`,
@@ -215,7 +227,7 @@ function versionFamily(raw: string): VersionFamily {
  */
 async function publishedVersions(
   request: VersionLookupRequest,
-): Promise<{ latest: string | null; versions: string[] } | null> {
+): Promise<{ latest: string | null; versions: string[]; complete?: boolean } | null> {
   switch (request.ecosystem) {
     case 'npm':
       return npmVersions(request.name);
@@ -292,19 +304,28 @@ function githubHeaders(token?: string): Record<string, string> {
 async function swiftTagVersions(
   name: string,
   token?: string,
-): Promise<{ latest: string | null; versions: string[] } | null> {
+): Promise<{ latest: string | null; versions: string[]; complete: boolean } | null> {
   if (!/^[\w.-]+\/[\w.-]+$/.test(name)) return null;
 
-  const tags = await fetchJson<{ name?: string }[]>(
-    `https://api.github.com/repos/${name}/tags?per_page=100`,
-    { headers: githubHeaders(token) },
-  );
-  if (!tags) return null;
+  // GitHub caps this endpoint at 100 tags per page. A single page can omit the
+  // installed package's entire tag family, and an omitted family is not proof
+  // that it has no upgrades. Twenty pages bounds scan cost while making the
+  // truncation explicit: reaching the bound returns an incomplete result that
+  // `lookup` must report as unchecked.
+  const perPage = 100;
+  const maxPages = 20;
+  const versions: string[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const tags = await fetchJson<{ name?: string }[]>(
+      `https://api.github.com/repos/${name}/tags?per_page=${perPage}&page=${page}`,
+      { headers: githubHeaders(token) },
+    );
+    if (!tags) return page === 1 ? null : { latest: null, versions: [...new Set(versions)], complete: false };
+    versions.push(...tags.map((tag) => tag.name).filter((tag): tag is string => Boolean(tag)));
+    if (tags.length < perPage) return { latest: null, versions: [...new Set(versions)], complete: true };
+  }
 
-  return {
-    latest: null,
-    versions: tags.map((tag) => tag.name).filter((tag): tag is string => Boolean(tag)),
-  };
+  return { latest: null, versions: [...new Set(versions)], complete: false };
 }
 
 /**

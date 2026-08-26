@@ -234,6 +234,42 @@ describe('version lookup: ecosystems with no package registry', () => {
     assert.match(result.reason, /git tags/i);
   });
 
+  test('Swift tag lookup paginates until the installed version family is found', async () => {
+    let requests = 0;
+    stubFetch((url) => {
+      requests++;
+      const page = new URL(url).searchParams.get('page');
+      if (page === '1') return json(Array.from({ length: 100 }, (_, i) => ({ name: `2020.01.${i + 1}` })));
+      assert.equal(page, '2');
+      return json([{ name: '2.60.0' }, { name: '2.75.0' }]);
+    });
+
+    const result = await lookupVersions({
+      name: 'apple/swift-nio',
+      ecosystem: 'swift',
+      current: '2.60.0',
+      range: '2.60.0',
+    });
+
+    assert.equal(requests, 2);
+    assert.equal(result.outcome, 'upgrade');
+    if (result.outcome === 'upgrade') assert.equal(result.latest, '2.75.0');
+  });
+
+  test('Swift tag lookup fails closed when its pagination bound is exhausted', async () => {
+    stubFetch(() => json(Array.from({ length: 100 }, (_, i) => ({ name: `2.${i}.0` }))));
+
+    const result = await lookupVersions({
+      name: 'apple/swift-nio',
+      ecosystem: 'swift',
+      current: '2.60.0',
+      range: '2.60.0',
+    });
+
+    assert.equal(result.outcome, 'unchecked');
+    if (result.outcome === 'unchecked') assert.match(result.reason, /could not enumerate all/i);
+  });
+
   test('opam versions come from the opam repository package directories', async () => {
     stubFetch((url) => {
       assert.match(url, /ocaml\/opam-repository\/contents\/packages\/lwt/);
