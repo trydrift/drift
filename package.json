@@ -28,8 +28,6 @@
   },
   "files": [
     "dist",
-    "action",
-    "action.yml",
     "README.md"
   ],
   "scripts": {
