@@ -22,6 +22,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import semver from 'semver';
+import { isExactSemVer } from './semver-utils.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -38,6 +40,12 @@ export function findVersionMismatches({ rootPkg, rootLock, extPkg, extLock, tag 
   ];
 
   const problems = [];
+  for (const [label, version] of readings) {
+    if (!isExactSemVer(version)) {
+      problems.push(`${label} contains invalid semantic version "${version}".`);
+    }
+  }
+
   const distinct = new Set(readings.map(([, version]) => version));
   if (distinct.size > 1) {
     problems.push(
@@ -47,13 +55,29 @@ export function findVersionMismatches({ rootPkg, rootLock, extPkg, extLock, tag 
   }
 
   if (tag !== undefined) {
-    const tagVersion = tag.replace(/^v/, '');
+    const tagVersion = typeof tag === 'string' && tag.startsWith('v') ? tag.slice(1) : '';
     const artifactVersion = rootPkg;
-    if (tagVersion !== artifactVersion) {
+    const validTagVersion = isExactSemVer(tagVersion) ? tagVersion : null;
+
+    if (validTagVersion && semver.prerelease(validTagVersion) !== null) {
       problems.push(
-        `Tag/version mismatch: git tag "${tag}" implies version "${tagVersion}", ` +
-          `but the artifact version is "${artifactVersion}".`,
+        'Automated releases only accept stable semantic versions.',
+        'Prerelease tags must not be published through release.yml.',
       );
+    } else {
+      const exactStableVersion = validTagVersion
+        ? `${semver.major(validTagVersion)}.${semver.minor(validTagVersion)}.${semver.patch(validTagVersion)}`
+        : undefined;
+      if (!validTagVersion || tagVersion !== exactStableVersion) {
+        problems.push(
+          `Invalid release tag "${tag}". Automated releases require an exact stable tag in the form vX.Y.Z.`,
+        );
+      } else if (tagVersion !== artifactVersion) {
+        problems.push(
+          `Tag/version mismatch: git tag "${tag}" implies version "${tagVersion}", ` +
+            `but the artifact version is "${artifactVersion}".`,
+        );
+      }
     }
   }
 
@@ -75,7 +99,7 @@ function parseTag(argv) {
   if (!flag) return undefined;
   if (flag.includes('=')) return flag.slice('--tag='.length);
   const index = argv.indexOf(flag);
-  return argv[index + 1];
+  return argv[index + 1] ?? '';
 }
 
 // Only runs the CLI when this file is executed directly, not when imported by tests.

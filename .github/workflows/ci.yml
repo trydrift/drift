@@ -54,6 +54,9 @@ jobs:
       - name: Verify version consistency across manifests
         run: npm run release:version
 
+      - name: Test release tooling
+        run: npm run test:release
+
       - name: Typecheck
         run: npm run typecheck
 

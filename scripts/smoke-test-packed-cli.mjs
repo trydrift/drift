@@ -1,14 +1,15 @@
 #!/usr/bin/env node
-// Builds the real npm artifact with `npm pack`, installs *that tarball* into a
-// clean temporary directory, and exercises the installed `drift` binary from
-// there — never importing anything from this source tree. This is the only
+// Accepts an existing npm tarball, or builds one with `npm pack` when no path
+// is supplied. Installs *that tarball* into a clean temporary directory and
+// exercises the installed `drift` binary from there — never importing anything
+// from this source tree. This is the only
 // check in the repo that would catch a bin path typo, a missing entry in
 // `files`, an accidentally-devDependency-only runtime import, or an ESM
 // resolution error that only appears once the package is actually installed.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -31,16 +32,25 @@ function assert(cond, message) {
 
 let workdir;
 let tarballAbsPath;
+let removeTarball = false;
 try {
-  log('npm pack (root package)');
-  const packOut = execFileSync('npm', ['pack', '--json', '--pack-destination', tmpdir()], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  });
-  const [{ filename }] = JSON.parse(packOut);
-  tarballAbsPath = join(tmpdir(), filename);
+  const suppliedTarball = process.argv[2];
+  if (suppliedTarball) {
+    tarballAbsPath = resolve(process.cwd(), suppliedTarball);
+    log(`using existing tarball ${tarballAbsPath}`);
+  } else {
+    log('npm pack (root package)');
+    const packOut = execFileSync('npm', ['pack', '--json', '--pack-destination', tmpdir()], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+    const [{ filename }] = JSON.parse(packOut);
+    tarballAbsPath = join(tmpdir(), filename);
+    removeTarball = true;
+    log(`packed ${filename}`);
+  }
   assert(existsSync(tarballAbsPath), `tarball ${tarballAbsPath} was not created`);
-  log(`packed ${filename}`);
+  assert(tarballAbsPath.endsWith('.tgz'), `${basename(tarballAbsPath)} is not an npm tarball`);
 
   workdir = mkdtempSync(join(tmpdir(), 'drift-smoke-'));
   log(`installing into clean directory ${workdir}`);
@@ -163,5 +173,5 @@ try {
   log('all packaged-CLI smoke checks passed');
 } finally {
   if (workdir) rmSync(workdir, { recursive: true, force: true });
-  if (tarballAbsPath) rmSync(tarballAbsPath, { force: true });
+  if (removeTarball && tarballAbsPath) rmSync(tarballAbsPath, { force: true });
 }

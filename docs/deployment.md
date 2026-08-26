@@ -254,9 +254,19 @@ the repositories where you want fixes dispatched.
 
 Release publishing uses OIDC on both registries — there is no npm or VS Code
 Marketplace token stored in this repository, and there should never be one.
-`release.yml` mints a short-lived credential from GitHub Actions' own
-`id-token: write` permission for each publish step; nothing permanent sits in
-GitHub secrets to leak or rotate.
+The workflow keeps validation and publication in separate trust domains:
+
+- `validate` has read-only repository access and no OIDC permission. It runs
+  every dependency install, test, eval, and build, then creates, tests, and
+  uploads the exact npm tarball and VSIX together with their checksums.
+- `publish` starts only after `validate` succeeds. It has the OIDC and
+  repository write permissions required for publishing, downloads and verifies
+  those artifacts, and publishes them unchanged. It does not checkout the
+  repository, install repository dependencies, rebuild, or run project code.
+
+This makes the artifact tested in the unprivileged job the artifact published
+by the privileged job. Short-lived publishing authority is unavailable while
+repository and dependency code executes.
 
 Two trust relationships have to exist before the first tag, and both are
 account-level settings only a maintainer with the right access can create —
@@ -272,9 +282,10 @@ account-level settings only a maintainer with the right access can create —
 ### The npm bootstrap problem
 
 npm Trusted Publishing can only be configured for a package that already
-exists, and `@usedrift/cli` doesn't yet. This is a one-time, manual,
-external step — never automated into `release.yml` — before Trusted
-Publishing can be turned on:
+exists, and `@usedrift/cli` doesn't yet. This is a one-time, manual prerelease,
+external step — never automated into `release.yml` — before Trusted Publishing
+can be turned on. Automated tag-driven releases accept exact stable `vX.Y.Z`
+tags only:
 
 1. Confirm every version (`package.json`, `package-lock.json`,
    `extension/package.json`, `extension/package-lock.json`) is `0.1.0` — run
@@ -311,13 +322,15 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-`release.yml` validates the tag against every manifest's version first (see
-`scripts/check-release-version.mjs`), then runs the same validation phase
-`npm run release:check` runs locally, then — only if every check passed —
-publishes the CLI to npm and the extension to the Marketplace, creates the
-GitHub Release with the VSIX attached, and moves the floating **`v0`** tag
-onto `v0.1.0` so `uses: trydrift/drift@v0` resolves to it. A version mismatch,
-or any validation failure, stops the workflow before anything is published.
+`release.yml` rejects prerelease and malformed tags, then validates the stable
+tag against every manifest's version (see `scripts/check-release-version.mjs`).
+Its unprivileged `validate` job runs the same validation phase
+`npm run release:check` runs locally and uploads the tested npm tarball and
+VSIX. Only after that succeeds does the privileged `publish` job download and
+publish those exact artifacts, create the GitHub Release with the same VSIX
+attached, and move the floating **`v0`** tag onto `v0.1.0` so
+`uses: trydrift/drift@v0` resolves to it. A prerelease tag, version mismatch,
+or any validation failure stops the workflow before anything is published.
 
 Listing the Action on the GitHub Marketplace is a separate, one-time manual
 step from the repository's own "Draft a release" / Marketplace tooling — it

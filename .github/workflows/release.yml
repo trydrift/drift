@@ -1,22 +1,11 @@
 name: Release
 
-# Triggered by pushing a `v*` tag (e.g. `v0.1.0`). Validates every artifact —
-# CLI, Action bundle, and VSIX — before publishing anything, then publishes
-# the CLI to npm, the extension to the VS Code Marketplace, creates a GitHub
-# Release, and moves the floating `v0` tag so `uses: trydrift/drift@v0`
-# resolves to the newest `v0.x.y`.
-#
-# Publishing uses OIDC on both registries — npm Trusted Publishing and the
-# VS Code Marketplace's `vsce ... --oidc` — so there is no long-lived
-# NPM_TOKEN or VSCE_PAT secret in this repository. Both trust relationships
-# are configured externally (npmjs.com, the Marketplace publisher settings),
-# not here; see docs/deployment.md. `id-token: write` below is what lets this
-# job mint the OIDC token each registry verifies.
-#
-# Ordering is deliberate: every validation step below runs to completion
-# before the first irreversible action (an npm publish). A failure in
-# extension packaging or CLI packaging must never happen after a public
-# artifact has already been published, if it could have been caught first.
+# A pushed stable tag (for example v0.1.0) starts two deliberately separate
+# trust domains. `validate` runs every repository/dependency-controlled command
+# without OIDC or repository write authority and uploads the exact npm tarball
+# and VSIX it tested. Only `publish` can mint OIDC credentials or write
+# repository contents, and it publishes those downloaded bytes without a
+# checkout or rebuild.
 
 on:
   push:
@@ -26,24 +15,18 @@ on:
 permissions: {}
 
 jobs:
-  release:
+  # UNPRIVILEGED: build and test everything; create immutable release inputs.
+  validate:
     runs-on: ubuntu-latest
-    # `gh release create` and moving the floating v0 tag both need contents:
-    # write; scoped to this one job rather than the whole workflow. id-token:
-    # write is for OIDC — both `npm publish` (Trusted Publishing) and
-    # `vsce publish --oidc` mint a token from this to prove the publish is
-    # coming from this exact workflow, in place of a stored credential.
     permissions:
-      contents: write
-      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
-      # The Action declares `using: node24`. `verify:action-bundle` runs the
-      # shipped bundle against this binary, because publishing an Action that
-      # only works on 22 fails in the user's repository, not here.
+      # The Action declares `using: node24`. Preserve the binary before
+      # restoring Node 22 for the rest of the repository validation.
       - name: Install Node 24 for the Action runtime check
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -55,25 +38,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: https://registry.npmjs.org
-
-      # npm Trusted Publishing needs an npm CLI new enough to mint and send
-      # the OIDC token; do not rely on whatever a given runner image happens
-      # to ship.
-      - name: Upgrade npm for Trusted Publishing
-        run: npm install --global npm@11
-
-      # ---- Validation phase: nothing here publishes anything. ----
 
       - run: npm ci
 
-      # The tag just pushed must exactly match every manifest's version, and
-      # every manifest must match each other, before a single further step
-      # runs. This is deliberately the first thing after `npm ci`: a mismatch
-      # here is a maintainer error, not a code regression, and should fail in
-      # seconds, not after the full validation phase.
-      - name: Validate release tag and version consistency
+      - name: Validate stable release tag and version consistency
         run: node scripts/check-release-version.mjs --tag "${{ github.ref_name }}"
+
+      - name: Test release tooling
+        run: npm run test:release
 
       - run: npm run typecheck
       - run: npm test
@@ -81,34 +53,21 @@ jobs:
       - run: npm run eval:test
       - run: npm run eval:deterministic
 
-      # Rebuilds action/index.cjs, fails if the committed bundle is stale,
-      # runs it with node_modules removed, and confirms the optional
-      # Anthropic SDK is statically bundled — the same check ci.yml runs on
-      # every PR, invoked here through the same script so the two cannot
-      # drift apart.
       - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 24)
         run: npm run verify:action-bundle
 
-      # Identity strings, invented CLI commands, invented extension identifiers,
-      # and any wording that sells an unchecked result as a pass. The README
-      # advertised a `drift.pullRequest` command that never existed; a comment
-      # could not have caught that, so this does.
       - name: Verify the READMEs and docs against the code
         run: npm run check:docs
 
-      # The shipped workflow's trigger paths are generated from the manifest
-      # registry; a stale committed copy means the Action silently stops
-      # starting on files Drift supports.
       - name: Verify the example workflow matches the manifest registry
         run: npm run verify:workflow
 
-      # The site is a release artifact too. It was outside every gate, which is
-      # how it kept advertising a command that had been deleted.
-      - name: Build the site
+      - name: Build and test the site
         working-directory: site
         run: |
           npm ci
           npm run typecheck
+          npm test
           npm run build
 
       - name: Extension — install, typecheck, test, build, package
@@ -120,49 +79,116 @@ jobs:
           npm run build
           npm run package
 
-      # Packs the real npm tarball, installs it into a clean temp directory,
-      # and runs `drift --version`, `--help`, and the offline `analyze`/`fix`/
-      # `pr` error paths against it — the actual artifact a user installs,
-      # not source-tree imports. Uses its own throwaway `npm pack`; the
-      # publish step below packs again for the real publish.
-      - name: Smoke-test the packed CLI artifact
-        run: npm run smoke:packed-cli
+      # Pack once. The smoke test consumes this exact tarball rather than
+      # creating a throwaway package that could differ from the published one.
+      - name: Pack and smoke-test the exact CLI artifact
+        run: |
+          mkdir -p artifacts
+          npm pack --pack-destination artifacts
+          mapfile -t CLI_TARBALLS < <(find artifacts -maxdepth 1 -type f -name '*.tgz' -print)
+          test "${#CLI_TARBALLS[@]}" -eq 1
+          CLI_TARBALL="${CLI_TARBALLS[0]}"
+          npm run smoke:packed-cli -- "$CLI_TARBALL"
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # ---- Everything above must pass before anything below runs. ----
-      # ---- Publish phase: each step here is a public, irreversible action. ----
+      - name: Stage and checksum the exact release artifacts
+        run: |
+          cp extension/drift.vsix artifacts/drift.vsix
+          unzip -t artifacts/drift.vsix
+          cd artifacts
+          sha256sum ./*.tgz ./drift.vsix > SHA256SUMS
 
-      # No NODE_AUTH_TOKEN / NPM_TOKEN: npm Trusted Publishing authenticates
-      # this exact workflow via the OIDC token id-token: write lets it mint,
-      # and provenance is attached automatically — no --provenance flag
-      # needed. Trusted Publishing for @usedrift/cli must already be
-      # configured on npmjs.com (see docs/deployment.md); it cannot be set up
-      # by this workflow.
-      - name: Publish CLI to npm
-        run: npm publish --access public
+      - name: Upload validated release artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-artifacts
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 7
 
-      # No VSCE_PAT: --oidc authenticates via the same GitHub Actions OIDC
-      # token, which the `drift` Marketplace publisher must already trust
-      # (see docs/deployment.md). Publishes the exact VSIX validation just
-      # produced, not a fresh source build.
-      - name: Publish extension to the VS Code Marketplace
-        working-directory: extension
-        run: npx --yes @vscode/vsce publish --oidc --no-dependencies --packagePath drift.vsix
+  # PRIVILEGED: verify and publish only the artifacts produced above.
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Install the npm publishing runtime
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
 
+      - name: Download validated release artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-artifacts
+          path: release-artifacts
+
+      # This job deliberately has no checkout. These checks read archive
+      # metadata only; they never execute code from either release artifact.
+      - name: Verify artifact checksums and identities
+        id: artifacts
+        shell: bash
+        run: |
+          cd release-artifacts
+          sha256sum --check SHA256SUMS
+
+          mapfile -t CLI_TARBALLS < <(find . -maxdepth 1 -type f -name '*.tgz' -print)
+          test "${#CLI_TARBALLS[@]}" -eq 1
+          CLI_TARBALL="${CLI_TARBALLS[0]}"
+          EXPECTED_VERSION="${GITHUB_REF_NAME#v}"
+
+          CLI_NAME="$(tar -xOf "$CLI_TARBALL" package/package.json | jq -r '.name')"
+          CLI_VERSION="$(tar -xOf "$CLI_TARBALL" package/package.json | jq -r '.version')"
+          VSIX_NAME="$(unzip -p drift.vsix extension/package.json | jq -r '.name')"
+          VSIX_PUBLISHER="$(unzip -p drift.vsix extension/package.json | jq -r '.publisher')"
+          VSIX_VERSION="$(unzip -p drift.vsix extension/package.json | jq -r '.version')"
+
+          test "$CLI_NAME" = '@usedrift/cli'
+          test "$CLI_VERSION" = "$EXPECTED_VERSION"
+          test "$VSIX_PUBLISHER.$VSIX_NAME" = 'drift.drift'
+          test "$VSIX_VERSION" = "$EXPECTED_VERSION"
+
+          echo "cli_tarball=release-artifacts/${CLI_TARBALL#./}" >> "$GITHUB_OUTPUT"
+          echo "vsix=release-artifacts/drift.vsix" >> "$GITHUB_OUTPUT"
+
+      # No NODE_AUTH_TOKEN or NPM_TOKEN: npm Trusted Publishing exchanges this
+      # job's OIDC identity for short-lived publish authority.
+      - name: Publish exact CLI tarball to npm
+        run: npm publish "${{ steps.artifacts.outputs.cli_tarball }}" --access public
+
+      # No VSCE_PAT: the Marketplace trusts this workflow's OIDC identity.
+      - name: Publish exact VSIX to the VS Code Marketplace
+        run: npx --yes @vscode/vsce@3.9.1 publish --oidc --no-dependencies --packagePath "${{ steps.artifacts.outputs.vsix }}"
+
+      # Registry publication must succeed before the GitHub Release exists.
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           gh release create "${{ github.ref_name }}" \
             --title "${{ github.ref_name }}" \
             --generate-notes \
-            extension/drift.vsix
+            "${{ steps.artifacts.outputs.vsix }}"
 
+      # Update the lightweight major tag through the API, so the privileged
+      # job never needs to checkout or execute repository contents.
       - name: Move the floating v0 tag
+        if: startsWith(github.ref_name, 'v0.')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          MAJOR="$(echo "${{ github.ref_name }}" | sed -E 's/^v([0-9]+)\..*/v\1/')"
-          if [ "$MAJOR" = "v0" ]; then
-            git tag -f v0 "${{ github.ref_name }}"
-            git push -f origin v0
+          if gh api "repos/${GH_REPO}/git/ref/tags/v0" >/dev/null 2>&1; then
+            gh api --method PATCH "repos/${GH_REPO}/git/refs/tags/v0" \
+              -f sha="${{ github.sha }}" \
+              -F force=true
+          else
+            gh api --method POST "repos/${GH_REPO}/git/refs" \
+              -f ref='refs/tags/v0' \
+              -f sha="${{ github.sha }}"
           fi

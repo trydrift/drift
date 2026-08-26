@@ -15,38 +15,74 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { isExactSemVer } from './semver-utils.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
-const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-.]+)?(?:\+[0-9A-Za-z-.]+)?$/;
 
-const version = process.argv[2];
-if (!version) {
-  console.error('Usage: node scripts/set-version.mjs <version>');
-  console.error('Example: node scripts/set-version.mjs 0.1.1');
-  process.exit(1);
-}
-if (!SEMVER.test(version)) {
-  console.error(`"${version}" is not a valid semantic version (expected e.g. 0.1.1 or 0.1.1-beta.0).`);
-  process.exit(1);
+export function isValidVersion(version) {
+  return isExactSemVer(version);
 }
 
-function updatePackageJson(path) {
-  const json = JSON.parse(readFileSync(path, 'utf8'));
-  json.version = version;
-  writeFileSync(path, `${JSON.stringify(json, null, 2)}\n`);
+function replaceVersionProperty(source, currentVersion, nextVersion, fromIndex = 0) {
+  const property = /("version"\s*:\s*)"([^"]*)"/g;
+  property.lastIndex = fromIndex;
+
+  for (let match = property.exec(source); match; match = property.exec(source)) {
+    if (match[2] !== currentVersion) continue;
+    const valueStart = match.index + match[1].length;
+    const valueEnd = valueStart + JSON.stringify(currentVersion).length;
+    const replacement = JSON.stringify(nextVersion);
+    return {
+      source: source.slice(0, valueStart) + replacement + source.slice(valueEnd),
+      nextIndex: valueStart + replacement.length,
+    };
+  }
+
+  throw new Error(`Could not find version property "${currentVersion}" to update.`);
 }
 
-function updateLockfile(path) {
-  const json = JSON.parse(readFileSync(path, 'utf8'));
-  json.version = version;
-  if (json.packages?.['']) json.packages[''].version = version;
-  writeFileSync(path, `${JSON.stringify(json, null, 2)}\n`);
+export function updateManifestText(source, version) {
+  const manifest = JSON.parse(source);
+  return replaceVersionProperty(source, manifest.version, version).source;
 }
 
-updatePackageJson(join(repoRoot, 'package.json'));
-updateLockfile(join(repoRoot, 'package-lock.json'));
-updatePackageJson(join(repoRoot, 'extension', 'package.json'));
-updateLockfile(join(repoRoot, 'extension', 'package-lock.json'));
+export function updateLockfileText(source, version) {
+  const lockfile = JSON.parse(source);
+  if (typeof lockfile.packages?.['']?.version !== 'string') {
+    throw new Error('Lockfile is missing packages[""].version.');
+  }
 
-console.log(`Set version to ${version} in package.json, package-lock.json, extension/package.json, extension/package-lock.json.`);
-console.log('Review the diff, commit it, then run `npm run release:check` before tagging.');
+  const root = replaceVersionProperty(source, lockfile.version, version);
+  return replaceVersionProperty(
+    root.source,
+    lockfile.packages[''].version,
+    version,
+    root.nextIndex,
+  ).source;
+}
+
+function updateJsonFile(path, update, version) {
+  const source = readFileSync(path, 'utf8');
+  writeFileSync(path, update(source, version));
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const version = process.argv[2];
+  if (!version) {
+    console.error('Usage: node scripts/set-version.mjs <version>');
+    console.error('Example: node scripts/set-version.mjs 0.1.1');
+    process.exit(1);
+  }
+  if (!isValidVersion(version)) {
+    console.error(`"${version}" is not a valid semantic version (expected e.g. 0.1.1 or 0.1.1-beta.0).`);
+    process.exit(1);
+  }
+
+  updateJsonFile(join(repoRoot, 'package.json'), updateManifestText, version);
+  updateJsonFile(join(repoRoot, 'package-lock.json'), updateLockfileText, version);
+  updateJsonFile(join(repoRoot, 'extension', 'package.json'), updateManifestText, version);
+  updateJsonFile(join(repoRoot, 'extension', 'package-lock.json'), updateLockfileText, version);
+
+  console.log(`Set version to ${version} in package.json, package-lock.json, extension/package.json, extension/package-lock.json.`);
+  console.log('Review the diff, commit it, then run `npm run release:check` before tagging.');
+}

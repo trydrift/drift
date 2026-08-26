@@ -21,6 +21,7 @@ function sh(cmd, args, opts = {}) {
 
 step('release: cross-manifest version consistency (root/extension package + lockfile)', () =>
   sh('npm', ['run', 'release:version']));
+step('release: tooling tests', () => sh('npm', ['run', 'test:release']));
 step('root: typecheck', () => sh('npm', ['run', 'typecheck']));
 step('root: tests (build + test/*.test.ts)', () => sh('npm', ['test']));
 step('root: benchmark review/adjudication integrity', () => sh('npm', ['run', 'eval:review:validate']));
@@ -42,6 +43,7 @@ step('cli: npm pack + install into a clean directory + smoke test', () => sh('np
 step('site: production build (catches copy that outlived the feature)', () => {
   sh('npm', ['ci'], { cwd: `${repoRoot}/site` });
   sh('npm', ['run', 'typecheck'], { cwd: `${repoRoot}/site` });
+  sh('npm', ['test'], { cwd: `${repoRoot}/site` });
   sh('npm', ['run', 'build'], { cwd: `${repoRoot}/site` });
 });
 
