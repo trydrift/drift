@@ -485,6 +485,21 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
       ['packages/api/.ruby-version', '.github/workflows/ci.yml'],
     );
   });
+
+  test('root package manifests do not leak into sibling workspaces for any runtime', () => {
+    const members = ['', 'packages/api'];
+    const manifests = [
+      ['ruby', 'Gemfile', "ruby '2.7'"],
+      ['ruby', 'demo.gemspec', "spec.required_ruby_version = '>=2.7'"],
+      ['go', 'go.mod', 'go 1.20'],
+      ['java', 'pom.xml', '<maven.compiler.release>17</maven.compiler.release>'],
+      ['java', 'build.gradle', 'sourceCompatibility = 17'],
+      ['rust', 'Cargo.toml', '[package]\nrust-version = "1.70"'],
+    ] as const;
+    for (const [runtime, path, content] of manifests) {
+      assert.deepEqual(findRuntimeDeclarations([{ path, content }], runtime, 'packages/api', members), [], `${runtime} ${path}`);
+    }
+  });
 });
 
 describe('checking this repository against a raised requirement', () => {

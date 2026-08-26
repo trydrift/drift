@@ -172,6 +172,12 @@ describe('recording audit: C and C++ public surface identity', () => {
     assert.ok(diffSurfaces(a, b).some((finding) => finding.symbol === 'a.foo'));
   });
 
+  test('anonymous namespace declarations are internal even in a public header', () => {
+    const surface = parseHeaderSurface([{ path: 'api.h', content: 'namespace {\nvoid helper();\n}\nvoid public_api();' }]);
+    assert.equal(surface.has('helper'), false);
+    assert.equal(surface.has('public_api'), true);
+  });
+
   test('surviving qualified APIs remain present across releases', () => {
     const before = parseHeaderSurface([
       { path: 'spdlog/logger.h', content: 'namespace spdlog {\nclass logger {\n public:\n  void level();\n  void name();\n  void sinks();\n};\n}' },
