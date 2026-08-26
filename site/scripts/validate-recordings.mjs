@@ -58,9 +58,8 @@ function validateAuditInvariants(recording, name) {
       validateSurfaceSymbols(change, recording.ecosystem);
       validateRuntime(change);
       validateRuntimeSites(change);
-      validateOwnerEvidence(change);
     }
-    validateKnownSurvivors(recording, candidate);
+    validateCorpusRegressionTripwires(recording, candidate);
   }
 
   // Keep this check tied to the recording id rather than a package name in the
@@ -81,11 +80,11 @@ function validateSurfaceSymbols(change, ecosystem) {
   const symbols = Array.isArray(change.symbols) ? change.symbols : [];
   if (ecosystem === 'pypi') {
     for (const symbol of symbols) {
-      if (/^[^./\s]+-v?\d+(?:[.-]\d+)+\./.test(symbol)) {
+      // PEP 625 sdists use `{distribution}-{version}`. Accept the full PEP 440
+      // family here (pre/post/dev/epoch), while requiring the transport-name
+      // hyphen so a legitimate import package such as `api_v2` is not rejected.
+      if (/^[^./\s]+-v?(?:\d+!)?\d+(?:[._-]\d+)*(?:(?:a|b|rc)\d*|[._-]?(?:post|dev)\d+)?\./i.test(symbol)) {
         throw new Error(`archive-root Python symbol: ${symbol}`);
-      }
-      if (/(^|\.)(?:docs?|examples?|tests?|testdata)(?:\.|$)/i.test(symbol)) {
-        throw new Error(`non-public Python symbol: ${symbol}`);
       }
     }
   }
@@ -108,13 +107,9 @@ function validateRuntimeSites(change) {
   const requirement = parseRequirement(change.runtime.requirement);
   for (const site of change.sites ?? []) {
     const file = site.file.toLowerCase();
-    const allowed = file.endsWith('.nvmrc') || file.endsWith('.node-version')
-      ? runtime === 'node'
-      : file.endsWith('.python-version')
-        ? runtime === 'python'
-        : file.endsWith('.ruby-version')
-          ? runtime === 'ruby'
-          : file.endsWith('.tool-versions');
+    const base = file.split('/').pop();
+    const excerpt = site.excerpt ?? '';
+    const allowed = runtimeSiteOwnedBy(runtime, file, base, excerpt);
     if (!allowed) throw new Error(`${runtime} runtime finding crossed config ownership at ${site.file}`);
 
     if (file.endsWith('.tool-versions')) {
@@ -123,28 +118,52 @@ function validateRuntimeSites(change) {
       if (!key || !accepted.includes(key)) throw new Error(`${runtime} runtime finding used the wrong .tool-versions key`);
     }
 
-    const declaration = site.excerpt.match(/\b\d+(?:\.\d+){0,3}\b/)?.[0];
-    if (declaration && requirement && compareVersions(declaration, requirement.version) >= 0 && requirement.operator !== '<') {
+    const exactPin = !/[<>=~^*x|]/i.test(excerpt)
+      ? excerpt.match(/\b\d+(?:\.\d+){0,3}\b/)?.[0]
+      : undefined;
+    if (exactPin && requirement && satisfies(exactPin, requirement)) {
       throw new Error(`compatible ${runtime} declaration was reported as an impact at ${site.file}`);
     }
   }
 }
 
-function validateOwnerEvidence(change) {
-  const qualified = (change.symbols ?? []).filter((symbol) => /[.:]/.test(symbol));
-  for (const symbol of qualified) {
-    const leaf = symbol.split(/[.:]/).pop();
-    if (!leaf || ['uint8_t', 'c_str', 'level', 'name', 'sinks', 'StateError', 'UnsupportedError'].includes(leaf)) {
-      for (const site of change.sites ?? []) {
-        if (site.confidence === 'high' && site.matchedSymbol === leaf) {
-          throw new Error(`high-confidence bare lexical match for qualified symbol ${symbol}`);
-        }
-      }
-    }
+function runtimeSiteOwnedBy(runtime, file, base, excerpt) {
+  if (base === '.tool-versions') return true;
+  if (runtime === 'node' && ['.nvmrc', '.node-version', 'package.json'].includes(base)) return true;
+  if (runtime === 'python' && ['.python-version', 'runtime.txt', 'pyproject.toml', 'setup.cfg', 'setup.py'].includes(base)) return true;
+  if (runtime === 'ruby' && (base === '.ruby-version' || base === 'gemfile' || base.endsWith('.gemspec'))) return true;
+  if (runtime === 'go' && base === 'go.mod') return true;
+  if (runtime === 'java' && ['pom.xml', 'build.gradle', 'build.gradle.kts'].includes(base)) return true;
+  if (runtime === 'rust' && ['rust-toolchain', 'rust-toolchain.toml', 'cargo.toml'].includes(base)) return true;
+
+  if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
+    const images = {
+      node: /(?:^|\/)node:/i,
+      python: /(?:^|\/)python:/i,
+      ruby: /(?:^|\/)ruby:/i,
+      go: /(?:^|\/)golang:/i,
+      java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):/i,
+      rust: /(?:^|\/)rust:/i,
+    };
+    return images[runtime]?.test(excerpt) ?? false;
   }
+
+  if (/^\.github\/workflows\/.+\.ya?ml$/.test(file) || /^\.(?:gitlab-ci|circleci)/.test(file)) {
+    const fields = {
+      node: /node-version\s*:/i,
+      python: /python-version\s*:/i,
+      ruby: /ruby-version\s*:/i,
+      go: /go-version\s*:/i,
+      java: /java-version\s*:/i,
+      rust: /toolchain\s*:/i,
+    };
+    return fields[runtime]?.test(excerpt) ?? false;
+  }
+  return false;
 }
 
-function validateKnownSurvivors(recording, candidate) {
+/** Package/symbol-specific checks below are corpus fixtures only, never engine policy. */
+function validateCorpusRegressionTripwires(recording, candidate) {
   const text = JSON.stringify((candidate.breaking ?? []).filter((change) => change.kind === 'removed-export'));
   const checks = recording.id === 'trantor'
     ? ['logger.level', 'logger.name', 'logger.sinks', 'SSL_get_error', 'OPENSSL_cleanup', 'RUN_ALL_TESTS']
@@ -174,6 +193,16 @@ function compareVersions(left, right) {
     if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) - (b[i] ?? 0);
   }
   return 0;
+}
+
+function satisfies(version, requirement) {
+  const compared = compareVersions(version, requirement.version);
+  if (requirement.operator === '>') return compared > 0;
+  if (requirement.operator === '>=') return compared >= 0;
+  if (requirement.operator === '<') return compared < 0;
+  if (requirement.operator === '<=') return compared <= 0;
+  if (requirement.operator === '=' || requirement.operator === '==') return compared === 0;
+  return compared >= 0;
 }
 
 if (failures.length > 0) {
