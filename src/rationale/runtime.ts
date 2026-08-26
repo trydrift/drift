@@ -851,7 +851,15 @@ export function checkNodeCompatibility(
   const out: RuntimeCompatibility[] = [];
 
   for (const decl of declarations) {
-    if (!semver.validRange(decl.requirement, { loose: true })) continue;
+    // An alias (`lts/hydrogen`), a channel name, anything semver cannot read
+    // as a range. Reported as `unknown` rather than skipped: a declaration
+    // dropped here is indistinguishable downstream from a repository that
+    // never wrote one, and that collapse is what turns "Drift could not tell"
+    // into "Drift found nothing wrong".
+    if (!semver.validRange(decl.requirement, { loose: true })) {
+      out.push({ ...decl, verdict: 'unknown' });
+      continue;
+    }
 
     let verdict: RuntimeCompatibility['verdict'];
     try {
@@ -859,7 +867,7 @@ export function checkNodeCompatibility(
       else if (!semver.intersects(decl.requirement, requirement, { loose: true })) verdict = 'incompatible';
       else verdict = 'partial';
     } catch {
-      continue;
+      verdict = 'unknown';
     }
 
     out.push({ ...decl, verdict });

@@ -60,6 +60,7 @@ function validateAuditInvariants(recording, name) {
       validateRuntimeSites(change);
     }
     validateCompatibilityEvidence(candidate, name);
+    validateRuntimeCompatibilityState(candidate, name);
     validateCorpusRegressionTripwires(recording, candidate);
   }
 
@@ -146,6 +147,91 @@ function validateCompatibilityEvidence(candidate, recordingName) {
   }
 }
 
+const RUNTIME_STATES = ['compatible', 'incompatible', 'partial', 'unknown'];
+
+/**
+ * The structural half of the runtime invariant, checked against the state the
+ * engine recorded rather than against the sentences it rendered.
+ *
+ * The three claims this exists to make impossible, all of which the corpus
+ * produced at some point because every layer read "zero impact sites" as
+ * "compatible":
+ *
+ *   1. A candidate whose runtime compatibility is `unknown` rendering as
+ *      safe-to-upgrade, or as `upstream-only` ("N upstream changes, none used
+ *      here"). Both are positive claims about this repository, and `unknown`
+ *      means no such claim was established.
+ *   2. A candidate whose runtime compatibility is `partial` rendering as
+ *      safe-to-upgrade, or headlining as Migration required off that overlap
+ *      alone.
+ *   3. A runtime requirement with no declaration to check producing no state
+ *      at all, which is how it used to disappear.
+ *
+ * `severityOf` is reproduced here only for the `upstream-only` shape it
+ * assigns to a zero-site candidate with upstream findings; deriving it from
+ * the recorded counts is what keeps this a structural check rather than a
+ * text search.
+ */
+function validateRuntimeCompatibilityState(candidate, recordingName) {
+  const state = candidate.runtimeCompatibility ?? null;
+  const analyses = candidate.runtimeAnalyses ?? [];
+  const where = `${recordingName}: ${candidate.name}`;
+
+  const runtimeChanges = (candidate.breaking ?? []).filter((change) => change.kind === 'runtime-requirement');
+  if (runtimeChanges.length > 0 && state === null) {
+    throw new Error(`${where} has a runtime requirement but recorded no runtime compatibility state`);
+  }
+  if (state !== null && !RUNTIME_STATES.includes(state)) {
+    throw new Error(`${where} recorded an unknown runtime compatibility state: ${state}`);
+  }
+
+  for (const analysis of analyses) {
+    if (!RUNTIME_STATES.includes(analysis.state)) {
+      throw new Error(`${where} runtime analysis for ${analysis.changeId} has state ${analysis.state}`);
+    }
+    // A `compatible` analysis is a positive finding and must never have been
+    // reached by finding nothing.
+    if (analysis.state === 'compatible' && analysis.reason !== 'satisfies') {
+      throw new Error(`${where} claims ${analysis.runtime} compatible for reason ${analysis.reason}`);
+    }
+    // The whole point of the state model: an analysis with nowhere to point
+    // is still an answer, and it is `unknown`.
+    if (analysis.reason === 'no-declaration' && analysis.state !== 'unknown') {
+      throw new Error(`${where} found no ${analysis.runtime} declaration but recorded ${analysis.state}`);
+    }
+  }
+
+  if (state === 'unknown' || state === 'partial') {
+    if (candidate.recommendation === 'safe-to-upgrade') {
+      throw new Error(`${where} is "safe-to-upgrade" with runtime compatibility ${state}`);
+    }
+    // The `upstream-only` severity shape: no located impact, upstream
+    // findings, and therefore the "none used here" line.
+    if (candidate.impactCount === 0 && candidate.breakingCount > 0) {
+      throw new Error(
+        `${where} would render as "upstream-only" ("none used here") with runtime compatibility ${state}`,
+      );
+    }
+    if (/none (?:of which this repository uses|used here)/i.test(candidate.summary ?? '')) {
+      throw new Error(`${where} claims nothing is used here with runtime compatibility ${state}`);
+    }
+  }
+
+  // A partial overlap on its own is a review, never a migration headline. It
+  // may still coexist with one, but only when some *other* finding is
+  // genuinely actionable -- a high-confidence non-runtime site.
+  if (state === 'partial' && candidate.recommendation === 'manual-migration-required') {
+    const independentlyActionable = (candidate.breaking ?? []).some(
+      (change) =>
+        change.kind !== 'runtime-requirement' &&
+        (change.sites ?? []).some((site) => site.confidence === 'high'),
+    );
+    if (!independentlyActionable) {
+      throw new Error(`${where} headlines as "manual-migration-required" on a partial runtime overlap alone`);
+    }
+  }
+}
+
 function validateRuntimeSites(change) {
   if (change.kind !== 'runtime-requirement' || !change.runtime) return;
   if (change.runtime.kind === 'unsupported-runtime-range') {
@@ -155,13 +241,23 @@ function validateRuntimeSites(change) {
     // than re-deriving range intersection here: every site must be explicitly
     // marked as a genuine finding, and ownership still applies.
     for (const site of change.sites ?? []) {
-      if (site.runtimeVerdict !== 'incompatible' && site.runtimeVerdict !== 'partial') {
-        throw new Error(`unsupported ${change.runtime.runtime} range site at ${site.file} has no compatibility verdict recorded`);
-      }
+      const runtime = change.runtime.runtime;
       const file = site.file.toLowerCase();
       const base = file.split('/').pop();
-      if (!runtimeSiteOwnedBy(change.runtime.runtime, file, base, site.excerpt ?? '')) {
-        throw new Error(`${change.runtime.runtime} runtime finding crossed config ownership at ${site.file}`);
+      const excerpt = site.excerpt ?? '';
+      if (site.runtimeVerdict === 'unknown') {
+        // Same rule as the minimum-runtime path: an unreadable value is still
+        // this runtime's declaration only if the position names the runtime.
+        if (!unresolvedPositionNames(runtime, file, base, excerpt)) {
+          throw new Error(`${runtime} runtime finding marked unknown at a position that does not name ${runtime}: ${site.file}`);
+        }
+        continue;
+      }
+      if (site.runtimeVerdict !== 'incompatible' && site.runtimeVerdict !== 'partial') {
+        throw new Error(`unsupported ${runtime} range site at ${site.file} has no compatibility verdict recorded`);
+      }
+      if (!runtimeSiteOwnedBy(runtime, file, base, excerpt)) {
+        throw new Error(`${runtime} runtime finding crossed config ownership at ${site.file}`);
       }
     }
     return;
@@ -174,15 +270,22 @@ function validateRuntimeSites(change) {
     const excerpt = site.excerpt ?? '';
 
     if (site.runtimeVerdict === 'unknown') {
-      // An unresolved declaration (`node-version: ${{ matrix.node }}`,
-      // `image: $DEFAULT_CI_IMAGE`) is unknown *because* its value does not
-      // match any concrete runtime pattern -- that is the whole point, so the
-      // usual field/image-content ownership check would reject every
-      // legitimate one. Only CI ever produces these (see
-      // `findUnresolvedRuntimeDeclarations`), so ownership here just means
-      // "this is actually a CI file".
-      if (!/^\.github\/workflows\/.+\.ya?ml$/.test(file) && !/^\.(?:gitlab-ci|circleci)/.test(file)) {
-        throw new Error(`${runtime} runtime finding marked unknown outside CI at ${site.file}`);
+      // An unresolved declaration is unknown *because* its value could not be
+      // read -- so the usual "the excerpt contains a concrete version"
+      // ownership check cannot apply. What must still hold, and what this
+      // checks, is that the *position* names the runtime: a field whose name
+      // identifies it (`node-version:`), an image that names it
+      // (`node:${NODE_VERSION}`), or a file that is inherently that runtime's
+      // (`.nvmrc`, `pom.xml`, `.tool-versions`).
+      //
+      // `image: $DEFAULT_CI_IMAGE` passes none of those, which is exactly the
+      // bug this tripwire exists for: one generic CI image used to attach
+      // itself to Node, Ruby and Python simultaneously and push every
+      // otherwise-clean candidate into "Upgrade after review".
+      if (!unresolvedPositionNames(runtime, file, base, excerpt)) {
+        throw new Error(
+          `${runtime} runtime finding marked unknown at a position that does not name ${runtime}: ${site.file} (${excerpt})`,
+        );
       }
       continue;
     }
@@ -203,6 +306,47 @@ function validateRuntimeSites(change) {
       throw new Error(`compatible ${runtime} declaration was reported as an impact at ${site.file}`);
     }
   }
+}
+
+/**
+ * Does this position *name* the runtime, independently of whether its value
+ * could be read?
+ *
+ * Runtime identity is the precondition for an unresolved declaration to exist
+ * at all. Where identity comes from the filename (`.nvmrc` is Node's and
+ * nobody else's) or the field name (`ruby-version:`), an unreadable value is
+ * still that runtime's declaration. Where it would have to come from the
+ * value itself — a bare `image:` — an unreadable value names nothing.
+ */
+function unresolvedPositionNames(runtime, file, base, excerpt) {
+  const RUNTIME_FILES = {
+    node: ['.nvmrc', '.node-version', 'package.json'],
+    python: ['.python-version', 'runtime.txt', 'pyproject.toml', 'setup.cfg', 'setup.py'],
+    ruby: ['.ruby-version', 'gemfile'],
+    go: ['go.mod'],
+    java: ['pom.xml', 'build.gradle', 'build.gradle.kts'],
+    rust: ['rust-toolchain', 'rust-toolchain.toml', 'cargo.toml'],
+  };
+  if (base === '.tool-versions') {
+    const key = excerpt.match(/^\s*([a-z][a-z0-9_-]*)\s+/i)?.[1]?.toLowerCase();
+    const accepted = runtime === 'node' ? ['node', 'nodejs'] : runtime === 'python' ? ['python', 'python3'] : [runtime];
+    return Boolean(key && accepted.includes(key));
+  }
+  if ((RUNTIME_FILES[runtime] ?? []).includes(base)) return true;
+  if (runtime === 'ruby' && base.endsWith('.gemspec')) return true;
+
+  const fields = {
+    node: /node-version\s*:|"node"\s*:/i,
+    python: /python-version\s*:|python_requires|requires-python/i,
+    ruby: /ruby-version\s*:/i,
+    go: /go-version\s*:/i,
+    java: /java-version\s*:|JavaLanguageVersion|sourceCompatibility|targetCompatibility/i,
+    rust: /toolchain\s*:|channel\s*=/i,
+  };
+  if (fields[runtime]?.test(excerpt)) return true;
+  // A container image only counts when the image itself names the runtime;
+  // the tag is allowed to be a variable.
+  return runtimeImageOwnedBy(runtime, excerpt);
 }
 
 function runtimeSiteOwnedBy(runtime, file, base, excerpt) {

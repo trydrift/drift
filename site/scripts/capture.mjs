@@ -530,6 +530,16 @@ function slimCandidate(candidate) {
     // opposed to a clean security check or a version lookup alone. `null`
     // when no rationale was computed at all (e.g. an error candidate).
     hasCompatibilityEvidence: candidate.rationale?.hasCompatibilityEvidence ?? null,
+    // What Drift established about this repository's runtime, as a state
+    // rather than as a count of sites -- `unknown` and `partial` both
+    // routinely come with zero sites, and the validator's job is to prove
+    // neither can render as safe. `null` when the upgrade announced no
+    // runtime requirement at all, which is deliberately NOT `compatible`.
+    runtimeCompatibility: candidate.runtimeCompatibility ?? null,
+    // The per-requirement breakdown behind the state above, so the validator
+    // can check each runtime requirement's own answer rather than only the
+    // worst one.
+    runtimeAnalyses: candidate.runtimeAnalyses ?? [],
     breakingCount: candidate.breakingCount,
     impactCount: candidate.impactCount,
     impactFiles: candidate.impactFiles,

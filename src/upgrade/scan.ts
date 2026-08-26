@@ -183,6 +183,22 @@ export interface UpgradeCandidate {
    */
   runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
   /**
+   * The per-requirement breakdown behind {@link runtimeCompatibility}: which
+   * upstream runtime requirement, which runtime, what state, and why.
+   *
+   * Kept as structure rather than prose so a recording can capture it and the
+   * corpus validator can assert invariants against the state directly —
+   * "unknown may not be safe", "a generic image is attached to no runtime" —
+   * instead of grepping the rendered sentences for them.
+   */
+  runtimeAnalyses?: readonly {
+    changeId: string;
+    runtime: string;
+    state: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+    reason: string;
+    siteCount: number;
+  }[];
+  /**
    * `impactCount` includes a compiler-provable finding that only a batch pass
    * has weighed in on — not because isolated evidence found it real, but
    * because a batch is never allowed to clear one (see
@@ -2269,6 +2285,17 @@ async function analyzeUpgrade(args: {
             // both come with zero sites. See `severityOf`.
             ...(rationale.assessment.runtimeCompatibility
               ? { runtimeCompatibility: rationale.assessment.runtimeCompatibility }
+              : {}),
+            ...(runtimeAnalyses.length > 0
+              ? {
+                  runtimeAnalyses: runtimeAnalyses.map((analysis) => ({
+                    changeId: analysis.changeId,
+                    runtime: analysis.runtime,
+                    state: analysis.state,
+                    reason: analysis.reason,
+                    siteCount: analysis.sites.length,
+                  })),
+                }
               : {}),
           }
         : {}),

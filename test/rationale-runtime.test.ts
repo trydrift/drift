@@ -589,10 +589,13 @@ describe('checking this repository against a raised requirement', () => {
     assert.equal(results[0].verdict, 'partial');
   });
 
-  test('a declaration this cannot parse as a range is left out, not misjudged', () => {
+  test('a declaration this cannot parse as a range comes back unknown, not misjudged and not dropped', () => {
+    // Dropping it (which this used to do) makes an unreadable declaration
+    // indistinguishable from a repository that never wrote one — and the
+    // caller then reads the resulting empty list as compatibility.
     assert.deepEqual(
       checkNodeCompatibility([{ file: 'Dockerfile', line: 1, requirement: 'lts' }], '>=22.13.0'),
-      [],
+      [{ file: 'Dockerfile', line: 1, requirement: 'lts', verdict: 'unknown' }],
     );
   });
 });
