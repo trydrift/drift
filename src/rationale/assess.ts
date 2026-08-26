@@ -72,9 +72,14 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   const affected = impactSites.length;
   const files = new Set(impactSites.map((site) => site.file)).size;
-  const actionable = impactSites.some((site) => site.confidence === 'high');
-  const decisions = input.breakingChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
-  const mechanical = input.breakingChanges.length - decisions.length;
+  const highConfidenceChangeIds = new Set(
+    impactSites
+      .filter((site) => site.confidence === 'high')
+      .map((site) => site.breakingChangeId),
+  );
+  const actionableChanges = input.breakingChanges.filter((change) => highConfidenceChangeIds.has(change.id));
+  const actionableDecisions = actionableChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
+  const actionableMechanical = actionableChanges.length - actionableDecisions.length;
 
   /* Facts first, in the order a reader needs them. */
 
@@ -103,12 +108,12 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     reasons.push(
       `${affected} ${plural(affected, 'place', 'places')} in ${files} ${plural(files, 'file', 'files')} ${plural(affected, 'uses', 'use')} an API this upgrade changes.`,
     );
-    if (mechanical > 0) {
-      reasons.push(`${mechanical} of the changes can be applied mechanically.`);
+    if (actionableMechanical > 0) {
+      reasons.push(`${actionableMechanical} of the locally affected changes can be applied mechanically.`);
     }
-    if (decisions.length > 0) {
+    if (actionableDecisions.length > 0) {
       reasons.push(
-        `${decisions.length} ${plural(decisions.length, 'change requires', 'changes require')} a developer decision rather than a substitution.`,
+        `${actionableDecisions.length} locally affected ${plural(actionableDecisions.length, 'change requires', 'changes require')} a developer decision rather than a substitution.`,
       );
     }
   } else if (input.breakingChanges.length > 0) {
@@ -130,7 +135,11 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   /* Then the conclusion those facts support. */
 
-  const recommendation = decide(input, { affected, decisions: decisions.length, actionable });
+  const recommendation = decide(input, {
+    affected,
+    decisions: actionableDecisions.length,
+    actionable: actionableChanges.length > 0,
+  });
   const confidence = judgeConfidence(input);
 
   if (input.gaps.length > 0) {
