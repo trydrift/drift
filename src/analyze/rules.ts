@@ -451,33 +451,65 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   const version = /^([<>=^~]*)\s*(\d+(?:\.\d+){0,3})$/.exec(rawRequirement);
   if (!version) return null;
   const statedOperator = version[1] ?? '';
-  let operator = statedOperator || '>=';
-  let normalizedVersion = version[2]!;
+  const normalizedVersion = version[2]!;
+  const sourceText = match[0]!.trim();
+
   if (ruleId === 'prose-dropped-runtime') {
-    // “Dropped support for Node <18” announces the *remaining* supported
-    // range, i.e. Node >=18. A bare dropped version only identifies the old
-    // line. It does not identify the next real release or the new minimum —
-    // Ruby 2.7, for example, was followed by Ruby 3.0, not a fictional 2.8.
+    // Dropped-support prose names the range upstream *stopped* supporting. It
+    // is never itself the new required range — inverting an arbitrary operator
+    // into "the required range" gets the meaning backwards for anything but
+    // `<`/`<=`, whose complement is unambiguous. `^16`'s complement is not
+    // ">=17": upstream may still support 17 only partially, or not at all
+    // outside a later line. So every dropped-support form is represented as
+    // what it actually is — an unsupported range — and a `derivedMinimum` is
+    // attached only for the two operators where the complement is exact.
     if (statedOperator === '') {
       const parts = normalizedVersion.split('.');
       return {
         kind: 'unsupported-runtime-range',
         runtime: rawRuntime,
         requirement: parts.length < 3 ? `${normalizedVersion}.x` : normalizedVersion,
-        sourceText: match[0]!.trim(),
+        sourceText,
       };
     }
-    else if (operator === '<') operator = '>=';
-    else if (operator === '<=') operator = '>';
-    else if (operator === '>=') return null;
-    else if (operator === '>') return null;
-    else if (operator === '=' || operator === '==') return null;
+    if (statedOperator === '<') {
+      return {
+        kind: 'unsupported-runtime-range',
+        runtime: rawRuntime,
+        requirement: `<${normalizedVersion}`,
+        derivedMinimum: `>=${normalizedVersion}`,
+        sourceText,
+      };
+    }
+    if (statedOperator === '<=') {
+      return {
+        kind: 'unsupported-runtime-range',
+        runtime: rawRuntime,
+        requirement: `<=${normalizedVersion}`,
+        derivedMinimum: `>${normalizedVersion}`,
+        sourceText,
+      };
+    }
+    if (statedOperator === '^' || statedOperator === '~') {
+      return {
+        kind: 'unsupported-runtime-range',
+        runtime: rawRuntime,
+        requirement: `${statedOperator}${normalizedVersion}`,
+        sourceText,
+      };
+    }
+    // `>=`, `>`, `=`/`==`: "dropped support for Node >=X" does not identify a
+    // coherent unsupported line (its complement would be everything below X,
+    // which is not what "dropped" means), so this is left unparsed rather than
+    // guessed at.
+    return null;
   }
+
   return {
     kind: 'minimum-runtime',
     runtime: rawRuntime,
-    requirement: `${operator}${normalizedVersion}`,
-    sourceText: match[0]!.trim(),
+    requirement: `${statedOperator || '>='}${normalizedVersion}`,
+    sourceText,
   };
 }
 
@@ -501,7 +533,9 @@ export function remediationForProse(match: ProseMatch, dependency: string): stri
       return `Behaviour changed: ${match.summary}. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.`;
     case 'runtime-requirement':
       if (match.runtime?.kind === 'unsupported-runtime-range') {
-        return `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported, but the release note does not establish a replacement minimum. Review the project's declared runtime against authoritative upstream compatibility guidance before changing it.`;
+        return match.runtime.derivedMinimum
+          ? `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported. That unambiguously means a floor of ${match.runtime.derivedMinimum}; update the runtime version declared in CI workflows, engine fields, and container images accordingly.`
+          : `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported, but the release note does not establish a replacement minimum. Review the project's declared runtime against authoritative upstream compatibility guidance rather than inventing one.`;
       }
       return `${match.summary}. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.`;
     case 'module-system-change':

@@ -481,21 +481,83 @@ describe('recording audit: structured runtime requirements', () => {
     assert.equal(node?.runtime?.kind, 'unsupported-runtime-range');
     assert.equal(node?.runtime?.requirement, '16.x');
 
-    const files = [file('.ruby-version', 'config', '2.7')];
-    const sites = localize(
+    const withinRange = [file('.ruby-version', 'config', '2.7')];
+    const affectedSites = localize(
       [change({ kind: 'runtime-requirement', symbols: ['ruby'], runtime: ruby?.runtime })] as never,
+      [dependency('pkg', 'npm')],
+      buildIndex(withinRange),
+      withinRange,
+      { logger },
+    );
+    assert.equal(affectedSites.length, 1, 'a declaration inside the explicitly unsupported range is a real finding');
+    assert.equal(affectedSites[0]?.runtimeVerdict, 'incompatible');
+    assert.equal(affectedSites[0]?.confidence, 'high');
+
+    const outsideRange = [file('.ruby-version', 'config', '3.3.1')];
+    const cleanSites = localize(
+      [change({ kind: 'runtime-requirement', symbols: ['ruby'], runtime: ruby?.runtime })] as never,
+      [dependency('pkg', 'npm')],
+      buildIndex(outsideRange),
+      outsideRange,
+      { logger },
+    );
+    assert.deepEqual(cleanSites, [], 'a declaration outside the dropped range is unaffected');
+  });
+
+  test('an unsupported range that only partially overlaps a declared range surfaces as partial, not silent', () => {
+    const node16 = matchProse('Dropped support for Node 16').find((candidate) => candidate.kind === 'runtime-requirement');
+    const files = [file('package.json', 'json', '{"engines":{"node":">=16 <20"}}')];
+    const sites = localize(
+      [change({ kind: 'runtime-requirement', symbols: ['node'], runtime: node16?.runtime })] as never,
       [dependency('pkg', 'npm')],
       buildIndex(files),
       files,
       { logger },
     );
-    assert.deepEqual(sites, [], 'an unsupported line alone does not authorize a runtime-floor edit');
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]?.runtimeVerdict, 'partial');
+  });
+
+  test('dropped-support ^, ~, <, and <= preserve unsupported-range semantics rather than inverting into a floor', () => {
+    const cases = [
+      ['Dropped support for Node ^16', 'node', '^16', undefined],
+      ['Dropped support for Node ~16', 'node', '~16', undefined],
+      ['Dropped support for Node <18', 'node', '<18', '>=18'],
+      ['Dropped support for Node <=16', 'node', '<=16', '>16'],
+      ['No longer supports Python < 3.10', 'python', '<3.10', '>=3.10'],
+    ] as const;
+    for (const [text, runtime, requirement, derivedMinimum] of cases) {
+      const match = matchProse(text).find((candidate) => candidate.kind === 'runtime-requirement');
+      assert.equal(match?.runtime?.kind, 'unsupported-runtime-range', text);
+      assert.equal(match?.runtime?.runtime, runtime, text);
+      assert.equal(match?.runtime?.requirement, requirement, text);
+      assert.equal(match?.runtime && 'derivedMinimum' in match.runtime ? match.runtime.derivedMinimum : undefined, derivedMinimum, text);
+    }
+
+    const caretFiles = [file('.nvmrc', 'config', '16.20.0')];
+    const caretMatch = matchProse('Dropped support for Node ^16').find((c) => c.kind === 'runtime-requirement');
+    const caretSites = localize(
+      [change({ kind: 'runtime-requirement', symbols: ['node'], runtime: caretMatch?.runtime })] as never,
+      [dependency('pkg', 'npm')],
+      buildIndex(caretFiles),
+      caretFiles,
+      { logger },
+    );
+    assert.equal(caretSites.length, 1, 'a repository declaration inside the dropped ^16 line is affected');
+
+    const clearFiles = [file('.nvmrc', 'config', '18.0.0')];
+    const caretClear = localize(
+      [change({ kind: 'runtime-requirement', symbols: ['node'], runtime: caretMatch?.runtime })] as never,
+      [dependency('pkg', 'npm')],
+      buildIndex(clearFiles),
+      clearFiles,
+      { logger },
+    );
+    assert.deepEqual(caretClear, [], 'Node 18 is untouched by a dropped ^16 line');
   });
 
   test('explicit dropped ranges and minimum-runtime phrasings remain minimum findings', () => {
     const cases = [
-      ['Dropped support for Node.js < 18', 'node', '>=18'],
-      ['No longer supports Python < 3.10', 'python', '>=3.10'],
       ['Requires Node.js >=18', 'node', '>=18'],
       ['Requires Node.js >= 18', 'node', '>=18'],
       ['Minimum Java version raised to 21', 'java', '>=21'],

@@ -107,6 +107,117 @@ export function checkRuntimeCompatibility(
   return out;
 }
 
+/**
+ * Does a repository declaration fall inside a range upstream explicitly
+ * stopped supporting?
+ *
+ * The mirror image of `checkRuntimeCompatibility`'s minimum-floor check, and
+ * deliberately reuses the same subset/intersects primitives: a declaration
+ * that is a *subset* of the unsupported range is `incompatible` here (every
+ * version this repository could run is one upstream dropped), where the same
+ * subset relationship against a stated minimum would mean `compatible`. No
+ * intersection at all means the declaration is untouched by the drop.
+ */
+export function checkUnsupportedRuntimeRange(
+  runtime: RuntimeName,
+  declarations: readonly RuntimeDeclaration[],
+  unsupportedRequirement: string,
+): RuntimeCompatibility[] {
+  if (runtime === 'python') return checkUnsupportedPythonRange(declarations, unsupportedRequirement);
+
+  const unsupportedRange = normalizeSemverRange(unsupportedRequirement);
+  if (!unsupportedRange) return [];
+  const out: RuntimeCompatibility[] = [];
+  for (const declaration of declarations) {
+    const declaredRange = normalizeSemverRange(declaration.requirement);
+    if (!declaredRange) continue;
+    let verdict: RuntimeCompatibility['verdict'];
+    try {
+      if (semver.subset(declaredRange, unsupportedRange, { loose: true })) verdict = 'incompatible';
+      else if (!semver.intersects(declaredRange, unsupportedRange, { loose: true })) verdict = 'compatible';
+      else verdict = 'partial';
+    } catch {
+      continue;
+    }
+    out.push({ ...declaration, verdict });
+  }
+  return out;
+}
+
+function checkUnsupportedPythonRange(
+  declarations: readonly RuntimeDeclaration[],
+  unsupportedRequirement: string,
+): RuntimeCompatibility[] {
+  const unsupported = parseSpecifierSet(unsupportedRequirement);
+  const out: RuntimeCompatibility[] = [];
+  for (const declaration of declarations) {
+    const declared = parseSpecifierSet(declaration.requirement);
+    let verdict: RuntimeCompatibility['verdict'];
+    if (isSubsetInterval(declared, unsupported)) verdict = 'incompatible';
+    else if (!intersectsInterval(declared, unsupported)) verdict = 'compatible';
+    else verdict = 'partial';
+    out.push({ ...declaration, verdict });
+  }
+  return out;
+}
+
+/**
+ * A runtime declaration Drift found but could not resolve to a literal
+ * version — a GitHub Actions matrix expression (`${{ matrix.node }}`), an
+ * unexpanded shell/CI variable (`$NODE_VERSION`) — so compatibility against a
+ * dependency's requirement is genuinely unknown rather than absent.
+ *
+ * Kept distinct from `RuntimeDeclaration`/`RuntimeCompatibility` because
+ * "Drift could not tell" and "the repository has no such declaration" must
+ * never collapse into the same empty result: the first is a reason to ask a
+ * developer to check by hand, the second is a reason to say nothing at all.
+ */
+export interface UnresolvedRuntimeDeclaration {
+  file: string;
+  line: number;
+  rawText: string;
+}
+
+const CI_RUNTIME_FIELDS: Record<RuntimeName, RegExp> = {
+  node: /\bnode-version\s*:\s*['"]?([^\s'"#]+)/i,
+  python: /\bpython-version\s*:\s*['"]?([^\s'"#]+)/i,
+  ruby: /\bruby-version\s*:\s*['"]?([^\s'"#]+)/i,
+  go: /\bgo-version\s*:\s*['"]?([^\s'"#]+)/i,
+  java: /\bjava-version\s*:\s*['"]?([^\s'"#]+)/i,
+  rust: /\btoolchain\s*:\s*['"]?([^\s'"#]+)/i,
+};
+
+/**
+ * Find CI runtime declarations that could not be resolved to a literal
+ * version, so a dynamic matrix build cannot silently read as "no runtime
+ * declared" and turn an unverified compatibility question into an implicit
+ * "safe". Only CI is covered here: it is the source where dynamic
+ * expressions (`${{ matrix.node }}`, `$NODE_VERSION`) are idiomatic and
+ * common; other declaration surfaces (`.nvmrc`, `engines.node`) are
+ * ordinarily literal, and a value Drift cannot parse there is left as an
+ * absence rather than guessed to be "dynamic".
+ */
+export function findUnresolvedRuntimeDeclarations(
+  files: readonly { path: string; content: string }[],
+  runtime: RuntimeName,
+  member?: string,
+  allMembers?: readonly string[],
+): UnresolvedRuntimeDeclaration[] {
+  const scoped = scopedTo(files, member, allMembers);
+  const out: UnresolvedRuntimeDeclaration[] = [];
+  for (const { path, content } of scoped) {
+    if (!isCiPath(path)) continue;
+    for (const [i, line] of content.split('\n').entries()) {
+      const raw = CI_RUNTIME_FIELDS[runtime].exec(line)?.[1];
+      if (raw && /[${}]/.test(raw)) out.push({ file: path, line: i + 1, rawText: raw });
+
+      const image = /^\s*(?:-\s*)?image\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
+      if (image && /[${}]/.test(image)) out.push({ file: path, line: i + 1, rawText: image });
+    }
+  }
+  return out;
+}
+
 const TOOL_VERSION_KEYS: Record<RuntimeName, readonly string[]> = {
   node: ['node', 'nodejs'],
   python: ['python', 'python3'],

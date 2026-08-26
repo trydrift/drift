@@ -72,6 +72,15 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   const affected = impactSites.length;
   const files = new Set(impactSites.map((site) => site.file)).size;
+  // A runtime requirement is a package-wide compatibility condition, not a
+  // symbol a caller invokes — ".nvmrc" and ".tool-versions" are not API call
+  // sites, and reasoning that says a repository "uses an API" for a runtime
+  // floor mismatch is simply false. Split by kind up front so every sentence
+  // below can name the right kind of fact.
+  const changeById = new Map(input.breakingChanges.map((c) => [c.id, c]));
+  const apiSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind !== 'runtime-requirement');
+  const apiFiles = new Set(apiSites.map((site) => site.file)).size;
+  const runtimeSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind === 'runtime-requirement');
   const highConfidenceChangeIds = new Set(
     impactSites
       .filter((site) => site.confidence === 'high')
@@ -104,10 +113,15 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     }
   }
 
-  if (affected > 0) {
+  if (apiSites.length > 0) {
     reasons.push(
-      `${affected} ${plural(affected, 'place', 'places')} in ${files} ${plural(files, 'file', 'files')} ${plural(affected, 'uses', 'use')} an API this upgrade changes.`,
+      `${apiSites.length} ${plural(apiSites.length, 'place', 'places')} in ${apiFiles} ${plural(apiFiles, 'file', 'files')} ${plural(apiSites.length, 'uses', 'use')} an API this upgrade changes.`,
     );
+  }
+  if (runtimeSites.length > 0) {
+    reasons.push(...describeRuntimeImpact(runtimeSites));
+  }
+  if (affected > 0) {
     if (actionableMechanical > 0) {
       reasons.push(`${actionableMechanical} of the locally affected changes can be applied mechanically.`);
     }
@@ -179,48 +193,53 @@ function decide(
     return counts.decisions > 0 ? 'manual-migration-required' : 'upgrade-after-review';
   }
 
-  // No evidence is not the same as no findings, and must never read as one.
-  // Checked last among the negative outcomes so that a genuine finding — which
-  // proves something *was* readable — always wins over the absence of others.
-  if (input.gaps.length > 0 && input.breakingChanges.length === 0 && !answeredSomething(input)) {
-    return 'insufficient-evidence';
+  const securityFavors = security.checked && security.resolved.length > 0;
+  const maintenanceFavors = maintenance.facts.some((fact) => fact.polarity === 'favors');
+
+  // "No breaking changes were found" only supports a compatibility claim when
+  // something actually looked at compatibility. A clean OSV check, a fine
+  // license, and a version that merely exists all answer *other* questions —
+  // none of them is an account of whether this code still works. Without a
+  // computed surface diff or compatibility prose that was actually fetched
+  // and read, Drift has not characterized compatibility at all, and "no
+  // breaking changes" here means "none were looked for", not "none exist".
+  if (input.breakingChanges.length === 0 && !hasCompatibilityEvidence(input)) {
+    // A resolved vulnerability (or other favorable maintenance fact) is still
+    // a real reason to move — but say so without implying compatibility was
+    // verified, which `upgrade-recommended`'s wording does and `safe-to-upgrade`
+    // does not.
+    return securityFavors || maintenanceFavors ? 'upgrade-recommended' : 'insufficient-evidence';
   }
 
-  if (
-    (security.checked && security.resolved.length > 0) ||
-    maintenance.facts.some((fact) => fact.polarity === 'favors')
-  ) {
-    return 'upgrade-recommended';
-  }
+  if (securityFavors || maintenanceFavors) return 'upgrade-recommended';
 
   return 'safe-to-upgrade';
 }
 
 /**
- * Did any source actually answer for this dependency?
+ * Did Drift obtain evidence that actually bears on *compatibility* — as
+ * opposed to evidence that merely answers some other question about the
+ * upgrade (a clean security advisory lookup, a fine license, proof the target
+ * version exists)?
  *
- * A surface diff that ran and found nothing is an answer. So is OSV replying
- * "no advisories". Both are the difference between "Drift checked and this is
- * clean" and "Drift could not check", and conflating them is the specific lie
- * this codebase already had to be corrected for once.
+ * This is the one gate that may unlock `safe-to-upgrade` or let "no breaking
+ * changes found" stand as a finding rather than a blank. A successful OSV
+ * check answers "does this introduce a known vulnerability", not "does this
+ * repository's code still work" — the two are independent facts, and treating
+ * the first as proof of the second is exactly what let Drift call a major
+ * version bump with no reachable changelog, no TypeScript declarations, and no
+ * resolvable source repository "Safe to upgrade".
  *
- * So are release notes that were fetched and read. That was missing, and the
- * omission produced its own smaller version of the same lie in the other
- * direction: a library whose four release notes Drift had downloaded, parsed,
- * and summarised as announcing nothing breaking was still reported as *not
- * verified*, next to a library where every source had failed. The two are not
- * the same fact. Prose is weaker than a computed diff — it reports what the
- * maintainer chose to write down — and it stays weaker: `judgeConfidence` caps
- * a prose-only assessment at `medium`, and the gap sentence saying so is
- * printed either way.
+ * A computed API surface diff is direct evidence: an observation of the
+ * shipped artefact itself. Release notes, changelogs and migration guides
+ * that were actually fetched and read are weaker but still real: they report
+ * what the maintainer chose to write down, and a document read end to end
+ * with no breaking passage in it is an answer, not a blank — see
+ * `judgeConfidence`, which caps a prose-only basis at `medium` rather than
+ * treating it as equivalent to a diff.
  */
-function answeredSomething(input: AssessmentInput): boolean {
-  return (
-    input.surfaceCompared ||
-    input.security.checked ||
-    (input.proseRead ?? 0) > 0 ||
-    proseEvidence(input).length > 0
-  );
+function hasCompatibilityEvidence(input: AssessmentInput): boolean {
+  return input.surfaceCompared || (input.proseRead ?? 0) > 0 || proseEvidence(input).length > 0;
 }
 
 /** Release notes, changelogs and migration guides read for this dependency. */
@@ -276,6 +295,39 @@ function joinList(items: readonly string[]): string {
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/**
+ * Rationale for runtime-requirement impact sites, kept apart from the
+ * API-usage sentence above because "N places use an API" is simply false for
+ * a `.nvmrc` or a CI `node-version:` line — the repository's declared runtime
+ * either satisfies a floor or it does not, and no call site is involved.
+ */
+function describeRuntimeImpact(sites: readonly ImpactSite[]): string[] {
+  const out: string[] = [];
+  const incompatible = sites.filter((site) => site.runtimeVerdict !== 'partial' && site.runtimeVerdict !== 'unknown');
+  const partial = sites.filter((site) => site.runtimeVerdict === 'partial');
+  const unknown = sites.filter((site) => site.runtimeVerdict === 'unknown');
+
+  if (incompatible.length > 0) {
+    const n = incompatible.length;
+    out.push(
+      `${n} runtime ${plural(n, 'declaration', 'declarations')} in this repository ${plural(n, 'does not satisfy', 'do not satisfy')} this upgrade's runtime requirement.`,
+    );
+  }
+  if (partial.length > 0) {
+    const n = partial.length;
+    out.push(
+      `${n} runtime ${plural(n, 'declaration allows', 'declarations allow')} versions this upgrade's runtime requirement rejects.`,
+    );
+  }
+  if (unknown.length > 0) {
+    const n = unknown.length;
+    out.push(
+      `${n} runtime ${plural(n, 'declaration is', 'declarations are')} dynamically defined; Drift could not determine whether ${plural(n, 'it satisfies', 'they satisfy')} this upgrade's runtime requirement.`,
+    );
+  }
+  return out;
 }
 
 function plural(count: number, one: string, many: string): string {

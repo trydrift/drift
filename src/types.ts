@@ -265,9 +265,17 @@ export interface MinimumRuntimeRequirement {
 export interface UnsupportedRuntimeRange {
   kind: 'unsupported-runtime-range';
   runtime: RuntimeName;
+  /** The unsupported range exactly as upstream stated it, e.g. "16.x", "^16", "<18". */
   requirement: string;
   /** The exact prose fragment from which the requirement was parsed. */
   sourceText: string;
+  /**
+   * A replacement floor, but only when the unsupported range's complement is
+   * mathematically unambiguous (`<18` implies `>=18`; `^16` does not imply
+   * anything Drift is willing to state as a floor). Never invented — see
+   * `parseRuntimeRequirement` in `analyze/rules.ts`.
+   */
+  derivedMinimum?: string;
 }
 
 /** Structured runtime evidence. Only `minimum-runtime` implies a local floor. */
@@ -441,6 +449,17 @@ export interface ImpactSite {
    */
   matchedText?: string;
   confidence: Confidence;
+  /**
+   * Set only for a `runtime-requirement` site: what compatibility state this
+   * particular declaration was found in. Distinct from `confidence`, which
+   * answers a different question (how sure Drift is about the site itself,
+   * not what it means) — an `unknown` site is one Drift is quite sure it
+   * found, and quite unsure how to interpret, hence `low` confidence paired
+   * with `runtimeVerdict: 'unknown'` rather than one field trying to carry
+   * both. Used to keep runtime rationale text (§ `assess.ts`) and the
+   * recording validator honest without re-deriving the verdict from prose.
+   */
+  runtimeVerdict?: 'incompatible' | 'partial' | 'unknown';
 }
 
 export type PlanEdgeReason =

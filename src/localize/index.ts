@@ -14,7 +14,10 @@ import { moduleMapKey, type ModuleMaps } from './modules.js';
 import { acceptsCallOfArity, callCannotResolveTo } from '../evidence/type-surface.js';
 import {
   checkRuntimeCompatibility,
+  checkUnsupportedRuntimeRange,
   findRuntimeDeclarations,
+  findUnresolvedRuntimeDeclarations,
+  type RuntimeCompatibility,
 } from '../rationale/runtime.js';
 
 /**
@@ -331,27 +334,68 @@ function localizeRuntimeRequirement(
   member?: string,
   allMembers?: readonly string[],
 ): ImpactSite[] {
-  // Knowing that one runtime line was dropped is not the same as knowing the
-  // replacement floor. Without a stated minimum there is no declaration Drift
-  // can honestly call incompatible and no mechanical config edit to propose.
-  if (change.runtime?.kind !== 'minimum-runtime') return [];
   const runtime = change.runtime?.runtime;
   const requirement = change.runtime?.requirement;
-  if (!runtime || !requirement) return [];
+  if (!change.runtime || !runtime || !requirement) return [];
 
   const files = [...contentByPath].map(([path, content]) => ({ path, content }));
   const declarations = findRuntimeDeclarations(files, runtime, member, allMembers);
+
+  const excerptFor = (declaration: RuntimeCompatibility) =>
+    files.find((file) => file.path === declaration.file)?.content.split('\n')[declaration.line - 1]?.trim().slice(0, 200) ?? '';
+
+  // An unsupported-range finding ("Removed support for Ruby 2.7") has no
+  // stated replacement floor, but that does not mean it cannot be checked: a
+  // repository declaration that falls inside the range upstream explicitly
+  // dropped is directly established as incompatible, independent of what the
+  // new minimum turns out to be.
+  if (change.runtime.kind === 'unsupported-runtime-range') {
+    const compatibility = checkUnsupportedRuntimeRange(runtime, declarations, requirement);
+    return compatibility
+      .filter((declaration) => declaration.verdict !== 'compatible')
+      .map((declaration) => ({
+        breakingChangeId: change.id,
+        file: declaration.file,
+        line: declaration.line,
+        excerpt: excerptFor(declaration),
+        matchedSymbol: runtime,
+        confidence: 'high' as const,
+        runtimeVerdict: declaration.verdict === 'partial' ? ('partial' as const) : ('incompatible' as const),
+      }));
+  }
+
   const compatibility = checkRuntimeCompatibility(runtime, declarations, requirement);
-  return compatibility
+  const sites: ImpactSite[] = compatibility
     .filter((declaration) => declaration.verdict !== 'compatible')
     .map((declaration) => ({
       breakingChangeId: change.id,
       file: declaration.file,
       line: declaration.line,
-      excerpt: files.find((file) => file.path === declaration.file)?.content.split('\n')[declaration.line - 1]?.trim().slice(0, 200) ?? '',
+      excerpt: excerptFor(declaration),
       matchedSymbol: runtime,
       confidence: 'high' as const,
+      runtimeVerdict: declaration.verdict === 'partial' ? ('partial' as const) : ('incompatible' as const),
     }));
+
+  // A dynamic CI declaration (`node-version: ${{ matrix.node }}`) is not "no
+  // declaration" — it is a declaration Drift cannot resolve. Surfacing it as a
+  // low-confidence, explicitly unknown site keeps this from disappearing into
+  // the same zero-site result as a repository that genuinely has no CI
+  // runtime pin at all, which would otherwise read as compatibility having
+  // been checked and passed.
+  for (const unresolved of findUnresolvedRuntimeDeclarations(files, runtime, member, allMembers)) {
+    sites.push({
+      breakingChangeId: change.id,
+      file: unresolved.file,
+      line: unresolved.line,
+      excerpt: files.find((file) => file.path === unresolved.file)?.content.split('\n')[unresolved.line - 1]?.trim().slice(0, 200) ?? '',
+      matchedSymbol: runtime,
+      confidence: 'low',
+      runtimeVerdict: 'unknown',
+    });
+  }
+
+  return sites;
 }
 
 /**
