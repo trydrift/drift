@@ -238,6 +238,39 @@ describe('recording audit: owner-aware localization', () => {
     assert.equal(sites.length, 0);
   });
 
+  test('C++ self calls and declarations do not impersonate a dependency function', () => {
+    const files = [file(
+      'src/light.h',
+      'cpp',
+      '#include <FastLED.h>\nclass Light {\n public:\n  inline int size() const { return 1; }\n  void draw() { this->size(); }\n};',
+    )];
+    const sites = localize(
+      [change({ dependency: 'FastLED', symbols: ['size'], fromKind: 'function' })],
+      [dependency('FastLED', 'arduino')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+    assert.equal(sites.length, 0);
+  });
+
+  test('a removed C++ function does not match a longer namespace path but a call still does', () => {
+    const files = [file(
+      'src/log.cpp',
+      'cpp',
+      '#include <spdlog/spdlog.h>\nvoid f() {\n  auto x = spdlog::level::trace;\n  spdlog::level();\n}',
+    )];
+    const sites = localize(
+      [change({ dependency: 'spdlog', symbols: ['spdlog.level', 'level'], fromKind: 'function' })],
+      [dependency('spdlog', 'conan')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+    assert.equal(sites.length, 1);
+    assert.match(sites[0]?.excerpt ?? '', /spdlog::level\(\)/);
+  });
+
   test('an explicitly owner-resolved member still localizes', () => {
     const files = [file('src/client.ts', 'typescript', "import { Client } from 'pkg';\nClient.request();")];
     const sites = localize(
