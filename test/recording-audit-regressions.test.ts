@@ -74,6 +74,7 @@ describe('recording audit: Python public surface identity', () => {
       await mkdir(join(archiveRoot, 'itemloaders'), { recursive: true });
       await mkdir(join(archiveRoot, 'docs'), { recursive: true });
       await writeFile(script, SURFACE_SCRIPT, 'utf8');
+      await writeFile(join(archiveRoot, 'pyproject.toml'), '[project]\nname = "itemloaders"\n', 'utf8');
       await writeFile(join(archiveRoot, 'itemloaders', '__init__.py'), '', 'utf8');
       await writeFile(
         join(archiveRoot, 'itemloaders', 'processors.py'),
@@ -119,6 +120,30 @@ describe('recording audit: Python public surface identity', () => {
       }
     }
   });
+
+  test('PEP 420 namespace packages retain their top-level import identity', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-python-surface-'));
+    const script = join(root, 'surface.py');
+    const archive = join(root, 'extraction', 'google-cloud-foo-1.0.0');
+    try {
+      await mkdir(join(archive, 'google', 'cloud', 'foo'), { recursive: true });
+      await mkdir(join(archive, 'google_cloud_foo.egg-info'), { recursive: true });
+      await mkdir(join(archive, 'tools', 'utility'), { recursive: true });
+      await writeFile(script, SURFACE_SCRIPT, 'utf8');
+      await writeFile(join(archive, 'pyproject.toml'), '[project]\nname = "google-cloud-foo"\n', 'utf8');
+      await writeFile(join(archive, 'google_cloud_foo.egg-info', 'top_level.txt'), 'google\n', 'utf8');
+      await writeFile(join(archive, 'google', 'cloud', 'foo', '__init__.py'), '', 'utf8');
+      await writeFile(join(archive, 'google', 'cloud', 'foo', 'client.py'), 'def fetch(): pass\n', 'utf8');
+      await writeFile(join(archive, 'tools', 'utility', '__init__.py'), 'def accidental_api(): pass\n', 'utf8');
+
+      const result = await execFile('python3', [script, join(root, 'extraction'), 'google-cloud-foo']);
+      const names = (JSON.parse(result.stdout) as { name: string }[]).map((symbol) => symbol.name);
+      assert.ok(names.includes('google.cloud.foo.client.fetch'));
+      assert.ok(!names.some((name) => name.startsWith('cloud.foo') || name.startsWith('tools.')));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('recording audit: C and C++ public surface identity', () => {
@@ -149,6 +174,44 @@ describe('recording audit: C and C++ public surface identity', () => {
     assert.ok(entry?.members.includes('operator[](size_t)'));
     assert.ok(entry?.members.includes('operator()(int)'));
     assert.ok(entry?.members.includes('operator==(const Value &) const'));
+  });
+
+  test('operator cv/ref/noexcept qualifiers remain part of canonical identity', () => {
+    const [entry] = parseHeader([
+      'class Value {',
+      ' public:',
+      '  explicit operator bool() const & noexcept;',
+      '  void operator()() &;',
+      '  void operator()(int value) &&;',
+      '  int operator[](size_t index) const volatile &;',
+      '};',
+    ].join('\n'));
+
+    assert.ok(entry?.members.includes('operator bool const & noexcept'));
+    assert.ok(entry?.members.includes('operator()() &'));
+    assert.ok(entry?.members.includes('operator()(int) &&'));
+    assert.ok(entry?.members.includes('operator[](size_t) const volatile &'));
+  });
+
+  test('ref-qualifier changes are breaking and uncommon public operators are retained', () => {
+    const before = parseHeaderSurface([{ path: 'api.h', content: [
+      'class Awaitable {',
+      ' public:',
+      '  Awaitable operator co_await() &;',
+      '};',
+      'long double operator "" _distance(long double);',
+    ].join('\n') }]);
+    const after = parseHeaderSurface([{ path: 'api.h', content: [
+      'class Awaitable {',
+      ' public:',
+      '  Awaitable operator co_await() &&;',
+      '};',
+      'long double operator "" _distance(long double);',
+    ].join('\n') }]);
+
+    assert.ok(before.get('Awaitable')?.members.includes('operator co_await() &'));
+    assert.ok(before.has('operator""_distance(long double)'));
+    assert.ok(diffSurfaces(before, after).some((finding) => finding.symbol.includes('operator co_await() &')));
   });
 
   test('namespace ownership survives surface extraction', () => {
@@ -385,7 +448,7 @@ describe('recording audit: structured runtime requirements', () => {
     const [match] = matchProse('This release now requires Node.js >=18.');
     assert.equal(match?.kind, 'runtime-requirement');
     assert.deepEqual(match?.runtime, {
-      kind: 'runtime-requirement',
+      kind: 'minimum-runtime',
       runtime: 'node',
       requirement: '>=18',
       sourceText: 'now requires Node.js >=18',
@@ -405,11 +468,33 @@ describe('recording audit: structured runtime requirements', () => {
     }
   });
 
-  test('legitimate dropped-support and minimum-runtime phrasings remain structured findings', () => {
+  test('bare dropped-support versions remain unsupported ranges without invented floors', () => {
+    const ruby = matchProse('Removed support for Ruby 2.7').find((candidate) => candidate.kind === 'runtime-requirement');
+    assert.deepEqual(ruby?.runtime, {
+      kind: 'unsupported-runtime-range',
+      runtime: 'ruby',
+      requirement: '2.7.x',
+      sourceText: 'Removed support for Ruby 2.7',
+    });
+
+    const node = matchProse('Dropped support for Node 16').find((candidate) => candidate.kind === 'runtime-requirement');
+    assert.equal(node?.runtime?.kind, 'unsupported-runtime-range');
+    assert.equal(node?.runtime?.requirement, '16.x');
+
+    const files = [file('.ruby-version', 'config', '2.7')];
+    const sites = localize(
+      [change({ kind: 'runtime-requirement', symbols: ['ruby'], runtime: ruby?.runtime })] as never,
+      [dependency('pkg', 'npm')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+    assert.deepEqual(sites, [], 'an unsupported line alone does not authorize a runtime-floor edit');
+  });
+
+  test('explicit dropped ranges and minimum-runtime phrasings remain minimum findings', () => {
     const cases = [
-      ['Dropped support for Node 16', 'node', '>=17'],
       ['Dropped support for Node.js < 18', 'node', '>=18'],
-      ['Removed support for Ruby 2.7', 'ruby', '>=2.8'],
       ['No longer supports Python < 3.10', 'python', '>=3.10'],
       ['Requires Node.js >=18', 'node', '>=18'],
       ['Requires Node.js >= 18', 'node', '>=18'],
@@ -417,6 +502,7 @@ describe('recording audit: structured runtime requirements', () => {
     ] as const;
     for (const [text, runtime, requirement] of cases) {
       const match = matchProse(text).find((candidate) => candidate.kind === 'runtime-requirement');
+      assert.equal(match?.runtime?.kind, 'minimum-runtime', text);
       assert.equal(match?.runtime?.runtime, runtime, text);
       assert.equal(match?.runtime?.requirement, requirement, text);
     }
@@ -433,7 +519,7 @@ describe('recording audit: structured runtime requirements', () => {
       kind: 'runtime-requirement',
       dependency: 'pkg',
       symbols: ['node'],
-      runtime: { kind: 'runtime-requirement', runtime: 'node', requirement: '>=24', sourceText: 'Node >=24' },
+      runtime: { kind: 'minimum-runtime', runtime: 'node', requirement: '>=24', sourceText: 'Node >=24' },
     });
     const sites = localize([nodeChange], [dependency('pkg', 'npm')], buildIndex(files), files, { logger });
     assert.deepEqual(sites.map((site) => [site.file, site.line]), [
@@ -475,7 +561,7 @@ describe('recording audit: structured runtime requirements', () => {
         id: `runtime-${runtime}`,
         kind: 'runtime-requirement',
         symbols: [runtime],
-        runtime: { kind: 'runtime-requirement', runtime, requirement, sourceText: `${runtime} ${requirement}` },
+        runtime: { kind: 'minimum-runtime', runtime, requirement, sourceText: `${runtime} ${requirement}` },
       });
       const sites = localize([runtimeChange] as never, [dependency('pkg', 'npm')], buildIndex(files), files, { logger });
       assert.deepEqual(sites.map((site) => site.file), [path], runtime);
@@ -492,7 +578,8 @@ describe('recording audit: Swift tag families', () => {
       current: '3.2.1',
       range: '3.2.1',
     });
-    assert.deepEqual(result, { outcome: 'up-to-date' });
+    assert.equal(result.outcome, 'unchecked');
+    if (result.outcome === 'unchecked') assert.match(result.reason, /no tags.*family/i);
   });
 
   test('newer tags in the same semantic family remain selectable', async () => {
