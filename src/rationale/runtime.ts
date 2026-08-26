@@ -377,7 +377,18 @@ function findNodeDeclarationsIn(
  * finding the root package's own declaration, but wrong to then treat as
  * repository-global the way a root `.nvmrc` or CI workflow is.
  */
-const MANIFEST_BASENAMES = new Set(['package.json', 'pyproject.toml', 'setup.cfg', 'setup.py']);
+const MANIFEST_BASENAMES = new Set([
+  'package.json',
+  'pyproject.toml',
+  'setup.cfg',
+  'setup.py',
+  'gemfile',
+  'go.mod',
+  'pom.xml',
+  'build.gradle',
+  'build.gradle.kts',
+  'cargo.toml',
+]);
 
 function scopedTo<T extends { path: string }>(
   files: readonly T[],
@@ -400,7 +411,7 @@ function scopedTo<T extends { path: string }>(
       // into a sibling member's compatibility check just because the root
       // happens to also be a workspace member.
       const base = (f.path.split('/').pop() ?? '').toLowerCase();
-      return !MANIFEST_BASENAMES.has(base);
+      return !MANIFEST_BASENAMES.has(base) && !base.endsWith('.gemspec');
     }
     return false;
   });

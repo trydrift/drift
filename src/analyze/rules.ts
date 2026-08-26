@@ -419,7 +419,9 @@ export function matchProse(passage: string): ProseMatch[] {
     out.push({
       ruleId: rule.id,
       kind: rule.kind,
-      summary: rule.summarize(match),
+      summary: runtime
+        ? `Minimum ${runtime.runtime} version is now ${runtime.requirement}`
+        : rule.summarize(match),
       symbols: symbol ? [symbol] : [],
       ...(runtime ? { runtime } : {}),
       replacementSymbols: replacement ? [replacement] : [],
@@ -448,11 +450,15 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   if (!version) return null;
   const statedOperator = version[1] ?? '';
   let operator = statedOperator || '>=';
+  let normalizedVersion = version[2]!;
   if (ruleId === 'prose-dropped-runtime') {
     // “Dropped support for Node <18” announces the *remaining* supported
     // range, i.e. Node >=18. A bare dropped version is the old supported line
     // itself, so the new range starts above it.
-    if (statedOperator === '') operator = `>=${nextVersion(version[2]!)}`;
+    if (statedOperator === '') {
+      operator = '>=';
+      normalizedVersion = nextVersion(normalizedVersion);
+    }
     else if (operator === '<') operator = '>=';
     else if (operator === '<=') operator = '>';
     else if (operator === '>=') return null;
@@ -462,9 +468,7 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   return {
     kind: 'runtime-requirement',
     runtime: rawRuntime,
-    requirement: operator.startsWith('>=') && operator.length > 2
-      ? operator
-      : `${operator}${version[2]}`,
+    requirement: `${operator}${normalizedVersion}`,
     sourceText: match[0]!.trim(),
   };
 }
