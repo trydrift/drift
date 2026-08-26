@@ -213,6 +213,19 @@ export interface UpgradeRationale {
    * the bug this field exists to prevent.
    */
   gaps: string[];
+  /**
+   * Whether Drift obtained evidence bearing on *compatibility* specifically —
+   * a computed API surface diff, or compatibility prose actually fetched and
+   * read — as opposed to evidence answering some other question (a clean
+   * security check, a fine license, a version lookup that merely confirms the
+   * target exists). See `hasCompatibilityEvidence` in `assess.ts`.
+   *
+   * Carried on the rationale (not just folded into `assessment.recommendation`)
+   * so downstream consumers — recording capture, the corpus validator — can
+   * check "a safe-to-upgrade claim implies real evidence" structurally,
+   * without re-deriving it from `gaps` prose or the recommendation label alone.
+   */
+  hasCompatibilityEvidence: boolean;
 }
 
 const SEVERITY_ORDER: Record<Severity, number> = {

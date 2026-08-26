@@ -17,7 +17,7 @@ import { assessSecurity, assessSecurityBatch, unchecked, type OsvOptions, type S
 import { assessMaintenance } from './maintenance.js';
 import { assessLicense } from './license.js';
 import { describeAdditions, improvementsFrom, summarizeRelease } from './summary.js';
-import { assessUpgrade } from './assess.js';
+import { assessUpgrade, hasCompatibilityEvidence } from './assess.js';
 import type { LicenseFinding, SecurityAssessment, UpgradeRationale } from './types.js';
 import type { RuntimeDeclaration } from './runtime.js';
 import { startSpan as diagSpan, withSpan as diagWithSpan } from '../util/diagnostics.js';
@@ -392,7 +392,7 @@ export async function finalizeRationale(
         licenseUnknown: license.verdict === 'unknown',
       });
 
-      const assessment = assessUpgrade({
+      const assessmentInput = {
         dependency: change.name,
         workspace: change.workspace,
         breakingChanges,
@@ -404,7 +404,8 @@ export async function finalizeRationale(
         gaps,
         surfaceCompared,
         proseRead: prose.length,
-      });
+      };
+      const assessment = assessUpgrade(assessmentInput);
 
       logger.debug(`${change.name} ${from} → ${to}: ${assessment.recommendation}`);
 
@@ -419,6 +420,15 @@ export async function finalizeRationale(
         summary,
         assessment,
         gaps,
+        // Whether Drift actually obtained evidence bearing on *compatibility*
+        // (a computed surface diff, or compatibility prose fetched and read) —
+        // as opposed to evidence that answers some other question (a clean
+        // security check, a fine license, a version that merely exists).
+        // Exposed alongside `assessment` so downstream consumers (recording
+        // capture, the corpus validator) can check the "safe to upgrade
+        // implies real evidence" invariant structurally, without re-parsing
+        // `gaps` prose.
+        hasCompatibilityEvidence: hasCompatibilityEvidence(assessmentInput),
       };
     },
   );
@@ -582,6 +592,7 @@ function degraded(change: DependencyChange, reason: string): UpgradeRationale {
     improvements: [],
     license: { verdict: 'unknown', statement: 'Not checked.', introduced: [] },
     summary: { changes: [], unrelated: 0 },
+    hasCompatibilityEvidence: false,
     assessment: {
       recommendation: 'insufficient-evidence',
       reasons: [reason],

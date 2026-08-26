@@ -59,6 +59,7 @@ function validateAuditInvariants(recording, name) {
       validateRuntime(change);
       validateRuntimeSites(change);
     }
+    validateCompatibilityEvidence(candidate, name);
     validateCorpusRegressionTripwires(recording, candidate);
   }
 
@@ -106,11 +107,45 @@ function validateRuntime(change) {
   }
 }
 
+/**
+ * A candidate must never claim compatibility was verified when Drift did not
+ * actually obtain evidence bearing on it. This is the corpus-level tripwire
+ * for the "safe to upgrade" false-all-clear class of bug: a clean security
+ * check, a fine license, or proof the target version exists are all real
+ * facts, but none of them says anything about whether the repository's code
+ * still works, and none may stand in for a computed surface diff or
+ * compatibility prose that was actually fetched and read.
+ *
+ * Driven by the structured `hasCompatibilityEvidence` field the engine now
+ * emits alongside the recommendation -- not by parsing `gaps` prose, which is
+ * exactly the fragile approach this invariant exists to avoid needing.
+ */
+function validateCompatibilityEvidence(candidate, recordingName) {
+  if (candidate.hasCompatibilityEvidence !== false) return;
+  if (candidate.recommendation === 'safe-to-upgrade') {
+    throw new Error(
+      `${recordingName}: ${candidate.name} is "safe-to-upgrade" with no compatibility evidence (no surface diff, no prose read)`,
+    );
+  }
+}
+
 function validateRuntimeSites(change) {
   if (change.kind !== 'runtime-requirement' || !change.runtime) return;
   if (change.runtime.kind === 'unsupported-runtime-range') {
-    if ((change.sites ?? []).length > 0) {
-      throw new Error(`unsupported ${change.runtime.runtime} range invented a local runtime-floor impact`);
+    // Not "always zero sites" -- an unsupported range with no stated
+    // replacement floor can still be checked against what the repository
+    // actually declares. Trust the engine's own structured verdict rather
+    // than re-deriving range intersection here: every site must be explicitly
+    // marked as a genuine finding, and ownership still applies.
+    for (const site of change.sites ?? []) {
+      if (site.runtimeVerdict !== 'incompatible' && site.runtimeVerdict !== 'partial') {
+        throw new Error(`unsupported ${change.runtime.runtime} range site at ${site.file} has no compatibility verdict recorded`);
+      }
+      const file = site.file.toLowerCase();
+      const base = file.split('/').pop();
+      if (!runtimeSiteOwnedBy(change.runtime.runtime, file, base, site.excerpt ?? '')) {
+        throw new Error(`${change.runtime.runtime} runtime finding crossed config ownership at ${site.file}`);
+      }
     }
     return;
   }

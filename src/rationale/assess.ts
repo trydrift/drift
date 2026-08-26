@@ -238,7 +238,7 @@ function decide(
  * `judgeConfidence`, which caps a prose-only basis at `medium` rather than
  * treating it as equivalent to a diff.
  */
-function hasCompatibilityEvidence(input: AssessmentInput): boolean {
+export function hasCompatibilityEvidence(input: AssessmentInput): boolean {
   return input.surfaceCompared || (input.proseRead ?? 0) > 0 || proseEvidence(input).length > 0;
 }
 

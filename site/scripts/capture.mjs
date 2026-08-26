@@ -524,6 +524,12 @@ function slimCandidate(candidate) {
     risk: candidate.risk,
     summary: candidate.summary,
     recommendation: candidate.recommendation ?? null,
+    // Structured signal for the recording validator's "safe-to-upgrade
+    // implies real evidence" invariant -- whether a computed surface diff or
+    // actually-read compatibility prose backs this candidate's assessment, as
+    // opposed to a clean security check or a version lookup alone. `null`
+    // when no rationale was computed at all (e.g. an error candidate).
+    hasCompatibilityEvidence: candidate.rationale?.hasCompatibilityEvidence ?? null,
     breakingCount: candidate.breakingCount,
     impactCount: candidate.impactCount,
     impactFiles: candidate.impactFiles,
@@ -602,6 +608,7 @@ function slimSite(site) {
     excerpt: site.excerpt.slice(0, 160),
     matchedSymbol: site.matchedSymbol,
     confidence: site.confidence,
+    ...(site.runtimeVerdict ? { runtimeVerdict: site.runtimeVerdict } : {}),
   };
 }
 
