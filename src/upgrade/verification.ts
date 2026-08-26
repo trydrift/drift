@@ -75,7 +75,8 @@ export function applyVerification(
   // disproved sixty-five of them.
   verified.summary = summarize(
     verified.breakingCount,
-    verified.impactCount,
+    verified.plan!.breakingChanges,
+    verified.plan!.impactSites,
     verified.name,
     verified.rationale,
   );

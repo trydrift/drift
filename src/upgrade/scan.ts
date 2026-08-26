@@ -2242,7 +2242,7 @@ async function analyzeUpgrade(args: {
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
       impactConfidence: strongestImpactConfidence(impactSites),
       risk: plan.risk,
-      summary: summarize(breakingChanges.length, impactSites.length, args.dep.name, rationale),
+      summary: summarize(breakingChanges.length, breakingChanges, impactSites, args.dep.name, rationale),
       // Kept even when there are findings: "two breaking changes, and the type
       // surface could not be read" is a different claim from "two breaking
       // changes", and the weaker one is the true one.
