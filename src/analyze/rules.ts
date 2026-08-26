@@ -454,6 +454,8 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   const normalizedVersion = version[2]!;
   const sourceText = match[0]!.trim();
 
+  const parseStatus = rangeGrammarStatus(rawRuntime, statedOperator);
+
   if (ruleId === 'prose-dropped-runtime') {
     // Dropped-support prose names the range upstream *stopped* supporting. It
     // is never itself the new required range — inverting an arbitrary operator
@@ -463,6 +465,14 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
     // outside a later line. So every dropped-support form is represented as
     // what it actually is — an unsupported range — and a `derivedMinimum` is
     // attached only for the two operators where the complement is exact.
+    //
+    // Every operator form the grammar accepts is preserved, `>=`/`>`/`=`
+    // included. "Dropped support for Node >=20" is a strange thing for a
+    // maintainer to write, but it is not unparseable — it states an
+    // unsupported line exactly as clearly as `<20` does, and returning `null`
+    // for it threw away a real, checkable fact because Drift could not derive
+    // a *floor* from it. No floor is derived; the range is simply kept as
+    // stated, which is all `unsupported-runtime-range` ever claimed to be.
     if (statedOperator === '') {
       const parts = normalizedVersion.split('.');
       return {
@@ -470,47 +480,67 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
         runtime: rawRuntime,
         requirement: parts.length < 3 ? `${normalizedVersion}.x` : normalizedVersion,
         sourceText,
+        ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
       };
     }
-    if (statedOperator === '<') {
-      return {
-        kind: 'unsupported-runtime-range',
-        runtime: rawRuntime,
-        requirement: `<${normalizedVersion}`,
-        derivedMinimum: `>=${normalizedVersion}`,
-        sourceText,
-      };
-    }
-    if (statedOperator === '<=') {
-      return {
-        kind: 'unsupported-runtime-range',
-        runtime: rawRuntime,
-        requirement: `<=${normalizedVersion}`,
-        derivedMinimum: `>${normalizedVersion}`,
-        sourceText,
-      };
-    }
-    if (statedOperator === '^' || statedOperator === '~') {
-      return {
-        kind: 'unsupported-runtime-range',
-        runtime: rawRuntime,
-        requirement: `${statedOperator}${normalizedVersion}`,
-        sourceText,
-      };
-    }
-    // `>=`, `>`, `=`/`==`: "dropped support for Node >=X" does not identify a
-    // coherent unsupported line (its complement would be everything below X,
-    // which is not what "dropped" means), so this is left unparsed rather than
-    // guessed at.
-    return null;
+    return {
+      kind: 'unsupported-runtime-range',
+      runtime: rawRuntime,
+      requirement: `${normalizeOperator(statedOperator)}${normalizedVersion}`,
+      // Only `<` and `<=` have an exact complement, so only they carry a
+      // replacement floor. `>=20`'s complement is "everything below 20",
+      // which is not a floor and not what upstream said.
+      ...(statedOperator === '<' ? { derivedMinimum: `>=${normalizedVersion}` } : {}),
+      ...(statedOperator === '<=' ? { derivedMinimum: `>${normalizedVersion}` } : {}),
+      sourceText,
+      ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
+    };
   }
 
   return {
     kind: 'minimum-runtime',
     runtime: rawRuntime,
-    requirement: `${statedOperator || '>='}${normalizedVersion}`,
+    requirement: `${normalizeOperator(statedOperator) || '>='}${normalizedVersion}`,
     sourceText,
+    ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
   };
+}
+
+/**
+ * Equality is written three ways in the wild (`=20`, `==20`, and `===20` in
+ * PEP 440's arbitrary-equality form) and normalized to one: `=20`.
+ *
+ * The documented interpretation is *that version line* — `=20` means the 20
+ * series, exactly as the bare form `20` does, which is how `semver.validRange`
+ * and PEP 440's `==20` both already read it. It is deliberately **not**
+ * reinterpreted as a minimum: "dropped support for Node =20" says 20 is gone,
+ * not that everything below 20 is.
+ */
+function normalizeOperator(stated: string): string {
+  if (stated === '==' || stated === '===' || stated === '=') return '=';
+  return stated;
+}
+
+/**
+ * Is this operator part of the range grammar the named runtime's ecosystem
+ * actually defines?
+ *
+ * PEP 440 has no caret at all, and its compatible-release operator is `~=`,
+ * not a bare `~` — so "Python ^3.10" is prose Drift can read the runtime and
+ * the version out of but *cannot evaluate as a range*. Feeding it to the PEP
+ * 440 parser anyway produced an imprecise interval that intersected almost
+ * anything, and therefore a confident-looking `partial` verdict manufactured
+ * out of a range nobody parsed. Go and Java have no such operators either.
+ *
+ * The requirement is still returned, sourceText and all — it is real upstream
+ * evidence — but flagged so the compatibility state machine reports `unknown`
+ * instead of inventing an answer.
+ */
+function rangeGrammarStatus(runtime: RuntimeName, operator: string): 'parsed' | 'unknown' {
+  if (operator !== '^' && operator !== '~') return 'parsed';
+  // npm/semver (Node), Cargo (Rust) and RubyGems all define caret/tilde
+  // ranges; `normalizeSemverRange` in `rationale/runtime.ts` evaluates them.
+  return ['node', 'rust', 'ruby'].includes(runtime) ? 'parsed' : 'unknown';
 }
 
 /** Remediation text for a prose-derived change. */

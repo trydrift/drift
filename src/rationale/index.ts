@@ -20,6 +20,7 @@ import { describeAdditions, improvementsFrom, summarizeRelease } from './summary
 import { assessUpgrade, hasCompatibilityEvidence } from './assess.js';
 import type { LicenseFinding, SecurityAssessment, UpgradeRationale } from './types.js';
 import type { RuntimeDeclaration } from './runtime.js';
+import type { RuntimeRequirementAnalysis } from './compatibility.js';
 import { startSpan as diagSpan, withSpan as diagWithSpan } from '../util/diagnostics.js';
 
 /**
@@ -111,6 +112,13 @@ export interface RationaleInput {
   evidence: readonly Evidence[];
   breakingChanges: readonly BreakingChange[];
   impactSites: readonly ImpactSite[];
+  /**
+   * Runtime compatibility states produced by localization, keyed to their
+   * breaking change by `changeId`. Absent when the caller did not run the
+   * runtime analysis — which is *not* the same as "every runtime requirement
+   * came back compatible", and `assessUpgrade` treats it as the former.
+   */
+  runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
 }
 
 /**
@@ -363,6 +371,9 @@ export async function finalizeRationale(
       );
       const relevantIds = new Set(breakingChanges.map((b) => b.id));
       const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
+      // Scoped by the same change-id set as the sites, so a monorepo member's
+      // runtime state never decides a sibling's recommendation.
+      const runtimeAnalyses = (input.runtimeAnalyses ?? []).filter((a) => relevantIds.has(a.changeId));
 
       const key = dependencyEcosystemKey(change);
       const computed = ctx.additions?.get(key);
@@ -404,6 +415,7 @@ export async function finalizeRationale(
         gaps,
         surfaceCompared,
         proseRead: prose.length,
+        runtimeAnalyses,
       };
       const assessment = assessUpgrade(assessmentInput);
 
@@ -607,12 +619,19 @@ export * from './types.js';
 export { assessSecurity, assessSecurityBatch, mergeAliases, cvssBaseScore } from './osv.js';
 export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js';
 export {
+  analyzeRuntimeRequirement,
+  worstRuntimeState,
+  runtimeCompatibilityIsUnresolved,
+  type RuntimeRequirementAnalysis,
+} from './compatibility.js';
+export {
   checkNodeCompatibility,
   checkPythonCompatibility,
   checkRuntimeCompatibility,
   findNodeDeclarations,
   findPythonDeclarations,
   findRuntimeDeclarations,
+  discoverRuntimeDeclarations,
 } from './runtime.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';

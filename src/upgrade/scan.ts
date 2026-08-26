@@ -53,7 +53,7 @@ import type { ProseSource } from '../evidence/index.js';
 import { analyze } from '../analyze/index.js';
 import { walkSourceFiles } from '../index/walk.js';
 import { buildIndex } from '../index/metarag.js';
-import { localize } from '../localize/index.js';
+import { localizeWithRuntime } from '../localize/index.js';
 import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey, upstreamUpgradeKey } from '../util/id.js';
@@ -170,6 +170,18 @@ export interface UpgradeCandidate {
    * actually traced. See `SeverityInput.impactConfidence`.
    */
   impactConfidence: 'high' | 'medium' | 'low' | 'none';
+  /**
+   * What Drift established about this repository's runtime relative to this
+   * upgrade's runtime requirements, or absent when it announced none.
+   *
+   * Carried on the candidate rather than recomputed by each consumer because
+   * it is the one fact about a package-wide compatibility condition that no
+   * count on this row can express: `unknown` and `partial` both routinely
+   * come with `impactCount === 0`. `severityOf` reads it, and site
+   * recordings capture it so the corpus validator can assert the invariant
+   * structurally.
+   */
+  runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
   /**
    * `impactCount` includes a compiler-provable finding that only a batch pass
    * has weighed in on — not because isolated evidence found it real, but
@@ -2188,7 +2200,7 @@ async function analyzeUpgrade(args: {
     awaitIndex.end();
     const localizing = span('localize', target.manager.ecosystem, { changes: breakingChanges.length });
     const localization = diagSpan('localization', { package: args.dep.name, changes: breakingChanges.length, filesConsidered: files.length });
-    const impactSites = localize(breakingChanges, [change], index, files, {
+    const { sites: impactSites, runtimeAnalyses } = localizeWithRuntime(breakingChanges, [change], index, files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
@@ -2199,7 +2211,7 @@ async function analyzeUpgrade(args: {
     localization.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
     const [rationale] = await measure('rationale', target.manager.ecosystem, () => buildRationale(
-      { changes: [change], evidence, breakingChanges, impactSites },
+      { changes: [change], evidence, breakingChanges, impactSites, runtimeAnalyses },
       {
         config: args.config,
         logger: args.logger,
@@ -2249,7 +2261,16 @@ async function analyzeUpgrade(args: {
       gaps: rationale?.gaps ?? [],
       toolRequests: installRequests(surfaceGaps),
       ...(rationale
-        ? { rationale, recommendation: rationale.assessment.recommendation }
+        ? {
+            rationale,
+            recommendation: rationale.assessment.recommendation,
+            // Structural, not derived from `impactCount`: the two states that
+            // must never render as safe -- `unknown` and `partial` -- can
+            // both come with zero sites. See `severityOf`.
+            ...(rationale.assessment.runtimeCompatibility
+              ? { runtimeCompatibility: rationale.assessment.runtimeCompatibility }
+              : {}),
+          }
         : {}),
       plan,
     };

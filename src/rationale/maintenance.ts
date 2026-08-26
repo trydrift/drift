@@ -263,7 +263,14 @@ function describeRuntimeVerification(
   requirement: string,
   check: (declarations: readonly RuntimeDeclaration[], requirement: string) => RuntimeCompatibility[],
 ): { statement: string; concerning: boolean; polarity: 'blocks' | 'context' } | null {
-  const results = check(repoRuntime, requirement);
+  // A declaration whose value could not be compared at all (`lts/hydrogen`, a
+  // channel name, a range grammar this ecosystem does not define) now comes
+  // back explicitly as `unknown` rather than being dropped on the floor. It
+  // must not count toward "this repository already satisfies it" — that is a
+  // positive claim — so it is filtered out here, leaving the generic "check
+  // this by hand" fact the caller falls back to when nothing comparable was
+  // found.
+  const results = check(repoRuntime, requirement).filter((r) => r.verdict !== 'unknown');
   if (results.length === 0) return null;
 
   const incompatible = results.filter((r) => r.verdict === 'incompatible');

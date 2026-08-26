@@ -70,7 +70,20 @@ export function summarize(
     );
   }
   detail.push(...runtimeDetailClauses(runtimeSites));
-  if (apiSites.length === 0 && runtimeSites.length === 0 && breakingCount > 0) {
+
+  // The runtime state is a fact about the whole package, not about any site,
+  // so it is read off the assessment rather than counted here — and it is the
+  // gate on the "none of which this repository uses" clause below. A raised
+  // Node floor with no declaration to check it against yields no sites at
+  // all, and that clause would then claim compatibility Drift never
+  // established.
+  const runtimeState = assessment.runtimeCompatibility;
+  const runtimeUnresolved = runtimeState === 'unknown' || runtimeState === 'partial';
+  if (runtimeSites.length === 0 && runtimeState === 'unknown') {
+    detail.push("this upgrade's runtime requirement could not be checked against this repository");
+  }
+
+  if (apiSites.length === 0 && runtimeSites.length === 0 && breakingCount > 0 && !runtimeUnresolved) {
     detail.push(
       `${breakingCount} upstream breaking change${breakingCount === 1 ? '' : 's'}, none of which this repository uses`,
     );

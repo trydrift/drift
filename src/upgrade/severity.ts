@@ -83,6 +83,24 @@ export interface SeverityInput {
    * give up exactly the cost that batching exists to save.
    */
   impactPendingIsolatedClearance?: boolean;
+  /**
+   * What Drift established about this repository's runtime relative to the
+   * upgrade's runtime requirements — `'compatible'`, `'incompatible'`,
+   * `'partial'`, `'unknown'` — or absent when the upgrade announced none.
+   *
+   * This module is deliberately dependency-free (the render layer imports
+   * it), so the union is spelled out rather than imported from
+   * `types.ts`; `RuntimeCompatibilityState` is its definition.
+   *
+   * It exists because a package-wide compatibility condition is invisible to
+   * every count above it. A raised Node floor Drift could not check against
+   * this repository produces zero impact sites, and `breakingCount > 0` then
+   * rendered "Safe for your code · N upstream changes, none used here" over
+   * a question nobody answered. `upstream-only` may only ever mean *Drift
+   * found upstream breaking changes and established this repository is
+   * unaffected* — never *found them and failed to find a local site*.
+   */
+  runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
 }
 
 /**
@@ -131,6 +149,20 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // — running for real, not predicting — disagrees. That is a stronger signal
   // than a clean diff and must outrank it, not be silently absorbed by it.
   if (candidate.verification?.status === 'failed') return 'verification-failed';
+
+  // Checked *before* `breakingCount`, and before the recommendation/gap
+  // ladder below, because every verdict past this point tells the developer
+  // some form of "this is fine here". A runtime requirement Drift could not
+  // resolve against this repository — a dynamic CI matrix, no authoritative
+  // declaration at all, an upstream range whose grammar it could not
+  // evaluate — is precisely the case where zero impact sites means zero
+  // knowledge, not zero risk. `partial` lands here too on the rare path where
+  // it produced no site: a declared range that admits rejected versions has
+  // not been shown to be safe either.
+  if (candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial') {
+    return 'unchecked';
+  }
+
   if (candidate.breakingCount > 0) return 'upstream-only';
 
   // The assessment ran and concluded that nothing could be read. That is the
@@ -174,8 +206,15 @@ export function describeSeverity(candidate: SeverityInput): string {
       // Hedged unless the strongest match is a direct, imported usage — a
       // textual-only or wrapper-mediated match is real enough to surface, but
       // not certain enough to tell someone flatly that their code is affected.
+      // Also hedged when the only established fact is a *partial* runtime
+      // overlap: the declaration was found with certainty, and what it means
+      // is that this repository's declared range includes versions upstream
+      // rejects — not that the version it actually runs on is one of them.
       const verb =
-        candidate.impactConfidence && candidate.impactConfidence !== 'high' ? 'May affect' : 'Affects';
+        (candidate.impactConfidence && candidate.impactConfidence !== 'high') ||
+        candidate.runtimeCompatibility === 'partial'
+          ? 'May affect'
+          : 'Affects';
       // Stated whenever it applies, for the same reason `describeVerification`
       // states `measuredWith`: this exact finding could read "safe" on the
       // next scan for no reason but an unrelated dependency's install

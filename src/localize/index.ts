@@ -13,12 +13,9 @@ import { withinMember } from '../detect/workspace.js';
 import { moduleMapKey, type ModuleMaps } from './modules.js';
 import { acceptsCallOfArity, callCannotResolveTo } from '../evidence/type-surface.js';
 import {
-  checkRuntimeCompatibility,
-  checkUnsupportedRuntimeRange,
-  findRuntimeDeclarations,
-  findUnresolvedRuntimeDeclarations,
-  type RuntimeCompatibility,
-} from '../rationale/runtime.js';
+  analyzeRuntimeRequirement,
+  type RuntimeRequirementAnalysis,
+} from '../rationale/compatibility.js';
 
 /**
  * Localization: where does this breaking change actually bite?
@@ -108,6 +105,21 @@ export interface LocalizeOptions {
   maxReExportDepth?: number;
 }
 
+/**
+ * Everything localization found — the sites, and the runtime compatibility
+ * states that are *not* derivable from them.
+ *
+ * `localize` returns only `sites` for the many callers that need nothing
+ * else. Anything that has to decide a severity or a recommendation must use
+ * {@link localizeWithRuntime} instead, because "zero runtime sites" is
+ * produced identically by a repository that satisfies the requirement and one
+ * that never declared a runtime at all.
+ */
+export interface Localization {
+  sites: ImpactSite[];
+  runtimeAnalyses: RuntimeRequirementAnalysis[];
+}
+
 export function localize(
   breakingChanges: readonly BreakingChange[],
   dependencyChanges: readonly DependencyChange[],
@@ -115,6 +127,16 @@ export function localize(
   files: readonly SourceFile[],
   options: LocalizeOptions,
 ): ImpactSite[] {
+  return localizeWithRuntime(breakingChanges, dependencyChanges, index, files, options).sites;
+}
+
+export function localizeWithRuntime(
+  breakingChanges: readonly BreakingChange[],
+  dependencyChanges: readonly DependencyChange[],
+  index: RepoIndex,
+  files: readonly SourceFile[],
+  options: LocalizeOptions,
+): Localization {
   const { logger, maxSitesPerChange = 100, member, members, moduleMaps, maxReExportDepth = 3 } = options;
 
   const contentByPath = new Map(files.map((f) => [f.path, f.content]));
@@ -134,6 +156,7 @@ export function localize(
   }
 
   const sites: ImpactSite[] = [];
+  const runtimeAnalyses: RuntimeRequirementAnalysis[] = [];
 
   /**
    * `candidateFiles` walks this repository's re-export graph from every
@@ -159,7 +182,11 @@ export function localize(
     // matches comments and documentation, which is a pure false positive — the
     // fix lives in CI config, engine fields, and container images.
     if (change.kind === 'runtime-requirement') {
-      sites.push(...localizeRuntimeRequirement(change, contentByPath, member, members));
+      const analysis = localizeRuntimeRequirement(change, contentByPath, member, members);
+      if (analysis) {
+        runtimeAnalyses.push(analysis);
+        sites.push(...analysis.sites);
+      }
       continue;
     }
 
@@ -222,7 +249,7 @@ export function localize(
     }
   }
 
-  return sites;
+  return { sites, runtimeAnalyses };
 }
 
 function localizeModuleSystemChange(
@@ -327,75 +354,21 @@ function inMember(sites: readonly ImpactSite[], member: string | undefined): Imp
  * engine fields, version files, container images — and matches the declaration
  * line rather than the runtime's name. `.nvmrc` and friends contain nothing but
  * the version, so the whole file is the site.
+ *
+ * The verdict itself is not computed here. `analyzeRuntimeRequirement` owns
+ * the whole state machine (see `rationale/compatibility.ts`) and returns both
+ * the state and the sites that illustrate it, so a caller that needs to know
+ * whether compatibility was established never has to infer it from how many
+ * sites came back.
  */
 function localizeRuntimeRequirement(
   change: BreakingChange,
   contentByPath: Map<string, string>,
   member?: string,
   allMembers?: readonly string[],
-): ImpactSite[] {
-  const runtime = change.runtime?.runtime;
-  const requirement = change.runtime?.requirement;
-  if (!change.runtime || !runtime || !requirement) return [];
-
+): RuntimeRequirementAnalysis | null {
   const files = [...contentByPath].map(([path, content]) => ({ path, content }));
-  const declarations = findRuntimeDeclarations(files, runtime, member, allMembers);
-
-  const excerptFor = (declaration: RuntimeCompatibility) =>
-    files.find((file) => file.path === declaration.file)?.content.split('\n')[declaration.line - 1]?.trim().slice(0, 200) ?? '';
-
-  // An unsupported-range finding ("Removed support for Ruby 2.7") has no
-  // stated replacement floor, but that does not mean it cannot be checked: a
-  // repository declaration that falls inside the range upstream explicitly
-  // dropped is directly established as incompatible, independent of what the
-  // new minimum turns out to be.
-  if (change.runtime.kind === 'unsupported-runtime-range') {
-    const compatibility = checkUnsupportedRuntimeRange(runtime, declarations, requirement);
-    return compatibility
-      .filter((declaration) => declaration.verdict !== 'compatible')
-      .map((declaration) => ({
-        breakingChangeId: change.id,
-        file: declaration.file,
-        line: declaration.line,
-        excerpt: excerptFor(declaration),
-        matchedSymbol: runtime,
-        confidence: 'high' as const,
-        runtimeVerdict: declaration.verdict === 'partial' ? ('partial' as const) : ('incompatible' as const),
-      }));
-  }
-
-  const compatibility = checkRuntimeCompatibility(runtime, declarations, requirement);
-  const sites: ImpactSite[] = compatibility
-    .filter((declaration) => declaration.verdict !== 'compatible')
-    .map((declaration) => ({
-      breakingChangeId: change.id,
-      file: declaration.file,
-      line: declaration.line,
-      excerpt: excerptFor(declaration),
-      matchedSymbol: runtime,
-      confidence: 'high' as const,
-      runtimeVerdict: declaration.verdict === 'partial' ? ('partial' as const) : ('incompatible' as const),
-    }));
-
-  // A dynamic CI declaration (`node-version: ${{ matrix.node }}`) is not "no
-  // declaration" — it is a declaration Drift cannot resolve. Surfacing it as a
-  // low-confidence, explicitly unknown site keeps this from disappearing into
-  // the same zero-site result as a repository that genuinely has no CI
-  // runtime pin at all, which would otherwise read as compatibility having
-  // been checked and passed.
-  for (const unresolved of findUnresolvedRuntimeDeclarations(files, runtime, member, allMembers)) {
-    sites.push({
-      breakingChangeId: change.id,
-      file: unresolved.file,
-      line: unresolved.line,
-      excerpt: files.find((file) => file.path === unresolved.file)?.content.split('\n')[unresolved.line - 1]?.trim().slice(0, 200) ?? '',
-      matchedSymbol: runtime,
-      confidence: 'low',
-      runtimeVerdict: 'unknown',
-    });
-  }
-
-  return sites;
+  return analyzeRuntimeRequirement(change, files, member, allMembers);
 }
 
 /**

@@ -16,7 +16,8 @@ import { gatherEvidence, type ProseSource } from './evidence/index.js';
 import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
-import { localize } from './localize/index.js';
+import { localizeWithRuntime } from './localize/index.js';
+import type { RuntimeRequirementAnalysis } from './rationale/compatibility.js';
 import { resolveModuleMaps } from './localize/modules.js';
 import { attemptCodemod, type CodemodResult } from './codemod/index.js';
 import { resolveFixPlans } from './fixplan/resolve.js';
@@ -233,6 +234,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   /* Stage 5 — localize */
   const impactSites: RemediationPlan['impactSites'] = [];
+  const runtimeAnalyses: RuntimeRequirementAnalysis[] = [];
   // Populated below, in the same pass that reads the repository for
   // localization -- a dependency's runtime floor is a property of this
   // repository, not of any one breaking change, so it is gathered once and
@@ -306,9 +308,18 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
         // also pick up — and search for — the other member's findings.
         const relevant = breakingChanges.filter((b) => ids.has(b.dependency) && b.workspace === member);
         if (relevant.length === 0) continue;
-        impactSites.push(
-          ...localize(relevant, changesHere, index, files, { logger, member, members, moduleMaps }),
-        );
+        const localized = localizeWithRuntime(relevant, changesHere, index, files, {
+          logger,
+          member,
+          members,
+          moduleMaps,
+        });
+        impactSites.push(...localized.sites);
+        // Kept alongside the sites, never derived from them: a runtime
+        // requirement Drift could not resolve produces an analysis and no
+        // site, and that is exactly the case the rationale must not read as
+        // "nothing found, so nothing wrong".
+        runtimeAnalyses.push(...localized.runtimeAnalyses);
       }
 
       logger.info(`Found ${impactSites.length} impact site(s)`);
@@ -570,7 +581,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   /* Stage 7 — rationale */
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
-    { changes: actionable, evidence, breakingChanges, impactSites },
+    { changes: actionable, evidence, breakingChanges, impactSites, runtimeAnalyses },
     {
       config,
       logger,

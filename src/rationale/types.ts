@@ -13,6 +13,8 @@
  * prose: a benefit Drift cannot cite is a benefit Drift does not mention.
  */
 
+import type { RuntimeCompatibilityState } from '../types.js';
+
 /** How sure the underlying source is about a vulnerability's seriousness. */
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'unknown';
 
@@ -193,6 +195,17 @@ export interface UpgradeAssessment {
   confidence: EvidenceConfidence;
   /** What the confidence rests on, named. */
   confidenceBasis: string;
+  /**
+   * The worst runtime compatibility state across this dependency's runtime
+   * requirements, or absent when it announced none.
+   *
+   * Deliberately absent rather than `'compatible'` when there was no runtime
+   * requirement to check: "nothing asked" and "asked and satisfied" are
+   * different facts, and only the second is evidence of anything. Consumed by
+   * `severityOf` and captured structurally into site recordings so the
+   * corpus validator can assert the invariant instead of grepping prose.
+   */
+  runtimeCompatibility?: RuntimeCompatibilityState;
 }
 
 /** Everything Drift concluded about one dependency move. */

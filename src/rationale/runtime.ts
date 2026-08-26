@@ -2,7 +2,7 @@ import semver from 'semver';
 import { isRuntimeConfigPath } from '../index/walk.js';
 import { memberOf } from '../detect/workspace.js';
 import { intersectsInterval, isSubsetInterval, parseSpecifierSet } from './pep440.js';
-import type { RuntimeName } from '../types.js';
+import type { RuntimeCompatibilityState, RuntimeName } from '../types.js';
 
 /**
  * Where this repository itself declares a runtime version.
@@ -16,69 +16,220 @@ export interface RuntimeDeclaration {
   requirement: string;
 }
 
-export interface RuntimeCompatibility extends RuntimeDeclaration {
-  verdict: 'compatible' | 'incompatible' | 'partial';
+/** Which kind of file a declaration (resolved or not) was read out of. */
+export type RuntimeDeclarationSource =
+  | 'version-file'
+  | 'manifest'
+  | 'container'
+  | 'ci'
+  | 'tool-versions'
+  | 'build-config';
+
+/**
+ * Everything a scan of this repository found about one runtime: the
+ * declarations it could read, and the declaration *positions* it recognized
+ * but could not resolve to a version.
+ *
+ * The two halves are returned together, from one pass, precisely so a caller
+ * cannot accidentally look at only the first and read an empty list as
+ * "nothing declared". A dynamic `FROM node:${NODE_VERSION}` is not the same
+ * fact as a repository with no Dockerfile, and only this shape can say so.
+ */
+export interface RuntimeDeclarationDiscovery {
+  resolved: RuntimeDeclaration[];
+  unresolved: UnresolvedRuntimeDeclaration[];
 }
 
-/** Find declarations for any runtime named by structured upstream evidence. */
+export interface RuntimeCompatibility extends RuntimeDeclaration {
+  /**
+   * `'unknown'` means the declaration was found but could not be compared —
+   * an alias (`lts/hydrogen`), a channel name, a range grammar this runtime's
+   * ecosystem does not define. Emitted rather than dropped: a declaration
+   * silently skipped is indistinguishable from a repository that never made
+   * one, and that collapse is exactly what turns "Drift could not tell" into
+   * "Drift found nothing wrong".
+   */
+  verdict: RuntimeCompatibilityState;
+}
+
+/**
+ * Find declarations for any runtime named by structured upstream evidence.
+ *
+ * The resolved half of {@link discoverRuntimeDeclarations}. Prefer the
+ * discovery form in any new caller that has to reason about compatibility —
+ * this one cannot distinguish "nothing declared" from "declared dynamically".
+ */
 export function findRuntimeDeclarations(
   files: readonly { path: string; content: string }[],
   runtime: RuntimeName,
   member?: string,
   allMembers?: readonly string[],
 ): RuntimeDeclaration[] {
+  return discoverRuntimeDeclarations(files, runtime, member, allMembers).resolved;
+}
+
+/**
+ * The one pass that reads this repository's runtime declarations.
+ *
+ * Every declaration surface — version files, manifests, container images,
+ * build configs, CI — is walked once, per runtime, after workspace scoping and
+ * precedence have already been applied by `scopedTo`. Each surface reports two
+ * things and never one: the versions it could read, and the positions it
+ * recognized as *this runtime's* declaration but could not resolve to a
+ * version.
+ *
+ * The second half is deliberately narrow. A position only becomes `unresolved`
+ * once the parser has already established runtime identity — `FROM
+ * node:${NODE_VERSION}` names Node and hides its version, so it is unresolved
+ * Node; `FROM $BASE_IMAGE` names nothing at all, so it is not a Node
+ * declaration in any state. Attaching every unreadable value in a CI file to
+ * whichever runtime happened to be under analysis is what made a single
+ * `image: $DEFAULT_CI_IMAGE` read as an unknown Node *and* Ruby *and* Python
+ * declaration simultaneously.
+ */
+export function discoverRuntimeDeclarations(
+  files: readonly { path: string; content: string }[],
+  runtime: RuntimeName,
+  member?: string,
+  allMembers?: readonly string[],
+): RuntimeDeclarationDiscovery {
   const scoped = scopedTo(files, member, allMembers);
-  if (runtime === 'node') return findNodeDeclarationsIn(scoped);
-  if (runtime === 'python') return findPythonDeclarationsIn(scoped);
-  const out: RuntimeDeclaration[] = [];
+  const found: RuntimeDeclarationDiscovery = { resolved: [], unresolved: [] };
+
   for (const { path, content } of scoped) {
     if (!isRuntimeConfigPath(path)) continue;
     const base = (path.split('/').pop() ?? '').toLowerCase();
 
-    const versionFile = runtime === 'ruby'
-      ? base === '.ruby-version'
-      : runtime === 'rust'
-        ? ['rust-toolchain', 'rust-toolchain.toml'].includes(base)
-        : false;
-    if (versionFile) {
-      if (base === 'rust-toolchain.toml') {
-        const found = lineValue(content, /^\s*channel\s*=\s*['"]([^'"]+)['"]/);
-        if (found) out.push({ file: path, ...found });
-      } else {
-        const requirement = content.trim().split('\n')[0]?.replace(/^(?:ruby-|go|rust-)?v?/i, '').trim();
-        if (requirement) out.push({ file: path, line: 1, requirement });
-      }
+    if (VERSION_FILES[runtime].includes(base)) {
+      versionFileDeclarations(path, base, content, runtime, found);
       continue;
     }
 
     if (base === '.tool-versions') {
-      out.push(...toolVersionDeclarations(path, content, runtime));
+      toolVersionDeclarations(path, content, runtime, found);
       continue;
     }
 
     if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
-      out.push(...containerDeclarations(path, content, runtime));
+      containerDeclarations(path, content, runtime, found);
       continue;
     }
 
+    if (runtime === 'node' && base === 'package.json') {
+      packageJsonEngineDeclarations(path, content, found);
+      continue;
+    }
+    if (runtime === 'python' && ['pyproject.toml', 'setup.cfg', 'setup.py'].includes(base)) {
+      pythonManifestDeclarations(path, base, content, found);
+      continue;
+    }
     if (runtime === 'ruby') {
-      if (base === 'gemfile') out.push(...rubyGemfileDeclarations(path, content));
-      else if (base.endsWith('.gemspec')) out.push(...rubyGemspecDeclarations(path, content));
+      if (base === 'gemfile') rubyGemfileDeclarations(path, content, found);
+      else if (base.endsWith('.gemspec')) rubyGemspecDeclarations(path, content, found);
     } else if (runtime === 'go' && base === 'go.mod') {
-      out.push(...goModDeclarations(path, content));
+      goModDeclarations(path, content, found);
     } else if (runtime === 'java') {
-      if (base === 'pom.xml') out.push(...mavenJavaDeclarations(path, content));
-      else if (base === 'build.gradle' || base === 'build.gradle.kts') out.push(...gradleJavaDeclarations(path, content));
+      if (base === 'pom.xml') mavenJavaDeclarations(path, content, found);
+      else if (base === 'build.gradle' || base === 'build.gradle.kts') gradleJavaDeclarations(path, content, found);
     } else if (runtime === 'rust' && base === 'cargo.toml') {
-      const found = tomlPackageValue(content, 'rust-version');
-      if (found) out.push({ file: path, ...found });
+      const found_ = tomlPackageValue(content, 'rust-version');
+      if (found_) record(found, runtime, path, found_.line, found_.requirement, 'manifest', found_.requirement);
     }
 
-    if (isCiPath(path)) {
-      out.push(...ciDeclarations(path, content, runtime));
-    }
+    if (isCiPath(path)) ciDeclarations(path, content, runtime, found);
   }
-  return out;
+
+  found.resolved = dedupeDeclarations(found.resolved);
+  found.unresolved = dedupeUnresolved(found.unresolved);
+  return found;
+}
+
+/**
+ * Plain "this directory runs on version X" files, per runtime. Node's
+ * `.nvmrc` says nothing about Ruby and vice versa, so the mapping is explicit
+ * rather than inferred from whichever file happens to be present.
+ */
+const VERSION_FILES: Record<RuntimeName, readonly string[]> = {
+  node: ['.nvmrc', '.node-version'],
+  python: ['.python-version', 'runtime.txt'],
+  ruby: ['.ruby-version'],
+  rust: ['rust-toolchain', 'rust-toolchain.toml'],
+  go: [],
+  java: [],
+};
+
+/**
+ * Record one recognized declaration position.
+ *
+ * `requirement === null` is the whole reason this exists: the position is
+ * already known to belong to `runtime`, so failing to read its value is a
+ * fact worth carrying (`unresolved`), never an absence.
+ */
+function record(
+  found: RuntimeDeclarationDiscovery,
+  runtime: RuntimeName,
+  file: string,
+  line: number,
+  rawText: string,
+  source: RuntimeDeclarationSource,
+  requirement: string | null,
+): void {
+  if (requirement) found.resolved.push({ file, line, requirement });
+  else found.unresolved.push({ runtime, file, line, rawText, source });
+}
+
+/**
+ * A value that is a reference to a version rather than a version — a shell or
+ * CI variable (`$NODE_VERSION`, `${NODE_VERSION}`), a GitHub Actions
+ * expression (`${{ matrix.node }}`), a Maven property (`${java.version}`), a
+ * Windows-style `%VAR%`, or an interpolated string.
+ */
+function isDynamicValue(raw: string): boolean {
+  return /[$`%]|\{\{|\}\}/.test(raw);
+}
+
+function versionFileDeclarations(
+  path: string,
+  base: string,
+  content: string,
+  runtime: RuntimeName,
+  found: RuntimeDeclarationDiscovery,
+): void {
+  if (base === 'rust-toolchain.toml') {
+    const channel = lineValue(content, /^\s*channel\s*=\s*['"]([^'"]+)['"]/);
+    if (!channel) return;
+    record(found, runtime, path, channel.line, channel.requirement, 'version-file', dynamicOr(channel.requirement));
+    return;
+  }
+
+  if (base === '.python-version') {
+    // Pyenv allows more than one version in this file — one per line, or
+    // several whitespace-separated on one line — and treats a `#` line as a
+    // comment. Reading only the first line can miss an older version this
+    // repository also builds and runs on, which is exactly the version a
+    // compatibility verdict needs to fail against.
+    for (const [i, line] of content.split('\n').entries()) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      for (const token of trimmed.split(/\s+/)) {
+        record(found, runtime, path, i + 1, token, 'version-file', dynamicOr(token));
+      }
+    }
+    return;
+  }
+
+  const first = content.trim().split('\n')[0]?.trim();
+  if (!first) return;
+  const stripped = base === 'runtime.txt'
+    ? first.replace(/^python-/i, '').trim()
+    : first.replace(/^(?:ruby-|go|rust-)?v?/i, '').trim();
+  if (!stripped) return;
+  record(found, runtime, path, 1, first, 'version-file', dynamicOr(stripped));
+}
+
+/** The value itself when it is a literal, `null` when it only points at one. */
+function dynamicOr(raw: string): string | null {
+  return isDynamicValue(raw) ? null : raw;
 }
 
 /** Compare declarations for runtimes without a language-specific grammar. */
@@ -90,17 +241,20 @@ export function checkRuntimeCompatibility(
   if (runtime === 'node') return checkNodeCompatibility(declarations, requirement);
   if (runtime === 'python') return checkPythonCompatibility(declarations, requirement);
   const out: RuntimeCompatibility[] = [];
+  const requiredRange = normalizeSemverRange(requirement);
   for (const declaration of declarations) {
     const declaredRange = normalizeSemverRange(declaration.requirement);
-    const requiredRange = normalizeSemverRange(requirement);
-    if (!declaredRange || !requiredRange) continue;
+    if (!declaredRange || !requiredRange) {
+      out.push({ ...declaration, verdict: 'unknown' });
+      continue;
+    }
     let verdict: RuntimeCompatibility['verdict'];
     try {
       if (semver.subset(declaredRange, requiredRange, { loose: true })) verdict = 'compatible';
       else if (!semver.intersects(declaredRange, requiredRange, { loose: true })) verdict = 'incompatible';
       else verdict = 'partial';
     } catch {
-      continue;
+      verdict = 'unknown';
     }
     out.push({ ...declaration, verdict });
   }
@@ -126,22 +280,36 @@ export function checkUnsupportedRuntimeRange(
   if (runtime === 'python') return checkUnsupportedPythonRange(declarations, unsupportedRequirement);
 
   const unsupportedRange = normalizeSemverRange(unsupportedRequirement);
-  if (!unsupportedRange) return [];
   const out: RuntimeCompatibility[] = [];
   for (const declaration of declarations) {
     const declaredRange = normalizeSemverRange(declaration.requirement);
-    if (!declaredRange) continue;
+    if (!declaredRange || !unsupportedRange) {
+      out.push({ ...declaration, verdict: 'unknown' });
+      continue;
+    }
     let verdict: RuntimeCompatibility['verdict'];
     try {
       if (semver.subset(declaredRange, unsupportedRange, { loose: true })) verdict = 'incompatible';
       else if (!semver.intersects(declaredRange, unsupportedRange, { loose: true })) verdict = 'compatible';
       else verdict = 'partial';
     } catch {
-      continue;
+      verdict = 'unknown';
     }
     out.push({ ...declaration, verdict });
   }
   return out;
+}
+
+/**
+ * A PEP 440 specifier set nothing at all could be read out of — no lower
+ * bound, no upper bound, and at least one clause the grammar rejected. That
+ * is a declaration Drift cannot compare, not a declaration that compares
+ * favourably, so it has to come back `unknown` rather than fall through to a
+ * verdict computed from two null bounds (which would call *everything*
+ * compatible).
+ */
+function unreadable(interval: { min: unknown; max: unknown; imprecise: boolean }): boolean {
+  return interval.imprecise && interval.min === null && interval.max === null;
 }
 
 function checkUnsupportedPythonRange(
@@ -159,7 +327,8 @@ function checkUnsupportedPythonRange(
   for (const declaration of declarations) {
     const declared = parseSpecifierSet(declaration.requirement);
     let verdict: RuntimeCompatibility['verdict'];
-    if (isSubsetInterval(declared, unsupported)) verdict = 'incompatible';
+    if (unreadable(declared)) verdict = 'unknown';
+    else if (isSubsetInterval(declared, unsupported)) verdict = 'incompatible';
     else if (!intersectsInterval(declared, unsupported)) verdict = 'compatible';
     else verdict = 'partial';
     out.push({ ...declaration, verdict });
@@ -179,49 +348,19 @@ function checkUnsupportedPythonRange(
  * developer to check by hand, the second is a reason to say nothing at all.
  */
 export interface UnresolvedRuntimeDeclaration {
+  /**
+   * Which runtime this position declares. Present because identity is the
+   * precondition for existing at all: a value with no runtime identity —
+   * `image: $DEFAULT_CI_IMAGE`, `FROM $BASE_IMAGE` — produces no
+   * `UnresolvedRuntimeDeclaration` for any runtime, rather than one for every
+   * runtime under analysis.
+   */
+  runtime: RuntimeName;
   file: string;
   line: number;
+  /** The unresolvable value exactly as written, for the report to quote. */
   rawText: string;
-}
-
-const CI_RUNTIME_FIELDS: Record<RuntimeName, RegExp> = {
-  node: /\bnode-version\s*:\s*['"]?([^\s'"#]+)/i,
-  python: /\bpython-version\s*:\s*['"]?([^\s'"#]+)/i,
-  ruby: /\bruby-version\s*:\s*['"]?([^\s'"#]+)/i,
-  go: /\bgo-version\s*:\s*['"]?([^\s'"#]+)/i,
-  java: /\bjava-version\s*:\s*['"]?([^\s'"#]+)/i,
-  rust: /\btoolchain\s*:\s*['"]?([^\s'"#]+)/i,
-};
-
-/**
- * Find CI runtime declarations that could not be resolved to a literal
- * version, so a dynamic matrix build cannot silently read as "no runtime
- * declared" and turn an unverified compatibility question into an implicit
- * "safe". Only CI is covered here: it is the source where dynamic
- * expressions (`${{ matrix.node }}`, `$NODE_VERSION`) are idiomatic and
- * common; other declaration surfaces (`.nvmrc`, `engines.node`) are
- * ordinarily literal, and a value Drift cannot parse there is left as an
- * absence rather than guessed to be "dynamic".
- */
-export function findUnresolvedRuntimeDeclarations(
-  files: readonly { path: string; content: string }[],
-  runtime: RuntimeName,
-  member?: string,
-  allMembers?: readonly string[],
-): UnresolvedRuntimeDeclaration[] {
-  const scoped = scopedTo(files, member, allMembers);
-  const out: UnresolvedRuntimeDeclaration[] = [];
-  for (const { path, content } of scoped) {
-    if (!isCiPath(path)) continue;
-    for (const [i, line] of content.split('\n').entries()) {
-      const raw = CI_RUNTIME_FIELDS[runtime].exec(line)?.[1];
-      if (raw && /[${}]/.test(raw)) out.push({ file: path, line: i + 1, rawText: raw });
-
-      const image = /^\s*(?:-\s*)?image\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
-      if (image && /[${}]/.test(image)) out.push({ file: path, line: i + 1, rawText: image });
-    }
-  }
-  return out;
+  source: RuntimeDeclarationSource;
 }
 
 const TOOL_VERSION_KEYS: Record<RuntimeName, readonly string[]> = {
@@ -233,102 +372,193 @@ const TOOL_VERSION_KEYS: Record<RuntimeName, readonly string[]> = {
   rust: ['rust'],
 };
 
-function toolVersionDeclarations(path: string, content: string, runtime: RuntimeName): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
+function toolVersionDeclarations(
+  path: string,
+  content: string,
+  runtime: RuntimeName,
+  found: RuntimeDeclarationDiscovery,
+): void {
   for (const [i, line] of content.split('\n').entries()) {
     const match = /^\s*([\w-]+)\s+([^\s#]+)/.exec(line);
+    // The *key* is what establishes runtime identity here, and it is a
+    // structural field of the format — so `nodejs $NODE_VERSION` is a Node
+    // declaration whose value could not be read, while `gitleaks 8.24.3` is
+    // not a runtime declaration at all.
     if (!match || !TOOL_VERSION_KEYS[runtime].includes(match[1]!.toLowerCase())) continue;
-    const requirement = runtime === 'java' ? numericRuntimeTag(match[2]!) : match[2]!;
-    if (requirement) out.push({ file: path, line: i + 1, requirement });
+    const raw = match[2]!;
+    const requirement = isDynamicValue(raw) ? null : runtime === 'java' ? numericRuntimeTag(raw) : raw;
+    record(found, runtime, path, i + 1, raw, 'tool-versions', requirement);
   }
-  return out;
 }
 
-function containerDeclarations(path: string, content: string, runtime: RuntimeName): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
+function containerDeclarations(
+  path: string,
+  content: string,
+  runtime: RuntimeName,
+  found: RuntimeDeclarationDiscovery,
+): void {
   for (const [i, line] of content.split('\n').entries()) {
     const from = /^\s*FROM\s+(?:--platform=\S+\s+)?(\S+)/i.exec(line)?.[1];
     if (!from) continue;
-    const requirement = containerImageRequirement(from, runtime);
-    if (requirement) out.push({ file: path, line: i + 1, requirement });
+    recordImage(found, runtime, path, i + 1, from, 'container');
   }
-  return out;
 }
 
-/** Read a runtime tag from a container image wherever that image is declared. */
-function containerImageRequirement(image: string, runtime: RuntimeName): string | null {
-  const images: Record<RuntimeName, RegExp> = {
-    node: /(?:^|\/)node:([^\s@'"#]+)/i,
-    python: /(?:^|\/)python:([^\s@'"#]+)/i,
-    ruby: /(?:^|\/)ruby:([^\s@'"#]+)/i,
-    go: /(?:^|\/)golang:([^\s@'"#]+)/i,
-    java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):([^\s@'"#]+)/i,
-    rust: /(?:^|\/)rust:([^\s@'"#]+)/i,
-  };
-  const tag = images[runtime].exec(image)?.[1];
-  return tag ? numericRuntimeTag(tag) : null;
+/**
+ * Record a container image reference, if and only if the image *names* this
+ * runtime.
+ *
+ * `node:${NODE_VERSION}` is unmistakably a Node runtime image whose tag Drift
+ * cannot resolve — unresolved Node. `$BASE_IMAGE` and `$DEFAULT_CI_IMAGE`
+ * name no runtime at all, so nothing is recorded for any runtime: they are
+ * not Node declarations that happen to be unreadable, they are simply not
+ * Node declarations.
+ */
+function recordImage(
+  found: RuntimeDeclarationDiscovery,
+  runtime: RuntimeName,
+  path: string,
+  line: number,
+  image: string,
+  source: RuntimeDeclarationSource,
+): void {
+  const tag = RUNTIME_IMAGES[runtime].exec(image)?.[1];
+  if (!tag) return;
+  record(found, runtime, path, line, image, source, isDynamicValue(tag) ? null : numericRuntimeTag(tag));
 }
 
-function rubyGemfileDeclarations(path: string, content: string): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
+/**
+ * The image names that identify a runtime, with their tag. Shared by
+ * Dockerfiles, GitLab CI and CircleCI so image semantics have exactly one
+ * source of truth across every config surface.
+ */
+const RUNTIME_IMAGES: Record<RuntimeName, RegExp> = {
+  node: /(?:^|\/)node:([^\s@'"#]+)/i,
+  python: /(?:^|\/)python:([^\s@'"#]+)/i,
+  ruby: /(?:^|\/)ruby:([^\s@'"#]+)/i,
+  go: /(?:^|\/)golang:([^\s@'"#]+)/i,
+  java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):([^\s@'"#]+)/i,
+  rust: /(?:^|\/)rust:([^\s@'"#]+)/i,
+};
+
+/**
+ * `package.json#engines.node`.
+ *
+ * A dynamic value here (`"node": "${NODE_VERSION}"`, written by a template or
+ * a release tool) is a Node declaration Drift cannot read, not the absence of
+ * one — the field name already settled runtime identity.
+ */
+function packageJsonEngineDeclarations(
+  path: string,
+  content: string,
+  found: RuntimeDeclarationDiscovery,
+): void {
+  const raw = engineFromPackageJson(content);
+  if (!raw) return;
+  record(found, 'node', path, lineOf(content, /"node"\s*:/), raw, 'manifest', dynamicOr(raw));
+}
+
+function pythonManifestDeclarations(
+  path: string,
+  base: string,
+  content: string,
+  found: RuntimeDeclarationDiscovery,
+): void {
+  const located =
+    base === 'pyproject.toml'
+      ? requiresPythonFromPyproject(content)
+      : base === 'setup.cfg'
+        ? pythonRequiresFromSetupCfg(content)
+        : setupPyPythonRequires(content);
+  if (!located) return;
+  record(found, 'python', path, located.line, located.requirement, 'manifest', dynamicOr(located.requirement));
+}
+
+function rubyGemfileDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   for (const [i, line] of content.split('\n').entries()) {
     const match = /^\s*ruby\s+(['"])([^'"]+)\1/.exec(line);
-    if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
+    if (match?.[2]) record(found, 'ruby', path, i + 1, match[2], 'manifest', dynamicOr(match[2]));
   }
-  return out;
 }
 
-function rubyGemspecDeclarations(path: string, content: string): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
+function rubyGemspecDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   for (const [i, line] of content.split('\n').entries()) {
     const match = /\.required_ruby_version\s*=\s*(['"])([^'"]+)\1/.exec(line);
-    if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
+    if (match?.[2]) record(found, 'ruby', path, i + 1, match[2], 'manifest', dynamicOr(match[2]));
   }
-  return out;
 }
 
-function goModDeclarations(path: string, content: string): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
+function goModDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   for (const [i, line] of content.split('\n').entries()) {
     const match = /^\s*(go|toolchain)\s+(?:go)?(\d+(?:\.\d+){0,3})\s*(?:\/\/.*)?$/.exec(line);
-    if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
+    if (match?.[2]) record(found, 'go', path, i + 1, match[2], 'manifest', match[2]);
   }
-  return out;
 }
 
-function mavenJavaDeclarations(path: string, content: string): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
-  const pattern = /<(?:maven\.compiler\.(?:release|source|target)|java\.version)>\s*([^<${}]+?)\s*<\//g;
+/**
+ * Maven's Java version, including the property indirection nearly every real
+ * `pom.xml` uses: `<maven.compiler.release>${java.version}</maven.compiler.release>`
+ * alongside a `<properties><java.version>17</java.version></properties>`.
+ *
+ * The property is looked up in the same file first — a one-hop substitution,
+ * not a general expression evaluator — because the alternative (calling every
+ * such pom unresolved) would report "Drift could not determine compatibility"
+ * for the single most common way Java projects state their version. Only when
+ * the property genuinely is not declared here does the position become
+ * unresolved, which is the honest answer: the value lives in a parent pom or
+ * a build profile Drift has not read.
+ */
+function mavenJavaDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
+  const positions: { line: number; raw: string }[] = [];
+  const pattern = /<(?:maven\.compiler\.(?:release|source|target)|java\.version)>\s*([^<]+?)\s*<\//g;
   for (const match of content.matchAll(pattern)) {
-    const requirement = javaVersion(match[1]!);
-    if (!requirement) continue;
-    out.push({ file: path, line: content.slice(0, match.index).split('\n').length, requirement });
+    positions.push({ line: content.slice(0, match.index).split('\n').length, raw: match[1]! });
   }
   const compilerBlocks = content.match(/<plugin>[\s\S]*?<artifactId>maven-compiler-plugin<\/artifactId>[\s\S]*?<\/plugin>/g) ?? [];
   for (const block of compilerBlocks) {
-    for (const match of block.matchAll(/<(?:release|source|target)>\s*([^<${}]+?)\s*<\//g)) {
-      const requirement = javaVersion(match[1]!);
-      if (!requirement) continue;
-      const blockStart = content.indexOf(block);
-      out.push({ file: path, line: content.slice(0, blockStart + match.index).split('\n').length, requirement });
+    const blockStart = content.indexOf(block);
+    for (const match of block.matchAll(/<(?:release|source|target)>\s*([^<]+?)\s*<\//g)) {
+      positions.push({ line: content.slice(0, blockStart + match.index).split('\n').length, raw: match[1]! });
     }
   }
-  return dedupeDeclarations(out);
+
+  for (const { line, raw } of positions) {
+    const resolved = resolveMavenProperty(content, raw);
+    record(found, 'java', path, line, raw, 'manifest', resolved ? javaVersion(resolved) : null);
+  }
 }
 
-function gradleJavaDeclarations(path: string, content: string): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
+/** One hop of `${property}` substitution against this pom's own `<properties>`. */
+function resolveMavenProperty(content: string, raw: string): string | null {
+  const property = /^\$\{([^}]+)\}$/.exec(raw.trim())?.[1];
+  if (!property) return isDynamicValue(raw) ? null : raw;
+  const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const value = new RegExp(`<${escaped}>\\s*([^<]+?)\\s*</${escaped}>`).exec(content)?.[1];
+  return value && !isDynamicValue(value) ? value : null;
+}
+
+/**
+ * Gradle's Java toolchain, in both the modern
+ * `JavaLanguageVersion.of(21)` form and the older
+ * `sourceCompatibility`/`targetCompatibility` assignments.
+ *
+ * The argument is captured whatever shape it has, so
+ * `JavaLanguageVersion.of(javaVersion)` — a project property resolved at
+ * configuration time — is recorded as an unresolved Java declaration rather
+ * than vanishing because the regex only ever matched digits.
+ */
+function gradleJavaDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   const patterns = [
-    /JavaLanguageVersion\.of\(\s*(\d+)\s*\)/,
-    /(?:sourceCompatibility|targetCompatibility)\s*=\s*(?:JavaVersion\.VERSION_)?['"]?(\d+(?:\.\d+)*)/,
+    /JavaLanguageVersion\.of\(\s*([^)]+?)\s*\)/,
+    /(?:sourceCompatibility|targetCompatibility)\s*=\s*(?:JavaVersion\.VERSION_)?['"]?([^\s'")]+)/,
   ];
   for (const [i, line] of content.split('\n').entries()) {
     for (const pattern of patterns) {
-      const requirement = javaVersion(pattern.exec(line)?.[1] ?? '');
-      if (requirement) out.push({ file: path, line: i + 1, requirement });
+      const raw = pattern.exec(line)?.[1];
+      if (!raw) continue;
+      record(found, 'java', path, i + 1, raw, 'build-config', isDynamicValue(raw) ? null : javaVersion(raw));
     }
   }
-  return dedupeDeclarations(out);
 }
 
 function javaVersion(raw: string): string | null {
@@ -355,22 +585,31 @@ function isCiPath(path: string): boolean {
   return /^\.github\/workflows\/.+\.ya?ml$/i.test(path) || /^\.(?:gitlab-ci|circleci)(?:\/|\.|$)/i.test(path);
 }
 
-function ciDeclarations(path: string, content: string, runtime: RuntimeName): RuntimeDeclaration[] {
-  const fields: Record<RuntimeName, RegExp> = {
-    node: /\bnode-version\s*:\s*['"]?([^\s'"#]+)/i,
-    python: /\bpython-version\s*:\s*['"]?([^\s'"#]+)/i,
-    ruby: /\bruby-version\s*:\s*['"]?([^\s'"#]+)/i,
-    go: /\bgo-version\s*:\s*['"]?([^\s'"#]+)/i,
-    java: /\bjava-version\s*:\s*['"]?([^\s'"#]+)/i,
-    rust: /\btoolchain\s*:\s*['"]?([^\s'"#]+)/i,
-  };
-  const out: RuntimeDeclaration[] = [];
+/**
+ * The CI fields whose *name* identifies a runtime. `node-version:` is a Node
+ * declaration whatever its value is — including `${{ matrix.node }}`, which
+ * is a Node declaration Drift cannot resolve.
+ */
+const CI_RUNTIME_FIELDS: Record<RuntimeName, RegExp> = {
+  node: /\bnode-version\s*:\s*['"]?([^\s'"#]+)/i,
+  python: /\bpython-version\s*:\s*['"]?([^\s'"#]+)/i,
+  ruby: /\bruby-version\s*:\s*['"]?([^\s'"#]+)/i,
+  go: /\bgo-version\s*:\s*['"]?([^\s'"#]+)/i,
+  java: /\bjava-version\s*:\s*['"]?([^\s'"#]+)/i,
+  rust: /\btoolchain\s*:\s*['"]?([^\s'"#]+)/i,
+};
+
+function ciDeclarations(
+  path: string,
+  content: string,
+  runtime: RuntimeName,
+  found: RuntimeDeclarationDiscovery,
+): void {
   const lines = content.split('\n');
   for (const [i, line] of lines.entries()) {
-    const raw = fields[runtime].exec(line)?.[1];
-    if (raw && !/[${}]/.test(raw)) {
-      const requirement = numericRuntimeTag(raw);
-      if (requirement) out.push({ file: path, line: i + 1, requirement });
+    const raw = CI_RUNTIME_FIELDS[runtime].exec(line)?.[1];
+    if (raw) {
+      record(found, runtime, path, i + 1, raw, 'ci', isDynamicValue(raw) ? null : numericRuntimeTag(raw));
     }
 
     // GitLab CI and CircleCI put authoritative runtimes in container images
@@ -379,10 +618,13 @@ function ciDeclarations(path: string, content: string, runtime: RuntimeName): Ru
     // truth across every config surface. Covers both the inline scalar form
     // (`image: node:18`, CircleCI's `- image: cimg/python:3.11`) and, below,
     // GitLab's map form (`image:` followed by an indented `name:`).
+    //
+    // `recordImage` is what keeps a generic `image: $DEFAULT_CI_IMAGE` out of
+    // every runtime's results: the image has to *name* the runtime before its
+    // unreadable tag can mean anything about that runtime.
     const image = /^\s*(?:-\s*)?image\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
-    if (image && !/[${}]/.test(image)) {
-      const requirement = containerImageRequirement(image, runtime);
-      if (requirement) out.push({ file: path, line: i + 1, requirement });
+    if (image) {
+      recordImage(found, runtime, path, i + 1, image, 'ci');
       continue;
     }
 
@@ -401,14 +643,10 @@ function ciDeclarations(path: string, content: string, runtime: RuntimeName): Ru
         const indent = /^\s*/.exec(next)![0].length;
         if (indent <= baseIndent) break;
         const nameValue = /^\s*name\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
-        if (nameValue && !/[${}]/.test(nameValue)) {
-          const requirement = containerImageRequirement(nameValue, runtime);
-          if (requirement) out.push({ file: path, line: j + 1, requirement });
-        }
+        if (nameValue) recordImage(found, runtime, path, j + 1, nameValue, 'ci');
       }
     }
   }
-  return dedupeDeclarations(out);
 }
 
 function lineValue(content: string, pattern: RegExp): { line: number; requirement: string } | null {
@@ -444,6 +682,18 @@ function dedupeDeclarations(declarations: readonly RuntimeDeclaration[]): Runtim
   });
 }
 
+function dedupeUnresolved(
+  declarations: readonly UnresolvedRuntimeDeclaration[],
+): UnresolvedRuntimeDeclaration[] {
+  const seen = new Set<string>();
+  return declarations.filter((declaration) => {
+    const key = `${declaration.file}:${declaration.line}:${declaration.rawText}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /**
  * Find every place this repository declares its own Node.js version.
  *
@@ -460,48 +710,6 @@ export function findNodeDeclarations(
   allMembers?: readonly string[],
 ): RuntimeDeclaration[] {
   return findRuntimeDeclarations(files, 'node', member, allMembers);
-}
-
-function findNodeDeclarationsIn(
-  files: readonly { path: string; content: string }[],
-): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
-
-  for (const { path, content } of files) {
-    if (!isRuntimeConfigPath(path)) continue;
-    const base = (path.split('/').pop() ?? '').toLowerCase();
-
-    if (base === 'package.json') {
-      const requirement = engineFromPackageJson(content);
-      if (requirement) out.push({ file: path, line: lineOf(content, /"node"\s*:/), requirement });
-      continue;
-    }
-
-    if (base === '.nvmrc' || base === '.node-version') {
-      const requirement = content.trim().split('\n')[0]?.replace(/^v/i, '').trim();
-      if (requirement) out.push({ file: path, line: 1, requirement });
-      continue;
-    }
-
-    if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
-      out.push(...containerDeclarations(path, content, 'node'));
-      continue;
-    }
-
-    if (base === '.tool-versions') {
-      for (const [i, line] of content.split('\n').entries()) {
-        const match = /^\s*(node|nodejs)\s+([^\s#]+)/i.exec(line);
-        if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
-      }
-      continue;
-    }
-
-    if (isCiPath(path)) {
-      out.push(...ciDeclarations(path, content, 'node'));
-    }
-  }
-
-  return out;
 }
 
 /**
@@ -678,75 +886,6 @@ export function findPythonDeclarations(
   return findRuntimeDeclarations(files, 'python', member, allMembers);
 }
 
-function findPythonDeclarationsIn(
-  files: readonly { path: string; content: string }[],
-): RuntimeDeclaration[] {
-  const out: RuntimeDeclaration[] = [];
-
-  for (const { path, content } of files) {
-    if (!isRuntimeConfigPath(path)) continue;
-    const base = (path.split('/').pop() ?? '').toLowerCase();
-
-    if (base === 'pyproject.toml') {
-      const found = requiresPythonFromPyproject(content);
-      if (found) out.push({ file: path, line: found.line, requirement: found.requirement });
-      continue;
-    }
-
-    if (base === 'setup.cfg') {
-      const found = pythonRequiresFromSetupCfg(content);
-      if (found) out.push({ file: path, line: found.line, requirement: found.requirement });
-      continue;
-    }
-
-    if (base === 'setup.py') {
-      const call = extractSetupCall(content);
-      const match = call ? /\bpython_requires\s*=\s*(['"])([^'"]+)\1/.exec(call) : null;
-      if (match?.[2]) out.push({ file: path, line: lineOf(content, /python_requires\s*=/), requirement: match[2] });
-      continue;
-    }
-
-    if (base === '.python-version') {
-      // Pyenv allows more than one version in this file — one per line, or
-      // several whitespace-separated on one line — and treats a `#` line as a
-      // comment. Reading only the first line can miss an older version this
-      // repository also builds and runs on, which is exactly the version a
-      // compatibility verdict needs to fail against.
-      for (const [i, line] of content.split('\n').entries()) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-        for (const token of trimmed.split(/\s+/)) {
-          out.push({ file: path, line: i + 1, requirement: token });
-        }
-      }
-      continue;
-    }
-
-    if (base === 'runtime.txt') {
-      const requirement = content.trim().split('\n')[0]?.replace(/^python-/i, '').trim();
-      if (requirement) out.push({ file: path, line: 1, requirement });
-      continue;
-    }
-
-    if (base === '.tool-versions') {
-      for (const [i, line] of content.split('\n').entries()) {
-        const match = /^\s*(python|python3)\s+([^\s#]+)/i.exec(line);
-        if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
-      }
-      continue;
-    }
-
-    if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
-      out.push(...containerDeclarations(path, content, 'python'));
-      continue;
-    }
-
-    if (isCiPath(path)) out.push(...ciDeclarations(path, content, 'python'));
-  }
-
-  return out;
-}
-
 /**
  * Read `requires-python` out of `pyproject.toml`'s `[project]` table only.
  *
@@ -801,6 +940,15 @@ function requiresPythonFromPyproject(content: string): { requirement: string; li
  * after it, `python_requires` very much included.
  */
 const CALL_PATTERN = /(?<!def\s+)(?:(?<![.\w])setup|(?<!\w)setuptools\.setup)\s*\(/g;
+
+/** `setup.py`'s literal `python_requires="..."` keyword argument, if it has one. */
+function setupPyPythonRequires(content: string): { requirement: string; line: number } | null {
+  const call = extractSetupCall(content);
+  const match = call ? /\bpython_requires\s*=\s*(['"])([^'"]+)\1/.exec(call) : null;
+  return match?.[2]
+    ? { requirement: match[2], line: lineOf(content, /python_requires\s*=/) }
+    : null;
+}
 
 function extractSetupCall(content: string): string | null {
   const withoutCommentLines = content
@@ -915,7 +1063,8 @@ export function checkPythonCompatibility(
     const declared = parseSpecifierSet(decl.requirement);
 
     let verdict: RuntimeCompatibility['verdict'];
-    if (isSubsetInterval(declared, required)) verdict = 'compatible';
+    if (unreadable(declared)) verdict = 'unknown';
+    else if (isSubsetInterval(declared, required)) verdict = 'compatible';
     else if (!intersectsInterval(declared, required)) verdict = 'incompatible';
     else verdict = 'partial';
 

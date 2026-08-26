@@ -1,4 +1,9 @@
 import type { BreakingChange, Evidence, ImpactSite } from '../types.js';
+import {
+  runtimeCompatibilityIsUnresolved,
+  worstRuntimeState,
+  type RuntimeRequirementAnalysis,
+} from './compatibility.js';
 import type {
   EvidenceConfidence,
   LicenseFinding,
@@ -49,6 +54,17 @@ export interface AssessmentInput {
    * own cache.
    */
   proseRead?: number;
+  /**
+   * What Drift established about this repository's runtime for each upstream
+   * runtime requirement — see `compatibility.ts`.
+   *
+   * Carried explicitly rather than inferred from `impactSites`, because the
+   * two states that matter most produce no sites at all: a workspace with no
+   * authoritative declaration, and an upstream range whose grammar Drift
+   * could not evaluate. Both are `unknown`, and both used to arrive here as
+   * an empty array indistinguishable from "checked, and fine".
+   */
+  runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
 }
 
 /**
@@ -81,9 +97,11 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   const apiSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind !== 'runtime-requirement');
   const apiFiles = new Set(apiSites.map((site) => site.file)).size;
   const runtimeSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind === 'runtime-requirement');
+  const runtimeState = worstRuntimeState(input.runtimeAnalyses);
+  const runtimeUnresolved = runtimeCompatibilityIsUnresolved(runtimeState);
   const highConfidenceChangeIds = new Set(
     impactSites
-      .filter((site) => site.confidence === 'high')
+      .filter((site) => isActionableSite(site))
       .map((site) => site.breakingChangeId),
   );
   const actionableChanges = input.breakingChanges.filter((change) => highConfidenceChangeIds.has(change.id));
@@ -118,7 +136,16 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
       `${apiSites.length} ${plural(apiSites.length, 'place', 'places')} in ${apiFiles} ${plural(apiFiles, 'file', 'files')} ${plural(apiSites.length, 'uses', 'use')} an API this upgrade changes.`,
     );
   }
-  if (runtimeSites.length > 0) {
+  // The runtime sentence comes from the analysis, not the sites: it is the
+  // only place that can say "Drift could not find a declaration at all",
+  // which by construction has no site to describe.
+  for (const analysis of input.runtimeAnalyses ?? []) {
+    reasons.push(analysis.statement);
+  }
+  if (runtimeSites.length > 0 && !(input.runtimeAnalyses?.length ?? 0)) {
+    // A caller that supplied runtime sites without the analyses behind them
+    // (an older embedder, a hand-built input) still gets an accurate summary
+    // rather than silence.
     reasons.push(...describeRuntimeImpact(runtimeSites));
   }
   if (affected > 0) {
@@ -130,7 +157,12 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
         `${actionableDecisions.length} locally affected ${plural(actionableDecisions.length, 'change requires', 'changes require')} a developer decision rather than a substitution.`,
       );
     }
-  } else if (input.breakingChanges.length > 0) {
+  } else if (input.breakingChanges.length > 0 && !runtimeUnresolved) {
+    // "None of which this repository uses" is a positive claim about this
+    // repository, and it may only be made when compatibility was actually
+    // established. With a runtime requirement left `unknown` or `partial`,
+    // the true sentence is the analysis statement pushed above — Drift did
+    // not find a local use *and* did not establish there isn't one.
     reasons.push(
       `${input.breakingChanges.length} upstream breaking ${plural(input.breakingChanges.length, 'change', 'changes')}, none of which this repository uses.`,
     );
@@ -153,6 +185,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     affected,
     decisions: actionableDecisions.length,
     actionable: actionableChanges.length > 0,
+    runtimeUnresolved,
   });
   const confidence = judgeConfidence(input);
 
@@ -165,12 +198,35 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     reasons,
     confidence: confidence.level,
     confidenceBasis: confidence.basis,
+    ...(runtimeState ? { runtimeCompatibility: runtimeState } : {}),
   };
+}
+
+/**
+ * Does this site, by itself, establish that the repository must change?
+ *
+ * For an API site the question is whether the match was semantically
+ * resolved, which is what `confidence` measures. For a runtime site it is a
+ * *different* question with a different answer, and conflating the two is
+ * what turned a partial range overlap into "Migration required": Drift can be
+ * completely certain it found `engines.node` (high confidence) and still have
+ * established only that the declared range *includes* versions upstream
+ * rejects, not that this project actually runs on one (partial).
+ *
+ * So confidence gates identity, `runtimeVerdict` gates meaning, and only
+ * `incompatible` — the repository definitely uses a rejected runtime — is
+ * actionable. `partial` and `unknown` are review, never a migration headline
+ * and never a reason to call anything safe.
+ */
+function isActionableSite(site: ImpactSite): boolean {
+  if (site.confidence !== 'high') return false;
+  if (site.runtimeVerdict === undefined) return true;
+  return site.runtimeVerdict === 'incompatible';
 }
 
 function decide(
   input: AssessmentInput,
-  counts: { affected: number; decisions: number; actionable: boolean },
+  counts: { affected: number; decisions: number; actionable: boolean; runtimeUnresolved: boolean },
 ): Recommendation {
   const { security, maintenance, license } = input;
 
@@ -188,10 +244,20 @@ function decide(
   if (counts.affected > 0) {
     // Lexical or owner-ambiguous matches are useful leads, but they do not
     // establish that this repository needs a migration. Only a semantically
-    // resolved (high-confidence) site can support that headline.
+    // resolved (high-confidence) site can support that headline — and, for a
+    // runtime requirement, only one whose verdict is `incompatible`. A
+    // partial overlap has an independent path to `manual-migration-required`
+    // exactly when some *other* finding is genuinely actionable, which is
+    // what `counts.decisions` measures after `isActionableSite`.
     if (!counts.actionable) return 'upgrade-after-review';
     return counts.decisions > 0 ? 'manual-migration-required' : 'upgrade-after-review';
   }
+
+  // Zero sites, and a runtime question Drift did not answer. Every branch
+  // below this point ends in `safe-to-upgrade`, `upgrade-recommended`, or
+  // `insufficient-evidence` — none of which may be said over an unresolved
+  // compatibility condition that applies to the whole package.
+  if (counts.runtimeUnresolved) return 'upgrade-after-review';
 
   const securityFavors = security.checked && security.resolved.length > 0;
   const maintenanceFavors = maintenance.facts.some((fact) => fact.polarity === 'favors');
