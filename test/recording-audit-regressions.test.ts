@@ -211,6 +211,15 @@ describe('recording audit: C and C++ public surface identity', () => {
     assert.ok(after.has('OPENSSL_cleanup'));
     assert.equal(diffSurfaces(before, after).length, 0);
   });
+
+  test('repeated C declaration annotations are parsed without regex backtracking', () => {
+    const annotations = Array.from({ length: 2_000 }, () => '__API').join('\t');
+    const surface = parseHeaderSurface([{
+      path: 'api.h',
+      content: `${annotations}\tint public_api(void);\n`,
+    }]);
+    assert.ok(surface.has('public_api'));
+  });
 });
 
 describe('recording audit: owner-aware localization', () => {

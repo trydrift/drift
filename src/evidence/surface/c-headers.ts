@@ -523,9 +523,10 @@ function parseDeclaration(statement: string, namespacePath: readonly string[] = 
     };
   }
 
+  const functionText = stripDeclarationPrefixes(text);
   const fn =
-    /^(?:(?:extern|static|inline|constexpr|virtual|explicit|friend|\w+_API|\w+_EXPORT|EXTERN_C|__\w+|__declspec\([^)]*\))\s+)*((?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|class\s+)*[\w:]+(?:\s*<[^>]*>)?[\s*&]+)(\w+)\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept)?\s*[;{]$/.exec(
-      text,
+    /^((?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|class\s+)*[\w:]+(?:\s*<[^>]*>)?[\s*&]+)(\w+)\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept)?\s*[;{]$/.exec(
+      functionText,
     );
   if (fn) {
     const returnType = collapse(fn[1]!);
@@ -554,6 +555,23 @@ function parseDeclaration(statement: string, namespacePath: readonly string[] = 
   }
 
   return null;
+}
+
+/**
+ * Remove declaration modifiers one token at a time.
+ *
+ * Keeping repetition in this progress-guaranteed loop avoids a nested regular
+ * expression whose overlapping `__name` and `name_API` alternatives could
+ * backtrack exponentially on adversarial headers.
+ */
+function stripDeclarationPrefixes(text: string): string {
+  const prefix = /^(?:extern|static|inline|constexpr|virtual|explicit|friend|EXTERN_C|__declspec\([^)]*\)|__\w+|[A-Za-z_]\w*_(?:API|EXPORT))\s+/;
+  let rest = text;
+  while (true) {
+    const match = prefix.exec(rest);
+    if (!match) return rest;
+    rest = rest.slice(match[0].length);
+  }
 }
 
 function qualify(namespacePath: readonly string[], name: string): string {
