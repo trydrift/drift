@@ -96,13 +96,24 @@ function validateRuntime(change) {
   if (!runtime || !['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(runtime.runtime)) {
     throw new Error('runtime requirement is not structured with a known runtime');
   }
-  if (!/^(?:[<>=~^]*\s*)?\d+(?:\.\d+){0,3}$/.test(runtime.requirement ?? '')) {
+  const valid = runtime.kind === 'minimum-runtime'
+    ? /^(?:[<>=~^]*\s*)?\d+(?:\.\d+){0,3}$/.test(runtime.requirement ?? '')
+    : runtime.kind === 'unsupported-runtime-range'
+      ? /^\d+(?:\.\d+){0,2}(?:\.x)?$/i.test(runtime.requirement ?? '')
+      : false;
+  if (!valid) {
     throw new Error(`malformed runtime requirement: ${runtime.requirement ?? 'missing'}`);
   }
 }
 
 function validateRuntimeSites(change) {
   if (change.kind !== 'runtime-requirement' || !change.runtime) return;
+  if (change.runtime.kind === 'unsupported-runtime-range') {
+    if ((change.sites ?? []).length > 0) {
+      throw new Error(`unsupported ${change.runtime.runtime} range invented a local runtime-floor impact`);
+    }
+    return;
+  }
   const runtime = change.runtime.runtime;
   const requirement = parseRequirement(change.runtime.requirement);
   for (const site of change.sites ?? []) {
@@ -137,15 +148,7 @@ function runtimeSiteOwnedBy(runtime, file, base, excerpt) {
   if (runtime === 'rust' && ['rust-toolchain', 'rust-toolchain.toml', 'cargo.toml'].includes(base)) return true;
 
   if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
-    const images = {
-      node: /(?:^|\/)node:/i,
-      python: /(?:^|\/)python:/i,
-      ruby: /(?:^|\/)ruby:/i,
-      go: /(?:^|\/)golang:/i,
-      java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):/i,
-      rust: /(?:^|\/)rust:/i,
-    };
-    return images[runtime]?.test(excerpt) ?? false;
+    return runtimeImageOwnedBy(runtime, excerpt);
   }
 
   if (/^\.github\/workflows\/.+\.ya?ml$/.test(file) || /^\.(?:gitlab-ci|circleci)/.test(file)) {
@@ -157,9 +160,21 @@ function runtimeSiteOwnedBy(runtime, file, base, excerpt) {
       java: /java-version\s*:/i,
       rust: /toolchain\s*:/i,
     };
-    return fields[runtime]?.test(excerpt) ?? false;
+    return (fields[runtime]?.test(excerpt) ?? false) || runtimeImageOwnedBy(runtime, excerpt);
   }
   return false;
+}
+
+function runtimeImageOwnedBy(runtime, excerpt) {
+  const images = {
+    node: /(?:^|\/)node:/i,
+    python: /(?:^|\/)python:/i,
+    ruby: /(?:^|\/)ruby:/i,
+    go: /(?:^|\/)golang:/i,
+    java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):/i,
+    rust: /(?:^|\/)rust:/i,
+  };
+  return images[runtime]?.test(excerpt) ?? false;
 }
 
 /** Package/symbol-specific checks below are corpus fixtures only, never engine policy. */
