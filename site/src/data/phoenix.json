@@ -6,10 +6,10 @@
   "language": "Elixir",
   "repo": "https://github.com/phoenixframework/phoenix",
   "blurb": "The web framework nearly every production Elixir application is built on.",
-  "capturedAt": "2026-08-26T02:46:40.676Z",
+  "capturedAt": "2026-08-26T03:33:08.512Z",
   "commit": "cb69bb890acbd728b6a81da6bceb039df3e9be94",
-  "engine": "5f714a0d411d6def",
-  "durationMs": 3002,
+  "engine": "e7735132693e42de",
+  "durationMs": 2881,
   "packagesChecked": 44,
   "manifests": [
     "package.json",
@@ -22,7 +22,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 128,
+      "at": 137,
       "phase": "Looking for manifests",
       "detail": "phoenixframework/phoenix",
       "done": 0,
@@ -30,7 +30,7 @@
     },
     {
       "type": "progress",
-      "at": 157,
+      "at": 166,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -38,7 +38,7 @@
     },
     {
       "type": "progress",
-      "at": 159,
+      "at": 169,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
@@ -46,7 +46,7 @@
     },
     {
       "type": "progress",
-      "at": 174,
+      "at": 177,
       "phase": "Reading manifest",
       "detail": "mix.exs",
       "done": 0,
@@ -54,7 +54,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#plug@1.20.3",
         "name": "plug",
@@ -81,7 +81,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#plug_crypto@2.2.0",
         "name": "plug_crypto",
@@ -108,7 +108,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#telemetry@1.4.2",
         "name": "telemetry",
@@ -135,7 +135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -162,7 +162,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#phoenix_template@1.0.4",
         "name": "phoenix_template",
@@ -189,7 +189,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#websock_adapter@0.6.0",
         "name": "websock_adapter",
@@ -216,7 +216,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#phoenix_view@2.0.4",
         "name": "phoenix_view",
@@ -243,7 +243,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#plug_cowboy@2.8.1",
         "name": "plug_cowboy",
@@ -270,7 +270,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -297,7 +297,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -324,7 +324,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#ex_doc@0.40.3",
         "name": "ex_doc",
@@ -351,7 +351,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -378,7 +378,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#ecto_sql@3.14.0",
         "name": "ecto_sql",
@@ -405,7 +405,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#gettext@1.0.2",
         "name": "gettext",
@@ -432,7 +432,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#telemetry_poller@1.3.0",
         "name": "telemetry_poller",
@@ -459,7 +459,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -486,7 +486,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#makeup_elixir@1.0.1",
         "name": "makeup_elixir",
@@ -513,7 +513,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#makeup_eex@2.0.2",
         "name": "makeup_eex",
@@ -540,7 +540,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 180,
       "candidate": {
         "id": "mix.exs#makeup_syntect@0.1.4",
         "name": "makeup_syntect",
@@ -567,7 +567,7 @@
     },
     {
       "type": "progress",
-      "at": 177,
+      "at": 180,
       "phase": "Reading manifest",
       "detail": "assets/package.json",
       "done": 0,
@@ -575,7 +575,7 @@
     },
     {
       "type": "progress",
-      "at": 177,
+      "at": 180,
       "phase": "Reading manifest",
       "detail": "installer/mix.exs",
       "done": 0,
@@ -583,7 +583,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 178,
+      "at": 180,
       "candidate": {
         "id": "installer/mix.exs#ex_doc@0.40.3",
         "name": "ex_doc",
@@ -610,7 +610,7 @@
     },
     {
       "type": "progress",
-      "at": 178,
+      "at": 180,
       "phase": "Reading manifest",
       "detail": "integration_test/mix.exs",
       "done": 0,
@@ -618,7 +618,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_ecto@4.7.0",
         "name": "phoenix_ecto",
@@ -645,7 +645,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#esbuild@0.10.0",
         "name": "esbuild",
@@ -672,7 +672,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sql@3.14.0",
         "name": "ecto_sql",
@@ -699,7 +699,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -726,7 +726,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#myxql@0.9.0",
         "name": "myxql",
@@ -753,7 +753,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#tds@2.3.8",
         "name": "tds",
@@ -780,7 +780,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -807,7 +807,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 181,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_html@4.3.0",
         "name": "phoenix_html",
@@ -834,7 +834,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -861,7 +861,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -888,7 +888,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -915,7 +915,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -942,7 +942,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -969,7 +969,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -996,7 +996,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_poller@1.3.0",
         "name": "telemetry_poller",
@@ -1023,7 +1023,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#gettext@1.0.2",
         "name": "gettext",
@@ -1050,7 +1050,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -1077,7 +1077,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -1104,7 +1104,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -1131,7 +1131,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#bcrypt_elixir@3.3.2",
         "name": "bcrypt_elixir",
@@ -1158,7 +1158,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#argon2_elixir@4.1.3",
         "name": "argon2_elixir",
@@ -1185,7 +1185,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#pbkdf2_elixir@2.3.1",
         "name": "pbkdf2_elixir",
@@ -1212,7 +1212,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#tailwind@0.5.1",
         "name": "tailwind",
@@ -1239,7 +1239,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 204,
+      "at": 182,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -1266,7 +1266,7 @@
     },
     {
       "type": "progress",
-      "at": 204,
+      "at": 182,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -1274,7 +1274,7 @@
     },
     {
       "type": "progress",
-      "at": 204,
+      "at": 182,
       "phase": "Checking registries",
       "detail": "44 direct dependencies",
       "done": 0,
@@ -1282,7 +1282,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 205,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#plug@1.20.3",
         "name": "plug",
@@ -1309,7 +1309,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 205,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#plug_crypto@2.2.0",
         "name": "plug_crypto",
@@ -1336,7 +1336,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 205,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#telemetry@1.4.2",
         "name": "telemetry",
@@ -1363,7 +1363,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 205,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -1390,7 +1390,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 205,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#phoenix_template@1.0.4",
         "name": "phoenix_template",
@@ -1417,7 +1417,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 205,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#websock_adapter@0.6.0",
         "name": "websock_adapter",
@@ -1444,7 +1444,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 205,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#phoenix_view@2.0.4",
         "name": "phoenix_view",
@@ -1471,7 +1471,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#plug_cowboy@2.8.1",
         "name": "plug_cowboy",
@@ -1498,7 +1498,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 182,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -1525,7 +1525,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -1552,7 +1552,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#ex_doc@0.40.3",
         "name": "ex_doc",
@@ -1579,7 +1579,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -1606,7 +1606,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#ecto_sql@3.14.0",
         "name": "ecto_sql",
@@ -1633,7 +1633,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#gettext@1.0.2",
         "name": "gettext",
@@ -1660,7 +1660,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#telemetry_poller@1.3.0",
         "name": "telemetry_poller",
@@ -1687,7 +1687,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -1714,7 +1714,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#makeup_elixir@1.0.1",
         "name": "makeup_elixir",
@@ -1741,7 +1741,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#makeup_eex@2.0.2",
         "name": "makeup_eex",
@@ -1768,7 +1768,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "mix.exs#makeup_syntect@0.1.4",
         "name": "makeup_syntect",
@@ -1795,7 +1795,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "installer/mix.exs#ex_doc@0.40.3",
         "name": "ex_doc",
@@ -1822,7 +1822,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_ecto@4.7.0",
         "name": "phoenix_ecto",
@@ -1849,7 +1849,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "integration_test/mix.exs#esbuild@0.10.0",
         "name": "esbuild",
@@ -1876,7 +1876,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sql@3.14.0",
         "name": "ecto_sql",
@@ -1903,7 +1903,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -1930,7 +1930,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "integration_test/mix.exs#myxql@0.9.0",
         "name": "myxql",
@@ -1957,7 +1957,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 206,
+      "at": 183,
       "candidate": {
         "id": "integration_test/mix.exs#tds@2.3.8",
         "name": "tds",
@@ -1984,7 +1984,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 207,
+      "at": 184,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -2011,7 +2011,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 207,
+      "at": 184,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_html@4.3.0",
         "name": "phoenix_html",
@@ -2038,7 +2038,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 207,
+      "at": 184,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -2065,7 +2065,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 207,
+      "at": 184,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -2092,7 +2092,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 207,
+      "at": 184,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -2119,7 +2119,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 207,
+      "at": 184,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -2146,12 +2146,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 215,
+      "at": 190,
       "id": "mix.exs#plug_crypto@2.2.0"
     },
     {
       "type": "progress",
-      "at": 215,
+      "at": 190,
       "phase": "Up to date",
       "detail": "plug_crypto@2.2.0",
       "done": 1,
@@ -2159,7 +2159,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 215,
+      "at": 190,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -2186,12 +2186,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 215,
+      "at": 190,
       "id": "mix.exs#telemetry@1.4.2"
     },
     {
       "type": "progress",
-      "at": 215,
+      "at": 190,
       "phase": "Up to date",
       "detail": "telemetry@1.4.2",
       "done": 2,
@@ -2199,7 +2199,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 215,
+      "at": 190,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -2225,8 +2225,48 @@
       }
     },
     {
+      "type": "candidate-drop",
+      "at": 191,
+      "id": "mix.exs#plug@1.20.3"
+    },
+    {
+      "type": "progress",
+      "at": 191,
+      "phase": "Up to date",
+      "detail": "plug@1.20.3",
+      "done": 3,
+      "total": 44
+    },
+    {
       "type": "candidate-upsert",
-      "at": 216,
+      "at": 191,
+      "candidate": {
+        "id": "integration_test/mix.exs#telemetry_poller@1.3.0",
+        "name": "telemetry_poller",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.3.0",
+        "latest": "1.3.0",
+        "selected": "1.3.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Asking Hex what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 191,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -2253,55 +2293,15 @@
     },
     {
       "type": "progress",
-      "at": 216,
+      "at": 191,
       "phase": "Outdated",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
-      "done": 3,
-      "total": 44
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 216,
-      "candidate": {
-        "id": "integration_test/mix.exs#telemetry_poller@1.3.0",
-        "name": "telemetry_poller",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.3.0",
-        "latest": "1.3.0",
-        "selected": "1.3.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Asking Hex what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-drop",
-      "at": 216,
-      "id": "mix.exs#phoenix_view@2.0.4"
-    },
-    {
-      "type": "progress",
-      "at": 216,
-      "phase": "Up to date",
-      "detail": "phoenix_view@2.0.4",
       "done": 4,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 216,
+      "at": 192,
       "candidate": {
         "id": "integration_test/mix.exs#gettext@1.0.2",
         "name": "gettext",
@@ -2328,12 +2328,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 216,
+      "at": 192,
       "id": "mix.exs#phoenix_template@1.0.4"
     },
     {
       "type": "progress",
-      "at": 216,
+      "at": 192,
       "phase": "Up to date",
       "detail": "phoenix_template@1.0.4",
       "done": 5,
@@ -2341,7 +2341,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 216,
+      "at": 192,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -2368,20 +2368,20 @@
     },
     {
       "type": "candidate-drop",
-      "at": 217,
-      "id": "mix.exs#plug@1.20.3"
+      "at": 192,
+      "id": "mix.exs#websock_adapter@0.6.0"
     },
     {
       "type": "progress",
-      "at": 217,
+      "at": 192,
       "phase": "Up to date",
-      "detail": "plug@1.20.3",
+      "detail": "websock_adapter@0.6.0",
       "done": 6,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 217,
+      "at": 192,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -2407,43 +2407,21 @@
       }
     },
     {
-      "type": "candidate-upsert",
-      "at": 218,
-      "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.9.0",
-        "selected": "2.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
+      "type": "candidate-drop",
+      "at": 192,
+      "id": "mix.exs#phoenix_view@2.0.4"
     },
     {
       "type": "progress",
-      "at": 218,
-      "phase": "Outdated",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "at": 192,
+      "phase": "Up to date",
+      "detail": "phoenix_view@2.0.4",
       "done": 7,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 218,
+      "at": 192,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -2470,17 +2448,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 219,
+      "at": 193,
       "candidate": {
-        "id": "mix.exs#bandit@1.12.4",
-        "name": "bandit",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
         "manifestPath": "mix.exs",
         "workspace": "",
         "workspaceName": "phoenix",
-        "current": "1.12.4",
-        "latest": "1.12.5",
-        "selected": "1.12.5",
+        "current": "2.8.1",
+        "latest": "2.9.0",
+        "selected": "2.9.0",
         "safeLatest": null,
         "status": "pending",
         "phase": "Waiting to be checked",
@@ -2497,15 +2475,15 @@
     },
     {
       "type": "progress",
-      "at": 219,
+      "at": 193,
       "phase": "Outdated",
-      "detail": "bandit 1.12.4 → 1.12.5",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 8,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 219,
+      "at": 193,
       "candidate": {
         "id": "integration_test/mix.exs#bcrypt_elixir@3.3.2",
         "name": "bcrypt_elixir",
@@ -2532,18 +2510,18 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 219,
+      "at": 195,
       "candidate": {
-        "id": "integration_test/mix.exs#bandit@1.12.4",
+        "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
         "current": "1.12.4",
         "latest": "1.12.5",
         "selected": "1.12.5",
-        "safeLatest": "1.12.5",
+        "safeLatest": null,
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -2559,7 +2537,7 @@
     },
     {
       "type": "progress",
-      "at": 219,
+      "at": 195,
       "phase": "Outdated",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 9,
@@ -2567,7 +2545,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 219,
+      "at": 195,
       "candidate": {
         "id": "integration_test/mix.exs#argon2_elixir@4.1.3",
         "name": "argon2_elixir",
@@ -2594,18 +2572,18 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 220,
+      "at": 195,
       "candidate": {
-        "id": "mix.exs#jason@1.4.5",
-        "name": "jason",
+        "id": "integration_test/mix.exs#bandit@1.12.4",
+        "name": "bandit",
         "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "1.4.5",
-        "latest": "1.5.0-alpha.2",
-        "selected": "1.5.0-alpha.2",
-        "safeLatest": null,
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.12.4",
+        "latest": "1.12.5",
+        "selected": "1.12.5",
+        "safeLatest": "1.12.5",
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -2621,15 +2599,15 @@
     },
     {
       "type": "progress",
-      "at": 220,
+      "at": 195,
       "phase": "Outdated",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "detail": "bandit 1.12.4 → 1.12.5",
       "done": 10,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 220,
+      "at": 195,
       "candidate": {
         "id": "integration_test/mix.exs#pbkdf2_elixir@2.3.1",
         "name": "pbkdf2_elixir",
@@ -2655,43 +2633,21 @@
       }
     },
     {
-      "type": "candidate-upsert",
-      "at": 220,
-      "candidate": {
-        "id": "integration_test/mix.exs#jason@1.4.5",
-        "name": "jason",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.4.5",
-        "latest": "1.5.0-alpha.2",
-        "selected": "1.5.0-alpha.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
+      "type": "candidate-drop",
+      "at": 197,
+      "id": "mix.exs#ex_doc@0.40.3"
     },
     {
       "type": "progress",
-      "at": 220,
-      "phase": "Outdated",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "at": 197,
+      "phase": "Up to date",
+      "detail": "ex_doc@0.40.3",
       "done": 11,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 220,
+      "at": 197,
       "candidate": {
         "id": "integration_test/mix.exs#tailwind@0.5.1",
         "name": "tailwind",
@@ -2718,12 +2674,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 221,
-      "id": "mix.exs#ex_doc@0.40.3"
+      "at": 197,
+      "id": "installer/mix.exs#ex_doc@0.40.3"
     },
     {
       "type": "progress",
-      "at": 221,
+      "at": 197,
       "phase": "Up to date",
       "detail": "ex_doc@0.40.3",
       "done": 12,
@@ -2731,7 +2687,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 221,
+      "at": 197,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -2757,99 +2713,78 @@
       }
     },
     {
-      "type": "candidate-drop",
-      "at": 221,
-      "id": "installer/mix.exs#ex_doc@0.40.3"
+      "type": "candidate-upsert",
+      "at": 197,
+      "candidate": {
+        "id": "mix.exs#jason@1.4.5",
+        "name": "jason",
+        "ecosystem": "hex",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "1.4.5",
+        "latest": "1.5.0-alpha.2",
+        "selected": "1.5.0-alpha.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
     },
     {
       "type": "progress",
-      "at": 221,
-      "phase": "Up to date",
-      "detail": "ex_doc@0.40.3",
+      "at": 197,
+      "phase": "Outdated",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 13,
       "total": 44
     },
     {
-      "type": "candidate-drop",
-      "at": 221,
-      "id": "mix.exs#telemetry_poller@1.3.0"
+      "type": "candidate-upsert",
+      "at": 197,
+      "candidate": {
+        "id": "integration_test/mix.exs#jason@1.4.5",
+        "name": "jason",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.4.5",
+        "latest": "1.5.0-alpha.2",
+        "selected": "1.5.0-alpha.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
     },
     {
       "type": "progress",
-      "at": 221,
-      "phase": "Up to date",
-      "detail": "telemetry_poller@1.3.0",
+      "at": 197,
+      "phase": "Outdated",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 14,
       "total": 44
     },
     {
-      "type": "candidate-drop",
-      "at": 221,
-      "id": "integration_test/mix.exs#telemetry_poller@1.3.0"
-    },
-    {
-      "type": "progress",
-      "at": 221,
-      "phase": "Up to date",
-      "detail": "telemetry_poller@1.3.0",
-      "done": 15,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 221,
-      "id": "mix.exs#ecto_sql@3.14.0"
-    },
-    {
-      "type": "progress",
-      "at": 221,
-      "phase": "Up to date",
-      "detail": "ecto_sql@3.14.0",
-      "done": 16,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 221,
-      "id": "integration_test/mix.exs#ecto_sql@3.14.0"
-    },
-    {
-      "type": "progress",
-      "at": 221,
-      "phase": "Up to date",
-      "detail": "ecto_sql@3.14.0",
-      "done": 17,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 221,
-      "id": "mix.exs#gettext@1.0.2"
-    },
-    {
-      "type": "progress",
-      "at": 221,
-      "phase": "Up to date",
-      "detail": "gettext@1.0.2",
-      "done": 18,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 221,
-      "id": "integration_test/mix.exs#gettext@1.0.2"
-    },
-    {
-      "type": "progress",
-      "at": 221,
-      "phase": "Up to date",
-      "detail": "gettext@1.0.2",
-      "done": 19,
-      "total": 44
-    },
-    {
       "type": "candidate-upsert",
-      "at": 222,
+      "at": 199,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -2876,28 +2811,106 @@
     },
     {
       "type": "progress",
-      "at": 222,
+      "at": 199,
       "phase": "Outdated",
       "detail": "ecto 3.14.0 → 3.14.2",
+      "done": 15,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 199,
+      "id": "mix.exs#telemetry_poller@1.3.0"
+    },
+    {
+      "type": "progress",
+      "at": 199,
+      "phase": "Up to date",
+      "detail": "telemetry_poller@1.3.0",
+      "done": 16,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 199,
+      "id": "integration_test/mix.exs#telemetry_poller@1.3.0"
+    },
+    {
+      "type": "progress",
+      "at": 199,
+      "phase": "Up to date",
+      "detail": "telemetry_poller@1.3.0",
+      "done": 17,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 199,
+      "id": "mix.exs#gettext@1.0.2"
+    },
+    {
+      "type": "progress",
+      "at": 199,
+      "phase": "Up to date",
+      "detail": "gettext@1.0.2",
+      "done": 18,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 199,
+      "id": "integration_test/mix.exs#gettext@1.0.2"
+    },
+    {
+      "type": "progress",
+      "at": 199,
+      "phase": "Up to date",
+      "detail": "gettext@1.0.2",
+      "done": 19,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 200,
+      "id": "mix.exs#ecto_sql@3.14.0"
+    },
+    {
+      "type": "progress",
+      "at": 200,
+      "phase": "Up to date",
+      "detail": "ecto_sql@3.14.0",
       "done": 20,
       "total": 44
     },
     {
       "type": "candidate-drop",
-      "at": 223,
-      "id": "mix.exs#makeup_syntect@0.1.4"
+      "at": 200,
+      "id": "integration_test/mix.exs#ecto_sql@3.14.0"
     },
     {
       "type": "progress",
-      "at": 223,
+      "at": 200,
       "phase": "Up to date",
-      "detail": "makeup_syntect@0.1.4",
+      "detail": "ecto_sql@3.14.0",
       "done": 21,
       "total": 44
     },
     {
+      "type": "candidate-drop",
+      "at": 200,
+      "id": "mix.exs#makeup_elixir@1.0.1"
+    },
+    {
+      "type": "progress",
+      "at": 200,
+      "phase": "Up to date",
+      "detail": "makeup_elixir@1.0.1",
+      "done": 22,
+      "total": 44
+    },
+    {
       "type": "candidate-upsert",
-      "at": 223,
+      "at": 201,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -2924,15 +2937,15 @@
     },
     {
       "type": "progress",
-      "at": 223,
+      "at": 201,
       "phase": "Outdated",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
-      "done": 22,
+      "done": 23,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 223,
+      "at": 201,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -2959,224 +2972,80 @@
     },
     {
       "type": "progress",
-      "at": 223,
+      "at": 201,
       "phase": "Outdated",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
-      "done": 23,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 224,
-      "id": "mix.exs#makeup_elixir@1.0.1"
-    },
-    {
-      "type": "progress",
-      "at": 224,
-      "phase": "Up to date",
-      "detail": "makeup_elixir@1.0.1",
       "done": 24,
       "total": 44
     },
     {
       "type": "candidate-drop",
-      "at": 224,
-      "id": "integration_test/mix.exs#esbuild@0.10.0"
+      "at": 201,
+      "id": "mix.exs#makeup_eex@2.0.2"
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 201,
       "phase": "Up to date",
-      "detail": "esbuild@0.10.0",
+      "detail": "makeup_eex@2.0.2",
       "done": 25,
       "total": 44
     },
     {
       "type": "candidate-drop",
-      "at": 224,
-      "id": "mix.exs#makeup_eex@2.0.2"
+      "at": 201,
+      "id": "mix.exs#makeup_syntect@0.1.4"
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 201,
       "phase": "Up to date",
-      "detail": "makeup_eex@2.0.2",
+      "detail": "makeup_syntect@0.1.4",
       "done": 26,
       "total": 44
     },
     {
       "type": "candidate-drop",
-      "at": 224,
-      "id": "mix.exs#websock_adapter@0.6.0"
+      "at": 202,
+      "id": "integration_test/mix.exs#esbuild@0.10.0"
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 202,
       "phase": "Up to date",
-      "detail": "websock_adapter@0.6.0",
+      "detail": "esbuild@0.10.0",
       "done": 27,
       "total": 44
     },
     {
       "type": "candidate-drop",
-      "at": 224,
-      "id": "integration_test/mix.exs#phoenix_ecto@4.7.0"
+      "at": 202,
+      "id": "integration_test/mix.exs#myxql@0.9.0"
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 202,
       "phase": "Up to date",
-      "detail": "phoenix_ecto@4.7.0",
+      "detail": "myxql@0.9.0",
       "done": 28,
       "total": 44
     },
     {
       "type": "candidate-drop",
-      "at": 224,
-      "id": "integration_test/mix.exs#myxql@0.9.0"
+      "at": 202,
+      "id": "integration_test/mix.exs#phoenix_ecto@4.7.0"
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 202,
       "phase": "Up to date",
-      "detail": "myxql@0.9.0",
+      "detail": "phoenix_ecto@4.7.0",
       "done": 29,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 225,
-      "candidate": {
-        "id": "integration_test/mix.exs#dns_cluster@0.2.0",
-        "name": "dns_cluster",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.2.0",
-        "latest": "0.3.0",
-        "selected": "0.3.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 225,
-      "phase": "Outdated",
-      "detail": "dns_cluster 0.2.0 → 0.3.0",
-      "done": 30,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 225,
-      "id": "integration_test/mix.exs#tds@2.3.8"
-    },
-    {
-      "type": "progress",
-      "at": 225,
-      "phase": "Up to date",
-      "detail": "tds@2.3.8",
-      "done": 31,
-      "total": 44
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 225,
-      "candidate": {
-        "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
-        "name": "ecto_sqlite3",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.24.0",
-        "latest": "0.24.1",
-        "selected": "0.24.1",
-        "safeLatest": "0.24.1",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 225,
-      "phase": "Outdated",
-      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
-      "done": 32,
-      "total": 44
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 225,
-      "candidate": {
-        "id": "integration_test/mix.exs#lazy_html@0.1.11",
-        "name": "lazy_html",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.1.11",
-        "latest": "0.1.12",
-        "selected": "0.1.12",
-        "safeLatest": "0.1.12",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 225,
-      "phase": "Outdated",
-      "detail": "lazy_html 0.1.11 → 0.1.12",
-      "done": 33,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 226,
-      "id": "integration_test/mix.exs#phoenix_html@4.3.0"
-    },
-    {
-      "type": "progress",
-      "at": 226,
-      "phase": "Up to date",
-      "detail": "phoenix_html@4.3.0",
-      "done": 34,
-      "total": 44
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 226,
+      "at": 203,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -3203,15 +3072,181 @@
     },
     {
       "type": "progress",
-      "at": 226,
+      "at": 203,
       "phase": "Outdated",
       "detail": "postgrex 0.22.3 → 0.22.4",
+      "done": 30,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 203,
+      "id": "integration_test/mix.exs#tds@2.3.8"
+    },
+    {
+      "type": "progress",
+      "at": 203,
+      "phase": "Up to date",
+      "detail": "tds@2.3.8",
+      "done": 31,
+      "total": 44
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 204,
+      "candidate": {
+        "id": "integration_test/mix.exs#dns_cluster@0.2.0",
+        "name": "dns_cluster",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.2.0",
+        "latest": "0.3.0",
+        "selected": "0.3.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 204,
+      "phase": "Outdated",
+      "detail": "dns_cluster 0.2.0 → 0.3.0",
+      "done": 32,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 204,
+      "id": "integration_test/mix.exs#phoenix_html@4.3.0"
+    },
+    {
+      "type": "progress",
+      "at": 204,
+      "phase": "Up to date",
+      "detail": "phoenix_html@4.3.0",
+      "done": 33,
+      "total": 44
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 204,
+      "candidate": {
+        "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
+        "name": "ecto_sqlite3",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.24.0",
+        "latest": "0.24.1",
+        "selected": "0.24.1",
+        "safeLatest": "0.24.1",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 204,
+      "phase": "Outdated",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
+      "done": 34,
+      "total": 44
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 205,
+      "candidate": {
+        "id": "integration_test/mix.exs#lazy_html@0.1.11",
+        "name": "lazy_html",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.1.11",
+        "latest": "0.1.12",
+        "selected": "0.1.12",
+        "safeLatest": "0.1.12",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 205,
+      "phase": "Outdated",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 35,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 227,
+      "at": 205,
+      "candidate": {
+        "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
+        "name": "phoenix_live_reload",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.6.2",
+        "latest": "1.7.0",
+        "selected": "1.7.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 205,
+      "phase": "Outdated",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
+      "done": 36,
+      "total": 44
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 206,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -3238,111 +3273,15 @@
     },
     {
       "type": "progress",
-      "at": 227,
+      "at": 206,
       "phase": "Outdated",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
-      "done": 36,
-      "total": 44
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 228,
-      "candidate": {
-        "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
-        "name": "phoenix_live_reload",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.6.2",
-        "latest": "1.7.0",
-        "selected": "1.7.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 228,
-      "phase": "Outdated",
-      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 37,
       "total": 44
     },
     {
       "type": "candidate-upsert",
-      "at": 233,
-      "candidate": {
-        "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
-        "name": "phoenix_live_dashboard",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.8.7",
-        "latest": "0.9.0",
-        "selected": "0.9.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 233,
-      "phase": "Outdated",
-      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
-      "done": 38,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 233,
-      "id": "integration_test/mix.exs#argon2_elixir@4.1.3"
-    },
-    {
-      "type": "progress",
-      "at": 233,
-      "phase": "Up to date",
-      "detail": "argon2_elixir@4.1.3",
-      "done": 39,
-      "total": 44
-    },
-    {
-      "type": "candidate-drop",
-      "at": 234,
-      "id": "integration_test/mix.exs#bcrypt_elixir@3.3.2"
-    },
-    {
-      "type": "progress",
-      "at": 234,
-      "phase": "Up to date",
-      "detail": "bcrypt_elixir@3.3.2",
-      "done": 40,
-      "total": 44
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 235,
+      "at": 210,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -3369,20 +3308,81 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 210,
       "phase": "Outdated",
       "detail": "swoosh 1.27.0 → 1.28.0",
+      "done": 38,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 210,
+      "id": "integration_test/mix.exs#argon2_elixir@4.1.3"
+    },
+    {
+      "type": "progress",
+      "at": 210,
+      "phase": "Up to date",
+      "detail": "argon2_elixir@4.1.3",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 210,
+      "candidate": {
+        "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
+        "name": "phoenix_live_dashboard",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.8.7",
+        "latest": "0.9.0",
+        "selected": "0.9.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 210,
+      "phase": "Outdated",
+      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
+      "done": 40,
+      "total": 44
+    },
+    {
+      "type": "candidate-drop",
+      "at": 211,
+      "id": "integration_test/mix.exs#bcrypt_elixir@3.3.2"
+    },
+    {
+      "type": "progress",
+      "at": 211,
+      "phase": "Up to date",
+      "detail": "bcrypt_elixir@3.3.2",
       "done": 41,
       "total": 44
     },
     {
       "type": "candidate-drop",
-      "at": 235,
+      "at": 211,
       "id": "integration_test/mix.exs#tailwind@0.5.1"
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 211,
       "phase": "Up to date",
       "detail": "tailwind@0.5.1",
       "done": 42,
@@ -3390,12 +3390,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 236,
+      "at": 211,
       "id": "integration_test/mix.exs#pbkdf2_elixir@2.3.1"
     },
     {
       "type": "progress",
-      "at": 236,
+      "at": 211,
       "phase": "Up to date",
       "detail": "pbkdf2_elixir@2.3.1",
       "done": 43,
@@ -3403,7 +3403,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 236,
+      "at": 212,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -3430,7 +3430,7 @@
     },
     {
       "type": "progress",
-      "at": 236,
+      "at": 212,
       "phase": "Outdated",
       "detail": "req 0.7.2 → 0.7.3",
       "done": 44,
@@ -3438,7 +3438,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 212,
       "phase": "Reading release notes and changelog",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -3446,7 +3446,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 212,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -3473,7 +3473,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 212,
       "phase": "Checking package metadata",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -3481,7 +3481,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 212,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -3508,7 +3508,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 212,
       "phase": "Checking package metadata",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -3516,7 +3516,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 212,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -3543,7 +3543,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 212,
       "phase": "Reading release notes and changelog",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -3551,7 +3551,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 212,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -3578,7 +3578,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 212,
       "phase": "Checking package metadata",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -3586,7 +3586,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 212,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -3613,7 +3613,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Reading release notes and changelog",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -3621,7 +3621,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -3648,7 +3648,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Checking package metadata",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -3656,7 +3656,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -3683,7 +3683,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Reading release notes and changelog",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -3691,7 +3691,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -3718,7 +3718,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Checking package metadata",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -3726,7 +3726,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -3753,7 +3753,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Reading release notes and changelog",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -3761,7 +3761,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -3788,7 +3788,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Checking package metadata",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -3796,7 +3796,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -3823,7 +3823,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Checking package metadata",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -3831,7 +3831,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -3858,7 +3858,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Reading release notes and changelog",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -3866,7 +3866,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -3893,7 +3893,7 @@
     },
     {
       "type": "progress",
-      "at": 237,
+      "at": 213,
       "phase": "Checking package metadata",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -3901,7 +3901,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 213,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -3928,7 +3928,7 @@
     },
     {
       "type": "progress",
-      "at": 238,
+      "at": 213,
       "phase": "Checking repository status",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -3936,7 +3936,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 238,
+      "at": 213,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -3963,7 +3963,7 @@
     },
     {
       "type": "progress",
-      "at": 238,
+      "at": 213,
       "phase": "Checking repository status",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -3971,7 +3971,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 238,
+      "at": 213,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -3998,7 +3998,7 @@
     },
     {
       "type": "progress",
-      "at": 238,
+      "at": 214,
       "phase": "Checking repository status",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -4006,7 +4006,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 238,
+      "at": 214,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -4033,7 +4033,7 @@
     },
     {
       "type": "progress",
-      "at": 238,
+      "at": 214,
       "phase": "Checking repository status",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -4041,7 +4041,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 238,
+      "at": 214,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -4068,7 +4068,7 @@
     },
     {
       "type": "progress",
-      "at": 239,
+      "at": 214,
       "phase": "Checking repository status",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -4076,7 +4076,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 239,
+      "at": 214,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -4103,7 +4103,7 @@
     },
     {
       "type": "progress",
-      "at": 239,
+      "at": 214,
       "phase": "Checking repository status",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -4111,7 +4111,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 239,
+      "at": 214,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -4138,7 +4138,7 @@
     },
     {
       "type": "progress",
-      "at": 239,
+      "at": 214,
       "phase": "Checking repository status",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -4146,7 +4146,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 239,
+      "at": 214,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -4173,7 +4173,7 @@
     },
     {
       "type": "progress",
-      "at": 239,
+      "at": 215,
       "phase": "Checking repository status",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -4181,7 +4181,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 239,
+      "at": 215,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -4208,7 +4208,7 @@
     },
     {
       "type": "progress",
-      "at": 248,
+      "at": 221,
       "phase": "Checking security advisories",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -4216,7 +4216,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 248,
+      "at": 221,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -4243,7 +4243,7 @@
     },
     {
       "type": "progress",
-      "at": 248,
+      "at": 221,
       "phase": "Checking security advisories",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -4251,7 +4251,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 248,
+      "at": 221,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -4278,7 +4278,7 @@
     },
     {
       "type": "progress",
-      "at": 251,
+      "at": 223,
       "phase": "Checking security advisories",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -4286,7 +4286,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 251,
+      "at": 223,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -4313,7 +4313,7 @@
     },
     {
       "type": "progress",
-      "at": 253,
+      "at": 223,
       "phase": "Checking security advisories",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -4321,7 +4321,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 253,
+      "at": 223,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -4348,77 +4348,7 @@
     },
     {
       "type": "progress",
-      "at": 254,
-      "phase": "Checking security advisories",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 254,
-      "candidate": {
-        "id": "mix.exs#jason@1.4.5",
-        "name": "jason",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "1.4.5",
-        "latest": "1.4.5",
-        "selected": "1.4.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 254,
-      "phase": "Checking security advisories",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 254,
-      "candidate": {
-        "id": "integration_test/mix.exs#jason@1.4.5",
-        "name": "jason",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.4.5",
-        "latest": "1.4.5",
-        "selected": "1.4.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 254,
+      "at": 226,
       "phase": "Checking security advisories",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -4426,7 +4356,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 254,
+      "at": 226,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -4453,7 +4383,77 @@
     },
     {
       "type": "progress",
-      "at": 257,
+      "at": 227,
+      "phase": "Checking security advisories",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 227,
+      "candidate": {
+        "id": "mix.exs#jason@1.4.5",
+        "name": "jason",
+        "ecosystem": "hex",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "1.4.5",
+        "latest": "1.4.5",
+        "selected": "1.4.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 227,
+      "phase": "Checking security advisories",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 227,
+      "candidate": {
+        "id": "integration_test/mix.exs#jason@1.4.5",
+        "name": "jason",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.4.5",
+        "latest": "1.4.5",
+        "selected": "1.4.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 228,
       "phase": "Checking security advisories",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -4461,7 +4461,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 257,
+      "at": 228,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -4488,7 +4488,7 @@
     },
     {
       "type": "progress",
-      "at": 369,
+      "at": 339,
       "phase": "Comparing the public API surface",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -4496,7 +4496,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 370,
+      "at": 339,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -4523,7 +4523,7 @@
     },
     {
       "type": "progress",
-      "at": 370,
+      "at": 339,
       "phase": "Comparing the public API surface",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -4531,7 +4531,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 370,
+      "at": 339,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -4558,7 +4558,7 @@
     },
     {
       "type": "progress",
-      "at": 370,
+      "at": 340,
       "phase": "Comparing the public API surface",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -4566,7 +4566,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 370,
+      "at": 340,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -4593,112 +4593,7 @@
     },
     {
       "type": "progress",
-      "at": 371,
-      "phase": "Comparing the public API surface",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 371,
-      "candidate": {
-        "id": "mix.exs#jason@1.4.5",
-        "name": "jason",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "1.4.5",
-        "latest": "1.4.5",
-        "selected": "1.4.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 371,
-      "phase": "Comparing the public API surface",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 371,
-      "candidate": {
-        "id": "integration_test/mix.exs#jason@1.4.5",
-        "name": "jason",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.4.5",
-        "latest": "1.4.5",
-        "selected": "1.4.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 371,
-      "phase": "Comparing the public API surface",
-      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
-      "done": 0,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 371,
-      "candidate": {
-        "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
-        "name": "ecto_sqlite3",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.24.0",
-        "latest": "0.24.0",
-        "selected": "0.24.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 372,
+      "at": 340,
       "phase": "Comparing the public API surface",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -4706,7 +4601,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 372,
+      "at": 340,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -4733,7 +4628,112 @@
     },
     {
       "type": "progress",
-      "at": 373,
+      "at": 341,
+      "phase": "Comparing the public API surface",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
+      "done": 0,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 341,
+      "candidate": {
+        "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
+        "name": "ecto_sqlite3",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.24.0",
+        "latest": "0.24.0",
+        "selected": "0.24.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 342,
+      "phase": "Comparing the public API surface",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 342,
+      "candidate": {
+        "id": "mix.exs#jason@1.4.5",
+        "name": "jason",
+        "ecosystem": "hex",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "1.4.5",
+        "latest": "1.4.5",
+        "selected": "1.4.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 342,
+      "phase": "Comparing the public API surface",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 342,
+      "candidate": {
+        "id": "integration_test/mix.exs#jason@1.4.5",
+        "name": "jason",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.4.5",
+        "latest": "1.4.5",
+        "selected": "1.4.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 342,
       "phase": "Comparing the public API surface",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -4741,7 +4741,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 373,
+      "at": 342,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -4768,7 +4768,7 @@
     },
     {
       "type": "progress",
-      "at": 2580,
+      "at": 380,
       "phase": "Indexing your code",
       "detail": "209 files indexed · 44 direct dependencies to check",
       "done": 0,
@@ -4776,7 +4776,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -4784,7 +4784,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -4811,7 +4811,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -4819,7 +4819,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -4846,7 +4846,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -4854,7 +4854,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -4881,7 +4881,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -4889,7 +4889,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -4916,7 +4916,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -4924,7 +4924,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -4951,7 +4951,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -4959,7 +4959,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -4986,7 +4986,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -4994,7 +4994,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -5021,7 +5021,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Checking license",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -5029,7 +5029,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -5056,7 +5056,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Reading release notes and changelog",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -5064,7 +5064,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -5091,7 +5091,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Comparing the public API surface",
       "detail": "bandit 1.12.4 → 1.12.5 · 3 evidence sources",
       "done": 0,
@@ -5099,7 +5099,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -5126,7 +5126,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Reading release notes and changelog",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -5134,7 +5134,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -5161,7 +5161,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1627,
       "phase": "Comparing the public API surface",
       "detail": "bandit 1.12.4 → 1.12.5 · 3 evidence sources",
       "done": 0,
@@ -5169,7 +5169,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1627,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -5196,7 +5196,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Reading release notes and changelog",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -5204,7 +5204,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -5231,7 +5231,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Comparing the public API surface",
       "detail": "dns_cluster 0.2.0 → 0.3.0 · 1 evidence source",
       "done": 0,
@@ -5239,7 +5239,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -5266,7 +5266,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Reading release notes and changelog",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -5274,7 +5274,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -5301,7 +5301,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Comparing the public API surface",
       "detail": "ecto 3.14.0 → 3.14.2 · 1 evidence source",
       "done": 0,
@@ -5309,7 +5309,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -5336,7 +5336,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Reading release notes and changelog",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -5344,7 +5344,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -5371,7 +5371,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Comparing the public API surface",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1 · 2 evidence sources",
       "done": 0,
@@ -5379,7 +5379,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -5406,7 +5406,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Reading release notes and changelog",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -5414,7 +5414,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -5441,7 +5441,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Comparing the public API surface",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
       "done": 0,
@@ -5449,7 +5449,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -5476,7 +5476,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Reading release notes and changelog",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -5484,7 +5484,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -5511,7 +5511,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Comparing the public API surface",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
       "done": 0,
@@ -5519,7 +5519,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -5546,7 +5546,7 @@
     },
     {
       "type": "progress",
-      "at": 2751,
+      "at": 1628,
       "phase": "Reading release notes and changelog",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -5554,7 +5554,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2751,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -5581,7 +5581,7 @@
     },
     {
       "type": "progress",
-      "at": 2752,
+      "at": 1628,
       "phase": "Comparing the public API surface",
       "detail": "lazy_html 0.1.11 → 0.1.12 · 1 evidence source",
       "done": 0,
@@ -5589,7 +5589,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2752,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -5616,7 +5616,7 @@
     },
     {
       "type": "progress",
-      "at": 2752,
+      "at": 1628,
       "phase": "Searching your code for 1 breaking change",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -5624,7 +5624,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2752,
+      "at": 1628,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -5651,7 +5651,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "Searching your code for 1 breaking change",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
@@ -5659,7 +5659,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -5686,7 +5686,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "No breaking changes to look for",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -5694,7 +5694,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -5721,7 +5721,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "No breaking changes to look for",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -5729,7 +5729,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -5756,7 +5756,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "No breaking changes to look for",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -5764,7 +5764,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -5791,7 +5791,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "No breaking changes to look for",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -5799,7 +5799,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -5826,7 +5826,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "No breaking changes to look for",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -5834,7 +5834,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -5861,7 +5861,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "No breaking changes to look for",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -5869,7 +5869,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -5896,7 +5896,7 @@
     },
     {
       "type": "progress",
-      "at": 2753,
+      "at": 1628,
       "phase": "Weighing what this upgrade is worth",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -5904,7 +5904,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2753,
+      "at": 1628,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -5931,7 +5931,7 @@
     },
     {
       "type": "progress",
-      "at": 2754,
+      "at": 1629,
       "phase": "Weighing what this upgrade is worth",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -5939,7 +5939,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2754,
+      "at": 1629,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -5966,7 +5966,7 @@
     },
     {
       "type": "progress",
-      "at": 2754,
+      "at": 1630,
       "phase": "Weighing what this upgrade is worth",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -5974,7 +5974,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2754,
+      "at": 1630,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -6001,7 +6001,7 @@
     },
     {
       "type": "progress",
-      "at": 2755,
+      "at": 1630,
       "phase": "Weighing what this upgrade is worth",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -6009,7 +6009,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2755,
+      "at": 1630,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -6036,7 +6036,7 @@
     },
     {
       "type": "progress",
-      "at": 2756,
+      "at": 1631,
       "phase": "Weighing what this upgrade is worth",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -6044,7 +6044,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2756,
+      "at": 1631,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -6071,7 +6071,7 @@
     },
     {
       "type": "progress",
-      "at": 2756,
+      "at": 1632,
       "phase": "Weighing what this upgrade is worth",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -6079,7 +6079,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2756,
+      "at": 1632,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -6106,7 +6106,7 @@
     },
     {
       "type": "progress",
-      "at": 2757,
+      "at": 1632,
       "phase": "Checking maintenance signals",
       "detail": "dns_cluster 0.2.0 → 0.3.0",
       "done": 0,
@@ -6114,7 +6114,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2757,
+      "at": 1632,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -6141,7 +6141,7 @@
     },
     {
       "type": "progress",
-      "at": 2757,
+      "at": 1632,
       "phase": "Checking maintenance signals",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
@@ -6149,7 +6149,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2757,
+      "at": 1632,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -6176,7 +6176,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1633,
       "phase": "Checking maintenance signals",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
@@ -6184,7 +6184,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1633,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -6211,7 +6211,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1633,
       "phase": "Checking maintenance signals",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -6219,7 +6219,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1633,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -6246,7 +6246,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1633,
       "phase": "Checking maintenance signals",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
@@ -6254,7 +6254,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1633,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -6281,7 +6281,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1633,
       "phase": "Checking maintenance signals",
       "detail": "lazy_html 0.1.11 → 0.1.12",
       "done": 0,
@@ -6289,7 +6289,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1633,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -6316,7 +6316,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#dns_cluster@0.2.0",
         "name": "dns_cluster",
@@ -6343,7 +6343,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Checked",
       "detail": "dns_cluster 0.2.0 → 0.3.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 1,
@@ -6351,7 +6351,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "mix.exs#ecto@3.14.0",
         "name": "ecto",
@@ -6378,7 +6378,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Checked",
       "detail": "ecto 3.14.0 → 3.14.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 2,
@@ -6386,7 +6386,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#ecto_sqlite3@0.24.0",
         "name": "ecto_sqlite3",
@@ -6413,7 +6413,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Checked",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
@@ -6421,7 +6421,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "mix.exs#jason@1.4.5",
         "name": "jason",
@@ -6448,7 +6448,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Checked",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
@@ -6456,7 +6456,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#jason@1.4.5",
         "name": "jason",
@@ -6483,7 +6483,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Checked",
       "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 5,
@@ -6491,7 +6491,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#lazy_html@0.1.11",
         "name": "lazy_html",
@@ -6518,7 +6518,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Checked",
       "detail": "lazy_html 0.1.11 → 0.1.12 · safe for your code · no breaking changes found — not deeply verified",
       "done": 6,
@@ -6526,7 +6526,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 6,
@@ -6534,7 +6534,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -6561,7 +6561,7 @@
     },
     {
       "type": "progress",
-      "at": 2758,
+      "at": 1634,
       "phase": "Checking package metadata",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 6,
@@ -6569,7 +6569,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2758,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -6596,7 +6596,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 6,
@@ -6604,7 +6604,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -6631,7 +6631,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Checking package metadata",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 6,
@@ -6639,7 +6639,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -6666,7 +6666,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 6,
@@ -6674,7 +6674,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -6701,7 +6701,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Checking package metadata",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 6,
@@ -6709,7 +6709,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -6736,7 +6736,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 6,
@@ -6744,7 +6744,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -6771,7 +6771,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Checking package metadata",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 6,
@@ -6779,7 +6779,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -6806,7 +6806,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Reading release notes and changelog",
       "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 6,
@@ -6814,7 +6814,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "mix.exs#plug_cowboy@2.8.1",
         "name": "plug_cowboy",
@@ -6841,7 +6841,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Checking package metadata",
       "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 6,
@@ -6849,7 +6849,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "mix.exs#plug_cowboy@2.8.1",
         "name": "plug_cowboy",
@@ -6876,7 +6876,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Reading release notes and changelog",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 6,
@@ -6884,7 +6884,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -6911,7 +6911,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1634,
       "phase": "Checking package metadata",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 6,
@@ -6919,7 +6919,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1634,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -6946,7 +6946,7 @@
     },
     {
       "type": "progress",
-      "at": 2759,
+      "at": 1635,
       "phase": "Checking repository status",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 6,
@@ -6954,7 +6954,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2759,
+      "at": 1635,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -6981,7 +6981,7 @@
     },
     {
       "type": "progress",
-      "at": 2760,
+      "at": 1635,
       "phase": "Checking repository status",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 6,
@@ -6989,7 +6989,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2760,
+      "at": 1635,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -7016,7 +7016,7 @@
     },
     {
       "type": "progress",
-      "at": 2760,
+      "at": 1635,
       "phase": "Checking repository status",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 6,
@@ -7024,7 +7024,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2760,
+      "at": 1635,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -7051,7 +7051,7 @@
     },
     {
       "type": "progress",
-      "at": 2760,
+      "at": 1636,
       "phase": "Checking repository status",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 6,
@@ -7059,7 +7059,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2760,
+      "at": 1636,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -7086,7 +7086,7 @@
     },
     {
       "type": "progress",
-      "at": 2760,
+      "at": 1636,
       "phase": "Checking repository status",
       "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 6,
@@ -7094,7 +7094,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2760,
+      "at": 1636,
       "candidate": {
         "id": "mix.exs#plug_cowboy@2.8.1",
         "name": "plug_cowboy",
@@ -7121,7 +7121,7 @@
     },
     {
       "type": "progress",
-      "at": 2761,
+      "at": 1636,
       "phase": "Checking repository status",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 6,
@@ -7129,7 +7129,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2761,
+      "at": 1636,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -7156,7 +7156,7 @@
     },
     {
       "type": "progress",
-      "at": 2769,
+      "at": 1647,
       "phase": "Weighing what this upgrade is worth",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 6,
@@ -7164,7 +7164,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2769,
+      "at": 1647,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -7191,7 +7191,7 @@
     },
     {
       "type": "progress",
-      "at": 2770,
+      "at": 1647,
       "phase": "Weighing what this upgrade is worth",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 6,
@@ -7199,7 +7199,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2770,
+      "at": 1648,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -7226,7 +7226,7 @@
     },
     {
       "type": "progress",
-      "at": 2771,
+      "at": 1648,
       "phase": "Checking maintenance signals",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 6,
@@ -7234,7 +7234,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2771,
+      "at": 1648,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -7261,7 +7261,7 @@
     },
     {
       "type": "progress",
-      "at": 2771,
+      "at": 1649,
       "phase": "Checking maintenance signals",
       "detail": "bandit 1.12.4 → 1.12.5",
       "done": 6,
@@ -7269,7 +7269,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2771,
+      "at": 1649,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -7296,7 +7296,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2772,
+      "at": 1649,
       "candidate": {
         "id": "mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -7350,7 +7350,7 @@
     },
     {
       "type": "progress",
-      "at": 2772,
+      "at": 1649,
       "phase": "Checked",
       "detail": "bandit 1.12.4 → 1.12.5 · safe for your code · 1 upstream change, none used here — not deeply verified",
       "done": 7,
@@ -7358,7 +7358,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2772,
+      "at": 1649,
       "candidate": {
         "id": "integration_test/mix.exs#bandit@1.12.4",
         "name": "bandit",
@@ -7412,7 +7412,7 @@
     },
     {
       "type": "progress",
-      "at": 2772,
+      "at": 1649,
       "phase": "Checked",
       "detail": "bandit 1.12.4 → 1.12.5 · safe for your code · 1 upstream change, none used here — not deeply verified",
       "done": 8,
@@ -7420,7 +7420,7 @@
     },
     {
       "type": "progress",
-      "at": 2772,
+      "at": 1649,
       "phase": "Reading release notes and changelog",
       "detail": "req 0.7.2 → 0.7.3",
       "done": 8,
@@ -7428,7 +7428,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2772,
+      "at": 1649,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -7455,7 +7455,7 @@
     },
     {
       "type": "progress",
-      "at": 2772,
+      "at": 1649,
       "phase": "Checking package metadata",
       "detail": "req 0.7.2 → 0.7.3",
       "done": 8,
@@ -7463,7 +7463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2772,
+      "at": 1649,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -7490,7 +7490,7 @@
     },
     {
       "type": "progress",
-      "at": 2772,
+      "at": 1649,
       "phase": "Reading release notes and changelog",
       "detail": "swoosh 1.27.0 → 1.28.0",
       "done": 8,
@@ -7498,7 +7498,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2772,
+      "at": 1650,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -7525,7 +7525,7 @@
     },
     {
       "type": "progress",
-      "at": 2772,
+      "at": 1650,
       "phase": "Checking package metadata",
       "detail": "swoosh 1.27.0 → 1.28.0",
       "done": 8,
@@ -7533,7 +7533,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2772,
+      "at": 1650,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -7560,7 +7560,7 @@
     },
     {
       "type": "progress",
-      "at": 2773,
+      "at": 1650,
       "phase": "Checking repository status",
       "detail": "req 0.7.2 → 0.7.3",
       "done": 8,
@@ -7568,7 +7568,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2773,
+      "at": 1650,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -7595,7 +7595,7 @@
     },
     {
       "type": "progress",
-      "at": 2773,
+      "at": 1650,
       "phase": "Checking repository status",
       "detail": "swoosh 1.27.0 → 1.28.0",
       "done": 8,
@@ -7603,7 +7603,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2773,
+      "at": 1650,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -7630,7 +7630,7 @@
     },
     {
       "type": "progress",
-      "at": 2775,
+      "at": 1651,
       "phase": "Checking security advisories",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 8,
@@ -7638,7 +7638,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2775,
+      "at": 1651,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -7665,7 +7665,7 @@
     },
     {
       "type": "progress",
-      "at": 2775,
+      "at": 1651,
       "phase": "Checking license",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 8,
@@ -7673,7 +7673,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2775,
+      "at": 1651,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -7700,77 +7700,7 @@
     },
     {
       "type": "progress",
-      "at": 2777,
-      "phase": "Checking security advisories",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
-      "done": 8,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2777,
-      "candidate": {
-        "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
-        "name": "phoenix_live_view",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.2.0",
-        "latest": "1.2.0",
-        "selected": "1.2.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2777,
-      "phase": "Checking license",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
-      "done": 8,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2777,
-      "candidate": {
-        "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
-        "name": "phoenix_live_view",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.2.0",
-        "latest": "1.2.0",
-        "selected": "1.2.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2777,
+      "at": 1652,
       "phase": "Checking security advisories",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 8,
@@ -7778,7 +7708,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2777,
+      "at": 1652,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -7805,7 +7735,7 @@
     },
     {
       "type": "progress",
-      "at": 2777,
+      "at": 1652,
       "phase": "Checking license",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 8,
@@ -7813,7 +7743,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2777,
+      "at": 1652,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -7840,7 +7770,7 @@
     },
     {
       "type": "progress",
-      "at": 2777,
+      "at": 1654,
       "phase": "Checking security advisories",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 8,
@@ -7848,7 +7778,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2777,
+      "at": 1654,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -7875,7 +7805,7 @@
     },
     {
       "type": "progress",
-      "at": 2777,
+      "at": 1654,
       "phase": "Checking license",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 8,
@@ -7883,7 +7813,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2777,
+      "at": 1654,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -7910,25 +7840,25 @@
     },
     {
       "type": "progress",
-      "at": 2780,
+      "at": 1654,
       "phase": "Checking security advisories",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 8,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2780,
+      "at": 1654,
       "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
+        "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
+        "name": "phoenix_live_view",
         "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.2.0",
+        "latest": "1.2.0",
+        "selected": "1.2.0",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking security advisories",
@@ -7945,25 +7875,25 @@
     },
     {
       "type": "progress",
-      "at": 2780,
+      "at": 1654,
       "phase": "Checking license",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 8,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2780,
+      "at": 1654,
       "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
+        "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
+        "name": "phoenix_live_view",
         "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.2.0",
+        "latest": "1.2.0",
+        "selected": "1.2.0",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking license",
@@ -7980,7 +7910,7 @@
     },
     {
       "type": "progress",
-      "at": 2780,
+      "at": 2120,
       "phase": "Checking security advisories",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 8,
@@ -7988,7 +7918,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2780,
+      "at": 2120,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -8015,7 +7945,7 @@
     },
     {
       "type": "progress",
-      "at": 2780,
+      "at": 2120,
       "phase": "Checking license",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 8,
@@ -8023,7 +7953,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2780,
+      "at": 2120,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -8050,25 +7980,25 @@
     },
     {
       "type": "progress",
-      "at": 2900,
+      "at": 2156,
       "phase": "Checking security advisories",
-      "detail": "req 0.7.2 → 0.7.3",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 8,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2900,
+      "at": 2156,
       "candidate": {
-        "id": "integration_test/mix.exs#req@0.7.2",
-        "name": "req",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.7.2",
-        "latest": "0.7.2",
-        "selected": "0.7.2",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking security advisories",
@@ -8085,25 +8015,25 @@
     },
     {
       "type": "progress",
-      "at": 2900,
+      "at": 2156,
       "phase": "Checking license",
-      "detail": "req 0.7.2 → 0.7.3",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 8,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2900,
+      "at": 2156,
       "candidate": {
-        "id": "integration_test/mix.exs#req@0.7.2",
-        "name": "req",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.7.2",
-        "latest": "0.7.2",
-        "selected": "0.7.2",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking license",
@@ -8120,7 +8050,7 @@
     },
     {
       "type": "progress",
-      "at": 2900,
+      "at": 2291,
       "phase": "Checking security advisories",
       "detail": "swoosh 1.27.0 → 1.28.0",
       "done": 8,
@@ -8128,7 +8058,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2900,
+      "at": 2291,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -8155,7 +8085,7 @@
     },
     {
       "type": "progress",
-      "at": 2900,
+      "at": 2291,
       "phase": "Checking license",
       "detail": "swoosh 1.27.0 → 1.28.0",
       "done": 8,
@@ -8163,7 +8093,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2900,
+      "at": 2291,
       "candidate": {
         "id": "integration_test/mix.exs#swoosh@1.27.0",
         "name": "swoosh",
@@ -8190,7 +8120,77 @@
     },
     {
       "type": "progress",
-      "at": 2904,
+      "at": 2293,
+      "phase": "Checking security advisories",
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 8,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2293,
+      "candidate": {
+        "id": "integration_test/mix.exs#req@0.7.2",
+        "name": "req",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.7.2",
+        "latest": "0.7.2",
+        "selected": "0.7.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2293,
+      "phase": "Checking license",
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 8,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2293,
+      "candidate": {
+        "id": "integration_test/mix.exs#req@0.7.2",
+        "name": "req",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.7.2",
+        "latest": "0.7.2",
+        "selected": "0.7.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2296,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 8,
@@ -8198,7 +8198,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2904,
+      "at": 2296,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -8225,7 +8225,7 @@
     },
     {
       "type": "progress",
-      "at": 2904,
+      "at": 2297,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 8,
@@ -8233,7 +8233,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2904,
+      "at": 2297,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -8260,7 +8260,7 @@
     },
     {
       "type": "progress",
-      "at": 2905,
+      "at": 2299,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 8,
@@ -8268,7 +8268,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2905,
+      "at": 2299,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -8295,7 +8295,7 @@
     },
     {
       "type": "progress",
-      "at": 2906,
+      "at": 2300,
       "phase": "Comparing the public API surface",
       "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 8,
@@ -8303,7 +8303,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2906,
+      "at": 2300,
       "candidate": {
         "id": "mix.exs#plug_cowboy@2.8.1",
         "name": "plug_cowboy",
@@ -8330,7 +8330,7 @@
     },
     {
       "type": "progress",
-      "at": 2912,
+      "at": 2304,
       "phase": "Comparing the public API surface",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 8,
@@ -8338,7 +8338,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2912,
+      "at": 2304,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -8365,7 +8365,7 @@
     },
     {
       "type": "progress",
-      "at": 2936,
+      "at": 2330,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 8,
@@ -8373,7 +8373,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2936,
+      "at": 2330,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -8400,7 +8400,7 @@
     },
     {
       "type": "progress",
-      "at": 2939,
+      "at": 2400,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 8,
@@ -8408,7 +8408,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2939,
+      "at": 2400,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -8435,7 +8435,7 @@
     },
     {
       "type": "progress",
-      "at": 2939,
+      "at": 2400,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0 · 2 evidence sources",
       "done": 8,
@@ -8443,7 +8443,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2940,
+      "at": 2400,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -8470,7 +8470,7 @@
     },
     {
       "type": "progress",
-      "at": 2940,
+      "at": 2400,
       "phase": "No breaking changes to look for",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 8,
@@ -8478,7 +8478,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2940,
+      "at": 2400,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -8505,7 +8505,7 @@
     },
     {
       "type": "progress",
-      "at": 2940,
+      "at": 2400,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 8,
@@ -8513,7 +8513,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2940,
+      "at": 2400,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -8540,7 +8540,7 @@
     },
     {
       "type": "progress",
-      "at": 2941,
+      "at": 2401,
       "phase": "Checking maintenance signals",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 8,
@@ -8548,7 +8548,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2941,
+      "at": 2401,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -8575,7 +8575,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2941,
+      "at": 2402,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_dashboard@0.8.7",
         "name": "phoenix_live_dashboard",
@@ -8602,7 +8602,7 @@
     },
     {
       "type": "progress",
-      "at": 2941,
+      "at": 2402,
       "phase": "Checked",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 9,
@@ -8610,7 +8610,7 @@
     },
     {
       "type": "progress",
-      "at": 2941,
+      "at": 2402,
       "phase": "Reading release notes and changelog",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 9,
@@ -8618,7 +8618,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2941,
+      "at": 2402,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -8645,7 +8645,7 @@
     },
     {
       "type": "progress",
-      "at": 2941,
+      "at": 2402,
       "phase": "Checking package metadata",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 9,
@@ -8653,7 +8653,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2941,
+      "at": 2402,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -8680,7 +8680,7 @@
     },
     {
       "type": "progress",
-      "at": 2942,
+      "at": 2402,
       "phase": "Checking repository status",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 9,
@@ -8688,7 +8688,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2942,
+      "at": 2402,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -8715,7 +8715,7 @@
     },
     {
       "type": "progress",
-      "at": 2942,
+      "at": 2402,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 9,
@@ -8723,7 +8723,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2942,
+      "at": 2402,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -8750,7 +8750,7 @@
     },
     {
       "type": "progress",
-      "at": 2942,
+      "at": 2402,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · 2 evidence sources",
       "done": 9,
@@ -8758,7 +8758,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2942,
+      "at": 2402,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -8785,7 +8785,7 @@
     },
     {
       "type": "progress",
-      "at": 2942,
+      "at": 2402,
       "phase": "No breaking changes to look for",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 9,
@@ -8793,7 +8793,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2942,
+      "at": 2402,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -8820,7 +8820,7 @@
     },
     {
       "type": "progress",
-      "at": 2942,
+      "at": 2402,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 9,
@@ -8828,7 +8828,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2942,
+      "at": 2402,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -8855,7 +8855,7 @@
     },
     {
       "type": "progress",
-      "at": 2943,
+      "at": 2403,
       "phase": "Checking maintenance signals",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 9,
@@ -8863,7 +8863,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2943,
+      "at": 2403,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -8890,7 +8890,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2943,
+      "at": 2403,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_reload@1.6.2",
         "name": "phoenix_live_reload",
@@ -8917,7 +8917,7 @@
     },
     {
       "type": "progress",
-      "at": 2943,
+      "at": 2403,
       "phase": "Checked",
       "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 10,
@@ -8925,7 +8925,7 @@
     },
     {
       "type": "progress",
-      "at": 2943,
+      "at": 2403,
       "phase": "Checking repository status",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 10,
@@ -8933,7 +8933,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2943,
+      "at": 2403,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -8960,7 +8960,7 @@
     },
     {
       "type": "progress",
-      "at": 2943,
+      "at": 2403,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 10,
@@ -8968,7 +8968,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2943,
+      "at": 2403,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -8995,7 +8995,7 @@
     },
     {
       "type": "progress",
-      "at": 2943,
+      "at": 2403,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10 · 3 evidence sources",
       "done": 10,
@@ -9003,7 +9003,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2943,
+      "at": 2403,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -9030,7 +9030,7 @@
     },
     {
       "type": "progress",
-      "at": 2944,
+      "at": 2403,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 10,
@@ -9038,7 +9038,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2944,
+      "at": 2403,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -9065,77 +9065,7 @@
     },
     {
       "type": "progress",
-      "at": 2944,
-      "phase": "Comparing the public API surface",
-      "detail": "swoosh 1.27.0 → 1.28.0",
-      "done": 10,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2944,
-      "candidate": {
-        "id": "integration_test/mix.exs#swoosh@1.27.0",
-        "name": "swoosh",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2945,
-      "phase": "Comparing the public API surface",
-      "detail": "req 0.7.2 → 0.7.3",
-      "done": 10,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2945,
-      "candidate": {
-        "id": "integration_test/mix.exs#req@0.7.2",
-        "name": "req",
-        "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "0.7.2",
-        "latest": "0.7.2",
-        "selected": "0.7.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2946,
+      "at": 2404,
       "phase": "Reading release notes and changelog",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 10,
@@ -9143,7 +9073,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2946,
+      "at": 2404,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -9170,7 +9100,7 @@
     },
     {
       "type": "progress",
-      "at": 2946,
+      "at": 2404,
       "phase": "Comparing the public API surface",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0 · 2 evidence sources",
       "done": 10,
@@ -9178,7 +9108,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2946,
+      "at": 2404,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -9205,7 +9135,7 @@
     },
     {
       "type": "progress",
-      "at": 2946,
+      "at": 2404,
       "phase": "No breaking changes to look for",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 10,
@@ -9213,7 +9143,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2946,
+      "at": 2404,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -9240,7 +9170,7 @@
     },
     {
       "type": "progress",
-      "at": 2946,
+      "at": 2404,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 10,
@@ -9248,7 +9178,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2946,
+      "at": 2404,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -9275,7 +9205,7 @@
     },
     {
       "type": "progress",
-      "at": 2946,
+      "at": 2404,
       "phase": "Checking maintenance signals",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0",
       "done": 10,
@@ -9283,7 +9213,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2946,
+      "at": 2404,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -9310,7 +9240,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2947,
+      "at": 2404,
       "candidate": {
         "id": "mix.exs#phoenix_pubsub@2.2.0",
         "name": "phoenix_pubsub",
@@ -9337,7 +9267,7 @@
     },
     {
       "type": "progress",
-      "at": 2947,
+      "at": 2404,
       "phase": "Checked",
       "detail": "phoenix_pubsub 2.2.0 → 2.3.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 11,
@@ -9345,225 +9275,15 @@
     },
     {
       "type": "progress",
-      "at": 2947,
-      "phase": "Reading release notes and changelog",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
-      "done": 11,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2947,
-      "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2947,
-      "phase": "Comparing the public API surface",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0 · 2 evidence sources",
-      "done": 11,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2947,
-      "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2947,
-      "phase": "No breaking changes to look for",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
-      "done": 11,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2947,
-      "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2947,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
-      "done": 11,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2947,
-      "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2947,
-      "phase": "Checking maintenance signals",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
-      "done": 11,
-      "total": 18
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2947,
-      "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.8.1",
-        "selected": "2.8.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2947,
-      "candidate": {
-        "id": "mix.exs#plug_cowboy@2.8.1",
-        "name": "plug_cowboy",
-        "ecosystem": "hex",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "workspaceName": "phoenix",
-        "current": "2.8.1",
-        "latest": "2.9.0",
-        "selected": "2.9.0",
-        "safeLatest": null,
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Do not upgrade yet. No breaking changes found for this version of plug_cowboy.",
-        "recommendation": "do-not-upgrade-yet",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 2,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2947,
-      "phase": "Checked",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 12,
-      "total": 18
-    },
-    {
-      "type": "progress",
-      "at": 2948,
+      "at": 2404,
       "phase": "Reading release notes and changelog",
       "detail": "postgrex 0.22.3 → 0.22.4",
-      "done": 12,
+      "done": 11,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 2404,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -9590,15 +9310,15 @@
     },
     {
       "type": "progress",
-      "at": 2948,
+      "at": 2404,
       "phase": "Comparing the public API surface",
       "detail": "postgrex 0.22.3 → 0.22.4 · 2 evidence sources",
-      "done": 12,
+      "done": 11,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 2405,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -9625,15 +9345,15 @@
     },
     {
       "type": "progress",
-      "at": 2948,
+      "at": 2405,
       "phase": "No breaking changes to look for",
       "detail": "postgrex 0.22.3 → 0.22.4",
-      "done": 12,
+      "done": 11,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 2405,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -9660,15 +9380,15 @@
     },
     {
       "type": "progress",
-      "at": 2948,
+      "at": 2405,
       "phase": "Weighing what this upgrade is worth",
       "detail": "postgrex 0.22.3 → 0.22.4",
-      "done": 12,
+      "done": 11,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 2405,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -9695,15 +9415,15 @@
     },
     {
       "type": "progress",
-      "at": 2949,
+      "at": 2405,
       "phase": "Checking maintenance signals",
       "detail": "postgrex 0.22.3 → 0.22.4",
-      "done": 12,
+      "done": 11,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2949,
+      "at": 2405,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -9730,7 +9450,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2949,
+      "at": 2406,
       "candidate": {
         "id": "integration_test/mix.exs#postgrex@0.22.3",
         "name": "postgrex",
@@ -9757,33 +9477,33 @@
     },
     {
       "type": "progress",
-      "at": 2949,
+      "at": 2406,
       "phase": "Checked",
       "detail": "postgrex 0.22.3 → 0.22.4 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 13,
+      "done": 12,
       "total": 18
     },
     {
       "type": "progress",
-      "at": 2951,
+      "at": 2406,
       "phase": "Reading release notes and changelog",
-      "detail": "swoosh 1.27.0 → 1.28.0",
-      "done": 13,
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 12,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2951,
+      "at": 2406,
       "candidate": {
-        "id": "integration_test/mix.exs#swoosh@1.27.0",
-        "name": "swoosh",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
         "phase": "Reading release notes and changelog",
@@ -9800,25 +9520,25 @@
     },
     {
       "type": "progress",
-      "at": 2951,
+      "at": 2406,
       "phase": "Comparing the public API surface",
-      "detail": "swoosh 1.27.0 → 1.28.0 · 2 evidence sources",
-      "done": 13,
+      "detail": "plug_cowboy 2.8.1 → 2.9.0 · 2 evidence sources",
+      "done": 12,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2951,
+      "at": 2406,
       "candidate": {
-        "id": "integration_test/mix.exs#swoosh@1.27.0",
-        "name": "swoosh",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
         "phase": "Comparing the public API surface",
@@ -9835,25 +9555,25 @@
     },
     {
       "type": "progress",
-      "at": 2951,
+      "at": 2406,
       "phase": "No breaking changes to look for",
-      "detail": "swoosh 1.27.0 → 1.28.0",
-      "done": 13,
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 12,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2951,
+      "at": 2406,
       "candidate": {
-        "id": "integration_test/mix.exs#swoosh@1.27.0",
-        "name": "swoosh",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
         "phase": "No breaking changes to look for",
@@ -9870,25 +9590,25 @@
     },
     {
       "type": "progress",
-      "at": 2951,
+      "at": 2406,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "swoosh 1.27.0 → 1.28.0",
-      "done": 13,
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 12,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2951,
+      "at": 2406,
       "candidate": {
-        "id": "integration_test/mix.exs#swoosh@1.27.0",
-        "name": "swoosh",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
         "phase": "Weighing what this upgrade is worth",
@@ -9905,25 +9625,25 @@
     },
     {
       "type": "progress",
-      "at": 2952,
+      "at": 2406,
       "phase": "Checking maintenance signals",
-      "detail": "swoosh 1.27.0 → 1.28.0",
-      "done": 13,
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 12,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2952,
+      "at": 2406,
       "candidate": {
-        "id": "integration_test/mix.exs#swoosh@1.27.0",
-        "name": "swoosh",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.8.1",
+        "selected": "2.8.1",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking maintenance signals",
@@ -9940,22 +9660,22 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2952,
+      "at": 2406,
       "candidate": {
-        "id": "integration_test/mix.exs#swoosh@1.27.0",
-        "name": "swoosh",
+        "id": "mix.exs#plug_cowboy@2.8.1",
+        "name": "plug_cowboy",
         "ecosystem": "hex",
-        "manifestPath": "integration_test/mix.exs",
-        "workspace": "integration_test",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.28.0",
-        "selected": "1.28.0",
+        "manifestPath": "mix.exs",
+        "workspace": "",
+        "workspaceName": "phoenix",
+        "current": "2.8.1",
+        "latest": "2.9.0",
+        "selected": "2.9.0",
         "safeLatest": null,
         "status": "clean",
         "phase": null,
         "risk": "none",
-        "summary": "Do not upgrade yet. No breaking changes found for this version of swoosh.",
+        "summary": "Do not upgrade yet. No breaking changes found for this version of plug_cowboy.",
         "recommendation": "do-not-upgrade-yet",
         "breakingCount": 0,
         "impactCount": 0,
@@ -9967,36 +9687,36 @@
     },
     {
       "type": "progress",
-      "at": 2952,
+      "at": 2406,
       "phase": "Checked",
-      "detail": "swoosh 1.27.0 → 1.28.0 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 14,
+      "detail": "plug_cowboy 2.8.1 → 2.9.0 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 13,
       "total": 18
     },
     {
       "type": "progress",
-      "at": 2952,
-      "phase": "Reading release notes and changelog",
-      "detail": "req 0.7.2 → 0.7.3",
-      "done": 14,
+      "at": 2407,
+      "phase": "Comparing the public API surface",
+      "detail": "swoosh 1.27.0 → 1.28.0",
+      "done": 13,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2952,
+      "at": 2407,
       "candidate": {
-        "id": "integration_test/mix.exs#req@0.7.2",
-        "name": "req",
+        "id": "integration_test/mix.exs#swoosh@1.27.0",
+        "name": "swoosh",
         "ecosystem": "hex",
         "manifestPath": "integration_test/mix.exs",
         "workspace": "integration_test",
         "workspaceName": null,
-        "current": "0.7.2",
-        "latest": "0.7.2",
-        "selected": "0.7.2",
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
         "safeLatest": null,
         "status": "pending",
-        "phase": "Reading release notes and changelog",
+        "phase": "Comparing the public API surface",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -10010,15 +9730,15 @@
     },
     {
       "type": "progress",
-      "at": 2952,
+      "at": 2408,
       "phase": "Comparing the public API surface",
-      "detail": "req 0.7.2 → 0.7.3 · 1 evidence source",
-      "done": 14,
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 13,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2952,
+      "at": 2408,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -10045,15 +9765,85 @@
     },
     {
       "type": "progress",
-      "at": 2952,
-      "phase": "No breaking changes to look for",
+      "at": 2500,
+      "phase": "Reading release notes and changelog",
       "detail": "req 0.7.2 → 0.7.3",
-      "done": 14,
+      "done": 13,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2952,
+      "at": 2500,
+      "candidate": {
+        "id": "integration_test/mix.exs#req@0.7.2",
+        "name": "req",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.7.2",
+        "latest": "0.7.2",
+        "selected": "0.7.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2500,
+      "phase": "Comparing the public API surface",
+      "detail": "req 0.7.2 → 0.7.3 · 1 evidence source",
+      "done": 13,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2500,
+      "candidate": {
+        "id": "integration_test/mix.exs#req@0.7.2",
+        "name": "req",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "0.7.2",
+        "latest": "0.7.2",
+        "selected": "0.7.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2500,
+      "phase": "No breaking changes to look for",
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 13,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2500,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -10080,15 +9870,15 @@
     },
     {
       "type": "progress",
-      "at": 2952,
+      "at": 2500,
       "phase": "Weighing what this upgrade is worth",
       "detail": "req 0.7.2 → 0.7.3",
-      "done": 14,
+      "done": 13,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2952,
+      "at": 2500,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -10115,15 +9905,15 @@
     },
     {
       "type": "progress",
-      "at": 2953,
+      "at": 2501,
       "phase": "Checking maintenance signals",
       "detail": "req 0.7.2 → 0.7.3",
-      "done": 14,
+      "done": 13,
       "total": 18
     },
     {
       "type": "candidate-upsert",
-      "at": 2953,
+      "at": 2501,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -10150,7 +9940,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2953,
+      "at": 2501,
       "candidate": {
         "id": "integration_test/mix.exs#req@0.7.2",
         "name": "req",
@@ -10177,15 +9967,225 @@
     },
     {
       "type": "progress",
-      "at": 2953,
+      "at": 2502,
       "phase": "Checked",
       "detail": "req 0.7.2 → 0.7.3 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 14,
+      "total": 18
+    },
+    {
+      "type": "progress",
+      "at": 2505,
+      "phase": "Reading release notes and changelog",
+      "detail": "swoosh 1.27.0 → 1.28.0",
+      "done": 14,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2505,
+      "candidate": {
+        "id": "integration_test/mix.exs#swoosh@1.27.0",
+        "name": "swoosh",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2505,
+      "phase": "Comparing the public API surface",
+      "detail": "swoosh 1.27.0 → 1.28.0 · 2 evidence sources",
+      "done": 14,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2505,
+      "candidate": {
+        "id": "integration_test/mix.exs#swoosh@1.27.0",
+        "name": "swoosh",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2505,
+      "phase": "No breaking changes to look for",
+      "detail": "swoosh 1.27.0 → 1.28.0",
+      "done": 14,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2505,
+      "candidate": {
+        "id": "integration_test/mix.exs#swoosh@1.27.0",
+        "name": "swoosh",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2505,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "swoosh 1.27.0 → 1.28.0",
+      "done": 14,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2505,
+      "candidate": {
+        "id": "integration_test/mix.exs#swoosh@1.27.0",
+        "name": "swoosh",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2505,
+      "phase": "Checking maintenance signals",
+      "detail": "swoosh 1.27.0 → 1.28.0",
+      "done": 14,
+      "total": 18
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2505,
+      "candidate": {
+        "id": "integration_test/mix.exs#swoosh@1.27.0",
+        "name": "swoosh",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2506,
+      "candidate": {
+        "id": "integration_test/mix.exs#swoosh@1.27.0",
+        "name": "swoosh",
+        "ecosystem": "hex",
+        "manifestPath": "integration_test/mix.exs",
+        "workspace": "integration_test",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.28.0",
+        "selected": "1.28.0",
+        "safeLatest": null,
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Do not upgrade yet. No breaking changes found for this version of swoosh.",
+        "recommendation": "do-not-upgrade-yet",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 2,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2506,
+      "phase": "Checked",
+      "detail": "swoosh 1.27.0 → 1.28.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 15,
       "total": 18
     },
     {
       "type": "progress",
-      "at": 2954,
+      "at": 2508,
       "phase": "Checking security advisories",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 15,
@@ -10193,7 +10193,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2954,
+      "at": 2508,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10220,7 +10220,7 @@
     },
     {
       "type": "progress",
-      "at": 2954,
+      "at": 2508,
       "phase": "Checking security advisories",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 15,
@@ -10228,7 +10228,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2954,
+      "at": 2508,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10255,7 +10255,7 @@
     },
     {
       "type": "progress",
-      "at": 2954,
+      "at": 2508,
       "phase": "Checking license",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 15,
@@ -10263,7 +10263,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2954,
+      "at": 2508,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10290,7 +10290,7 @@
     },
     {
       "type": "progress",
-      "at": 2954,
+      "at": 2508,
       "phase": "Checking license",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 15,
@@ -10298,7 +10298,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2954,
+      "at": 2508,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10325,7 +10325,7 @@
     },
     {
       "type": "progress",
-      "at": 2995,
+      "at": 2586,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 15,
@@ -10333,7 +10333,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2995,
+      "at": 2586,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -10360,7 +10360,7 @@
     },
     {
       "type": "progress",
-      "at": 2995,
+      "at": 2586,
       "phase": "Checking maintenance signals",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10",
       "done": 15,
@@ -10368,7 +10368,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2995,
+      "at": 2586,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -10395,7 +10395,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2996,
+      "at": 2587,
       "candidate": {
         "id": "integration_test/mix.exs#phoenix_live_view@1.2.0",
         "name": "phoenix_live_view",
@@ -10475,7 +10475,7 @@
     },
     {
       "type": "progress",
-      "at": 2996,
+      "at": 2587,
       "phase": "Checked",
       "detail": "phoenix_live_view 1.2.0 → 1.2.10 · safe for your code · 2 upstream changes, none used here — not deeply verified",
       "done": 16,
@@ -10483,7 +10483,7 @@
     },
     {
       "type": "progress",
-      "at": 2998,
+      "at": 2835,
       "phase": "Comparing the public API surface",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10491,7 +10491,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2998,
+      "at": 2835,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10518,7 +10518,7 @@
     },
     {
       "type": "progress",
-      "at": 2998,
+      "at": 2835,
       "phase": "Comparing the public API surface",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10526,7 +10526,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2998,
+      "at": 2835,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10553,7 +10553,7 @@
     },
     {
       "type": "progress",
-      "at": 3000,
+      "at": 2879,
       "phase": "Reading release notes and changelog",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10561,7 +10561,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3000,
+      "at": 2879,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10588,7 +10588,7 @@
     },
     {
       "type": "progress",
-      "at": 3000,
+      "at": 2879,
       "phase": "Comparing the public API surface",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0 · 1 evidence source",
       "done": 16,
@@ -10596,7 +10596,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3000,
+      "at": 2879,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10623,7 +10623,7 @@
     },
     {
       "type": "progress",
-      "at": 3000,
+      "at": 2879,
       "phase": "Reading release notes and changelog",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10631,7 +10631,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3000,
+      "at": 2879,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10658,7 +10658,7 @@
     },
     {
       "type": "progress",
-      "at": 3000,
+      "at": 2879,
       "phase": "Comparing the public API surface",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0 · 1 evidence source",
       "done": 16,
@@ -10666,7 +10666,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3000,
+      "at": 2879,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10693,7 +10693,7 @@
     },
     {
       "type": "progress",
-      "at": 3000,
+      "at": 2879,
       "phase": "No breaking changes to look for",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10701,7 +10701,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3000,
+      "at": 2879,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10728,7 +10728,7 @@
     },
     {
       "type": "progress",
-      "at": 3000,
+      "at": 2879,
       "phase": "No breaking changes to look for",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10736,7 +10736,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3000,
+      "at": 2879,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10763,7 +10763,7 @@
     },
     {
       "type": "progress",
-      "at": 3000,
+      "at": 2879,
       "phase": "Weighing what this upgrade is worth",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10771,7 +10771,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3000,
+      "at": 2879,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10798,7 +10798,7 @@
     },
     {
       "type": "progress",
-      "at": 3001,
+      "at": 2880,
       "phase": "Weighing what this upgrade is worth",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10806,7 +10806,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3001,
+      "at": 2880,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10833,7 +10833,7 @@
     },
     {
       "type": "progress",
-      "at": 3001,
+      "at": 2881,
       "phase": "Checking maintenance signals",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10841,7 +10841,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3002,
+      "at": 2881,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10868,7 +10868,7 @@
     },
     {
       "type": "progress",
-      "at": 3002,
+      "at": 2881,
       "phase": "Checking maintenance signals",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0",
       "done": 16,
@@ -10876,7 +10876,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3002,
+      "at": 2881,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10903,7 +10903,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3002,
+      "at": 2881,
       "candidate": {
         "id": "mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10930,7 +10930,7 @@
     },
     {
       "type": "progress",
-      "at": 3002,
+      "at": 2881,
       "phase": "Checked",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 17,
@@ -10938,7 +10938,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3002,
+      "at": 2881,
       "candidate": {
         "id": "integration_test/mix.exs#telemetry_metrics@1.1.0",
         "name": "telemetry_metrics",
@@ -10965,7 +10965,7 @@
     },
     {
       "type": "progress",
-      "at": 3002,
+      "at": 2881,
       "phase": "Checked",
       "detail": "telemetry_metrics 1.1.0 → 1.2.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 18,

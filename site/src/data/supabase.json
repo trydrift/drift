@@ -6,10 +6,10 @@
   "language": "TypeScript",
   "repo": "https://github.com/supabase/supabase-js",
   "blurb": "The official Supabase client for JavaScript and TypeScript.",
-  "capturedAt": "2026-08-26T02:44:52.096Z",
+  "capturedAt": "2026-08-26T03:31:02.335Z",
   "commit": "8e1fe781aa01edc3161b212509cd7cc72ac55995",
-  "engine": "5f714a0d411d6def",
-  "durationMs": 7164,
+  "engine": "e7735132693e42de",
+  "durationMs": 11263,
   "packagesChecked": 22,
   "manifests": [
     "package.json",
@@ -27,7 +27,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 169,
+      "at": 119,
       "phase": "Looking for manifests",
       "detail": "supabase/supabase-js",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 143,
       "phase": "Reading the workspace",
       "detail": "10 packages · pnpm-workspace",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 201,
+      "at": 147,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "progress",
-      "at": 921,
+      "at": 829,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/package.json",
       "done": 0,
@@ -59,7 +59,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 922,
+      "at": 830,
       "candidate": {
         "id": "packages/core/auth-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -86,7 +86,7 @@
     },
     {
       "type": "progress",
-      "at": 922,
+      "at": 830,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/example/react/package.json",
       "done": 0,
@@ -94,7 +94,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 922,
+      "at": 830,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -121,7 +121,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 922,
+      "at": 830,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -148,7 +148,7 @@
     },
     {
       "type": "progress",
-      "at": 922,
+      "at": 830,
       "phase": "Reading manifest",
       "detail": "packages/core/functions-js/package.json",
       "done": 0,
@@ -156,7 +156,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 922,
+      "at": 830,
       "candidate": {
         "id": "packages/core/functions-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -183,7 +183,7 @@
     },
     {
       "type": "progress",
-      "at": 922,
+      "at": 830,
       "phase": "Reading manifest",
       "detail": "packages/core/postgrest-js/package.json",
       "done": 0,
@@ -191,7 +191,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 922,
+      "at": 830,
       "candidate": {
         "id": "packages/core/postgrest-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -218,7 +218,7 @@
     },
     {
       "type": "progress",
-      "at": 922,
+      "at": 830,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/package.json",
       "done": 0,
@@ -226,7 +226,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 922,
+      "at": 830,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5",
         "name": "@supabase/phoenix",
@@ -253,7 +253,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 922,
+      "at": 830,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -280,7 +280,7 @@
     },
     {
       "type": "progress",
-      "at": 922,
+      "at": 830,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/example/package.json",
       "done": 0,
@@ -288,7 +288,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -315,7 +315,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -342,7 +342,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -369,7 +369,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -396,7 +396,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#class-variance-authority@0.7.1",
         "name": "class-variance-authority",
@@ -423,7 +423,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#clsx@2.1.1",
         "name": "clsx",
@@ -450,7 +450,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -477,7 +477,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
         "name": "next",
@@ -504,7 +504,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next-themes@0.4.6",
         "name": "next-themes",
@@ -531,7 +531,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -558,7 +558,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -585,7 +585,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -612,7 +612,7 @@
     },
     {
       "type": "progress",
-      "at": 923,
+      "at": 831,
       "phase": "Reading manifest",
       "detail": "packages/core/storage-js/package.json",
       "done": 0,
@@ -620,7 +620,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -647,7 +647,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 831,
       "candidate": {
         "id": "packages/core/storage-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -674,7 +674,7 @@
     },
     {
       "type": "progress",
-      "at": 923,
+      "at": 831,
       "phase": "Reading manifest",
       "detail": "packages/core/supabase-js/package.json",
       "done": 0,
@@ -682,7 +682,7 @@
     },
     {
       "type": "progress",
-      "at": 923,
+      "at": 831,
       "phase": "Reading manifest",
       "detail": "packages/shared/tracing/package.json",
       "done": 0,
@@ -690,7 +690,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 924,
+      "at": 831,
       "candidate": {
         "id": "packages/shared/tracing/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -717,7 +717,7 @@
     },
     {
       "type": "progress",
-      "at": 924,
+      "at": 831,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -725,7 +725,7 @@
     },
     {
       "type": "progress",
-      "at": 924,
+      "at": 831,
       "phase": "Checking registries",
       "detail": "22 direct dependencies",
       "done": 0,
@@ -733,7 +733,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 924,
+      "at": 831,
       "candidate": {
         "id": "packages/core/auth-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -760,7 +760,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 924,
+      "at": 832,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -787,7 +787,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 924,
+      "at": 832,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -814,7 +814,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 832,
       "candidate": {
         "id": "packages/core/functions-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -841,7 +841,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 832,
       "candidate": {
         "id": "packages/core/postgrest-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -868,7 +868,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 832,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5",
         "name": "@supabase/phoenix",
@@ -895,7 +895,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 832,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -922,7 +922,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 832,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -949,7 +949,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 832,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -976,7 +976,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 832,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -1003,7 +1003,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 925,
+      "at": 833,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -1030,7 +1030,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 926,
+      "at": 833,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#class-variance-authority@0.7.1",
         "name": "class-variance-authority",
@@ -1057,7 +1057,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 926,
+      "at": 833,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#clsx@2.1.1",
         "name": "clsx",
@@ -1084,7 +1084,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 926,
+      "at": 833,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -1111,7 +1111,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 926,
+      "at": 833,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
         "name": "next",
@@ -1138,7 +1138,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 926,
+      "at": 834,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next-themes@0.4.6",
         "name": "next-themes",
@@ -1165,7 +1165,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 926,
+      "at": 834,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -1192,7 +1192,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 926,
+      "at": 834,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -1219,7 +1219,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 927,
+      "at": 834,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -1246,7 +1246,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 927,
+      "at": 834,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -1273,7 +1273,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 927,
+      "at": 834,
       "candidate": {
         "id": "packages/core/storage-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1300,7 +1300,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 927,
+      "at": 834,
       "candidate": {
         "id": "packages/shared/tracing/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1327,12 +1327,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1058,
+      "at": 946,
       "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5"
     },
     {
       "type": "progress",
-      "at": 1058,
+      "at": 946,
       "phase": "Up to date",
       "detail": "@supabase/phoenix@0.4.5",
       "done": 1,
@@ -1340,12 +1340,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1059,
+      "at": 947,
       "id": "packages/core/auth-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1059,
+      "at": 947,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 2,
@@ -1353,12 +1353,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1059,
+      "at": 947,
       "id": "packages/core/functions-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1059,
+      "at": 947,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 3,
@@ -1366,12 +1366,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1059,
+      "at": 947,
       "id": "packages/core/postgrest-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1059,
+      "at": 947,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 4,
@@ -1379,12 +1379,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1059,
+      "at": 947,
       "id": "packages/core/realtime-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1059,
+      "at": 947,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 5,
@@ -1392,12 +1392,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1059,
+      "at": 947,
       "id": "packages/core/storage-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1059,
+      "at": 947,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 6,
@@ -1405,12 +1405,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1059,
+      "at": 947,
       "id": "packages/shared/tracing/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1059,
+      "at": 947,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 7,
@@ -1418,20 +1418,33 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1061,
+      "at": 950,
       "id": "packages/core/realtime-js/example/package.json#class-variance-authority@0.7.1"
     },
     {
       "type": "progress",
-      "at": 1061,
+      "at": 950,
       "phase": "Up to date",
       "detail": "class-variance-authority@0.7.1",
       "done": 8,
       "total": 22
     },
     {
+      "type": "candidate-drop",
+      "at": 951,
+      "id": "packages/core/realtime-js/example/package.json#clsx@2.1.1"
+    },
+    {
+      "type": "progress",
+      "at": 951,
+      "phase": "Up to date",
+      "detail": "clsx@2.1.1",
+      "done": 9,
+      "total": 22
+    },
+    {
       "type": "candidate-upsert",
-      "at": 1070,
+      "at": 964,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -1458,15 +1471,15 @@
     },
     {
       "type": "progress",
-      "at": 1070,
+      "at": 964,
       "phase": "Outdated",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 9,
+      "done": 10,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 1076,
+      "at": 969,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -1493,41 +1506,15 @@
     },
     {
       "type": "progress",
-      "at": 1076,
+      "at": 969,
       "phase": "Outdated",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
-      "done": 10,
-      "total": 22
-    },
-    {
-      "type": "candidate-drop",
-      "at": 1077,
-      "id": "packages/core/realtime-js/example/package.json#clsx@2.1.1"
-    },
-    {
-      "type": "progress",
-      "at": 1077,
-      "phase": "Up to date",
-      "detail": "clsx@2.1.1",
       "done": 11,
       "total": 22
     },
     {
-      "type": "candidate-drop",
-      "at": 1078,
-      "id": "packages/core/realtime-js/example/package.json#next-themes@0.4.6"
-    },
-    {
-      "type": "progress",
-      "at": 1078,
-      "phase": "Up to date",
-      "detail": "next-themes@0.4.6",
-      "done": 12,
-      "total": 22
-    },
-    {
       "type": "candidate-upsert",
-      "at": 1079,
+      "at": 969,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -1554,15 +1541,28 @@
     },
     {
       "type": "progress",
-      "at": 1079,
+      "at": 969,
       "phase": "Outdated",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "done": 12,
+      "total": 22
+    },
+    {
+      "type": "candidate-drop",
+      "at": 970,
+      "id": "packages/core/realtime-js/example/package.json#next-themes@0.4.6"
+    },
+    {
+      "type": "progress",
+      "at": 970,
+      "phase": "Up to date",
+      "detail": "next-themes@0.4.6",
       "done": 13,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 1115,
+      "at": 1046,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -1589,7 +1589,7 @@
     },
     {
       "type": "progress",
-      "at": 1115,
+      "at": 1046,
       "phase": "Outdated",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 14,
@@ -1597,7 +1597,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1125,
+      "at": 1058,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -1624,7 +1624,7 @@
     },
     {
       "type": "progress",
-      "at": 1125,
+      "at": 1058,
       "phase": "Outdated",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 15,
@@ -1632,7 +1632,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1135,
+      "at": 1070,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -1659,7 +1659,7 @@
     },
     {
       "type": "progress",
-      "at": 1135,
+      "at": 1070,
       "phase": "Outdated",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 16,
@@ -1667,7 +1667,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1149,
+      "at": 1083,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -1694,7 +1694,7 @@
     },
     {
       "type": "progress",
-      "at": 1149,
+      "at": 1083,
       "phase": "Outdated",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 17,
@@ -1702,7 +1702,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1386,
+      "at": 1401,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -1729,7 +1729,7 @@
     },
     {
       "type": "progress",
-      "at": 1386,
+      "at": 1402,
       "phase": "Outdated",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 18,
@@ -1737,7 +1737,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1386,
+      "at": 1402,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -1764,7 +1764,7 @@
     },
     {
       "type": "progress",
-      "at": 1386,
+      "at": 1402,
       "phase": "Outdated",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 19,
@@ -1772,7 +1772,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1489,
+      "at": 1553,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -1799,7 +1799,7 @@
     },
     {
       "type": "progress",
-      "at": 1489,
+      "at": 1553,
       "phase": "Outdated",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 20,
@@ -1807,7 +1807,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1489,
+      "at": 1553,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -1834,7 +1834,7 @@
     },
     {
       "type": "progress",
-      "at": 1489,
+      "at": 1553,
       "phase": "Outdated",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 21,
@@ -1842,7 +1842,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2592,
+      "at": 2926,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
         "name": "next",
@@ -1869,7 +1869,7 @@
     },
     {
       "type": "progress",
-      "at": 2592,
+      "at": 2926,
       "phase": "Outdated",
       "detail": "next 16.2.11 → 16.3.3",
       "done": 22,
@@ -1877,7 +1877,7 @@
     },
     {
       "type": "progress",
-      "at": 2593,
+      "at": 2927,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -1885,7 +1885,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2593,
+      "at": 2927,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -1912,7 +1912,7 @@
     },
     {
       "type": "progress",
-      "at": 2594,
+      "at": 2928,
       "phase": "Checking package metadata",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -1920,7 +1920,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2594,
+      "at": 2928,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -1947,7 +1947,7 @@
     },
     {
       "type": "progress",
-      "at": 2594,
+      "at": 2928,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -1955,7 +1955,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2594,
+      "at": 2928,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -1982,7 +1982,7 @@
     },
     {
       "type": "progress",
-      "at": 2594,
+      "at": 2928,
       "phase": "Checking package metadata",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -1990,7 +1990,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2594,
+      "at": 2928,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -2017,7 +2017,7 @@
     },
     {
       "type": "progress",
-      "at": 2594,
+      "at": 2928,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -2025,7 +2025,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2594,
+      "at": 2928,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -2052,7 +2052,7 @@
     },
     {
       "type": "progress",
-      "at": 2594,
+      "at": 2929,
       "phase": "Checking package metadata",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -2060,7 +2060,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2594,
+      "at": 2929,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -2087,7 +2087,7 @@
     },
     {
       "type": "progress",
-      "at": 2595,
+      "at": 2929,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -2095,7 +2095,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2595,
+      "at": 2929,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -2122,7 +2122,7 @@
     },
     {
       "type": "progress",
-      "at": 2595,
+      "at": 2929,
       "phase": "Checking package metadata",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -2130,7 +2130,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2595,
+      "at": 2929,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -2157,7 +2157,7 @@
     },
     {
       "type": "progress",
-      "at": 2595,
+      "at": 2929,
       "phase": "Reading release notes and changelog",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2165,7 +2165,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2595,
+      "at": 2929,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2192,7 +2192,7 @@
     },
     {
       "type": "progress",
-      "at": 2595,
+      "at": 2929,
       "phase": "Checking package metadata",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2200,7 +2200,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2595,
+      "at": 2929,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2227,7 +2227,7 @@
     },
     {
       "type": "progress",
-      "at": 2595,
+      "at": 2929,
       "phase": "Reading release notes and changelog",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 0,
@@ -2235,7 +2235,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2595,
+      "at": 2930,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2262,7 +2262,7 @@
     },
     {
       "type": "progress",
-      "at": 2595,
+      "at": 2930,
       "phase": "Checking package metadata",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 0,
@@ -2270,7 +2270,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2595,
+      "at": 2930,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2297,7 +2297,7 @@
     },
     {
       "type": "progress",
-      "at": 2595,
+      "at": 2930,
       "phase": "Reading release notes and changelog",
       "detail": "next 16.2.11 → 16.3.3",
       "done": 0,
@@ -2305,7 +2305,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2595,
+      "at": 2930,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
         "name": "next",
@@ -2332,7 +2332,7 @@
     },
     {
       "type": "progress",
-      "at": 2596,
+      "at": 2930,
       "phase": "Checking package metadata",
       "detail": "next 16.2.11 → 16.3.3",
       "done": 0,
@@ -2340,7 +2340,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2596,
+      "at": 2930,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
         "name": "next",
@@ -2367,7 +2367,7 @@
     },
     {
       "type": "progress",
-      "at": 2596,
+      "at": 2930,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -2375,7 +2375,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2596,
+      "at": 2930,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -2402,7 +2402,7 @@
     },
     {
       "type": "progress",
-      "at": 2596,
+      "at": 2931,
       "phase": "Checking package metadata",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -2410,7 +2410,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2596,
+      "at": 2931,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -2437,7 +2437,7 @@
     },
     {
       "type": "progress",
-      "at": 2750,
+      "at": 2951,
       "phase": "Checking repository status",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2445,7 +2445,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2750,
+      "at": 2951,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2472,7 +2472,7 @@
     },
     {
       "type": "progress",
-      "at": 2762,
+      "at": 2966,
       "phase": "Checking repository status",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -2480,7 +2480,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2762,
+      "at": 2966,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -2507,7 +2507,7 @@
     },
     {
       "type": "progress",
-      "at": 2768,
+      "at": 2973,
       "phase": "Checking repository status",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -2515,7 +2515,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2768,
+      "at": 2973,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -2542,7 +2542,7 @@
     },
     {
       "type": "progress",
-      "at": 2782,
+      "at": 2989,
       "phase": "Checking repository status",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -2550,7 +2550,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2782,
+      "at": 2989,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -2577,7 +2577,7 @@
     },
     {
       "type": "progress",
-      "at": 2795,
+      "at": 3002,
       "phase": "Checking repository status",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -2585,7 +2585,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 3002,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -2612,7 +2612,7 @@
     },
     {
       "type": "progress",
-      "at": 2857,
+      "at": 3035,
       "phase": "Checking security advisories",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2620,7 +2620,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2857,
+      "at": 3035,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2647,7 +2647,7 @@
     },
     {
       "type": "progress",
-      "at": 2884,
+      "at": 3079,
       "phase": "Checking repository status",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 0,
@@ -2655,7 +2655,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2884,
+      "at": 3079,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2682,7 +2682,7 @@
     },
     {
       "type": "progress",
-      "at": 2907,
+      "at": 3085,
       "phase": "Checking security advisories",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -2690,7 +2690,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2907,
+      "at": 3085,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -2717,7 +2717,7 @@
     },
     {
       "type": "progress",
-      "at": 2907,
+      "at": 3085,
       "phase": "Checking security advisories",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -2725,7 +2725,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2907,
+      "at": 3085,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -2752,7 +2752,7 @@
     },
     {
       "type": "progress",
-      "at": 2907,
+      "at": 3085,
       "phase": "Checking security advisories",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -2760,7 +2760,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2907,
+      "at": 3085,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -2787,7 +2787,7 @@
     },
     {
       "type": "progress",
-      "at": 2907,
+      "at": 3085,
       "phase": "Checking security advisories",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -2795,7 +2795,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2907,
+      "at": 3085,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -2822,7 +2822,42 @@
     },
     {
       "type": "progress",
-      "at": 3168,
+      "at": 3233,
+      "phase": "Checking security advisories",
+      "detail": "lucide-react 0.511.0 → 1.34.0",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3233,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
+        "name": "lucide-react",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "0.511.0",
+        "latest": "0.511.0",
+        "selected": "0.511.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3247,
       "phase": "Checking license",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -2830,7 +2865,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3168,
+      "at": 3247,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -2857,7 +2892,7 @@
     },
     {
       "type": "progress",
-      "at": 3168,
+      "at": 3248,
       "phase": "Checking license",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -2865,7 +2900,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3168,
+      "at": 3248,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -2892,7 +2927,7 @@
     },
     {
       "type": "progress",
-      "at": 3168,
+      "at": 3248,
       "phase": "Checking license",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -2900,7 +2935,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3168,
+      "at": 3248,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -2927,7 +2962,7 @@
     },
     {
       "type": "progress",
-      "at": 3168,
+      "at": 3248,
       "phase": "Checking license",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -2935,7 +2970,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3168,
+      "at": 3248,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -2962,7 +2997,7 @@
     },
     {
       "type": "progress",
-      "at": 3168,
+      "at": 3248,
       "phase": "Checking license",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2970,7 +3005,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3168,
+      "at": 3248,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2997,7 +3032,42 @@
     },
     {
       "type": "progress",
-      "at": 3212,
+      "at": 3248,
+      "phase": "Checking license",
+      "detail": "lucide-react 0.511.0 → 1.34.0",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3248,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
+        "name": "lucide-react",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "0.511.0",
+        "latest": "0.511.0",
+        "selected": "0.511.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3249,
       "phase": "Reading release notes and changelog",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -3005,7 +3075,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3212,
+      "at": 3249,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3032,7 +3102,7 @@
     },
     {
       "type": "progress",
-      "at": 3212,
+      "at": 3249,
       "phase": "Comparing the public API surface",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · 5 evidence sources",
       "done": 0,
@@ -3040,7 +3110,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3212,
+      "at": 3249,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3067,7 +3137,7 @@
     },
     {
       "type": "progress",
-      "at": 3221,
+      "at": 3258,
       "phase": "Searching your code for 26 breaking changes",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -3075,7 +3145,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3221,
+      "at": 3258,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3102,77 +3172,7 @@
     },
     {
       "type": "progress",
-      "at": 3223,
-      "phase": "Checking security advisories",
-      "detail": "lucide-react 0.511.0 → 1.34.0",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3223,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
-        "name": "lucide-react",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "0.511.0",
-        "latest": "0.511.0",
-        "selected": "0.511.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3223,
-      "phase": "Checking license",
-      "detail": "lucide-react 0.511.0 → 1.34.0",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3223,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
-        "name": "lucide-react",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "0.511.0",
-        "latest": "0.511.0",
-        "selected": "0.511.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3772,
+      "at": 3501,
       "phase": "Checking repository status",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -3180,7 +3180,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3772,
+      "at": 3501,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -3207,7 +3207,7 @@
     },
     {
       "type": "progress",
-      "at": 3829,
+      "at": 3782,
       "phase": "Checking security advisories",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -3215,7 +3215,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3829,
+      "at": 3782,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -3242,7 +3242,7 @@
     },
     {
       "type": "progress",
-      "at": 3829,
+      "at": 3782,
       "phase": "Checking license",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -3250,7 +3250,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3829,
+      "at": 3782,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -3277,7 +3277,7 @@
     },
     {
       "type": "progress",
-      "at": 4518,
+      "at": 4173,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -3285,7 +3285,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4518,
+      "at": 4173,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -3312,7 +3312,7 @@
     },
     {
       "type": "progress",
-      "at": 4518,
+      "at": 4173,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -3320,7 +3320,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4518,
+      "at": 4173,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -3347,7 +3347,7 @@
     },
     {
       "type": "progress",
-      "at": 4518,
+      "at": 4173,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -3355,7 +3355,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4518,
+      "at": 4173,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -3382,7 +3382,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4174,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -3390,7 +3390,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4174,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -3417,7 +3417,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4174,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
       "done": 0,
@@ -3425,7 +3425,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4174,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -3452,7 +3452,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4174,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -3460,7 +3460,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4174,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -3487,7 +3487,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4174,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · 2 evidence sources",
       "done": 0,
@@ -3495,7 +3495,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4174,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -3522,7 +3522,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4174,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -3530,7 +3530,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4174,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -3557,7 +3557,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4174,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · 1 evidence source",
       "done": 0,
@@ -3565,7 +3565,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4174,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -3592,7 +3592,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4175,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -3600,7 +3600,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4175,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -3627,7 +3627,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4175,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
       "done": 0,
@@ -3635,7 +3635,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4175,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -3662,7 +3662,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4175,
       "phase": "Reading release notes and changelog",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 0,
@@ -3670,7 +3670,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4175,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -3697,7 +3697,7 @@
     },
     {
       "type": "progress",
-      "at": 4519,
+      "at": 4175,
       "phase": "Comparing the public API surface",
       "detail": "lucide-react 0.511.0 → 1.34.0 · 3 evidence sources",
       "done": 0,
@@ -3705,7 +3705,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4519,
+      "at": 4175,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -3732,7 +3732,7 @@
     },
     {
       "type": "progress",
-      "at": 4521,
+      "at": 4176,
       "phase": "No breaking changes to look for",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -3740,7 +3740,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4521,
+      "at": 4176,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -3767,7 +3767,7 @@
     },
     {
       "type": "progress",
-      "at": 4521,
+      "at": 4176,
       "phase": "Searching your code for 4 breaking changes",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -3775,7 +3775,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4521,
+      "at": 4176,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -3802,7 +3802,7 @@
     },
     {
       "type": "progress",
-      "at": 4521,
+      "at": 4176,
       "phase": "No breaking changes to look for",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -3810,7 +3810,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4521,
+      "at": 4176,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -3837,7 +3837,7 @@
     },
     {
       "type": "progress",
-      "at": 4521,
+      "at": 4176,
       "phase": "No breaking changes to look for",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -3845,7 +3845,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4521,
+      "at": 4176,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -3872,7 +3872,7 @@
     },
     {
       "type": "progress",
-      "at": 4521,
+      "at": 4176,
       "phase": "Searching your code for 107 breaking changes",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 0,
@@ -3880,7 +3880,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4521,
+      "at": 4176,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -3907,7 +3907,7 @@
     },
     {
       "type": "progress",
-      "at": 4526,
+      "at": 4182,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -3915,7 +3915,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4526,
+      "at": 4182,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -3942,7 +3942,7 @@
     },
     {
       "type": "progress",
-      "at": 4526,
+      "at": 4182,
       "phase": "Comparing the public API surface",
       "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
       "done": 0,
@@ -3950,7 +3950,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4526,
+      "at": 4182,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -3977,7 +3977,7 @@
     },
     {
       "type": "progress",
-      "at": 4526,
+      "at": 4182,
       "phase": "No breaking changes to look for",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -3985,7 +3985,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4526,
+      "at": 4182,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -4012,7 +4012,7 @@
     },
     {
       "type": "progress",
-      "at": 4887,
+      "at": 4235,
       "phase": "Indexing your code",
       "detail": "385 files indexed · 22 direct dependencies to check",
       "done": 0,
@@ -4020,7 +4020,7 @@
     },
     {
       "type": "progress",
-      "at": 5114,
+      "at": 4464,
       "phase": "Weighing what this upgrade is worth",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -4028,7 +4028,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5114,
+      "at": 4464,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -4055,7 +4055,7 @@
     },
     {
       "type": "progress",
-      "at": 5121,
+      "at": 4471,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -4063,7 +4063,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5121,
+      "at": 4471,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -4090,7 +4090,7 @@
     },
     {
       "type": "progress",
-      "at": 5124,
+      "at": 4474,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -4098,7 +4098,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5124,
+      "at": 4474,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -4125,7 +4125,7 @@
     },
     {
       "type": "progress",
-      "at": 5132,
+      "at": 4479,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -4133,7 +4133,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5132,
+      "at": 4479,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -4160,7 +4160,7 @@
     },
     {
       "type": "progress",
-      "at": 5136,
+      "at": 4483,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -4168,7 +4168,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5136,
+      "at": 4483,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -4195,7 +4195,7 @@
     },
     {
       "type": "progress",
-      "at": 5155,
+      "at": 4501,
       "phase": "Weighing what this upgrade is worth",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 0,
@@ -4203,7 +4203,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5155,
+      "at": 4501,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -4230,7 +4230,7 @@
     },
     {
       "type": "progress",
-      "at": 5158,
+      "at": 4504,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -4238,7 +4238,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5158,
+      "at": 4504,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -4265,7 +4265,7 @@
     },
     {
       "type": "progress",
-      "at": 5161,
+      "at": 4507,
       "phase": "Checking maintenance signals",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -4273,7 +4273,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5162,
+      "at": 4507,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -4300,7 +4300,7 @@
     },
     {
       "type": "progress",
-      "at": 5169,
+      "at": 4514,
       "phase": "Checking maintenance signals",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
@@ -4308,7 +4308,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5169,
+      "at": 4514,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -4335,7 +4335,7 @@
     },
     {
       "type": "progress",
-      "at": 5171,
+      "at": 4517,
       "phase": "Checking maintenance signals",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
@@ -4343,7 +4343,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5171,
+      "at": 4517,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -4370,7 +4370,7 @@
     },
     {
       "type": "progress",
-      "at": 5173,
+      "at": 4518,
       "phase": "Checking maintenance signals",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
@@ -4378,7 +4378,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5173,
+      "at": 4518,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -4405,7 +4405,7 @@
     },
     {
       "type": "progress",
-      "at": 5175,
+      "at": 4520,
       "phase": "Checking maintenance signals",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
@@ -4413,7 +4413,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5175,
+      "at": 4520,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -4440,7 +4440,7 @@
     },
     {
       "type": "progress",
-      "at": 5176,
+      "at": 4521,
       "phase": "Checking maintenance signals",
       "detail": "lucide-react 0.511.0 → 1.34.0",
       "done": 0,
@@ -4448,7 +4448,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5176,
+      "at": 4521,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -4475,7 +4475,7 @@
     },
     {
       "type": "progress",
-      "at": 5179,
+      "at": 4524,
       "phase": "Checking maintenance signals",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
@@ -4483,7 +4483,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5179,
+      "at": 4524,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -4510,7 +4510,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5198,
+      "at": 4542,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -4634,7 +4634,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checked",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · safe for your code · 26 upstream changes, none used here — not deeply verified",
       "done": 1,
@@ -4642,7 +4642,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.6",
         "name": "@radix-ui/react-label",
@@ -4671,7 +4671,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checked",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found — not deeply verified",
       "done": 2,
@@ -4679,7 +4679,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.1",
         "name": "@radix-ui/react-checkbox",
@@ -4708,7 +4708,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checked",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
@@ -4716,7 +4716,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.14",
         "name": "@radix-ui/react-dropdown-menu",
@@ -4745,7 +4745,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checked",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
@@ -4753,7 +4753,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.2.2",
         "name": "@radix-ui/react-slot",
@@ -4879,7 +4879,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checked",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · safe for your code · 4 upstream changes, none used here — not deeply verified",
       "done": 5,
@@ -4887,7 +4887,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -5011,7 +5011,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checked",
       "detail": "lucide-react 0.511.0 → 1.34.0 · safe for your code · 107 upstream changes, none used here — not deeply verified",
       "done": 6,
@@ -5019,7 +5019,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.2.0",
         "name": "react",
@@ -5048,7 +5048,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checked",
       "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found — not deeply verified",
       "done": 7,
@@ -5056,7 +5056,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5064,7 +5064,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5091,7 +5091,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checking package metadata",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5099,7 +5099,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5126,7 +5126,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 7,
@@ -5134,7 +5134,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -5161,7 +5161,7 @@
     },
     {
       "type": "progress",
-      "at": 5199,
+      "at": 4543,
       "phase": "Checking package metadata",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 7,
@@ -5169,7 +5169,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5199,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -5196,7 +5196,7 @@
     },
     {
       "type": "progress",
-      "at": 5200,
+      "at": 4543,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 7,
@@ -5204,7 +5204,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5200,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -5231,7 +5231,7 @@
     },
     {
       "type": "progress",
-      "at": 5200,
+      "at": 4543,
       "phase": "Checking package metadata",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 7,
@@ -5239,7 +5239,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5200,
+      "at": 4543,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -5266,7 +5266,7 @@
     },
     {
       "type": "progress",
-      "at": 5200,
+      "at": 4544,
       "phase": "Reading release notes and changelog",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 7,
@@ -5274,7 +5274,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5200,
+      "at": 4544,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -5301,7 +5301,7 @@
     },
     {
       "type": "progress",
-      "at": 5200,
+      "at": 4544,
       "phase": "Checking package metadata",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 7,
@@ -5309,7 +5309,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5200,
+      "at": 4544,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -5336,7 +5336,7 @@
     },
     {
       "type": "progress",
-      "at": 5201,
+      "at": 4545,
       "phase": "Checking repository status",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5344,7 +5344,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5201,
+      "at": 4545,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5371,7 +5371,7 @@
     },
     {
       "type": "progress",
-      "at": 5202,
+      "at": 4546,
       "phase": "Checking security advisories",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5379,7 +5379,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5202,
+      "at": 4546,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5406,7 +5406,7 @@
     },
     {
       "type": "progress",
-      "at": 5204,
+      "at": 4548,
       "phase": "Checking license",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5414,7 +5414,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5204,
+      "at": 4548,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5441,112 +5441,7 @@
     },
     {
       "type": "progress",
-      "at": 5630,
-      "phase": "Checking repository status",
-      "detail": "next 16.2.11 → 16.3.3",
-      "done": 7,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 5630,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking repository status",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 5683,
-      "phase": "Checking security advisories",
-      "detail": "next 16.2.11 → 16.3.3",
-      "done": 7,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 5683,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 5683,
-      "phase": "Checking license",
-      "detail": "next 16.2.11 → 16.3.3",
-      "done": 7,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 5683,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 5712,
+      "at": 4991,
       "phase": "Checking repository status",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 7,
@@ -5554,7 +5449,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5712,
+      "at": 4991,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -5581,28 +5476,28 @@
     },
     {
       "type": "progress",
-      "at": 5786,
-      "phase": "Checking security advisories",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "at": 5409,
+      "phase": "Checking repository status",
+      "detail": "next 16.2.11 → 16.3.3",
       "done": 7,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 5786,
+      "at": 5409,
       "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
-        "name": "tailwind-merge",
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
         "ecosystem": "npm",
         "manifestPath": "packages/core/realtime-js/example/package.json",
         "workspace": "packages/core/realtime-js/example",
         "workspaceName": null,
-        "current": "3.3.0",
-        "latest": "3.3.0",
-        "selected": "3.3.0",
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
         "safeLatest": null,
         "status": "pending",
-        "phase": "Checking security advisories",
+        "phase": "Checking repository status",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -5616,42 +5511,7 @@
     },
     {
       "type": "progress",
-      "at": 5786,
-      "phase": "Checking license",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
-      "done": 7,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 5786,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
-        "name": "tailwind-merge",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "3.3.0",
-        "latest": "3.3.0",
-        "selected": "3.3.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 5796,
+      "at": 5497,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5659,7 +5519,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5796,
+      "at": 5497,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5686,7 +5546,7 @@
     },
     {
       "type": "progress",
-      "at": 5796,
+      "at": 5497,
       "phase": "Comparing the public API surface",
       "detail": "react 19.0.0 → 19.2.8 · 4 evidence sources",
       "done": 7,
@@ -5694,7 +5554,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5796,
+      "at": 5497,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5721,7 +5581,7 @@
     },
     {
       "type": "progress",
-      "at": 5797,
+      "at": 5497,
       "phase": "Searching your code for 1 breaking change",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5729,7 +5589,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5797,
+      "at": 5497,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5756,7 +5616,7 @@
     },
     {
       "type": "progress",
-      "at": 5799,
+      "at": 5500,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5764,7 +5624,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5799,
+      "at": 5500,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5791,7 +5651,7 @@
     },
     {
       "type": "progress",
-      "at": 5802,
+      "at": 5503,
       "phase": "Checking maintenance signals",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 7,
@@ -5799,7 +5659,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5802,
+      "at": 5503,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5826,7 +5686,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5813,
+      "at": 5513,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.0.0",
         "name": "react",
@@ -5885,7 +5745,7 @@
     },
     {
       "type": "progress",
-      "at": 5813,
+      "at": 5513,
       "phase": "Checked",
       "detail": "react 19.0.0 → 19.2.8 · safe for your code · 1 upstream change, none used here — not deeply verified",
       "done": 8,
@@ -5893,7 +5753,147 @@
     },
     {
       "type": "progress",
-      "at": 5845,
+      "at": 5514,
+      "phase": "Checking security advisories",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5514,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
+        "name": "tailwind-merge",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "3.3.0",
+        "latest": "3.3.0",
+        "selected": "3.3.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5514,
+      "phase": "Checking license",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5514,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
+        "name": "tailwind-merge",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "3.3.0",
+        "latest": "3.3.0",
+        "selected": "3.3.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5533,
+      "phase": "Checking security advisories",
+      "detail": "next 16.2.11 → 16.3.3",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5533,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5533,
+      "phase": "Checking license",
+      "detail": "next 16.2.11 → 16.3.3",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5533,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 5984,
       "phase": "Reading release notes and changelog",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 8,
@@ -5901,7 +5901,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5845,
+      "at": 5984,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -5928,7 +5928,7 @@
     },
     {
       "type": "progress",
-      "at": 5845,
+      "at": 5985,
       "phase": "Comparing the public API surface",
       "detail": "tailwind-merge 3.3.0 → 3.6.0 · 2 evidence sources",
       "done": 8,
@@ -5936,7 +5936,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5845,
+      "at": 5985,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -5963,7 +5963,7 @@
     },
     {
       "type": "progress",
-      "at": 5846,
+      "at": 5985,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 8,
@@ -5971,7 +5971,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5846,
+      "at": 5985,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -5998,7 +5998,7 @@
     },
     {
       "type": "progress",
-      "at": 5847,
+      "at": 5986,
       "phase": "Weighing what this upgrade is worth",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 8,
@@ -6006,7 +6006,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5847,
+      "at": 5986,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -6033,7 +6033,7 @@
     },
     {
       "type": "progress",
-      "at": 5849,
+      "at": 5989,
       "phase": "Checking maintenance signals",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 8,
@@ -6041,7 +6041,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5849,
+      "at": 5989,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -6068,7 +6068,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5852,
+      "at": 5992,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.3.0",
         "name": "tailwind-merge",
@@ -6146,7 +6146,7 @@
     },
     {
       "type": "progress",
-      "at": 5852,
+      "at": 5992,
       "phase": "Checked",
       "detail": "tailwind-merge 3.3.0 → 3.6.0 · safe for your code · 2 upstream changes, none used here — not deeply verified",
       "done": 9,
@@ -6154,7 +6154,7 @@
     },
     {
       "type": "progress",
-      "at": 5975,
+      "at": 6159,
       "phase": "Checking repository status",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 9,
@@ -6162,7 +6162,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5975,
+      "at": 6159,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6189,7 +6189,7 @@
     },
     {
       "type": "progress",
-      "at": 5975,
+      "at": 6159,
       "phase": "Checking repository status",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 9,
@@ -6197,7 +6197,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5975,
+      "at": 6159,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6224,7 +6224,7 @@
     },
     {
       "type": "progress",
-      "at": 5978,
+      "at": 6161,
       "phase": "Checking security advisories",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 9,
@@ -6232,7 +6232,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5978,
+      "at": 6162,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6259,7 +6259,7 @@
     },
     {
       "type": "progress",
-      "at": 5978,
+      "at": 6162,
       "phase": "Checking security advisories",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 9,
@@ -6267,7 +6267,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5978,
+      "at": 6162,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6294,7 +6294,7 @@
     },
     {
       "type": "progress",
-      "at": 5980,
+      "at": 6165,
       "phase": "Checking license",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 9,
@@ -6302,7 +6302,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5980,
+      "at": 6165,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6329,7 +6329,7 @@
     },
     {
       "type": "progress",
-      "at": 5980,
+      "at": 6165,
       "phase": "Checking license",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 9,
@@ -6337,7 +6337,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5980,
+      "at": 6165,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6364,227 +6364,15 @@
     },
     {
       "type": "progress",
-      "at": 6001,
-      "phase": "Reading release notes and changelog",
-      "detail": "next 16.2.11 → 16.3.3",
-      "done": 9,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 6001,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 6001,
-      "phase": "Comparing the public API surface",
-      "detail": "next 16.2.11 → 16.3.3 · 2 evidence sources",
-      "done": 9,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 6001,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 6001,
-      "phase": "No breaking changes to look for",
-      "detail": "next 16.2.11 → 16.3.3",
-      "done": 9,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 6001,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 6001,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "next 16.2.11 → 16.3.3",
-      "done": 9,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 6001,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 6004,
-      "phase": "Checking maintenance signals",
-      "detail": "next 16.2.11 → 16.3.3",
-      "done": 9,
-      "total": 12
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 6004,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.2.11",
-        "selected": "16.2.11",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 6018,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
-        "name": "next",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "16.2.11",
-        "latest": "16.3.3",
-        "selected": "16.3.3",
-        "safeLatest": "16.3.3",
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. next ships no declarations of its own; its types live in @types/next, which versions separately and does not move with this upgrade. Nothing was compared.",
-        "recommendation": "safe-to-upgrade",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 2,
-        "gaps": [
-          "next ships no declarations of its own; its types live in @types/next, which versions separately and does not move with this upgrade. Nothing was compared."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 6018,
-      "phase": "Checked",
-      "detail": "next 16.2.11 → 16.3.3 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 10,
-      "total": 12
-    },
-    {
-      "type": "progress",
-      "at": 7047,
+      "at": 7352,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 10,
+      "done": 9,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7047,
+      "at": 7352,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6611,15 +6399,15 @@
     },
     {
       "type": "progress",
-      "at": 7047,
+      "at": 7352,
       "phase": "Comparing the public API surface",
       "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 10,
+      "done": 9,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7047,
+      "at": 7352,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6646,15 +6434,15 @@
     },
     {
       "type": "progress",
-      "at": 7047,
+      "at": 7352,
       "phase": "No breaking changes to look for",
       "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 10,
+      "done": 9,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7047,
+      "at": 7352,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6681,15 +6469,15 @@
     },
     {
       "type": "progress",
-      "at": 7048,
+      "at": 7352,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 10,
+      "done": 9,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7048,
+      "at": 7352,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6716,15 +6504,15 @@
     },
     {
       "type": "progress",
-      "at": 7051,
+      "at": 7356,
       "phase": "Checking maintenance signals",
       "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 10,
+      "done": 9,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7051,
+      "at": 7356,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6751,7 +6539,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 7061,
+      "at": 7366,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.2.0",
         "name": "react-dom",
@@ -6780,23 +6568,23 @@
     },
     {
       "type": "progress",
-      "at": 7062,
+      "at": 7366,
       "phase": "Checked",
       "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 11,
+      "done": 10,
       "total": 12
     },
     {
       "type": "progress",
-      "at": 7065,
+      "at": 7370,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 11,
+      "done": 10,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7065,
+      "at": 7370,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6823,15 +6611,15 @@
     },
     {
       "type": "progress",
-      "at": 7065,
+      "at": 7370,
       "phase": "Comparing the public API surface",
       "detail": "react-dom 19.0.0 → 19.2.8 · 4 evidence sources",
-      "done": 11,
+      "done": 10,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7065,
+      "at": 7370,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6858,15 +6646,15 @@
     },
     {
       "type": "progress",
-      "at": 7065,
+      "at": 7371,
       "phase": "Searching your code for 1 breaking change",
       "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 11,
+      "done": 10,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7065,
+      "at": 7371,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6893,15 +6681,15 @@
     },
     {
       "type": "progress",
-      "at": 7076,
+      "at": 7373,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 11,
+      "done": 10,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7076,
+      "at": 7373,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6928,15 +6716,15 @@
     },
     {
       "type": "progress",
-      "at": 7087,
+      "at": 7377,
       "phase": "Checking maintenance signals",
       "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 11,
+      "done": 10,
       "total": 12
     },
     {
       "type": "candidate-upsert",
-      "at": 7087,
+      "at": 7377,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -6963,7 +6751,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 7163,
+      "at": 7389,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.0.0",
         "name": "react-dom",
@@ -7022,9 +6810,221 @@
     },
     {
       "type": "progress",
-      "at": 7163,
+      "at": 7390,
       "phase": "Checked",
       "detail": "react-dom 19.0.0 → 19.2.8 · safe for your code · 1 upstream change, none used here — not deeply verified",
+      "done": 11,
+      "total": 12
+    },
+    {
+      "type": "progress",
+      "at": 11242,
+      "phase": "Reading release notes and changelog",
+      "detail": "next 16.2.11 → 16.3.3",
+      "done": 11,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11242,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11242,
+      "phase": "Comparing the public API surface",
+      "detail": "next 16.2.11 → 16.3.3 · 2 evidence sources",
+      "done": 11,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11242,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11242,
+      "phase": "No breaking changes to look for",
+      "detail": "next 16.2.11 → 16.3.3",
+      "done": 11,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11242,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11243,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "next 16.2.11 → 16.3.3",
+      "done": 11,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11243,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11246,
+      "phase": "Checking maintenance signals",
+      "detail": "next 16.2.11 → 16.3.3",
+      "done": 11,
+      "total": 12
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11246,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.2.11",
+        "selected": "16.2.11",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 11262,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#next@16.2.11",
+        "name": "next",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "16.2.11",
+        "latest": "16.3.3",
+        "selected": "16.3.3",
+        "safeLatest": "16.3.3",
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. next ships no declarations of its own; its types live in @types/next, which versions separately and does not move with this upgrade. Nothing was compared.",
+        "recommendation": "safe-to-upgrade",
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 2,
+        "gaps": [
+          "next ships no declarations of its own; its types live in @types/next, which versions separately and does not move with this upgrade. Nothing was compared."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 11263,
+      "phase": "Checked",
+      "detail": "next 16.2.11 → 16.3.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 12,
       "total": 12
     }

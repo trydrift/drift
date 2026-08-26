@@ -6,10 +6,10 @@
   "language": "PHP",
   "repo": "https://github.com/guzzle/guzzle",
   "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
-  "capturedAt": "2026-08-26T02:46:37.668Z",
+  "capturedAt": "2026-08-26T03:33:05.626Z",
   "commit": "7b7b04a0f5a548bfe9ced4b56f5661deee229ac3",
-  "engine": "5f714a0d411d6def",
-  "durationMs": 860,
+  "engine": "e7735132693e42de",
+  "durationMs": 1250,
   "packagesChecked": 10,
   "manifests": [
     "composer.json",
@@ -21,7 +21,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 109,
+      "at": 107,
       "phase": "Looking for manifests",
       "detail": "guzzle/guzzle",
       "done": 0,
@@ -29,7 +29,7 @@
     },
     {
       "type": "progress",
-      "at": 117,
+      "at": 115,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -37,7 +37,7 @@
     },
     {
       "type": "progress",
-      "at": 119,
+      "at": 117,
       "phase": "Reading manifest",
       "detail": "composer.json",
       "done": 0,
@@ -45,7 +45,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "composer.json#guzzlehttp/promises@3.0.2",
         "name": "guzzlehttp/promises",
@@ -72,7 +72,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "composer.json#guzzlehttp/psr7@3.1.0",
         "name": "guzzlehttp/psr7",
@@ -99,7 +99,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -126,7 +126,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -153,7 +153,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -180,7 +180,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -207,7 +207,7 @@
     },
     {
       "type": "progress",
-      "at": 120,
+      "at": 119,
       "phase": "Reading manifest",
       "detail": "vendor-bin/composer-normalize/composer.json",
       "done": 0,
@@ -215,7 +215,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -242,7 +242,7 @@
     },
     {
       "type": "progress",
-      "at": 120,
+      "at": 119,
       "phase": "Reading manifest",
       "detail": "vendor-bin/php-cs-fixer/composer.json",
       "done": 0,
@@ -250,7 +250,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -277,7 +277,7 @@
     },
     {
       "type": "progress",
-      "at": 120,
+      "at": 119,
       "phase": "Reading manifest",
       "detail": "vendor-bin/phpstan/composer.json",
       "done": 0,
@@ -285,7 +285,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -312,7 +312,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -339,7 +339,7 @@
     },
     {
       "type": "progress",
-      "at": 120,
+      "at": 119,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -347,7 +347,7 @@
     },
     {
       "type": "progress",
-      "at": 120,
+      "at": 119,
       "phase": "Checking registries",
       "detail": "10 direct dependencies",
       "done": 0,
@@ -355,7 +355,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 120,
+      "at": 119,
       "candidate": {
         "id": "composer.json#guzzlehttp/promises@3.0.2",
         "name": "guzzlehttp/promises",
@@ -382,7 +382,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "composer.json#guzzlehttp/psr7@3.1.0",
         "name": "guzzlehttp/psr7",
@@ -409,7 +409,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -436,7 +436,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -463,7 +463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -490,7 +490,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -517,7 +517,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -544,7 +544,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -571,7 +571,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -598,7 +598,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 121,
+      "at": 120,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -625,7 +625,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 127,
+      "at": 126,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -652,7 +652,7 @@
     },
     {
       "type": "progress",
-      "at": 127,
+      "at": 126,
       "phase": "Outdated",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 1,
@@ -660,20 +660,33 @@
     },
     {
       "type": "candidate-drop",
-      "at": 128,
+      "at": 126,
       "id": "composer.json#guzzlehttp/promises@3.0.2"
     },
     {
       "type": "progress",
-      "at": 128,
+      "at": 126,
       "phase": "Up to date",
       "detail": "guzzlehttp/promises@3.0.2",
       "done": 2,
       "total": 10
     },
     {
+      "type": "candidate-drop",
+      "at": 127,
+      "id": "composer.json#guzzlehttp/psr7@3.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 127,
+      "phase": "Up to date",
+      "detail": "guzzlehttp/psr7@3.1.0",
+      "done": 3,
+      "total": 10
+    },
+    {
       "type": "candidate-upsert",
-      "at": 128,
+      "at": 127,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -700,28 +713,15 @@
     },
     {
       "type": "progress",
-      "at": 128,
+      "at": 127,
       "phase": "Outdated",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "type": "candidate-drop",
-      "at": 129,
-      "id": "composer.json#guzzlehttp/psr7@3.1.0"
-    },
-    {
-      "type": "progress",
-      "at": 129,
-      "phase": "Up to date",
-      "detail": "guzzlehttp/psr7@3.1.0",
       "done": 4,
       "total": 10
     },
     {
       "type": "candidate-upsert",
-      "at": 129,
+      "at": 128,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -748,7 +748,7 @@
     },
     {
       "type": "progress",
-      "at": 129,
+      "at": 128,
       "phase": "Outdated",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 5,
@@ -756,7 +756,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 130,
+      "at": 129,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -783,7 +783,7 @@
     },
     {
       "type": "progress",
-      "at": 130,
+      "at": 129,
       "phase": "Outdated",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 6,
@@ -791,12 +791,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 131,
+      "at": 130,
       "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0"
     },
     {
       "type": "progress",
-      "at": 131,
+      "at": 130,
       "phase": "Up to date",
       "detail": "ergebnis/composer-normalize@2.52.0",
       "done": 7,
@@ -804,77 +804,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 132,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.5",
-        "selected": "2.0.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 132,
-      "phase": "Outdated",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 8,
-      "total": 10
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 138,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.22",
-        "selected": "3.95.22",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 138,
-      "phase": "Outdated",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
-      "done": 9,
-      "total": 10
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 142,
+      "at": 135,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -901,15 +831,85 @@
     },
     {
       "type": "progress",
-      "at": 142,
+      "at": 135,
       "phase": "Outdated",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
+      "done": 8,
+      "total": 10
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 140,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.22",
+        "selected": "3.95.22",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 140,
+      "phase": "Outdated",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
+      "done": 9,
+      "total": 10
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 141,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.5",
+        "selected": "2.0.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 141,
+      "phase": "Outdated",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 10,
       "total": 10
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -917,7 +917,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -944,7 +944,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Checking package metadata",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -952,7 +952,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -979,7 +979,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -987,7 +987,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1014,7 +1014,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -1022,7 +1022,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1049,7 +1049,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1057,7 +1057,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1084,7 +1084,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1092,7 +1092,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1119,7 +1119,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -1127,7 +1127,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -1154,7 +1154,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Checking package metadata",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -1162,7 +1162,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -1189,7 +1189,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -1197,7 +1197,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -1224,7 +1224,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Checking package metadata",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -1232,7 +1232,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -1259,7 +1259,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Reading release notes and changelog",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -1267,7 +1267,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -1294,7 +1294,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Checking package metadata",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -1302,7 +1302,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -1329,7 +1329,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Reading release notes and changelog",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -1337,7 +1337,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -1364,7 +1364,7 @@
     },
     {
       "type": "progress",
-      "at": 143,
+      "at": 142,
       "phase": "Checking package metadata",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -1372,7 +1372,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 143,
+      "at": 142,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -1574,7 +1574,7 @@
     },
     {
       "type": "progress",
-      "at": 145,
+      "at": 144,
       "phase": "Checking repository status",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -1582,7 +1582,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 145,
+      "at": 144,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -1679,7 +1679,7 @@
     },
     {
       "type": "progress",
-      "at": 152,
+      "at": 150,
       "phase": "Checking security advisories",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -1687,7 +1687,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 152,
+      "at": 150,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1698,6 +1698,41 @@
         "current": "3.95.2",
         "latest": "3.95.2",
         "selected": "3.95.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 152,
+      "phase": "Checking security advisories",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 152,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
         "safeLatest": null,
         "status": "pending",
         "phase": "Checking security advisories",
@@ -1751,41 +1786,6 @@
       "type": "progress",
       "at": 154,
       "phase": "Checking security advisories",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 154,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 154,
-      "phase": "Checking security advisories",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
       "total": 7
@@ -1819,7 +1819,7 @@
     },
     {
       "type": "progress",
-      "at": 155,
+      "at": 154,
       "phase": "Checking security advisories",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -1827,7 +1827,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 155,
+      "at": 154,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -1889,987 +1889,7 @@
     },
     {
       "type": "progress",
-      "at": 649,
-      "phase": "Checking license",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 649,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 649,
-      "phase": "Checking license",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 649,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
-        "name": "phpstan/phpstan",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.1.55",
-        "latest": "2.1.55",
-        "selected": "2.1.55",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 649,
-      "phase": "Checking license",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Checking license",
-      "detail": "psr/http-client 1.0.0 → 1.0.3",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-client@1.0.0",
-        "name": "psr/http-client",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Checking license",
-      "detail": "psr/http-factory 1.0.0 → 1.1.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-factory@1.0.0",
-        "name": "psr/http-factory",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Checking license",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php80@1.25.0",
-        "name": "symfony/polyfill-php80",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.25.0",
-        "latest": "1.25.0",
-        "selected": "1.25.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Checking license",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php82@1.27.0",
-        "name": "symfony/polyfill-php82",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Reading release notes and changelog",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Comparing the public API surface",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22 · 1 evidence source",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Reading release notes and changelog",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
-        "name": "phpstan/phpstan",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.1.55",
-        "latest": "2.1.55",
-        "selected": "2.1.55",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Comparing the public API surface",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.9 · 1 evidence source",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
-        "name": "phpstan/phpstan",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.1.55",
-        "latest": "2.1.55",
-        "selected": "2.1.55",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Reading release notes and changelog",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Comparing the public API surface",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Reading release notes and changelog",
-      "detail": "psr/http-client 1.0.0 → 1.0.3",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-client@1.0.0",
-        "name": "psr/http-client",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Comparing the public API surface",
-      "detail": "psr/http-client 1.0.0 → 1.0.3 · 1 evidence source",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-client@1.0.0",
-        "name": "psr/http-client",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Reading release notes and changelog",
-      "detail": "psr/http-factory 1.0.0 → 1.1.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-factory@1.0.0",
-        "name": "psr/http-factory",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Comparing the public API surface",
-      "detail": "psr/http-factory 1.0.0 → 1.1.0 · 1 evidence source",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-factory@1.0.0",
-        "name": "psr/http-factory",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Reading release notes and changelog",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php80@1.25.0",
-        "name": "symfony/polyfill-php80",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.25.0",
-        "latest": "1.25.0",
-        "selected": "1.25.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Comparing the public API surface",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · 1 evidence source",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php80@1.25.0",
-        "name": "symfony/polyfill-php80",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.25.0",
-        "latest": "1.25.0",
-        "selected": "1.25.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Reading release notes and changelog",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php82@1.27.0",
-        "name": "symfony/polyfill-php82",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "Comparing the public API surface",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · 1 evidence source",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php82@1.27.0",
-        "name": "symfony/polyfill-php82",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "No breaking changes to look for",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "No breaking changes to look for",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
-        "name": "phpstan/phpstan",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.1.55",
-        "latest": "2.1.55",
-        "selected": "2.1.55",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "No breaking changes to look for",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "No breaking changes to look for",
-      "detail": "psr/http-client 1.0.0 → 1.0.3",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-client@1.0.0",
-        "name": "psr/http-client",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "No breaking changes to look for",
-      "detail": "psr/http-factory 1.0.0 → 1.1.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#psr/http-factory@1.0.0",
-        "name": "psr/http-factory",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "No breaking changes to look for",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php80@1.25.0",
-        "name": "symfony/polyfill-php80",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.25.0",
-        "latest": "1.25.0",
-        "selected": "1.25.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 650,
-      "phase": "No breaking changes to look for",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 650,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php82@1.27.0",
-        "name": "symfony/polyfill-php82",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 788,
+      "at": 1083,
       "phase": "Indexing your code",
       "detail": "140 files indexed · 10 direct dependencies to check",
       "done": 0,
@@ -2877,7 +1897,987 @@
     },
     {
       "type": "progress",
-      "at": 845,
+      "at": 1240,
+      "phase": "Checking license",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Checking license",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
+        "name": "phpstan/phpstan",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.1.55",
+        "latest": "2.1.55",
+        "selected": "2.1.55",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Checking license",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Checking license",
+      "detail": "psr/http-client 1.0.0 → 1.0.3",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-client@1.0.0",
+        "name": "psr/http-client",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Checking license",
+      "detail": "psr/http-factory 1.0.0 → 1.1.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-factory@1.0.0",
+        "name": "psr/http-factory",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Checking license",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php80@1.25.0",
+        "name": "symfony/polyfill-php80",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.25.0",
+        "latest": "1.25.0",
+        "selected": "1.25.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Checking license",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php82@1.27.0",
+        "name": "symfony/polyfill-php82",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Reading release notes and changelog",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Comparing the public API surface",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22 · 1 evidence source",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Reading release notes and changelog",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
+        "name": "phpstan/phpstan",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.1.55",
+        "latest": "2.1.55",
+        "selected": "2.1.55",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Comparing the public API surface",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.9 · 1 evidence source",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
+        "name": "phpstan/phpstan",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.1.55",
+        "latest": "2.1.55",
+        "selected": "2.1.55",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Reading release notes and changelog",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Comparing the public API surface",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Reading release notes and changelog",
+      "detail": "psr/http-client 1.0.0 → 1.0.3",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-client@1.0.0",
+        "name": "psr/http-client",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Comparing the public API surface",
+      "detail": "psr/http-client 1.0.0 → 1.0.3 · 1 evidence source",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-client@1.0.0",
+        "name": "psr/http-client",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Reading release notes and changelog",
+      "detail": "psr/http-factory 1.0.0 → 1.1.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-factory@1.0.0",
+        "name": "psr/http-factory",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Comparing the public API surface",
+      "detail": "psr/http-factory 1.0.0 → 1.1.0 · 1 evidence source",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-factory@1.0.0",
+        "name": "psr/http-factory",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Reading release notes and changelog",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php80@1.25.0",
+        "name": "symfony/polyfill-php80",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.25.0",
+        "latest": "1.25.0",
+        "selected": "1.25.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Comparing the public API surface",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · 1 evidence source",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php80@1.25.0",
+        "name": "symfony/polyfill-php80",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.25.0",
+        "latest": "1.25.0",
+        "selected": "1.25.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Reading release notes and changelog",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php82@1.27.0",
+        "name": "symfony/polyfill-php82",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "Comparing the public API surface",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · 1 evidence source",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php82@1.27.0",
+        "name": "symfony/polyfill-php82",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "No breaking changes to look for",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "No breaking changes to look for",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
+        "name": "phpstan/phpstan",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.1.55",
+        "latest": "2.1.55",
+        "selected": "2.1.55",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "No breaking changes to look for",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "No breaking changes to look for",
+      "detail": "psr/http-client 1.0.0 → 1.0.3",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-client@1.0.0",
+        "name": "psr/http-client",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "No breaking changes to look for",
+      "detail": "psr/http-factory 1.0.0 → 1.1.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#psr/http-factory@1.0.0",
+        "name": "psr/http-factory",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "No breaking changes to look for",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php80@1.25.0",
+        "name": "symfony/polyfill-php80",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.25.0",
+        "latest": "1.25.0",
+        "selected": "1.25.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
+      "phase": "No breaking changes to look for",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1241,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php82@1.27.0",
+        "name": "symfony/polyfill-php82",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1241,
       "phase": "Weighing what this upgrade is worth",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -2885,7 +2885,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 845,
+      "at": 1241,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2912,7 +2912,7 @@
     },
     {
       "type": "progress",
-      "at": 846,
+      "at": 1242,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -2920,7 +2920,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 846,
+      "at": 1242,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2947,7 +2947,7 @@
     },
     {
       "type": "progress",
-      "at": 847,
+      "at": 1242,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -2955,7 +2955,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 847,
+      "at": 1242,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2982,7 +2982,7 @@
     },
     {
       "type": "progress",
-      "at": 849,
+      "at": 1243,
       "phase": "Weighing what this upgrade is worth",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -2990,7 +2990,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 849,
+      "at": 1243,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -3017,7 +3017,7 @@
     },
     {
       "type": "progress",
-      "at": 849,
+      "at": 1243,
       "phase": "Weighing what this upgrade is worth",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -3025,7 +3025,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 849,
+      "at": 1243,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -3052,7 +3052,7 @@
     },
     {
       "type": "progress",
-      "at": 850,
+      "at": 1244,
       "phase": "Weighing what this upgrade is worth",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -3060,7 +3060,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 850,
+      "at": 1244,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -3087,7 +3087,7 @@
     },
     {
       "type": "progress",
-      "at": 851,
+      "at": 1244,
       "phase": "Weighing what this upgrade is worth",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -3095,7 +3095,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 851,
+      "at": 1244,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -3122,7 +3122,7 @@
     },
     {
       "type": "progress",
-      "at": 852,
+      "at": 1244,
       "phase": "Checking maintenance signals",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -3130,7 +3130,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 852,
+      "at": 1244,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -3157,7 +3157,7 @@
     },
     {
       "type": "progress",
-      "at": 855,
+      "at": 1246,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -3165,7 +3165,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 855,
+      "at": 1246,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -3192,7 +3192,7 @@
     },
     {
       "type": "progress",
-      "at": 858,
+      "at": 1248,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -3200,7 +3200,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 858,
+      "at": 1248,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3227,7 +3227,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1248,
       "phase": "Checking maintenance signals",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -3235,7 +3235,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 859,
+      "at": 1248,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -3262,7 +3262,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1248,
       "phase": "Checking maintenance signals",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -3270,7 +3270,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 859,
+      "at": 1248,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -3297,7 +3297,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1249,
       "phase": "Checking maintenance signals",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -3305,7 +3305,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 859,
+      "at": 1249,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -3332,7 +3332,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1249,
       "phase": "Checking maintenance signals",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -3340,7 +3340,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 859,
+      "at": 1249,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -3367,7 +3367,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1250,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -3396,7 +3396,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1250,
       "phase": "Checked",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22 · safe for your code · no breaking changes found — not deeply verified",
       "done": 1,
@@ -3404,7 +3404,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1250,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -3433,7 +3433,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1250,
       "phase": "Checked",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9 · safe for your code · no breaking changes found — not deeply verified",
       "done": 2,
@@ -3441,7 +3441,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1250,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3470,7 +3470,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1250,
       "phase": "Checked",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
@@ -3478,7 +3478,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1250,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -3507,7 +3507,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1250,
       "phase": "Checked",
       "detail": "psr/http-client 1.0.0 → 1.0.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
@@ -3515,7 +3515,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1250,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -3544,7 +3544,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1250,
       "phase": "Checked",
       "detail": "psr/http-factory 1.0.0 → 1.1.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 5,
@@ -3552,7 +3552,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1250,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -3581,7 +3581,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1250,
       "phase": "Checked",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 6,
@@ -3589,7 +3589,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1250,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -3618,7 +3618,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1250,
       "phase": "Checked",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · safe for your code · no breaking changes found — not deeply verified",
       "done": 7,
