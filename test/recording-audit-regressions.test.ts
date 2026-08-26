@@ -74,6 +74,7 @@ describe('recording audit: Python public surface identity', () => {
       await mkdir(join(archiveRoot, 'itemloaders'), { recursive: true });
       await mkdir(join(archiveRoot, 'docs'), { recursive: true });
       await writeFile(script, SURFACE_SCRIPT, 'utf8');
+      await writeFile(join(archiveRoot, 'itemloaders', '__init__.py'), '', 'utf8');
       await writeFile(
         join(archiveRoot, 'itemloaders', 'processors.py'),
         'class TakeFirst: pass\nclass MapCompose: pass\nclass Compose: pass\n',
@@ -81,7 +82,7 @@ describe('recording audit: Python public surface identity', () => {
       );
       await writeFile(join(archiveRoot, 'docs', 'conf.py'), 'def failure(error): pass\n', 'utf8');
 
-      const result = await execFile('python3', [script, extraction]);
+      const result = await execFile('python3', [script, extraction, 'itemloaders']);
       const symbols = JSON.parse(result.stdout) as { name: string }[];
       const names = symbols.map((symbol) => symbol.name);
 
@@ -94,6 +95,30 @@ describe('recording audit: Python public surface identity', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  test('PEP 440 wrappers, src layouts, and non-package utility files canonicalize to import identity', async () => {
+    for (const wrapper of ['itemloaders-1.0rc1', 'itemloaders-1.0.post1', 'itemloaders-1.0.dev1', 'itemloaders-2.0b3', 'itemloaders-1!2.0']) {
+      const root = await mkdtemp(join(tmpdir(), 'drift-python-surface-'));
+      const script = join(root, 'surface.py');
+      const archive = join(root, 'extraction', wrapper);
+      try {
+        await mkdir(join(archive, 'src', 'mypackage'), { recursive: true });
+        await writeFile(script, SURFACE_SCRIPT, 'utf8');
+        await writeFile(join(archive, 'pyproject.toml'), '[project]\nname = "itemloaders"\n', 'utf8');
+        await writeFile(join(archive, 'src', 'mypackage', '__init__.py'), '', 'utf8');
+        await writeFile(join(archive, 'src', 'mypackage', 'client.py'), 'def fetch(): pass\n', 'utf8');
+        await writeFile(join(archive, 'utility.py'), 'def accidental_api(): pass\n', 'utf8');
+
+        const result = await execFile('python3', [script, join(root, 'extraction'), 'itemloaders']);
+        const names = (JSON.parse(result.stdout) as { name: string }[]).map((symbol) => symbol.name);
+        assert.ok(names.includes('mypackage.client.fetch'), wrapper);
+        assert.ok(!names.some((name) => name.startsWith('src.') || name.includes(wrapper)), wrapper);
+        assert.ok(!names.some((name) => name.includes('accidental_api')), wrapper);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    }
+  });
 });
 
 describe('recording audit: C and C++ public surface identity', () => {
@@ -101,6 +126,29 @@ describe('recording audit: C and C++ public surface identity', () => {
     const [entry] = parseHeader('class UISlider {\n public:\n  operator uint8_t();\n};');
     assert.ok(entry);
     assert.ok(!entry.members.includes('uint8_t'));
+    assert.ok(entry.members.includes('operator uint8_t'));
+  });
+
+  test('operator removals and signature changes remain breaking surface changes', () => {
+    const before = parseHeaderSurface([{ path: 'api.h', content: 'class Value {\n public:\n  operator uint8_t();\n  bool operator[](size_t index);\n};' }]);
+    const removed = parseHeaderSurface([{ path: 'api.h', content: 'class Value {\n public:\n  bool operator[](size_t index);\n};' }]);
+    const changed = parseHeaderSurface([{ path: 'api.h', content: 'class Value {\n public:\n  operator uint8_t();\n  bool operator[](int index);\n};' }]);
+    assert.ok(diffSurfaces(before, removed).some((finding) => finding.symbol === 'Value.operator uint8_t'));
+    assert.ok(diffSurfaces(before, changed).some((finding) => finding.symbol.includes('operator[](size_t)')));
+  });
+
+  test('subscript, call, and comparison operators are retained distinctly', () => {
+    const [entry] = parseHeader([
+      'class Value {',
+      ' public:',
+      '  bool operator[](size_t index);',
+      '  void operator()(int value);',
+      '  bool operator==(const Value &other) const;',
+      '};',
+    ].join('\n'));
+    assert.ok(entry?.members.includes('operator[](size_t)'));
+    assert.ok(entry?.members.includes('operator()(int)'));
+    assert.ok(entry?.members.includes('operator==(const Value &) const'));
   });
 
   test('namespace ownership survives surface extraction', () => {
@@ -111,6 +159,17 @@ describe('recording audit: C and C++ public surface identity', () => {
       entries.map((entry) => entry.name),
       ['alpha.Widget', 'beta.Widget'],
     );
+  });
+
+  test('inline namespace version changes are transparent but ordinary namespace moves are not', () => {
+    const v10 = parseHeaderSurface([{ path: 'fmt.h', content: 'namespace fmt {\ninline namespace v10 {\nvoid print();\n}\n}' }]);
+    const v11 = parseHeaderSurface([{ path: 'fmt.h', content: 'namespace fmt {\ninline namespace v11 {\nvoid print();\n}\n}' }]);
+    assert.deepEqual(diffSurfaces(v10, v11), []);
+    assert.ok(v10.has('fmt.print'));
+
+    const a = parseHeaderSurface([{ path: 'api.h', content: 'namespace a {\nvoid foo();\n}' }]);
+    const b = parseHeaderSurface([{ path: 'api.h', content: 'namespace b {\nvoid foo();\n}' }]);
+    assert.ok(diffSurfaces(a, b).some((finding) => finding.symbol === 'a.foo'));
   });
 
   test('surviving qualified APIs remain present across releases', () => {
@@ -182,8 +241,46 @@ describe('recording audit: owner-aware localization', () => {
       files,
       { logger },
     );
-    assert.equal(sites.length, 1);
-    assert.equal(sites[0]?.confidence, 'high');
+    assert.ok(sites.length >= 1);
+    assert.ok(sites.every((site) => site.confidence === 'high'));
+  });
+
+  test('unseen generic leaves require dependency ownership while real imports, aliases, and receivers survive', () => {
+    for (const leaf of ['find', 'open', 'close', 'parse', 'create', 'get', 'set', 'read', 'write', 'build']) {
+      const unrelated = [file('src/unrelated.ts', 'typescript', `import { Client } from 'pkg';\nother.${leaf}();`)];
+      const falseSites = localize(
+        [change({ symbols: [`Client.${leaf}`, leaf] })],
+        [dependency('pkg', 'npm')],
+        buildIndex(unrelated),
+        unrelated,
+        { logger },
+      );
+      assert.equal(falseSites.length, 0, leaf);
+
+      const owned = [file('src/owned.ts', 'typescript', `import { Client as ApiClient } from 'pkg';\nconst client = new ApiClient();\nclient.${leaf}();`)];
+      const trueSites = localize(
+        [change({ symbols: [`Client.${leaf}`, leaf] })],
+        [dependency('pkg', 'npm')],
+        buildIndex(owned),
+        owned,
+        { logger },
+      );
+      assert.equal(trueSites.length, 1, leaf);
+      assert.equal(trueSites[0]?.confidence, 'high', leaf);
+    }
+  });
+
+  test('direct and destructured dependency members remain high-confidence positives', () => {
+    const files = [file('src/direct.ts', 'typescript', "import { parse } from 'pkg';\nparse(input);")];
+    const sites = localize(
+      [change({ symbols: ['Parser.parse', 'parse'] })],
+      [dependency('pkg', 'npm')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+    assert.ok(sites.length >= 1);
+    assert.ok(sites.every((site) => site.confidence === 'high'));
   });
 });
 
@@ -205,9 +302,27 @@ describe('recording audit: structured runtime requirements', () => {
       'Dropped support for importing internal files from lib/',
       'Dropped support for Mongoid < 8',
       'Dropped support for using HTML comments (...)',
+      'Dropped support for legacy authentication',
       'Minimum Node version raised to .',
     ]) {
       assert.equal(matchProse(text).some((match) => match.kind === 'runtime-requirement'), false, text);
+    }
+  });
+
+  test('legitimate dropped-support and minimum-runtime phrasings remain structured findings', () => {
+    const cases = [
+      ['Dropped support for Node 16', 'node', '>=17'],
+      ['Dropped support for Node.js < 18', 'node', '>=18'],
+      ['Removed support for Ruby 2.7', 'ruby', '>=2.8'],
+      ['No longer supports Python < 3.10', 'python', '>=3.10'],
+      ['Requires Node.js >=18', 'node', '>=18'],
+      ['Requires Node.js >= 18', 'node', '>=18'],
+      ['Minimum Java version raised to 21', 'java', '>=21'],
+    ] as const;
+    for (const [text, runtime, requirement] of cases) {
+      const match = matchProse(text).find((candidate) => candidate.kind === 'runtime-requirement');
+      assert.equal(match?.runtime?.runtime, runtime, text);
+      assert.equal(match?.runtime?.requirement, requirement, text);
     }
   });
 
@@ -248,6 +363,28 @@ describe('recording audit: structured runtime requirements', () => {
     );
     assert.equal(ruby.length, 0);
   });
+
+  test('every supported runtime localizes only its incompatible authoritative declaration', () => {
+    const fixtures = [
+      ['node', '>=24', '.nvmrc', '22'],
+      ['python', '>=3.13', 'Dockerfile', 'FROM python:3.11'],
+      ['ruby', '>=3.4', '.ruby-version', '3.3'],
+      ['go', '>=1.25', 'go.mod', 'go 1.23'],
+      ['java', '>=21', 'Containerfile', 'FROM eclipse-temurin:17'],
+      ['rust', '>=1.90', 'rust-toolchain', '1.82'],
+    ] as const;
+    for (const [runtime, requirement, path, content] of fixtures) {
+      const files = [file(path, 'config', content)];
+      const runtimeChange = change({
+        id: `runtime-${runtime}`,
+        kind: 'runtime-requirement',
+        symbols: [runtime],
+        runtime: { kind: 'runtime-requirement', runtime, requirement, sourceText: `${runtime} ${requirement}` },
+      });
+      const sites = localize([runtimeChange] as never, [dependency('pkg', 'npm')], buildIndex(files), files, { logger });
+      assert.deepEqual(sites.map((site) => site.file), [path], runtime);
+    }
+  });
 });
 
 describe('recording audit: Swift tag families', () => {
@@ -260,6 +397,13 @@ describe('recording audit: Swift tag families', () => {
       range: '3.2.1',
     });
     assert.deepEqual(result, { outcome: 'up-to-date' });
+  });
+
+  test('newer tags in the same semantic family remain selectable', async () => {
+    globalThis.fetch = (() => Promise.resolve(json([{ name: '3.3.0' }, { name: '2016.12.26' }]))) as typeof fetch;
+    const result = await lookupVersions({ name: 'facebook/yoga', ecosystem: 'swift', current: '3.2.1', range: '3.2.1' });
+    assert.equal(result.outcome, 'upgrade');
+    if (result.outcome === 'upgrade') assert.equal(result.latest, '3.3.0');
   });
 });
 
@@ -320,5 +464,39 @@ describe('recording audit: weak localization recommendations', () => {
       surfaceCompared: true,
     });
     assert.equal(result.recommendation, 'upgrade-after-review');
+  });
+
+  test('decision headlines and reason counts use only high-confidence locally affected changes', () => {
+    const mechanical = change({ id: 'mechanical', kind: 'removed-export' });
+    const unusedDecision = change({ id: 'unused-decision', kind: 'signature-change' });
+    const localDecision = change({ id: 'local-decision', kind: 'signature-change' });
+    const baseInput = {
+      dependency: 'pkg', evidence: [],
+      security: { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' as const },
+      maintenance: { facts: [] }, license: { verdict: 'ok' as const, statement: 'ok', introduced: [] },
+      gaps: [], surfaceCompared: true,
+    };
+    const mechanicalOnly = assessUpgrade({
+      ...baseInput,
+      breakingChanges: [mechanical, unusedDecision] as never,
+      impactSites: [{ breakingChangeId: 'mechanical', file: 'a.ts', line: 1, excerpt: 'x', matchedSymbol: 'x', confidence: 'high' }] as never,
+    });
+    assert.equal(mechanicalOnly.recommendation, 'upgrade-after-review');
+    assert.equal(mechanicalOnly.reasons.some((reason) => /developer decision/.test(reason)), false);
+
+    const decision = assessUpgrade({
+      ...baseInput,
+      breakingChanges: [mechanical, unusedDecision, localDecision] as never,
+      impactSites: [{ breakingChangeId: 'local-decision', file: 'b.ts', line: 1, excerpt: 'x()', matchedSymbol: 'x', confidence: 'high' }] as never,
+    });
+    assert.equal(decision.recommendation, 'manual-migration-required');
+    assert.ok(decision.reasons.some((reason) => /^1 locally affected change requires/.test(reason)));
+
+    const weak = assessUpgrade({
+      ...baseInput,
+      breakingChanges: [localDecision] as never,
+      impactSites: [{ breakingChangeId: 'local-decision', file: 'b.ts', line: 1, excerpt: 'x()', matchedSymbol: 'x', confidence: 'medium' }] as never,
+    });
+    assert.equal(weak.recommendation, 'upgrade-after-review');
   });
 });

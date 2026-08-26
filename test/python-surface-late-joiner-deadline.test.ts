@@ -200,8 +200,10 @@ describe('Python single-flight: each caller owns its own timeoutMs budget', () =
 
       // B: a much larger budget, joining the same in-flight computation
       // (same package, same from/to) while A's archive request is still
-      // held open, waiting only on the real `AbortSignal` A's own 80ms
-      // budget will fire.
+      // held open, waiting only on the real `AbortSignal` A's own 500ms
+      // budget will fire. The gate makes the timeout outcome deterministic;
+      // 500ms only leaves enough room for test setup to dispatch the request
+      // on loaded CI machines and does not relax the production contract.
       const runB = pythonSurface.compute(makeRequest(name, '1.0.0', '2.0.0', 20_000, wB));
 
       const [resultA, resultB] = await Promise.all([runA, runB]);

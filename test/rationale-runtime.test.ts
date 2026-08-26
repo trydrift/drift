@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   checkNodeCompatibility,
   checkPythonCompatibility,
+  checkRuntimeCompatibility,
+  findRuntimeDeclarations,
   findNodeDeclarations,
   findPythonDeclarations,
 } from '../dist/rationale/index.js';
@@ -393,6 +395,95 @@ describe("finding this repository's own Python declarations", () => {
   test('reads runtime.txt, stripping the "python-" prefix some platforms use', () => {
     const files = [{ path: 'runtime.txt', content: 'python-3.11.4' }];
     assert.deepEqual(findPythonDeclarations(files), [{ file: 'runtime.txt', line: 1, requirement: '3.11.4' }]);
+  });
+});
+
+describe('shared runtime declaration discovery across supported runtimes', () => {
+  const cases = [
+    {
+      runtime: 'node', requirement: '>=24', compatibleRequirement: '>=18',
+      file: { path: '.nvmrc', content: '22' }, expected: '22',
+    },
+    {
+      runtime: 'python', requirement: '>=3.13', compatibleRequirement: '>=3.10',
+      file: { path: 'Containerfile', content: 'FROM python:3.11-slim' }, expected: '3.11',
+    },
+    {
+      runtime: 'ruby', requirement: '>=3.4', compatibleRequirement: '>=3.2',
+      file: { path: '.ruby-version', content: '3.3' }, expected: '3.3',
+    },
+    {
+      runtime: 'go', requirement: '>=1.25', compatibleRequirement: '>=1.22',
+      file: { path: 'go.mod', content: 'module example.com/demo\n\ngo 1.23\ntoolchain go1.24.1\n' }, expected: '1.23',
+    },
+    {
+      runtime: 'java', requirement: '>=21', compatibleRequirement: '>=17',
+      file: { path: 'Dockerfile', content: 'FROM eclipse-temurin:17-jdk' }, expected: '17',
+    },
+    {
+      runtime: 'rust', requirement: '>=1.90', compatibleRequirement: '>=1.80',
+      file: { path: 'rust-toolchain', content: '1.82' }, expected: '1.82',
+    },
+  ] as const;
+
+  for (const fixture of cases) {
+    test(`${fixture.runtime}: discovers declarations and distinguishes compatible from incompatible`, () => {
+      const declarations = findRuntimeDeclarations([fixture.file], fixture.runtime);
+      assert.ok(declarations.some((declaration) => declaration.requirement === fixture.expected));
+      assert.ok(checkRuntimeCompatibility(fixture.runtime, declarations, fixture.requirement).some((result) => result.verdict !== 'compatible'));
+      assert.ok(checkRuntimeCompatibility(fixture.runtime, declarations, fixture.compatibleRequirement).every((result) => result.verdict === 'compatible'));
+    });
+  }
+
+  test('discovers static manifests, containers, and GitHub Actions declarations for every runtime', () => {
+    const fixtures = [
+      ['node', 'package.json', '{"engines":{"node":">=20"}}', '>=20'],
+      ['python', 'setup.cfg', '[options]\npython_requires = >=3.10', '>=3.10'],
+      ['python', '.github/workflows/ci.yml', 'python-version: "3.12"', '3.12'],
+      ['ruby', 'Gemfile', "ruby '3.3.1'", '3.3.1'],
+      ['ruby', 'demo.gemspec', "spec.required_ruby_version = '>= 3.2'", '>= 3.2'],
+      ['ruby', 'Dockerfile', 'FROM ruby:3.3-slim', '3.3'],
+      ['go', 'Dockerfile', 'FROM golang:1.24-alpine', '1.24'],
+      ['go', '.github/workflows/ci.yml', 'go-version: "1.24"', '1.24'],
+      ['java', 'pom.xml', '<maven.compiler.release>21</maven.compiler.release>', '21'],
+      ['java', 'build.gradle.kts', 'languageVersion = JavaLanguageVersion.of(21)', '21'],
+      ['java', '.github/workflows/ci.yml', 'java-version: "21"', '21'],
+      ['rust', 'rust-toolchain.toml', '[toolchain]\nchannel = "1.84"', '1.84'],
+      ['rust', 'Cargo.toml', '[package]\nrust-version = "1.81"', '1.81'],
+      ['rust', 'Dockerfile', 'FROM rust:1.82-slim', '1.82'],
+      ['rust', '.github/workflows/ci.yml', 'toolchain: "1.83"', '1.83'],
+    ] as const;
+    for (const [runtime, path, content, expected] of fixtures) {
+      assert.ok(
+        findRuntimeDeclarations([{ path, content }], runtime).some((declaration) => declaration.requirement === expected),
+        `${runtime} ${path}`,
+      );
+    }
+  });
+
+  test('runtime ownership never crosses version files or .tool-versions keys', () => {
+    const files = [
+      { path: '.nvmrc', content: '18' },
+      { path: '.ruby-version', content: '3.1' },
+      { path: 'go.mod', content: 'go 1.22' },
+      { path: '.tool-versions', content: 'nodejs 20\npython 3.11\nruby 3.3\ngolang 1.24\njava temurin-21\nrust 1.82' },
+    ];
+    assert.deepEqual(findRuntimeDeclarations(files, 'node').map((declaration) => declaration.file), ['.nvmrc', '.tool-versions']);
+    assert.deepEqual(findRuntimeDeclarations(files, 'ruby').map((declaration) => declaration.file), ['.ruby-version', '.tool-versions']);
+    assert.deepEqual(findRuntimeDeclarations(files, 'python').map((declaration) => declaration.file), ['.tool-versions']);
+    assert.deepEqual(findRuntimeDeclarations(files, 'go').map((declaration) => declaration.file), ['go.mod', '.tool-versions']);
+  });
+
+  test('shared discovery preserves workspace ownership and repository-global CI', () => {
+    const files = [
+      { path: 'packages/api/.ruby-version', content: '3.3' },
+      { path: 'packages/web/.ruby-version', content: '2.7' },
+      { path: '.github/workflows/ci.yml', content: 'ruby-version: "3.2"' },
+    ];
+    assert.deepEqual(
+      findRuntimeDeclarations(files, 'ruby', 'packages/api', ['', 'packages/api', 'packages/web']).map((declaration) => declaration.file),
+      ['packages/api/.ruby-version', '.github/workflows/ci.yml'],
+    );
   });
 });
 
