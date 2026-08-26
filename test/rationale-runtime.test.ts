@@ -111,6 +111,38 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     ]);
   });
 
+  test("a member's own .nvmrc shadows the root's, the way nvm/asdf actually resolve one", () => {
+    const files = [
+      { path: '.nvmrc', content: '18' },
+      { path: 'packages/api/.nvmrc', content: '20' },
+    ];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20' },
+    ]);
+  });
+
+  test("a member's own .tool-versions shadows the root's", () => {
+    const files = [
+      { path: '.tool-versions', content: 'nodejs 18' },
+      { path: 'packages/api/.tool-versions', content: 'nodejs 20' },
+    ];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: 'packages/api/.tool-versions', line: 1, requirement: '20' },
+    ]);
+  });
+
+  test('a repo-global CI workflow still applies even when a member has its own .nvmrc', () => {
+    // Unlike a version-pin file, CI is not shadowed: a root workflow may
+    // build/test every member, and a member's own runtime pin says nothing
+    // about what CI actually runs with.
+    const files = [
+      { path: 'packages/api/.nvmrc', content: '20' },
+      { path: '.github/workflows/ci.yml', content: "          node-version: '18'" },
+    ];
+    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
+    assert.deepEqual(new Set(declarations.map((d) => d.file)), new Set(['packages/api/.nvmrc', '.github/workflows/ci.yml']));
+  });
+
   test('the root workspace (member === "") does not inherit a sibling’s .nvmrc', () => {
     const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
     assert.deepEqual(findNodeDeclarations(files, '', allMembers), []);

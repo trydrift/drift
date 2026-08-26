@@ -543,6 +543,26 @@ const MANIFEST_BASENAMES = new Set([
   'cargo.toml',
 ]);
 
+/**
+ * Plain version-pin files: no build tool treats these as *this directory's*
+ * declaration exclusively the way it does a manifest, nor as governing the
+ * whole build regardless of directory the way CI/Dockerfiles do. Real
+ * toolchains (nvm, rbenv, pyenv, asdf, rustup) walk from a directory upward
+ * and stop at the first one they find — a nested `.nvmrc` overrides a root
+ * one for that subtree, it does not merely add to it. `.tool-versions` is
+ * included: asdf resolves it exactly the same way.
+ */
+const HIERARCHICAL_VERSION_FILES = new Set([
+  '.nvmrc',
+  '.node-version',
+  '.ruby-version',
+  '.python-version',
+  'runtime.txt',
+  '.tool-versions',
+  'rust-toolchain',
+  'rust-toolchain.toml',
+]);
+
 function scopedTo<T extends { path: string }>(
   files: readonly T[],
   member: string | undefined,
@@ -550,9 +570,25 @@ function scopedTo<T extends { path: string }>(
 ): readonly T[] {
   if (member === undefined) return files;
   const members = allMembers ?? [];
+  const basenameOf = (path: string) => (path.split('/').pop() ?? '').toLowerCase();
+
+  // If the member being analyzed has its own copy of a hierarchical version
+  // file, that copy shadows an ancestor's (most commonly the root's) file of
+  // the same name — the way `nvm`/`asdf` actually resolve one, and not the
+  // way a repository-global CI workflow or an unrelated manifest works.
+  const shadowedBasenames = new Set(
+    files
+      .filter((f) => HIERARCHICAL_VERSION_FILES.has(basenameOf(f.path)) && memberOf(f.path, members) === member)
+      .map((f) => basenameOf(f.path)),
+  );
+
   return files.filter((f) => {
     const owner = memberOf(f.path, members);
     if (owner === member) return true;
+
+    const base = basenameOf(f.path);
+    if (shadowedBasenames.has(base) && HIERARCHICAL_VERSION_FILES.has(base)) return false;
+
     // No member directory claims this file at all — genuinely repository-
     // global by construction (or the root is not itself a registered member).
     if (owner === null) return true;
@@ -563,7 +599,6 @@ function scopedTo<T extends { path: string }>(
       // manifest is that package's own declared runtime, and must not leak
       // into a sibling member's compatibility check just because the root
       // happens to also be a workspace member.
-      const base = (f.path.split('/').pop() ?? '').toLowerCase();
       return !MANIFEST_BASENAMES.has(base) && !base.endsWith('.gemspec');
     }
     return false;
