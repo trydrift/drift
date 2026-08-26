@@ -301,6 +301,29 @@ describe('recording audit: owner-aware localization', () => {
     assert.equal(sites.length, 0);
   });
 
+  test('a package-root relation alone cannot turn a public function into an internal method', () => {
+    const files = [file(
+      'tests/keys.py',
+      'python',
+      'from cryptography.hazmat.primitives.serialization import load_pem_private_key\nload_pem_private_key(data, None)',
+    )];
+    const sites = localize(
+      [change({
+        dependency: 'cryptography',
+        symbols: [
+          'cryptography.hazmat.backends.openssl.backend.Backend.load_pem_private_key',
+          'Backend.load_pem_private_key',
+          'load_pem_private_key',
+        ],
+      })],
+      [dependency('cryptography', 'pypi')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+    assert.equal(sites.length, 0);
+  });
+
   test('a direct import from the qualified API module remains a real positive', () => {
     const files = [file('tests/server.py', 'python', 'from twisted.web.util import Redirect\nRedirect()')];
     const sites = localize(
