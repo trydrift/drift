@@ -6,10 +6,10 @@
   "language": "Swift",
   "repo": "https://github.com/layoutBox/FlexLayout",
   "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
-  "capturedAt": "2026-08-26T02:39:16.771Z",
+  "capturedAt": "2026-08-26T02:46:44.592Z",
   "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
-  "engine": "947deca6c0e61a51",
-  "durationMs": 501,
+  "engine": "5f714a0d411d6def",
+  "durationMs": 1541,
   "packagesChecked": 5,
   "manifests": [
     "Package.swift",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 409,
+      "at": 145,
       "phase": "Looking for manifests",
       "detail": "layoutBox/FlexLayout",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 432,
+      "at": 158,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 433,
+      "at": 159,
       "candidate": {
         "id": "Package.swift#facebook/yoga@3.2.1",
         "name": "facebook/yoga",
@@ -62,7 +62,7 @@
     },
     {
       "type": "progress",
-      "at": 433,
+      "at": 159,
       "phase": "Reading manifest",
       "detail": "Podfile",
       "done": 0,
@@ -70,7 +70,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 160,
       "candidate": {
         "id": "Podfile#Yoga@3.2.1",
         "name": "Yoga",
@@ -97,7 +97,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 160,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -124,7 +124,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 160,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -151,7 +151,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 160,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -178,7 +178,7 @@
     },
     {
       "type": "progress",
-      "at": 434,
+      "at": 160,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -186,7 +186,7 @@
     },
     {
       "type": "progress",
-      "at": 434,
+      "at": 160,
       "phase": "Checking registries",
       "detail": "5 direct dependencies",
       "done": 0,
@@ -194,7 +194,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 160,
       "candidate": {
         "id": "Package.swift#facebook/yoga@3.2.1",
         "name": "facebook/yoga",
@@ -221,7 +221,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 161,
       "candidate": {
         "id": "Podfile#Yoga@3.2.1",
         "name": "Yoga",
@@ -248,7 +248,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 161,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -275,7 +275,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 161,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -302,7 +302,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 161,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -329,68 +329,20 @@
     },
     {
       "type": "candidate-drop",
-      "at": 461,
-      "id": "Podfile#Yoga@3.2.1"
+      "at": 1513,
+      "id": "Package.swift#facebook/yoga@3.2.1"
     },
     {
       "type": "progress",
-      "at": 461,
+      "at": 1513,
       "phase": "Up to date",
-      "detail": "Yoga@3.2.1",
+      "detail": "facebook/yoga@3.2.1",
       "done": 1,
       "total": 5
     },
     {
       "type": "candidate-upsert",
-      "at": 461,
-      "candidate": {
-        "id": "Podfile#PinLayout@1.10.5",
-        "name": "PinLayout",
-        "ecosystem": "cocoapods",
-        "manifestPath": "Podfile",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.5",
-        "latest": "1.10.6",
-        "selected": "1.10.6",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 461,
-      "phase": "Outdated",
-      "detail": "PinLayout 1.10.5 → 1.10.6",
-      "done": 2,
-      "total": 5
-    },
-    {
-      "type": "candidate-drop",
-      "at": 462,
-      "id": "Package.swift#facebook/yoga@3.2.1"
-    },
-    {
-      "type": "progress",
-      "at": 462,
-      "phase": "Up to date",
-      "detail": "facebook/yoga@3.2.1",
-      "done": 3,
-      "total": 5
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 463,
+      "at": 1515,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -417,15 +369,63 @@
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1515,
       "phase": "Outdated",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "done": 2,
+      "total": 5
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1515,
+      "candidate": {
+        "id": "Podfile#PinLayout@1.10.5",
+        "name": "PinLayout",
+        "ecosystem": "cocoapods",
+        "manifestPath": "Podfile",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.5",
+        "latest": "1.10.6",
+        "selected": "1.10.6",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1515,
+      "phase": "Outdated",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "type": "candidate-drop",
+      "at": 1515,
+      "id": "Podfile#Yoga@3.2.1"
+    },
+    {
+      "type": "progress",
+      "at": 1515,
+      "phase": "Up to date",
+      "detail": "Yoga@3.2.1",
       "done": 4,
       "total": 5
     },
     {
       "type": "candidate-upsert",
-      "at": 463,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -452,7 +452,7 @@
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1516,
       "phase": "Outdated",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 5,
@@ -460,7 +460,7 @@
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1516,
       "phase": "Reading release notes and changelog",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -468,7 +468,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 463,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -495,7 +495,7 @@
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1516,
       "phase": "Checking package metadata",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -503,7 +503,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 463,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -530,7 +530,7 @@
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1516,
       "phase": "Reading release notes and changelog",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -538,7 +538,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 463,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -565,7 +565,7 @@
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1516,
       "phase": "Checking package metadata",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -573,7 +573,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 463,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -600,7 +600,7 @@
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1516,
       "phase": "Reading release notes and changelog",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -608,7 +608,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 463,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -635,7 +635,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1516,
       "phase": "Checking package metadata",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -643,7 +643,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -670,7 +670,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1516,
       "phase": "Checking repository status",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -678,7 +678,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -705,7 +705,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1516,
       "phase": "Checking security advisories",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -713,7 +713,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1516,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -740,7 +740,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1516,
       "phase": "Checking repository status",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -748,7 +748,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -775,7 +775,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Checking security advisories",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -783,7 +783,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -810,7 +810,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Checking repository status",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -818,7 +818,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -845,7 +845,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Checking security advisories",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -853,7 +853,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -880,7 +880,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Checking license",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -888,7 +888,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -915,7 +915,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Checking license",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -923,7 +923,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -950,7 +950,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Checking license",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -958,7 +958,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -985,7 +985,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Reading release notes and changelog",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -993,7 +993,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1020,7 +1020,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Comparing the public API surface",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · 1 evidence source",
       "done": 0,
@@ -1028,7 +1028,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1055,7 +1055,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Reading release notes and changelog",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -1063,7 +1063,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1090,7 +1090,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Comparing the public API surface",
       "detail": "PinLayout 1.10.5 → 1.10.6 · 1 evidence source",
       "done": 0,
@@ -1098,7 +1098,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1125,7 +1125,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Reading release notes and changelog",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -1133,7 +1133,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1160,7 +1160,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "Comparing the public API surface",
       "detail": "SwiftLint 0.55.1 → 0.65.1 · 1 evidence source",
       "done": 0,
@@ -1168,7 +1168,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1195,7 +1195,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "No breaking changes to look for",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -1203,7 +1203,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1230,7 +1230,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "No breaking changes to look for",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -1238,7 +1238,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1265,7 +1265,7 @@
     },
     {
       "type": "progress",
-      "at": 464,
+      "at": 1517,
       "phase": "No breaking changes to look for",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -1273,7 +1273,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 464,
+      "at": 1517,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1300,7 +1300,7 @@
     },
     {
       "type": "progress",
-      "at": 491,
+      "at": 1534,
       "phase": "Indexing your code",
       "detail": "59 files indexed · 5 direct dependencies to check",
       "done": 0,
@@ -1308,7 +1308,7 @@
     },
     {
       "type": "progress",
-      "at": 496,
+      "at": 1538,
       "phase": "Weighing what this upgrade is worth",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -1316,7 +1316,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 496,
+      "at": 1538,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1343,7 +1343,7 @@
     },
     {
       "type": "progress",
-      "at": 496,
+      "at": 1538,
       "phase": "Weighing what this upgrade is worth",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -1351,7 +1351,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 496,
+      "at": 1538,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1378,7 +1378,7 @@
     },
     {
       "type": "progress",
-      "at": 497,
+      "at": 1538,
       "phase": "Weighing what this upgrade is worth",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -1386,7 +1386,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 497,
+      "at": 1538,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1413,7 +1413,7 @@
     },
     {
       "type": "progress",
-      "at": 497,
+      "at": 1538,
       "phase": "Checking maintenance signals",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
@@ -1421,7 +1421,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 497,
+      "at": 1538,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1448,7 +1448,7 @@
     },
     {
       "type": "progress",
-      "at": 498,
+      "at": 1539,
       "phase": "Checking maintenance signals",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
@@ -1456,7 +1456,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 498,
+      "at": 1539,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1483,7 +1483,7 @@
     },
     {
       "type": "progress",
-      "at": 499,
+      "at": 1540,
       "phase": "Checking maintenance signals",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
@@ -1491,7 +1491,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 499,
+      "at": 1540,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1518,7 +1518,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 500,
+      "at": 1541,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1548,7 +1548,7 @@
     },
     {
       "type": "progress",
-      "at": 501,
+      "at": 1541,
       "phase": "Checked",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · not verified · drift found nothing it could check this version against",
       "done": 1,
@@ -1556,7 +1556,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 501,
+      "at": 1541,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1586,7 +1586,7 @@
     },
     {
       "type": "progress",
-      "at": 501,
+      "at": 1541,
       "phase": "Checked",
       "detail": "PinLayout 1.10.5 → 1.10.6 · not verified · drift found nothing it could check this version against",
       "done": 2,
@@ -1594,7 +1594,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 501,
+      "at": 1541,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1624,7 +1624,7 @@
     },
     {
       "type": "progress",
-      "at": 501,
+      "at": 1541,
       "phase": "Checked",
       "detail": "SwiftLint 0.55.1 → 0.65.1 · not verified · drift found nothing it could check this version against",
       "done": 3,
