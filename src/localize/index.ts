@@ -1372,6 +1372,9 @@ function declarationOccurrence(
   const after = line.slice(at);
   if (!before || !/^\w+\s*\(/.test(after)) return false;
   if (/(?:\.|::|->)\s*$/.test(before)) return false;
+  // A one-word statement can otherwise look exactly like a one-word return
+  // type (`return dependencyCall()` versus `Widget factory()`).
+  if (/^(?:return|co_return|throw|case|delete|new)$/.test(before)) return false;
   return /^(?:(?:virtual|static|inline|constexpr|consteval|constinit|explicit|friend|extern)\s+)*(?:const\s+)?(?:(?:unsigned|signed|long|short)\s+)*[\w:<>]+(?:\s*[*&])?$/.test(before);
 }
 
