@@ -100,10 +100,20 @@ function validateRuntime(change) {
   const valid = runtime.kind === 'minimum-runtime'
     ? /^(?:[<>=~^]*\s*)?\d+(?:\.\d+){0,3}$/.test(runtime.requirement ?? '')
     : runtime.kind === 'unsupported-runtime-range'
-      ? /^\d+(?:\.\d+){0,2}(?:\.x)?$/i.test(runtime.requirement ?? '')
+      // Either a bare dropped line normalized to its `.x` line (`16.x`), or
+      // the exact operator form upstream stated (`^16`, `~16`, `<18`,
+      // `<=16`) -- see `parseRuntimeRequirement` in analyze/rules.ts, which
+      // deliberately keeps these distinct rather than inventing a floor for
+      // every operator.
+      ? /^(?:\d+(?:\.\d+){0,2}(?:\.x)?|[<>=~^]+\d+(?:\.\d+){0,3})$/i.test(runtime.requirement ?? '')
       : false;
   if (!valid) {
     throw new Error(`malformed runtime requirement: ${runtime.requirement ?? 'missing'}`);
+  }
+  if (runtime.kind === 'unsupported-runtime-range' && runtime.derivedMinimum !== undefined) {
+    if (!/^[<>=]+\d+(?:\.\d+){0,3}$/.test(runtime.derivedMinimum)) {
+      throw new Error(`malformed derived minimum: ${runtime.derivedMinimum}`);
+    }
   }
 }
 
@@ -122,6 +132,13 @@ function validateRuntime(change) {
  */
 function validateCompatibilityEvidence(candidate, recordingName) {
   if (candidate.hasCompatibilityEvidence !== false) return;
+  // `hasCompatibilityEvidence` answers "did Drift look at compatibility with
+  // nothing upstream to show for it". A candidate with real breaking changes
+  // already carries its own proof a comparison ran (each one cites the
+  // evidence source, e.g. `type-surface-diff`) -- the flag only governs
+  // whether "no breaking changes found" is allowed to stand as a finding, per
+  // `decide()` in assess.ts.
+  if (candidate.breakingCount > 0) return;
   if (candidate.recommendation === 'safe-to-upgrade') {
     throw new Error(
       `${recordingName}: ${candidate.name} is "safe-to-upgrade" with no compatibility evidence (no surface diff, no prose read)`,
@@ -155,6 +172,21 @@ function validateRuntimeSites(change) {
     const file = site.file.toLowerCase();
     const base = file.split('/').pop();
     const excerpt = site.excerpt ?? '';
+
+    if (site.runtimeVerdict === 'unknown') {
+      // An unresolved declaration (`node-version: ${{ matrix.node }}`,
+      // `image: $DEFAULT_CI_IMAGE`) is unknown *because* its value does not
+      // match any concrete runtime pattern -- that is the whole point, so the
+      // usual field/image-content ownership check would reject every
+      // legitimate one. Only CI ever produces these (see
+      // `findUnresolvedRuntimeDeclarations`), so ownership here just means
+      // "this is actually a CI file".
+      if (!/^\.github\/workflows\/.+\.ya?ml$/.test(file) && !/^\.(?:gitlab-ci|circleci)/.test(file)) {
+        throw new Error(`${runtime} runtime finding marked unknown outside CI at ${site.file}`);
+      }
+      continue;
+    }
+
     const allowed = runtimeSiteOwnedBy(runtime, file, base, excerpt);
     if (!allowed) throw new Error(`${runtime} runtime finding crossed config ownership at ${site.file}`);
 

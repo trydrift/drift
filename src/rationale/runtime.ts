@@ -148,7 +148,13 @@ function checkUnsupportedPythonRange(
   declarations: readonly RuntimeDeclaration[],
   unsupportedRequirement: string,
 ): RuntimeCompatibility[] {
-  const unsupported = parseSpecifierSet(unsupportedRequirement);
+  // `parseRuntimeRequirement` formats a bare dropped-support line with the
+  // semver X-range convention shared across every runtime ("3.7.x"). PEP 440's
+  // own wildcard is "*", not "x" ("3.7.*") -- left untranslated, `analyzeToken`
+  // cannot parse the trailing ".x" at all, the whole specifier set comes back
+  // `imprecise`, and every declaration then falls through to the same
+  // uninformative "partial" verdict regardless of its actual version.
+  const unsupported = parseSpecifierSet(unsupportedRequirement.replace(/\.x$/i, '.*'));
   const out: RuntimeCompatibility[] = [];
   for (const declaration of declarations) {
     const declared = parseSpecifierSet(declaration.requirement);

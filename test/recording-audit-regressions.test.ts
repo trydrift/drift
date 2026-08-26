@@ -518,6 +518,38 @@ describe('recording audit: structured runtime requirements', () => {
     assert.equal(sites[0]?.runtimeVerdict, 'partial');
   });
 
+  test('a bare Python dropped-support line is checked precisely, not universally "partial"', () => {
+    // PEP 440's wildcard is "*", not the semver "x" every other runtime here
+    // uses -- a repository declaring Python 3.14 (nowhere near a dropped
+    // Python 3.7 line) must come back clean, and one declaring exactly 3.7
+    // must come back a real, high-confidence finding. Both used to collapse
+    // into the same uninformative "partial" because the "x" suffix could not
+    // be parsed as a PEP 440 specifier at all.
+    const python37 = matchProse('Dropped support for Python 3.7').find((c) => c.kind === 'runtime-requirement');
+    assert.equal(python37?.runtime?.requirement, '3.7.x');
+
+    const clearFiles = [file('.python-version', 'config', '3.14')];
+    const clearSites = localize(
+      [change({ kind: 'runtime-requirement', symbols: ['python'], runtime: python37?.runtime })] as never,
+      [dependency('pkg', 'npm')],
+      buildIndex(clearFiles),
+      clearFiles,
+      { logger },
+    );
+    assert.deepEqual(clearSites, [], 'Python 3.14 does not intersect a dropped 3.7 line');
+
+    const affectedFiles = [file('.python-version', 'config', '3.7')];
+    const affectedSites = localize(
+      [change({ kind: 'runtime-requirement', symbols: ['python'], runtime: python37?.runtime })] as never,
+      [dependency('pkg', 'npm')],
+      buildIndex(affectedFiles),
+      affectedFiles,
+      { logger },
+    );
+    assert.equal(affectedSites.length, 1);
+    assert.equal(affectedSites[0]?.runtimeVerdict, 'incompatible');
+  });
+
   test('dropped-support ^, ~, <, and <= preserve unsupported-range semantics rather than inverting into a floor', () => {
     const cases = [
       ['Dropped support for Node ^16', 'node', '^16', undefined],
