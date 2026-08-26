@@ -10,14 +10,20 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { matchProse } from '../dist/analyze/index.js';
-import { discoverRuntimeDeclarations } from '../dist/rationale/runtime.js';
+import { matchProse, normalizeRuntimeOperator, RUNTIME_RANGE_GRAMMARS } from '../dist/analyze/index.js';
+import {
+  checkRuntimeCompatibility,
+  checkUnsupportedRuntimeRange,
+  discoverRuntimeDeclarations,
+  identifyRuntimeImage,
+} from '../dist/rationale/runtime.js';
 import { analyzeRuntimeRequirement, worstRuntimeState } from '../dist/rationale/compatibility.js';
 import { assessUpgrade } from '../dist/rationale/assess.js';
 import { severityOf, describeSeverity } from '../dist/upgrade/severity.js';
 import { localizeWithRuntime } from '../dist/localize/index.js';
 import { buildIndex } from '../dist/index/metarag.js';
 import { createLogger } from '../dist/util/logger.js';
+import { validateRuntimeCompatibilityState } from '../site/scripts/runtime-recording-validation.mjs';
 
 const logger = createLogger('error');
 
@@ -90,6 +96,14 @@ describe('runtime prose: every operator form the grammar accepts survives', () =
     assert.equal(dropped('Dropped support for Node ==20')?.requirement, '=20');
   });
 
+  test('Python equality normalizes to valid PEP 440 syntax', () => {
+    assert.equal(dropped('Dropped support for Python ==3.10')?.requirement, '==3.10');
+    assert.equal(dropped('Dropped support for Python =3.10')?.requirement, '==3.10');
+    const required = matchProse('Requires Python ==3.10').find((match) => match.runtime)?.runtime;
+    assert.equal(required?.requirement, '==3.10');
+    assert.equal(required?.rangeParseStatus, undefined);
+  });
+
   test('"<" and "<=" keep their exact complements as derived floors', () => {
     const lt = dropped('Dropped support for Node <18');
     assert.equal(lt?.requirement, '<18');
@@ -98,14 +112,12 @@ describe('runtime prose: every operator form the grammar accepts survives', () =
     assert.equal(lte && 'derivedMinimum' in lte ? lte.derivedMinimum : undefined, '>16');
   });
 
-  test('caret and tilde stay parsed for the ecosystems that define them', () => {
-    for (const [text, expected] of [
-      ['Dropped support for Node ^16', '^16'],
-      ['Dropped support for Ruby ~3.0', '~3.0'],
-    ] as const) {
-      const range = dropped(text);
-      assert.equal(range?.requirement, expected, text);
-      assert.equal(range?.rangeParseStatus, undefined, `${text} is evaluable, so it carries no unknown flag`);
+  test('caret and tilde stay parsed only for ecosystems Drift intentionally models', () => {
+    for (const text of ['Dropped support for Node ^16', 'Dropped support for Rust ~1.75']) {
+      assert.equal(dropped(text)?.rangeParseStatus, undefined, text);
+    }
+    for (const text of ['Dropped support for Ruby ^3.0', 'Dropped support for Ruby ~3.0', 'Dropped support for Ruby ~>3.0']) {
+      assert.equal(dropped(text)?.rangeParseStatus, 'unknown', text);
     }
   });
 
@@ -130,6 +142,33 @@ describe('runtime prose: every operator form the grammar accepts survives', () =
     assert.equal(analysis?.state, 'unknown');
     assert.equal(analysis?.reason, 'unparseable');
     assert.deepEqual(analysis?.sites, []);
+  });
+});
+
+describe('runtime range grammar is ecosystem-specific executable documentation', () => {
+  const operators = ['', '<', '<=', '>', '>=', '=', '==', '^', '~'] as const;
+  const caretAndTilde = new Set(['^', '~']);
+  const runtimes = ['node', 'python', 'ruby', 'go', 'java', 'rust'] as const;
+
+  for (const runtime of runtimes) {
+    test(`${runtime}: every captured operator has an explicit result`, () => {
+      assert.equal(RUNTIME_RANGE_GRAMMARS[runtime].runtime, runtime);
+      for (const operator of operators) {
+        const expected = caretAndTilde.has(operator) && !['node', 'rust'].includes(runtime) ? 'unknown' : 'parsed';
+        assert.equal(normalizeRuntimeOperator(runtime, operator).status, expected, `${runtime} ${operator || 'bare'}`);
+      }
+    });
+  }
+
+  test('RubyGems pessimistic syntax stays unknown until its semantics are implemented', () => {
+    assert.deepEqual(normalizeRuntimeOperator('ruby', '~>'), { status: 'unknown', operator: '~>' });
+  });
+
+  test('Python compatible-release syntax is modeled, but bare tilde is not', () => {
+    assert.deepEqual(normalizeRuntimeOperator('python', '~='), { status: 'parsed', operator: '~=' });
+    const range = matchProse('Requires Python ~=3.10').find((match) => match.runtime)?.runtime;
+    assert.equal(range?.requirement, '~=3.10');
+    assert.equal(range?.rangeParseStatus, undefined);
   });
 });
 
@@ -163,6 +202,61 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
     assert.deepEqual(discoverRuntimeDeclarations(repo, 'python').unresolved, []);
   });
 
+  test('CI runtime fields are YAML keys, not comments or script substrings', () => {
+    const repo = files({
+      '.github/workflows/ci.yml': [
+        '# node-version: 16',
+        'run: echo "node-version: 16"',
+        'with:',
+        '  node-version: 20',
+      ].join('\n'),
+      '.gitlab-ci.yml': [
+        '# ruby-version: 2.7',
+        'script:',
+        '  - echo "ruby-version: 3.0"',
+        'ruby-version: $RUBY_VERSION',
+      ].join('\n'),
+    });
+    const node = discoverRuntimeDeclarations(repo, 'node');
+    assert.deepEqual(node.resolved.map((d) => d.requirement), ['20']);
+    assert.deepEqual(node.unresolved, []);
+    const ruby = discoverRuntimeDeclarations(repo, 'ruby');
+    assert.deepEqual(ruby.resolved, []);
+    assert.equal(ruby.unresolved.length, 1);
+    assert.equal(ruby.unresolved[0]?.line, 4);
+  });
+
+  test('YAML block scalar contents cannot impersonate runtime keys or images', () => {
+    const repo = files({
+      '.github/workflows/ci.yml': [
+        'jobs:',
+        '  test:',
+        '    steps:',
+        '      - run: |',
+        '          node-version: 16',
+        '          image: node:16',
+        '      - run: >-',
+        '          echo "python-version: 3.10"',
+        '      - uses: actions/setup-node@v4',
+        '        with:',
+        '          node-version: 20',
+      ].join('\n'),
+      '.gitlab-ci.yml': ['script:', '  - |', '    ruby-version: 3.0', 'image: ruby:3.3'].join('\n'),
+    });
+
+    const node = discoverRuntimeDeclarations(repo, 'node');
+    assert.deepEqual(node.resolved.map((declaration) => declaration.requirement), ['20']);
+    assert.equal(node.unresolved.length, 0);
+
+    const python = discoverRuntimeDeclarations(repo, 'python');
+    assert.equal(python.resolved.length, 0);
+    assert.equal(python.unresolved.length, 0);
+
+    const ruby = discoverRuntimeDeclarations(repo, 'ruby');
+    assert.deepEqual(ruby.resolved.map((declaration) => declaration.requirement), ['3.3']);
+    assert.equal(ruby.unresolved.length, 0);
+  });
+
   test('a Dockerfile runtime image with a dynamic tag is unresolved; a generic base image is nothing', () => {
     const specific = discoverRuntimeDeclarations(files({ Dockerfile: 'FROM node:${NODE_VERSION}\n' }), 'node');
     assert.equal(specific.unresolved.length, 1);
@@ -171,6 +265,24 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
     const generic = discoverRuntimeDeclarations(files({ Dockerfile: 'FROM $BASE_IMAGE\n' }), 'node');
     assert.deepEqual(generic.resolved, []);
     assert.deepEqual(generic.unresolved, []);
+  });
+
+  test('runtime image identity does not require a literal tag', () => {
+    assert.deepEqual(identifyRuntimeImage('node:20'), { runtime: 'node', version: '20' });
+    assert.deepEqual(identifyRuntimeImage('node'), { runtime: 'node' });
+    assert.deepEqual(identifyRuntimeImage('node@sha256:deadbeef'), { runtime: 'node' });
+    assert.equal(identifyRuntimeImage('$BASE_IMAGE'), null);
+
+    for (const content of ['FROM node', 'FROM node@sha256:deadbeef']) {
+      const found = discoverRuntimeDeclarations(files({ Dockerfile: `${content}\n` }), 'node');
+      assert.deepEqual(found.resolved, []);
+      assert.equal(found.unresolved.length, 1, content);
+    }
+    for (const content of ['image: node', 'image: node@sha256:deadbeef']) {
+      const found = discoverRuntimeDeclarations(files({ '.circleci/config.yml': `${content}\n` }), 'node');
+      assert.deepEqual(found.resolved, []);
+      assert.equal(found.unresolved.length, 1, content);
+    }
   });
 
   test('a dynamic package.json engines value is an unresolved Node declaration', () => {
@@ -295,6 +407,26 @@ describe('runtime compatibility: all four states', () => {
     assert.equal(analysis?.reason, 'unparseable');
   });
 
+  test('Python equality is evaluated with PEP 440 equality semantics', () => {
+    assert.equal(
+      checkRuntimeCompatibility('python', [{ file: 'pyproject.toml', line: 1, requirement: '==3.10' }], '==3.10')[0]?.verdict,
+      'compatible',
+    );
+  });
+
+  test('an unreadable upstream Python range is unknown on both compatibility paths', () => {
+    const declarations = [{ file: 'pyproject.toml', line: 1, requirement: '>=3.12' }];
+    assert.equal(checkRuntimeCompatibility('python', declarations, '^3.10')[0]?.verdict, 'unknown');
+    assert.equal(checkUnsupportedRuntimeRange('python', declarations, '^3.10')[0]?.verdict, 'unknown');
+  });
+
+  test('an unreadable repository Python declaration is unknown', () => {
+    assert.equal(
+      checkRuntimeCompatibility('python', [{ file: 'pyproject.toml', line: 1, requirement: '>=3.10,!=3.11' }], '>=3.10')[0]?.verdict,
+      'unknown',
+    );
+  });
+
   test('a generic CI image cannot make an otherwise-compatible repository uncertain', () => {
     const analysis = analyzeRuntimeRequirement(
       runtimeChange('node', '>=18'),
@@ -314,8 +446,15 @@ describe('runtime compatibility: all four states', () => {
   });
 
   test('the worst state across several requirements is the one that decides', () => {
-    assert.equal(worstRuntimeState([{ state: 'compatible' }, { state: 'unknown' }] as never), 'unknown');
-    assert.equal(worstRuntimeState([{ state: 'partial' }, { state: 'incompatible' }] as never), 'incompatible');
+    for (const [states, expected] of [
+      [['compatible', 'compatible'], 'compatible'],
+      [['compatible', 'unknown'], 'unknown'],
+      [['compatible', 'partial'], 'partial'],
+      [['unknown', 'incompatible'], 'incompatible'],
+      [['partial', 'incompatible'], 'incompatible'],
+    ] as const) {
+      assert.equal(worstRuntimeState(states.map((state) => ({ state })) as never), expected, states.join(' + '));
+    }
     assert.equal(worstRuntimeState([]), undefined, 'no requirement is not the same fact as a satisfied one');
   });
 });
@@ -438,5 +577,67 @@ describe('runtime severity: unresolved compatibility can never render as safe', 
 
   test('runtime compatible does not block upstream-only', () => {
     assert.equal(severityOf({ ...baseCandidate, runtimeCompatibility: 'compatible' }), 'upstream-only');
+  });
+});
+
+describe('runtime recording validator consumes recorded structure', () => {
+  const recorded = (overrides: Record<string, unknown> = {}) => ({
+    name: 'pkg',
+    runtimeCompatibility: 'unknown',
+    recommendation: 'upgrade-after-review',
+    severity: 'unchecked',
+    independentActionableFindingCount: 0,
+    breakingCount: 1,
+    impactCount: 0,
+    breaking: [{ kind: 'runtime-requirement' }],
+    runtimeAnalyses: [{
+      changeId: 'runtime-change',
+      runtime: 'node',
+      state: 'unknown',
+      reason: 'no-declaration',
+      siteCount: 0,
+      declarationCount: 0,
+      unresolvedCount: 0,
+    }],
+    ...overrides,
+  });
+
+  test('unknown with zero sites and upstream changes is valid when severity is unchecked', () => {
+    assert.doesNotThrow(() => validateRuntimeCompatibilityState(recorded(), 'fixture'));
+  });
+
+  test('unknown cannot record upstream-only severity', () => {
+    assert.throws(() => validateRuntimeCompatibilityState(recorded({ severity: 'upstream-only' }), 'fixture'), /severity upstream-only/);
+  });
+
+  test('partial cannot be safe-to-upgrade', () => {
+    assert.throws(() => validateRuntimeCompatibilityState(recorded({
+      runtimeCompatibility: 'partial',
+      recommendation: 'safe-to-upgrade',
+      runtimeAnalyses: [{ changeId: 'runtime-change', runtime: 'node', state: 'partial', reason: 'overlaps', siteCount: 1, declarationCount: 1, unresolvedCount: 0 }],
+    }), 'fixture'), /safe-to-upgrade/);
+  });
+
+  test('compatible requires an actual declaration', () => {
+    assert.throws(() => validateRuntimeCompatibilityState(recorded({
+      runtimeCompatibility: 'compatible',
+      recommendation: 'safe-to-upgrade',
+      severity: 'upstream-only',
+      runtimeAnalyses: [{ changeId: 'runtime-change', runtime: 'node', state: 'compatible', reason: 'satisfies', siteCount: 0, declarationCount: 0, unresolvedCount: 0 }],
+    }), 'fixture'), /without an actual declaration/);
+  });
+
+  test('no-declaration can never be compatible', () => {
+    assert.throws(() => validateRuntimeCompatibilityState(recorded({
+      runtimeCompatibility: 'compatible',
+      severity: 'upstream-only',
+      runtimeAnalyses: [{ changeId: 'runtime-change', runtime: 'node', state: 'compatible', reason: 'no-declaration', siteCount: 0, declarationCount: 0, unresolvedCount: 0 }],
+    }), 'fixture'), /compatible for reason no-declaration/);
+  });
+
+  test('dynamic requires at least one unresolved declaration', () => {
+    assert.throws(() => validateRuntimeCompatibilityState(recorded({
+      runtimeAnalyses: [{ changeId: 'runtime-change', runtime: 'node', state: 'unknown', reason: 'dynamic', siteCount: 1, declarationCount: 0, unresolvedCount: 0 }],
+    }), 'fixture'), /without an unresolved declaration/);
   });
 });

@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateRecording } from './recording-validation.mjs';
 import { engineFingerprint } from './engine-fingerprint.mjs';
+import { validateRuntimeCompatibilityState } from './runtime-recording-validation.mjs';
 
 const RECORDING_SCHEMA_VERSION = 2;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -144,90 +145,6 @@ function validateCompatibilityEvidence(candidate, recordingName) {
     throw new Error(
       `${recordingName}: ${candidate.name} is "safe-to-upgrade" with no compatibility evidence (no surface diff, no prose read)`,
     );
-  }
-}
-
-/**
- * The structural half of the runtime invariant, checked against the state the
- * engine recorded rather than against the sentences it rendered.
- *
- * The three claims this exists to make impossible, all of which the corpus
- * produced at some point because every layer read "zero impact sites" as
- * "compatible":
- *
- *   1. A candidate whose runtime compatibility is `unknown` rendering as
- *      safe-to-upgrade, or as `upstream-only` ("N upstream changes, none used
- *      here"). Both are positive claims about this repository, and `unknown`
- *      means no such claim was established.
- *   2. A candidate whose runtime compatibility is `partial` rendering as
- *      safe-to-upgrade, or headlining as Migration required off that overlap
- *      alone.
- *   3. A runtime requirement with no declaration to check producing no state
- *      at all, which is how it used to disappear.
- *
- * `severityOf` is reproduced here only for the `upstream-only` shape it
- * assigns to a zero-site candidate with upstream findings; deriving it from
- * the recorded counts is what keeps this a structural check rather than a
- * text search.
- */
-function validateRuntimeCompatibilityState(candidate, recordingName) {
-  const RUNTIME_STATES = ['compatible', 'incompatible', 'partial', 'unknown'];
-  const state = candidate.runtimeCompatibility ?? null;
-  const analyses = candidate.runtimeAnalyses ?? [];
-  const where = `${recordingName}: ${candidate.name}`;
-
-  const runtimeChanges = (candidate.breaking ?? []).filter((change) => change.kind === 'runtime-requirement');
-  if (runtimeChanges.length > 0 && state === null) {
-    throw new Error(`${where} has a runtime requirement but recorded no runtime compatibility state`);
-  }
-  if (state !== null && !RUNTIME_STATES.includes(state)) {
-    throw new Error(`${where} recorded an unknown runtime compatibility state: ${state}`);
-  }
-
-  for (const analysis of analyses) {
-    if (!RUNTIME_STATES.includes(analysis.state)) {
-      throw new Error(`${where} runtime analysis for ${analysis.changeId} has state ${analysis.state}`);
-    }
-    // A `compatible` analysis is a positive finding and must never have been
-    // reached by finding nothing.
-    if (analysis.state === 'compatible' && analysis.reason !== 'satisfies') {
-      throw new Error(`${where} claims ${analysis.runtime} compatible for reason ${analysis.reason}`);
-    }
-    // The whole point of the state model: an analysis with nowhere to point
-    // is still an answer, and it is `unknown`.
-    if (analysis.reason === 'no-declaration' && analysis.state !== 'unknown') {
-      throw new Error(`${where} found no ${analysis.runtime} declaration but recorded ${analysis.state}`);
-    }
-  }
-
-  if (state === 'unknown' || state === 'partial') {
-    if (candidate.recommendation === 'safe-to-upgrade') {
-      throw new Error(`${where} is "safe-to-upgrade" with runtime compatibility ${state}`);
-    }
-    // The `upstream-only` severity shape: no located impact, upstream
-    // findings, and therefore the "none used here" line.
-    if (candidate.impactCount === 0 && candidate.breakingCount > 0) {
-      throw new Error(
-        `${where} would render as "upstream-only" ("none used here") with runtime compatibility ${state}`,
-      );
-    }
-    if (/none (?:of which this repository uses|used here)/i.test(candidate.summary ?? '')) {
-      throw new Error(`${where} claims nothing is used here with runtime compatibility ${state}`);
-    }
-  }
-
-  // A partial overlap on its own is a review, never a migration headline. It
-  // may still coexist with one, but only when some *other* finding is
-  // genuinely actionable -- a high-confidence non-runtime site.
-  if (state === 'partial' && candidate.recommendation === 'manual-migration-required') {
-    const independentlyActionable = (candidate.breaking ?? []).some(
-      (change) =>
-        change.kind !== 'runtime-requirement' &&
-        (change.sites ?? []).some((site) => site.confidence === 'high'),
-    );
-    if (!independentlyActionable) {
-      throw new Error(`${where} headlines as "manual-migration-required" on a partial runtime overlap alone`);
-    }
   }
 }
 
@@ -377,12 +294,12 @@ function runtimeSiteOwnedBy(runtime, file, base, excerpt) {
 
 function runtimeImageOwnedBy(runtime, excerpt) {
   const images = {
-    node: /(?:^|\/)node:/i,
-    python: /(?:^|\/)python:/i,
-    ruby: /(?:^|\/)ruby:/i,
-    go: /(?:^|\/)golang:/i,
-    java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):/i,
-    rust: /(?:^|\/)rust:/i,
+    node: /(?:^|[\s/])node(?=[:@\s]|$)/i,
+    python: /(?:^|[\s/])python(?=[:@\s]|$)/i,
+    ruby: /(?:^|[\s/])ruby(?=[:@\s]|$)/i,
+    go: /(?:^|[\s/])golang(?=[:@\s]|$)/i,
+    java: /(?:^|[\s/])(?:openjdk|eclipse-temurin|amazoncorretto)(?=[:@\s]|$)/i,
+    rust: /(?:^|[\s/])rust(?=[:@\s]|$)/i,
   };
   return images[runtime]?.test(excerpt) ?? false;
 }

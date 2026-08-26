@@ -546,6 +546,10 @@ function renderChangeCard(
   // The one number a reader sees first — the three-dimension breakdown in
   // `renderConfidenceDetail` stays underneath for anyone who wants the working.
   const display = confidenceDisplay(change);
+  const runtimeState =
+    change.kind === 'runtime-requirement'
+      ? plan.rationale?.find((entry) => entry.dependency === change.dependency)?.assessment.runtimeCompatibility
+      : undefined;
 
   const siteList = sites.length
     ? `<ul class="sites">
@@ -562,6 +566,10 @@ function renderChangeCard(
           )
           .join('')}
        </ul>`
+    : change.kind === 'runtime-requirement'
+      ? runtimeState === 'unknown' || runtimeState === 'partial'
+        ? `<p class="muted">Drift has no concrete runtime declaration edit to point at, and compatibility remains <b>${escapeHtml(runtimeState)}</b>. Confirm the runtime used to build and deploy before upgrading.</p>`
+        : `<p class="muted">The repository's runtime declaration satisfies this requirement, so no runtime configuration edit is planned.</p>`
     : notSearched(change)
       // "Searched and found nothing" and "could not search" produce the same
       // empty list and mean opposite things. The panel must not render them
@@ -610,7 +618,13 @@ function renderChangeCard(
           .join(' · ')}</p>`
       : ''
   }
-  <p class="muted">${escapeHtml(sites.length ? 'Repo risk is based on these local matches.' : 'Repo risk stays none when there are no local matches to edit.')}</p>
+  <p class="muted">${escapeHtml(
+    sites.length
+      ? 'Repo risk is based on these local matches.'
+      : runtimeState === 'unknown' || runtimeState === 'partial'
+        ? 'No local match is not evidence of runtime compatibility.'
+        : 'Repo risk stays none when there are no local matches to edit.',
+  )}</p>
   ${siteList}
 </article>`;
 }

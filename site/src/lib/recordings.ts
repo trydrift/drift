@@ -102,7 +102,11 @@ export interface Candidate {
     state: "compatible" | "incompatible" | "partial" | "unknown";
     reason: string;
     siteCount: number;
+    declarationCount: number;
+    unresolvedCount: number;
   }[];
+  severity?: "affected" | "verification-failed" | "upstream-only" | "unchecked" | "clean" | "error" | "pending";
+  independentActionableFindingCount?: number;
   breakingCount: number;
   impactCount: number;
   impactFiles: number;

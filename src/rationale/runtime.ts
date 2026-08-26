@@ -1,7 +1,7 @@
 import semver from 'semver';
 import { isRuntimeConfigPath } from '../index/walk.js';
 import { memberOf } from '../detect/workspace.js';
-import { intersectsInterval, isSubsetInterval, parseSpecifierSet } from './pep440.js';
+import { intersectsInterval, isSubsetInterval, parseSpecifierSet, type VersionInterval } from './pep440.js';
 import type { RuntimeCompatibilityState, RuntimeName } from '../types.js';
 
 /**
@@ -300,16 +300,30 @@ export function checkUnsupportedRuntimeRange(
   return out;
 }
 
+export type ParsedPythonRuntimeRange =
+  | { status: 'parsed'; value: VersionInterval }
+  | { status: 'unknown'; reason: 'unsupported-grammar' | 'unparseable' };
+
 /**
- * A PEP 440 specifier set nothing at all could be read out of — no lower
- * bound, no upper bound, and at least one clause the grammar rejected. That
- * is a declaration Drift cannot compare, not a declaration that compares
- * favourably, so it has to come back `unknown` rather than fall through to a
- * verdict computed from two null bounds (which would call *everything*
- * compatible).
+ * Parse a Python runtime range without asking callers to infer failure from
+ * whatever partial bounds the PEP 440 interval parser happened to recover.
+ * An imprecise interval is not representable by Drift's model and therefore
+ * cannot support any compatibility verdict, regardless of whether the text
+ * belonged to the repository or to upstream.
  */
-function unreadable(interval: { min: unknown; max: unknown; imprecise: boolean }): boolean {
-  return interval.imprecise && interval.min === null && interval.max === null;
+export function parsePythonRuntimeRange(
+  requirement: string,
+  kind: 'minimum' | 'unsupported' = 'minimum',
+): ParsedPythonRuntimeRange {
+  const normalized = kind === 'unsupported' ? requirement.replace(/\.x$/i, '.*') : requirement;
+  if (/^\s*(?:\^|~(?![=>]))/.test(normalized)) {
+    return { status: 'unknown', reason: 'unsupported-grammar' };
+  }
+  const value = parseSpecifierSet(normalized);
+  if (value.imprecise || (value.min === null && value.max === null)) {
+    return { status: 'unknown', reason: 'unparseable' };
+  }
+  return { status: 'parsed', value };
 }
 
 function checkUnsupportedPythonRange(
@@ -322,14 +336,14 @@ function checkUnsupportedPythonRange(
   // cannot parse the trailing ".x" at all, the whole specifier set comes back
   // `imprecise`, and every declaration then falls through to the same
   // uninformative "partial" verdict regardless of its actual version.
-  const unsupported = parseSpecifierSet(unsupportedRequirement.replace(/\.x$/i, '.*'));
+  const unsupported = parsePythonRuntimeRange(unsupportedRequirement, 'unsupported');
   const out: RuntimeCompatibility[] = [];
   for (const declaration of declarations) {
-    const declared = parseSpecifierSet(declaration.requirement);
+    const declared = parsePythonRuntimeRange(declaration.requirement);
     let verdict: RuntimeCompatibility['verdict'];
-    if (unreadable(declared)) verdict = 'unknown';
-    else if (isSubsetInterval(declared, unsupported)) verdict = 'incompatible';
-    else if (!intersectsInterval(declared, unsupported)) verdict = 'compatible';
+    if (unsupported.status === 'unknown' || declared.status === 'unknown') verdict = 'unknown';
+    else if (isSubsetInterval(declared.value, unsupported.value)) verdict = 'incompatible';
+    else if (!intersectsInterval(declared.value, unsupported.value)) verdict = 'compatible';
     else verdict = 'partial';
     out.push({ ...declaration, verdict });
   }
@@ -422,24 +436,57 @@ function recordImage(
   image: string,
   source: RuntimeDeclarationSource,
 ): void {
-  const tag = RUNTIME_IMAGES[runtime].exec(image)?.[1];
-  if (!tag) return;
-  record(found, runtime, path, line, image, source, isDynamicValue(tag) ? null : numericRuntimeTag(tag));
+  const identity = identifyRuntimeImage(image);
+  if (!identity || identity.runtime !== runtime) return;
+  const version = identity.version;
+  record(
+    found,
+    runtime,
+    path,
+    line,
+    image,
+    source,
+    version && !isDynamicValue(version) ? numericRuntimeTag(version) : null,
+  );
 }
 
 /**
- * The image names that identify a runtime, with their tag. Shared by
- * Dockerfiles, GitLab CI and CircleCI so image semantics have exactly one
- * source of truth across every config surface.
+ * Runtime identity and version extraction are separate questions. A bare or
+ * digest-only `node` image still names Node even though it supplies no tag
+ * Drift can compare. Shared by Dockerfiles, GitLab CI and CircleCI so the
+ * surfaces cannot diverge.
  */
-const RUNTIME_IMAGES: Record<RuntimeName, RegExp> = {
-  node: /(?:^|\/)node:([^\s@'"#]+)/i,
-  python: /(?:^|\/)python:([^\s@'"#]+)/i,
-  ruby: /(?:^|\/)ruby:([^\s@'"#]+)/i,
-  go: /(?:^|\/)golang:([^\s@'"#]+)/i,
-  java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):([^\s@'"#]+)/i,
-  rust: /(?:^|\/)rust:([^\s@'"#]+)/i,
+export interface RuntimeImageIdentity {
+  runtime: RuntimeName;
+  version?: string;
+}
+
+const RUNTIME_IMAGE_NAMES: Readonly<Record<string, RuntimeName>> = {
+  node: 'node',
+  python: 'python',
+  ruby: 'ruby',
+  golang: 'go',
+  openjdk: 'java',
+  'eclipse-temurin': 'java',
+  amazoncorretto: 'java',
+  rust: 'rust',
 };
+
+export function identifyRuntimeImage(raw: string): RuntimeImageIdentity | null {
+  const image = raw.trim().replace(/^['"]|['"]$/g, '');
+  if (!image || image.startsWith('$')) return null;
+
+  const withoutDigest = image.split('@', 1)[0]!;
+  const slash = withoutDigest.lastIndexOf('/');
+  const colon = withoutDigest.lastIndexOf(':');
+  const hasTag = colon > slash;
+  const repository = (hasTag ? withoutDigest.slice(0, colon) : withoutDigest).split('/').at(-1)?.toLowerCase();
+  if (!repository) return null;
+  const runtime = RUNTIME_IMAGE_NAMES[repository];
+  if (!runtime) return null;
+  const version = hasTag ? withoutDigest.slice(colon + 1) : undefined;
+  return version ? { runtime, version } : { runtime };
+}
 
 /**
  * `package.json#engines.node`.
@@ -453,9 +500,9 @@ function packageJsonEngineDeclarations(
   content: string,
   found: RuntimeDeclarationDiscovery,
 ): void {
-  const raw = engineFromPackageJson(content);
-  if (!raw) return;
-  record(found, 'node', path, lineOf(content, /"node"\s*:/), raw, 'manifest', dynamicOr(raw));
+  const engine = engineFromPackageJson(content);
+  if (!engine) return;
+  record(found, 'node', path, lineOf(content, /"node"\s*:/), engine.raw, 'manifest', engine.requirement);
 }
 
 function pythonManifestDeclarations(
@@ -464,27 +511,36 @@ function pythonManifestDeclarations(
   content: string,
   found: RuntimeDeclarationDiscovery,
 ): void {
+  if (base === 'setup.py') {
+    const setup = setupPyPythonRequires(content);
+    if (setup) record(found, 'python', path, setup.line, setup.raw, 'manifest', setup.requirement);
+    return;
+  }
   const located =
     base === 'pyproject.toml'
       ? requiresPythonFromPyproject(content)
       : base === 'setup.cfg'
         ? pythonRequiresFromSetupCfg(content)
-        : setupPyPythonRequires(content);
+        : null;
   if (!located) return;
   record(found, 'python', path, located.line, located.requirement, 'manifest', dynamicOr(located.requirement));
 }
 
 function rubyGemfileDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   for (const [i, line] of content.split('\n').entries()) {
-    const match = /^\s*ruby\s+(['"])([^'"]+)\1/.exec(line);
-    if (match?.[2]) record(found, 'ruby', path, i + 1, match[2], 'manifest', dynamicOr(match[2]));
+    const call = /^\s*ruby\s+(.+?)\s*(?:#.*)?$/.exec(line)?.[1]?.trim();
+    if (!call) continue;
+    const literal = /^(['"])([^'"]+)\1/.exec(call)?.[2];
+    record(found, 'ruby', path, i + 1, call, 'manifest', literal ? dynamicOr(literal) : null);
   }
 }
 
 function rubyGemspecDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   for (const [i, line] of content.split('\n').entries()) {
-    const match = /\.required_ruby_version\s*=\s*(['"])([^'"]+)\1/.exec(line);
-    if (match?.[2]) record(found, 'ruby', path, i + 1, match[2], 'manifest', dynamicOr(match[2]));
+    const raw = /\.required_ruby_version\s*=\s*(.+?)\s*(?:#.*)?$/.exec(line)?.[1]?.trim();
+    if (!raw) continue;
+    const literal = /^(['"])([^'"]+)\1/.exec(raw)?.[2];
+    record(found, 'ruby', path, i + 1, raw, 'manifest', literal ? dynamicOr(literal) : null);
   }
 }
 
@@ -590,14 +646,49 @@ function isCiPath(path: string): boolean {
  * declaration whatever its value is — including `${{ matrix.node }}`, which
  * is a Node declaration Drift cannot resolve.
  */
-const CI_RUNTIME_FIELDS: Record<RuntimeName, RegExp> = {
-  node: /\bnode-version\s*:\s*['"]?([^\s'"#]+)/i,
-  python: /\bpython-version\s*:\s*['"]?([^\s'"#]+)/i,
-  ruby: /\bruby-version\s*:\s*['"]?([^\s'"#]+)/i,
-  go: /\bgo-version\s*:\s*['"]?([^\s'"#]+)/i,
-  java: /\bjava-version\s*:\s*['"]?([^\s'"#]+)/i,
-  rust: /\btoolchain\s*:\s*['"]?([^\s'"#]+)/i,
+const CI_RUNTIME_FIELD_NAMES: Record<RuntimeName, string> = {
+  node: 'node-version',
+  python: 'python-version',
+  ruby: 'ruby-version',
+  go: 'go-version',
+  java: 'java-version',
+  rust: 'toolchain',
 };
+
+function yamlKeyValue(line: string, key: string): { raw: string } | null {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = new RegExp(`^\\s*(?:-\\s*)?${escaped}\\s*:\\s*(.*?)\\s*$`, 'i').exec(line);
+  if (!match) return null;
+  const value = match[1]!.replace(/\\s+#.*$/, '').trim();
+  const quoted = /^(['"])(.*?)\1$/.exec(value)?.[2];
+  return { raw: quoted ?? value };
+}
+
+/**
+ * Mark YAML lines that are configuration structure rather than literal text
+ * inside a `|`/`>` scalar. An anchored key matcher alone is insufficient for
+ * a workflow such as `run: |` followed by `node-version: 16`: that indented
+ * text is shell input, not a YAML key.
+ */
+function yamlStructuralLineMask(lines: readonly string[]): boolean[] {
+  const structural = Array.from({ length: lines.length }, () => true);
+  let scalarIndent: number | null = null;
+  const blockScalar = /(?:^\s*-\s*|:\s*)[>|](?:(?:[+-]?\d)|(?:\d[+-]?))?\s*(?:#.*)?$/;
+
+  for (const [i, line] of lines.entries()) {
+    const trimmed = line.trim();
+    const indent = /^\s*/.exec(line)![0].length;
+    if (scalarIndent !== null) {
+      if (!trimmed || indent > scalarIndent) {
+        structural[i] = false;
+        continue;
+      }
+      scalarIndent = null;
+    }
+    if (blockScalar.test(line)) scalarIndent = indent;
+  }
+  return structural;
+}
 
 function ciDeclarations(
   path: string,
@@ -606,9 +697,12 @@ function ciDeclarations(
   found: RuntimeDeclarationDiscovery,
 ): void {
   const lines = content.split('\n');
+  const structural = yamlStructuralLineMask(lines);
   for (const [i, line] of lines.entries()) {
-    const raw = CI_RUNTIME_FIELDS[runtime].exec(line)?.[1];
-    if (raw) {
+    if (!structural[i]) continue;
+    const field = yamlKeyValue(line, CI_RUNTIME_FIELD_NAMES[runtime]);
+    if (field) {
+      const raw = field.raw;
       record(found, runtime, path, i + 1, raw, 'ci', isDynamicValue(raw) ? null : numericRuntimeTag(raw));
     }
 
@@ -642,6 +736,7 @@ function ciDeclarations(
         if (!next.trim()) continue;
         const indent = /^\s*/.exec(next)![0].length;
         if (indent <= baseIndent) break;
+        if (!structural[j]) continue;
         const nameValue = /^\s*name\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
         if (nameValue) recordImage(found, runtime, path, j + 1, nameValue, 'ci');
       }
@@ -665,7 +760,6 @@ function numericRuntimeTag(raw: string): string | null {
 function normalizeSemverRange(raw: string): string | null {
   const normalized = raw
     .trim()
-    .replace(/^~>\s*/, '~')
     .replace(/^(?:ruby-|go|rust-)?v(?=\d)/i, '')
     .replace(/^(?:temurin|corretto|openjdk)[-_](?=\d)/i, '')
     .replace(/_/g, '.');
@@ -819,10 +913,13 @@ function scopedTo<T extends { path: string }>(
   });
 }
 
-function engineFromPackageJson(content: string): string | null {
+function engineFromPackageJson(content: string): { raw: string; requirement: string | null } | null {
   try {
-    const parsed = JSON.parse(content) as { engines?: { node?: string } };
-    return parsed.engines?.node ?? null;
+    const parsed = JSON.parse(content) as { engines?: Record<string, unknown> };
+    if (!parsed.engines || !Object.prototype.hasOwnProperty.call(parsed.engines, 'node')) return null;
+    const value = parsed.engines.node;
+    if (typeof value === 'string') return { raw: value, requirement: dynamicOr(value) };
+    return { raw: JSON.stringify(value), requirement: null };
   } catch {
     return null;
   }
@@ -950,11 +1047,16 @@ function requiresPythonFromPyproject(content: string): { requirement: string; li
 const CALL_PATTERN = /(?<!def\s+)(?:(?<![.\w])setup|(?<!\w)setuptools\.setup)\s*\(/g;
 
 /** `setup.py`'s literal `python_requires="..."` keyword argument, if it has one. */
-function setupPyPythonRequires(content: string): { requirement: string; line: number } | null {
+function setupPyPythonRequires(content: string): { raw: string; requirement: string | null; line: number } | null {
   const call = extractSetupCall(content);
-  const match = call ? /\bpython_requires\s*=\s*(['"])([^'"]+)\1/.exec(call) : null;
-  return match?.[2]
-    ? { requirement: match[2], line: lineOf(content, /python_requires\s*=/) }
+  if (!call) return null;
+  const literal = /\bpython_requires\s*=\s*(['"])([^'"]+)\1/.exec(call)?.[2];
+  if (literal) {
+    return { raw: literal, requirement: dynamicOr(literal), line: lineOf(content, /python_requires\s*=/) };
+  }
+  const expression = /\bpython_requires\s*=\s*([^,)\n]+)/.exec(call)?.[1]?.trim();
+  return expression
+    ? { raw: expression, requirement: null, line: lineOf(content, /python_requires\s*=/) }
     : null;
 }
 
@@ -1064,16 +1166,16 @@ export function checkPythonCompatibility(
   declarations: readonly RuntimeDeclaration[],
   requirement: string,
 ): RuntimeCompatibility[] {
-  const required = parseSpecifierSet(requirement);
+  const required = parsePythonRuntimeRange(requirement);
   const out: RuntimeCompatibility[] = [];
 
   for (const decl of declarations) {
-    const declared = parseSpecifierSet(decl.requirement);
+    const declared = parsePythonRuntimeRange(decl.requirement);
 
     let verdict: RuntimeCompatibility['verdict'];
-    if (unreadable(declared)) verdict = 'unknown';
-    else if (isSubsetInterval(declared, required)) verdict = 'compatible';
-    else if (!intersectsInterval(declared, required)) verdict = 'incompatible';
+    if (required.status === 'unknown' || declared.status === 'unknown') verdict = 'unknown';
+    else if (isSubsetInterval(declared.value, required.value)) verdict = 'compatible';
+    else if (!intersectsInterval(declared.value, required.value)) verdict = 'incompatible';
     else verdict = 'partial';
 
     out.push({ ...decl, verdict });

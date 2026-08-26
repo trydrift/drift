@@ -10,6 +10,7 @@ import {
   checkRuntimeCompatibility,
   checkUnsupportedRuntimeRange,
   discoverRuntimeDeclarations,
+  parsePythonRuntimeRange,
   type RuntimeCompatibility,
   type RuntimeDeclaration,
   type UnresolvedRuntimeDeclaration,
@@ -80,7 +81,14 @@ export function analyzeRuntimeRequirement(
   // operator for. Evaluating it anyway is how a made-up `partial` gets
   // manufactured out of a range nobody parsed, so the declarations are not
   // consulted at all and the state is honestly unknown.
-  if (requirement.rangeParseStatus === 'unknown') {
+  const upstreamPythonRange =
+    runtime === 'python'
+      ? parsePythonRuntimeRange(
+          requirement.requirement,
+          requirement.kind === 'unsupported-runtime-range' ? 'unsupported' : 'minimum',
+        )
+      : null;
+  if (requirement.rangeParseStatus === 'unknown' || upstreamPythonRange?.status === 'unknown') {
     return {
       changeId: change.id,
       runtime,

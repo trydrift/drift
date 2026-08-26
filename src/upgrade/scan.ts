@@ -197,6 +197,8 @@ export interface UpgradeCandidate {
     state: 'compatible' | 'incompatible' | 'partial' | 'unknown';
     reason: string;
     siteCount: number;
+    declarationCount: number;
+    unresolvedCount: number;
   }[];
   /**
    * `impactCount` includes a compiler-provable finding that only a batch pass
@@ -2294,6 +2296,8 @@ async function analyzeUpgrade(args: {
                     state: analysis.state,
                     reason: analysis.reason,
                     siteCount: analysis.sites.length,
+                    declarationCount: analysis.declarations.length,
+                    unresolvedCount: analysis.unresolved.length,
                   })),
                 }
               : {}),

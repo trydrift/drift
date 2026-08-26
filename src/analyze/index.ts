@@ -473,4 +473,5 @@ export function meetsConfidence(actual: Confidence, minimum: Confidence): boolea
 }
 
 export * from './rules.js';
+export * from './runtime-grammar.js';
 export type { ProseMatch };

@@ -6,6 +6,7 @@ import type {
   StructuredFinding,
 } from '../types.js';
 import { specCodeFor } from '../evidence/spec/index.js';
+import { normalizeRuntimeOperator } from './runtime-grammar.js';
 
 /**
  * Deterministic mapping from computed findings and changelog prose to
@@ -454,7 +455,8 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   const normalizedVersion = version[2]!;
   const sourceText = match[0]!.trim();
 
-  const parseStatus = rangeGrammarStatus(rawRuntime, statedOperator);
+  const normalizedOperator = normalizeRuntimeOperator(rawRuntime, statedOperator);
+  const parseStatus = normalizedOperator.status;
 
   if (ruleId === 'prose-dropped-runtime') {
     // Dropped-support prose names the range upstream *stopped* supporting. It
@@ -486,7 +488,7 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
     return {
       kind: 'unsupported-runtime-range',
       runtime: rawRuntime,
-      requirement: `${normalizeOperator(statedOperator)}${normalizedVersion}`,
+      requirement: `${normalizedOperator.operator}${normalizedVersion}`,
       // Only `<` and `<=` have an exact complement, so only they carry a
       // replacement floor. `>=20`'s complement is "everything below 20",
       // which is not a floor and not what upstream said.
@@ -500,48 +502,12 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   return {
     kind: 'minimum-runtime',
     runtime: rawRuntime,
-    requirement: `${normalizeOperator(statedOperator) || '>='}${normalizedVersion}`,
+    requirement: `${normalizedOperator.operator || '>='}${normalizedVersion}`,
     sourceText,
     ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
   };
 }
 
-/**
- * Equality is written three ways in the wild (`=20`, `==20`, and `===20` in
- * PEP 440's arbitrary-equality form) and normalized to one: `=20`.
- *
- * The documented interpretation is *that version line* — `=20` means the 20
- * series, exactly as the bare form `20` does, which is how `semver.validRange`
- * and PEP 440's `==20` both already read it. It is deliberately **not**
- * reinterpreted as a minimum: "dropped support for Node =20" says 20 is gone,
- * not that everything below 20 is.
- */
-function normalizeOperator(stated: string): string {
-  if (stated === '==' || stated === '===' || stated === '=') return '=';
-  return stated;
-}
-
-/**
- * Is this operator part of the range grammar the named runtime's ecosystem
- * actually defines?
- *
- * PEP 440 has no caret at all, and its compatible-release operator is `~=`,
- * not a bare `~` — so "Python ^3.10" is prose Drift can read the runtime and
- * the version out of but *cannot evaluate as a range*. Feeding it to the PEP
- * 440 parser anyway produced an imprecise interval that intersected almost
- * anything, and therefore a confident-looking `partial` verdict manufactured
- * out of a range nobody parsed. Go and Java have no such operators either.
- *
- * The requirement is still returned, sourceText and all — it is real upstream
- * evidence — but flagged so the compatibility state machine reports `unknown`
- * instead of inventing an answer.
- */
-function rangeGrammarStatus(runtime: RuntimeName, operator: string): 'parsed' | 'unknown' {
-  if (operator !== '^' && operator !== '~') return 'parsed';
-  // npm/semver (Node), Cargo (Rust) and RubyGems all define caret/tilde
-  // ranges; `normalizeSemverRange` in `rationale/runtime.ts` evaluates them.
-  return ['node', 'rust', 'ruby'].includes(runtime) ? 'parsed' : 'unknown';
-}
 
 /** Remediation text for a prose-derived change. */
 export function remediationForProse(match: ProseMatch, dependency: string): string {

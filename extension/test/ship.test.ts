@@ -172,6 +172,14 @@ describe('writing the commit', () => {
     assert.doesNotMatch(body, /no code in this repository that uses the affected APIs/i);
     assert.match(body, /own checks failed/i);
   });
+
+  test('an unresolved zero-site runtime requirement is never reported as unused code', () => {
+    const { body } = upgradeCommitMessage([
+      candidate({ breakingCount: 1, impactCount: 0, runtimeCompatibility: 'unknown' }),
+    ]);
+    assert.doesNotMatch(body, /no code in this repository that uses the affected APIs|none used here/i);
+    assert.match(body, /could not establish runtime compatibility/i);
+  });
 });
 
 describe('the pull request body', () => {

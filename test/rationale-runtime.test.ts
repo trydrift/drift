@@ -4,6 +4,7 @@ import {
   checkNodeCompatibility,
   checkPythonCompatibility,
   checkRuntimeCompatibility,
+  discoverRuntimeDeclarations,
   findRuntimeDeclarations,
   findNodeDeclarations,
   findPythonDeclarations,
@@ -248,9 +249,12 @@ describe("finding this repository's own Python declarations", () => {
     assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 5, requirement: '>=3.10' }]);
   });
 
-  test('a computed python_requires in setup.py is left out rather than evaluated', () => {
+  test('a computed python_requires in setup.py remains an unresolved declaration', () => {
     const files = [{ path: 'setup.py', content: 'setup(python_requires=MIN_PYTHON)' }];
     assert.deepEqual(findPythonDeclarations(files), []);
+    const discovery = discoverRuntimeDeclarations(files, 'python');
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0]?.rawText, 'MIN_PYTHON');
   });
 
   test('reads .python-version as a pin', () => {
@@ -534,6 +538,20 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
     assert.deepEqual(findRuntimeDeclarations(files, 'ruby').map((declaration) => declaration.file), ['.ruby-version', '.tool-versions']);
     assert.deepEqual(findRuntimeDeclarations(files, 'python').map((declaration) => declaration.file), ['.tool-versions']);
     assert.deepEqual(findRuntimeDeclarations(files, 'go').map((declaration) => declaration.file), ['go.mod', '.tool-versions']);
+  });
+
+  test('runtime-specific manifest positions never disappear when their values are computed', () => {
+    const fixtures = [
+      ['node', 'package.json', '{"engines":{"node":42}}'],
+      ['python', 'setup.py', 'setup(python_requires=MIN_PYTHON)'],
+      ['ruby', 'Gemfile', 'ruby RUBY_VERSION'],
+      ['ruby', 'demo.gemspec', 'spec.required_ruby_version = RUBY_VERSION'],
+    ] as const;
+    for (const [runtime, path, content] of fixtures) {
+      const discovery = discoverRuntimeDeclarations([{ path, content }], runtime);
+      assert.deepEqual(discovery.resolved, [], `${runtime} ${path}`);
+      assert.equal(discovery.unresolved.length, 1, `${runtime} ${path}`);
+    }
   });
 
   test('shared discovery preserves workspace ownership and repository-global CI', () => {

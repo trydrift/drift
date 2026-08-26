@@ -123,6 +123,9 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
   // APIs" — see `severityOf`'s own `verification-failed` tier, reused here
   // rather than reconstructing the same distinction badly.
   const verificationFailed = candidates.some((c) => severityOf(c) === 'verification-failed');
+  const runtimeUnresolved = candidates.some(
+    (c) => c.runtimeCompatibility === 'unknown' || c.runtimeCompatibility === 'partial',
+  );
 
   const body = [
     ...lines,
@@ -131,11 +134,13 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
       ? "Drift installed this upgrade and the project's own checks failed, even though static analysis found no specific location to point at. Review the failure before shipping this."
       : breaking === 0
         ? 'Drift found no breaking changes upstream for these versions.'
-        : `Drift found ${count(breaking, 'breaking change')} upstream and ${
-            impacted === 0
-              ? 'no code in this repository that uses the affected APIs'
-              : `${count(impacted, 'place')} in this repository that use the affected APIs`
-          }.`,
+        : runtimeUnresolved && impacted === 0
+          ? `Drift found ${count(breaking, 'breaking change')} upstream, but could not establish runtime compatibility for this repository.`
+          : `Drift found ${count(breaking, 'breaking change')} upstream and ${
+              impacted === 0
+                ? 'no code in this repository that uses the affected APIs'
+                : `${count(impacted, 'place')} in this repository that use the affected APIs`
+            }${runtimeUnresolved ? '; runtime compatibility still requires review' : ''}.`,
   ].join('\n');
 
   return { subject, body };

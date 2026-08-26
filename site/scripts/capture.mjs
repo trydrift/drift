@@ -88,6 +88,7 @@ const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js
 const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
 const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
 const { deriveOverallConfidence } = await import(join(repoRoot, 'dist/confidence/calibrate.js'));
+const { severityOf } = await import(join(repoRoot, 'dist/upgrade/severity.js'));
 const RECORDING_SCHEMA_VERSION = 2;
 import { isSchemaStale, validateRecording } from './recording-validation.mjs';
 
@@ -540,6 +541,16 @@ function slimCandidate(candidate) {
     // can check each runtime requirement's own answer rather than only the
     // worst one.
     runtimeAnalyses: candidate.runtimeAnalyses ?? [],
+    // The application's actual verdict. The validator consumes this instead
+    // of reconstructing a second severity algorithm from counts.
+    severity: severityOf(candidate),
+    independentActionableFindingCount: new Set(
+      (candidate.plan?.impactSites ?? [])
+        .filter((site) => site.confidence === 'high')
+        .map((site) => (candidate.plan?.breakingChanges ?? []).find((change) => change.id === site.breakingChangeId))
+        .filter((change) => change && change.kind !== 'runtime-requirement')
+        .map((change) => change.id),
+    ).size,
     breakingCount: candidate.breakingCount,
     impactCount: candidate.impactCount,
     impactFiles: candidate.impactFiles,

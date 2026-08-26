@@ -52,6 +52,8 @@ const ENGINE_PATHS = [
   'src/types.ts',
   'site/scripts/capture.mjs',
   'site/scripts/recording-validation.mjs',
+  'site/scripts/runtime-recording-validation.mjs',
+  'site/scripts/validate-recordings.mjs',
   'site/scripts/engine-fingerprint.mjs',
   'site/src/lib/recordings.ts',
 ];
