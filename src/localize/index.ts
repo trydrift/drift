@@ -331,6 +331,10 @@ function localizeRuntimeRequirement(
   member?: string,
   allMembers?: readonly string[],
 ): ImpactSite[] {
+  // Knowing that one runtime line was dropped is not the same as knowing the
+  // replacement floor. Without a stated minimum there is no declaration Drift
+  // can honestly call incompatible and no mechanical config edit to propose.
+  if (change.runtime?.kind !== 'minimum-runtime') return [];
   const runtime = change.runtime?.runtime;
   const requirement = change.runtime?.requirement;
   if (!runtime || !requirement) return [];

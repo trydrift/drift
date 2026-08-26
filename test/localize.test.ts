@@ -622,7 +622,7 @@ const other = require('@scope/other/features/foo');`,
       kind: 'runtime-requirement' as const,
       symbols: ['Node.js'],
       runtime: {
-        kind: 'runtime-requirement' as const,
+        kind: 'minimum-runtime' as const,
         runtime: 'node' as const,
         requirement: '>=14',
         sourceText: 'Requires Node.js 14 or later',

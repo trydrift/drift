@@ -420,7 +420,9 @@ export function matchProse(passage: string): ProseMatch[] {
       ruleId: rule.id,
       kind: rule.kind,
       summary: runtime
-        ? `Minimum ${runtime.runtime} version is now ${runtime.requirement}`
+        ? runtime.kind === 'minimum-runtime'
+          ? `Minimum ${runtime.runtime} version is now ${runtime.requirement}`
+          : `${runtime.runtime} ${runtime.requirement} is no longer supported`
         : rule.summarize(match),
       symbols: symbol ? [symbol] : [],
       ...(runtime ? { runtime } : {}),
@@ -453,11 +455,17 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   let normalizedVersion = version[2]!;
   if (ruleId === 'prose-dropped-runtime') {
     // “Dropped support for Node <18” announces the *remaining* supported
-    // range, i.e. Node >=18. A bare dropped version is the old supported line
-    // itself, so the new range starts above it.
+    // range, i.e. Node >=18. A bare dropped version only identifies the old
+    // line. It does not identify the next real release or the new minimum —
+    // Ruby 2.7, for example, was followed by Ruby 3.0, not a fictional 2.8.
     if (statedOperator === '') {
-      operator = '>=';
-      normalizedVersion = nextVersion(normalizedVersion);
+      const parts = normalizedVersion.split('.');
+      return {
+        kind: 'unsupported-runtime-range',
+        runtime: rawRuntime,
+        requirement: parts.length < 3 ? `${normalizedVersion}.x` : normalizedVersion,
+        sourceText: match[0]!.trim(),
+      };
     }
     else if (operator === '<') operator = '>=';
     else if (operator === '<=') operator = '>';
@@ -466,17 +474,11 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
     else if (operator === '=' || operator === '==') return null;
   }
   return {
-    kind: 'runtime-requirement',
+    kind: 'minimum-runtime',
     runtime: rawRuntime,
     requirement: `${operator}${normalizedVersion}`,
     sourceText: match[0]!.trim(),
   };
-}
-
-function nextVersion(raw: string): string {
-  const parts = raw.split('.').map(Number);
-  parts[parts.length - 1] = (parts.at(-1) ?? 0) + 1;
-  return parts.join('.');
 }
 
 /** Remediation text for a prose-derived change. */
@@ -498,6 +500,9 @@ export function remediationForProse(match: ProseMatch, dependency: string): stri
     case 'behaviour-change':
       return `Behaviour changed: ${match.summary}. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.`;
     case 'runtime-requirement':
+      if (match.runtime?.kind === 'unsupported-runtime-range') {
+        return `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported, but the release note does not establish a replacement minimum. Review the project's declared runtime against authoritative upstream compatibility guidance before changing it.`;
+      }
       return `${match.summary}. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.`;
     case 'module-system-change':
       return `\`${dependency}\` no longer exposes a CommonJS-compatible entry point. Update each localized \`require('${dependency}')\` site to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import('${dependency}')\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;

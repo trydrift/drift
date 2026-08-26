@@ -253,13 +253,25 @@ export type BreakingChangeKind =
 export type RuntimeName = 'node' | 'python' | 'go' | 'ruby' | 'java' | 'rust';
 
 /** A parseable runtime floor announced by an upstream release. */
-export interface RuntimeRequirement {
-  kind: 'runtime-requirement';
+export interface MinimumRuntimeRequirement {
+  kind: 'minimum-runtime';
   runtime: RuntimeName;
   requirement: string;
   /** The exact prose fragment from which the requirement was parsed. */
   sourceText: string;
 }
+
+/** A runtime line upstream dropped without stating its replacement floor. */
+export interface UnsupportedRuntimeRange {
+  kind: 'unsupported-runtime-range';
+  runtime: RuntimeName;
+  requirement: string;
+  /** The exact prose fragment from which the requirement was parsed. */
+  sourceText: string;
+}
+
+/** Structured runtime evidence. Only `minimum-runtime` implies a local floor. */
+export type RuntimeRequirement = MinimumRuntimeRequirement | UnsupportedRuntimeRange;
 
 export type ModuleSystem = 'commonjs' | 'esm' | 'dual';
 export type ModuleIncompatibleUsage = 'require' | 'static-import' | 'dynamic-import' | 're-export';
