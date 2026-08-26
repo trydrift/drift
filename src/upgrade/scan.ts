@@ -2192,6 +2192,7 @@ async function analyzeUpgrade(args: {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
+      members: args.allMembers,
       ...(moduleMaps ? { moduleMaps } : {}),
     });
     localizing.end({ sites: impactSites.length });

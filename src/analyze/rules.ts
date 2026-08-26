@@ -226,6 +226,14 @@ const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted
  */
 const PROSE_RULES: ProseRule[] = [
   {
+    id: 'prose-dropped-runtime',
+    kind: 'runtime-requirement',
+    pattern:
+      /\b(?:(?:dropped|drops?|removed)\s+support\s+for|no\s+longer\s+supports?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?([<>=^~]*\s*\d+(?:\.\d+){0,3})/i,
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} support below ${m[2]?.trim()} was removed`,
+  },
+  {
     id: 'prose-removed',
     kind: 'removed-export',
     pattern: /`([\w$.]+)`(?:\(\))?\s+(?:has been|have been|was|were|is|are)\s+removed\b/i,
@@ -403,7 +411,7 @@ export function matchProse(passage: string): ProseMatch[] {
     const symbol = rule.symbolGroup === 0 ? null : match[rule.symbolGroup];
     if (rule.symbolGroup !== 0 && !symbol) continue;
 
-    const runtime = rule.id === 'prose-min-runtime' ? parseRuntimeRequirement(match) : undefined;
+    const runtime = rule.kind === 'runtime-requirement' ? parseRuntimeRequirement(match, rule.id) : undefined;
     if (rule.kind === 'runtime-requirement' && !runtime) continue;
 
     const replacement = rule.replacementGroup ? match[rule.replacementGroup] : undefined;
@@ -430,21 +438,41 @@ export function matchProse(passage: string): ProseMatch[] {
   return out;
 }
 
-function parseRuntimeRequirement(match: RegExpMatchArray): RuntimeRequirement | null {
+function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): RuntimeRequirement | null {
   const rawRuntime = match[1]?.toLowerCase().replace(/\.js$/, '') as RuntimeName | undefined;
   const rawRequirement = match[2]?.trim();
   if (!rawRuntime || !rawRequirement) return null;
   if (!['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(rawRuntime)) return null;
 
-  const version = /^([<>=^~]*)(\d+(?:\.\d+){0,3})$/.exec(rawRequirement);
+  const version = /^([<>=^~]*)\s*(\d+(?:\.\d+){0,3})$/.exec(rawRequirement);
   if (!version) return null;
-  const operator = version[1] || '>=';
+  const statedOperator = version[1] ?? '';
+  let operator = statedOperator || '>=';
+  if (ruleId === 'prose-dropped-runtime') {
+    // “Dropped support for Node <18” announces the *remaining* supported
+    // range, i.e. Node >=18. A bare dropped version is the old supported line
+    // itself, so the new range starts above it.
+    if (statedOperator === '') operator = `>=${nextVersion(version[2]!)}`;
+    else if (operator === '<') operator = '>=';
+    else if (operator === '<=') operator = '>';
+    else if (operator === '>=') return null;
+    else if (operator === '>') return null;
+    else if (operator === '=' || operator === '==') return null;
+  }
   return {
     kind: 'runtime-requirement',
     runtime: rawRuntime,
-    requirement: `${operator}${version[2]}`,
+    requirement: operator.startsWith('>=') && operator.length > 2
+      ? operator
+      : `${operator}${version[2]}`,
     sourceText: match[0]!.trim(),
   };
+}
+
+function nextVersion(raw: string): string {
+  const parts = raw.split('.').map(Number);
+  parts[parts.length - 1] = (parts.at(-1) ?? 0) + 1;
+  return parts.join('.');
 }
 
 /** Remediation text for a prose-derived change. */

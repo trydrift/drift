@@ -598,8 +598,10 @@ export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js'
 export {
   checkNodeCompatibility,
   checkPythonCompatibility,
+  checkRuntimeCompatibility,
   findNodeDeclarations,
   findPythonDeclarations,
+  findRuntimeDeclarations,
 } from './runtime.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';

@@ -24,34 +24,58 @@ export interface RuntimeCompatibility extends RuntimeDeclaration {
 export function findRuntimeDeclarations(
   files: readonly { path: string; content: string }[],
   runtime: RuntimeName,
+  member?: string,
+  allMembers?: readonly string[],
 ): RuntimeDeclaration[] {
-  if (runtime === 'node') return findNodeDeclarations(files);
-  if (runtime === 'python') return findPythonDeclarations(files);
-
+  const scoped = scopedTo(files, member, allMembers);
+  if (runtime === 'node') return findNodeDeclarationsIn(scoped);
+  if (runtime === 'python') return findPythonDeclarationsIn(scoped);
   const out: RuntimeDeclaration[] = [];
-  for (const { path, content } of files) {
+  for (const { path, content } of scoped) {
     if (!isRuntimeConfigPath(path)) continue;
     const base = (path.split('/').pop() ?? '').toLowerCase();
-    const expected = runtime === 'ruby' ? '.ruby-version' : undefined;
-    if (expected && base === expected) {
-      const requirement = content.trim().split('\n')[0]?.replace(/^v/i, '').trim();
-      if (requirement) out.push({ file: path, line: 1, requirement });
+
+    const versionFile = runtime === 'ruby'
+      ? base === '.ruby-version'
+      : runtime === 'rust'
+        ? ['rust-toolchain', 'rust-toolchain.toml'].includes(base)
+        : false;
+    if (versionFile) {
+      if (base === 'rust-toolchain.toml') {
+        const found = lineValue(content, /^\s*channel\s*=\s*['"]([^'"]+)['"]/);
+        if (found) out.push({ file: path, ...found });
+      } else {
+        const requirement = content.trim().split('\n')[0]?.replace(/^(?:ruby-|go|rust-)?v?/i, '').trim();
+        if (requirement) out.push({ file: path, line: 1, requirement });
+      }
       continue;
     }
-    if (base !== '.tool-versions') continue;
-    const keys: Record<RuntimeName, string[]> = {
-      node: ['node', 'nodejs'],
-      python: ['python', 'python3'],
-      go: ['go', 'golang'],
-      ruby: ['ruby'],
-      java: ['java'],
-      rust: ['rust'],
-    };
-    for (const [i, line] of content.split('\n').entries()) {
-      const match = /^\s*([\w-]+)\s+([^\s#]+)/.exec(line);
-      if (match && keys[runtime].includes(match[1]!.toLowerCase())) {
-        out.push({ file: path, line: i + 1, requirement: match[2]! });
-      }
+
+    if (base === '.tool-versions') {
+      out.push(...toolVersionDeclarations(path, content, runtime));
+      continue;
+    }
+
+    if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
+      out.push(...containerDeclarations(path, content, runtime));
+      continue;
+    }
+
+    if (runtime === 'ruby') {
+      if (base === 'gemfile') out.push(...rubyGemfileDeclarations(path, content));
+      else if (base.endsWith('.gemspec')) out.push(...rubyGemspecDeclarations(path, content));
+    } else if (runtime === 'go' && base === 'go.mod') {
+      out.push(...goModDeclarations(path, content));
+    } else if (runtime === 'java') {
+      if (base === 'pom.xml') out.push(...mavenJavaDeclarations(path, content));
+      else if (base === 'build.gradle' || base === 'build.gradle.kts') out.push(...gradleJavaDeclarations(path, content));
+    } else if (runtime === 'rust' && base === 'cargo.toml') {
+      const found = tomlPackageValue(content, 'rust-version');
+      if (found) out.push({ file: path, ...found });
+    }
+
+    if (isCiPath(path)) {
+      out.push(...ciDeclarations(path, content, runtime));
     }
   }
   return out;
@@ -67,11 +91,13 @@ export function checkRuntimeCompatibility(
   if (runtime === 'python') return checkPythonCompatibility(declarations, requirement);
   const out: RuntimeCompatibility[] = [];
   for (const declaration of declarations) {
-    if (!semver.validRange(declaration.requirement, { loose: true })) continue;
+    const declaredRange = normalizeSemverRange(declaration.requirement);
+    const requiredRange = normalizeSemverRange(requirement);
+    if (!declaredRange || !requiredRange) continue;
     let verdict: RuntimeCompatibility['verdict'];
     try {
-      if (semver.subset(declaration.requirement, requirement, { loose: true })) verdict = 'compatible';
-      else if (!semver.intersects(declaration.requirement, requirement, { loose: true })) verdict = 'incompatible';
+      if (semver.subset(declaredRange, requiredRange, { loose: true })) verdict = 'compatible';
+      else if (!semver.intersects(declaredRange, requiredRange, { loose: true })) verdict = 'incompatible';
       else verdict = 'partial';
     } catch {
       continue;
@@ -79,6 +105,184 @@ export function checkRuntimeCompatibility(
     out.push({ ...declaration, verdict });
   }
   return out;
+}
+
+const TOOL_VERSION_KEYS: Record<RuntimeName, readonly string[]> = {
+  node: ['node', 'nodejs'],
+  python: ['python', 'python3'],
+  go: ['go', 'golang'],
+  ruby: ['ruby'],
+  java: ['java'],
+  rust: ['rust'],
+};
+
+function toolVersionDeclarations(path: string, content: string, runtime: RuntimeName): RuntimeDeclaration[] {
+  const out: RuntimeDeclaration[] = [];
+  for (const [i, line] of content.split('\n').entries()) {
+    const match = /^\s*([\w-]+)\s+([^\s#]+)/.exec(line);
+    if (!match || !TOOL_VERSION_KEYS[runtime].includes(match[1]!.toLowerCase())) continue;
+    const requirement = runtime === 'java' ? numericRuntimeTag(match[2]!) : match[2]!;
+    if (requirement) out.push({ file: path, line: i + 1, requirement });
+  }
+  return out;
+}
+
+function containerDeclarations(path: string, content: string, runtime: RuntimeName): RuntimeDeclaration[] {
+  const images: Record<RuntimeName, RegExp> = {
+    node: /(?:^|\/)node:([^\s@]+)/i,
+    python: /(?:^|\/)python:([^\s@]+)/i,
+    ruby: /(?:^|\/)ruby:([^\s@]+)/i,
+    go: /(?:^|\/)golang:([^\s@]+)/i,
+    java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):([^\s@]+)/i,
+    rust: /(?:^|\/)rust:([^\s@]+)/i,
+  };
+  const out: RuntimeDeclaration[] = [];
+  for (const [i, line] of content.split('\n').entries()) {
+    const from = /^\s*FROM\s+(?:--platform=\S+\s+)?(\S+)/i.exec(line)?.[1];
+    if (!from) continue;
+    const tag = images[runtime].exec(from)?.[1];
+    const requirement = tag ? numericRuntimeTag(tag) : null;
+    if (requirement) out.push({ file: path, line: i + 1, requirement });
+  }
+  return out;
+}
+
+function rubyGemfileDeclarations(path: string, content: string): RuntimeDeclaration[] {
+  const out: RuntimeDeclaration[] = [];
+  for (const [i, line] of content.split('\n').entries()) {
+    const match = /^\s*ruby\s+(['"])([^'"]+)\1/.exec(line);
+    if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
+  }
+  return out;
+}
+
+function rubyGemspecDeclarations(path: string, content: string): RuntimeDeclaration[] {
+  const out: RuntimeDeclaration[] = [];
+  for (const [i, line] of content.split('\n').entries()) {
+    const match = /\.required_ruby_version\s*=\s*(['"])([^'"]+)\1/.exec(line);
+    if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
+  }
+  return out;
+}
+
+function goModDeclarations(path: string, content: string): RuntimeDeclaration[] {
+  const out: RuntimeDeclaration[] = [];
+  for (const [i, line] of content.split('\n').entries()) {
+    const match = /^\s*(go|toolchain)\s+(?:go)?(\d+(?:\.\d+){0,3})\s*(?:\/\/.*)?$/.exec(line);
+    if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
+  }
+  return out;
+}
+
+function mavenJavaDeclarations(path: string, content: string): RuntimeDeclaration[] {
+  const out: RuntimeDeclaration[] = [];
+  const pattern = /<(?:maven\.compiler\.(?:release|source|target)|java\.version)>\s*([^<${}]+?)\s*<\//g;
+  for (const match of content.matchAll(pattern)) {
+    const requirement = javaVersion(match[1]!);
+    if (!requirement) continue;
+    out.push({ file: path, line: content.slice(0, match.index).split('\n').length, requirement });
+  }
+  const compilerBlocks = content.match(/<plugin>[\s\S]*?<artifactId>maven-compiler-plugin<\/artifactId>[\s\S]*?<\/plugin>/g) ?? [];
+  for (const block of compilerBlocks) {
+    for (const match of block.matchAll(/<(?:release|source|target)>\s*([^<${}]+?)\s*<\//g)) {
+      const requirement = javaVersion(match[1]!);
+      if (!requirement) continue;
+      const blockStart = content.indexOf(block);
+      out.push({ file: path, line: content.slice(0, blockStart + match.index).split('\n').length, requirement });
+    }
+  }
+  return dedupeDeclarations(out);
+}
+
+function gradleJavaDeclarations(path: string, content: string): RuntimeDeclaration[] {
+  const out: RuntimeDeclaration[] = [];
+  const patterns = [
+    /JavaLanguageVersion\.of\(\s*(\d+)\s*\)/,
+    /(?:sourceCompatibility|targetCompatibility)\s*=\s*(?:JavaVersion\.VERSION_)?['"]?(\d+(?:\.\d+)*)/,
+  ];
+  for (const [i, line] of content.split('\n').entries()) {
+    for (const pattern of patterns) {
+      const requirement = javaVersion(pattern.exec(line)?.[1] ?? '');
+      if (requirement) out.push({ file: path, line: i + 1, requirement });
+    }
+  }
+  return dedupeDeclarations(out);
+}
+
+function javaVersion(raw: string): string | null {
+  const numeric = numericRuntimeTag(raw.replace(/_/g, '.'));
+  return numeric?.startsWith('1.') ? numeric.slice(2) : numeric;
+}
+
+function tomlPackageValue(content: string, key: string): { line: number; requirement: string } | null {
+  let inPackage = false;
+  for (const [i, line] of content.split('\n').entries()) {
+    const table = /^\s*\[([^\]]+)\]\s*$/.exec(line);
+    if (table) {
+      inPackage = table[1] === 'package';
+      continue;
+    }
+    if (!inPackage) continue;
+    const match = new RegExp(`^\\s*${key.replace('-', '\\-')}\\s*=\\s*['"]([^'"]+)['"]`).exec(line);
+    if (match?.[1]) return { line: i + 1, requirement: match[1] };
+  }
+  return null;
+}
+
+function isCiPath(path: string): boolean {
+  return /^\.github\/workflows\/.+\.ya?ml$/i.test(path) || /^\.(?:gitlab-ci|circleci)(?:\/|\.|$)/i.test(path);
+}
+
+function ciDeclarations(path: string, content: string, runtime: RuntimeName): RuntimeDeclaration[] {
+  const fields: Record<RuntimeName, RegExp> = {
+    node: /\bnode-version\s*:\s*['"]?([^\s'"#]+)/i,
+    python: /\bpython-version\s*:\s*['"]?([^\s'"#]+)/i,
+    ruby: /\bruby-version\s*:\s*['"]?([^\s'"#]+)/i,
+    go: /\bgo-version\s*:\s*['"]?([^\s'"#]+)/i,
+    java: /\bjava-version\s*:\s*['"]?([^\s'"#]+)/i,
+    rust: /\btoolchain\s*:\s*['"]?([^\s'"#]+)/i,
+  };
+  const out: RuntimeDeclaration[] = [];
+  for (const [i, line] of content.split('\n').entries()) {
+    const raw = fields[runtime].exec(line)?.[1];
+    if (!raw || /[${}]/.test(raw)) continue;
+    const requirement = numericRuntimeTag(raw);
+    if (requirement) out.push({ file: path, line: i + 1, requirement });
+  }
+  return out;
+}
+
+function lineValue(content: string, pattern: RegExp): { line: number; requirement: string } | null {
+  for (const [i, line] of content.split('\n').entries()) {
+    const requirement = pattern.exec(line)?.[1];
+    if (requirement) return { line: i + 1, requirement };
+  }
+  return null;
+}
+
+function numericRuntimeTag(raw: string): string | null {
+  const match = /(?:^|[-_])v?(\d+(?:[._]\d+){0,3})/.exec(raw.trim());
+  return match?.[1]?.replace(/_/g, '.') ?? null;
+}
+
+function normalizeSemverRange(raw: string): string | null {
+  const normalized = raw
+    .trim()
+    .replace(/^~>\s*/, '~')
+    .replace(/^(?:ruby-|go|rust-)?v(?=\d)/i, '')
+    .replace(/^(?:temurin|corretto|openjdk)[-_](?=\d)/i, '')
+    .replace(/_/g, '.');
+  return semver.validRange(normalized, { loose: true });
+}
+
+function dedupeDeclarations(declarations: readonly RuntimeDeclaration[]): RuntimeDeclaration[] {
+  const seen = new Set<string>();
+  return declarations.filter((declaration) => {
+    const key = `${declaration.file}:${declaration.line}:${declaration.requirement}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /**
@@ -96,9 +300,15 @@ export function findNodeDeclarations(
   member?: string,
   allMembers?: readonly string[],
 ): RuntimeDeclaration[] {
+  return findRuntimeDeclarations(files, 'node', member, allMembers);
+}
+
+function findNodeDeclarationsIn(
+  files: readonly { path: string; content: string }[],
+): RuntimeDeclaration[] {
   const out: RuntimeDeclaration[] = [];
 
-  for (const { path, content } of scopedTo(files, member, allMembers)) {
+  for (const { path, content } of files) {
     if (!isRuntimeConfigPath(path)) continue;
     const base = (path.split('/').pop() ?? '').toLowerCase();
 
@@ -114,13 +324,8 @@ export function findNodeDeclarations(
       continue;
     }
 
-    if (base.startsWith('dockerfile')) {
-      const lines = content.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        const match = /^\s*FROM\s+node:([^\s@]+)/i.exec(lines[i]!);
-        const tag = match?.[1]?.split('-')[0];
-        if (tag) out.push({ file: path, line: i + 1, requirement: tag });
-      }
+    if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
+      out.push(...containerDeclarations(path, content, 'node'));
       continue;
     }
 
@@ -132,14 +337,8 @@ export function findNodeDeclarations(
       continue;
     }
 
-    if (/^\.github\/workflows\/.+\.ya?ml$/.test(path)) {
-      const lines = content.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        const match = /node-version\s*:\s*['"]?([^\s'"#]+)['"]?/i.exec(lines[i]!);
-        const requirement = match?.[1];
-        if (!requirement || /[${}]/.test(requirement)) continue;
-        out.push({ file: path, line: i + 1, requirement });
-      }
+    if (isCiPath(path)) {
+      out.push(...ciDeclarations(path, content, 'node'));
     }
   }
 
@@ -271,9 +470,15 @@ export function findPythonDeclarations(
   member?: string,
   allMembers?: readonly string[],
 ): RuntimeDeclaration[] {
+  return findRuntimeDeclarations(files, 'python', member, allMembers);
+}
+
+function findPythonDeclarationsIn(
+  files: readonly { path: string; content: string }[],
+): RuntimeDeclaration[] {
   const out: RuntimeDeclaration[] = [];
 
-  for (const { path, content } of scopedTo(files, member, allMembers)) {
+  for (const { path, content } of files) {
     if (!isRuntimeConfigPath(path)) continue;
     const base = (path.split('/').pop() ?? '').toLowerCase();
 
@@ -323,7 +528,15 @@ export function findPythonDeclarations(
         const match = /^\s*(python|python3)\s+([^\s#]+)/i.exec(line);
         if (match?.[2]) out.push({ file: path, line: i + 1, requirement: match[2] });
       }
+      continue;
     }
+
+    if (base.startsWith('dockerfile') || base.startsWith('containerfile')) {
+      out.push(...containerDeclarations(path, content, 'python'));
+      continue;
+    }
+
+    if (isCiPath(path)) out.push(...ciDeclarations(path, content, 'python'));
   }
 
   return out;

@@ -307,7 +307,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
         const relevant = breakingChanges.filter((b) => ids.has(b.dependency) && b.workspace === member);
         if (relevant.length === 0) continue;
         impactSites.push(
-          ...localize(relevant, changesHere, index, files, { logger, member, moduleMaps }),
+          ...localize(relevant, changesHere, index, files, { logger, member, members, moduleMaps }),
         );
       }
 

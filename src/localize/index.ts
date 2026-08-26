@@ -84,6 +84,8 @@ export interface LocalizeOptions {
    * boundary still resolves — only the sites are scoped.
    */
   member?: string;
+  /** Every workspace member, used to keep runtime declarations out of siblings. */
+  members?: readonly string[];
   /**
    * Module names read from the published artefacts, keyed by `moduleMapKey`.
    *
@@ -110,7 +112,7 @@ export function localize(
   files: readonly SourceFile[],
   options: LocalizeOptions,
 ): ImpactSite[] {
-  const { logger, maxSitesPerChange = 100, member, moduleMaps, maxReExportDepth = 3 } = options;
+  const { logger, maxSitesPerChange = 100, member, members, moduleMaps, maxReExportDepth = 3 } = options;
 
   const contentByPath = new Map(files.map((f) => [f.path, f.content]));
   const indexByPath = new Map(index.files.map((f) => [f.path, f]));
@@ -154,7 +156,7 @@ export function localize(
     // matches comments and documentation, which is a pure false positive — the
     // fix lives in CI config, engine fields, and container images.
     if (change.kind === 'runtime-requirement') {
-      sites.push(...inMember(localizeRuntimeRequirement(change, contentByPath), member));
+      sites.push(...localizeRuntimeRequirement(change, contentByPath, member, members));
       continue;
     }
 
@@ -326,13 +328,15 @@ function inMember(sites: readonly ImpactSite[], member: string | undefined): Imp
 function localizeRuntimeRequirement(
   change: BreakingChange,
   contentByPath: Map<string, string>,
+  member?: string,
+  allMembers?: readonly string[],
 ): ImpactSite[] {
   const runtime = change.runtime?.runtime;
   const requirement = change.runtime?.requirement;
   if (!runtime || !requirement) return [];
 
   const files = [...contentByPath].map(([path, content]) => ({ path, content }));
-  const declarations = findRuntimeDeclarations(files, runtime);
+  const declarations = findRuntimeDeclarations(files, runtime, member, allMembers);
   const compatibility = checkRuntimeCompatibility(runtime, declarations, requirement);
   return compatibility
     .filter((declaration) => declaration.verdict !== 'compatible')
@@ -875,17 +879,13 @@ function searchFiles(
 
     for (const symbol of change.symbols) {
       const derivedOwner = ownerForDerivedSymbol(change, symbol);
-      // A bare member retained as a search candidate is useful for aliases and
-      // destructuring, but it is not identity by itself. It becomes actionable
-      // only when this file explicitly binds the qualified owner from the
-      // dependency. This prevents `TouchListWrapper.StateError` from becoming
-      // Dart core `StateError`, and `basic_cstring_view.c_str` from becoming
-      // every unrelated C++ string call.
-      if (
-        derivedOwner &&
-        !importedNames.has(symbol) &&
-        (isPrimitiveLeaf(symbol) || !relevantImports.some((record) => record.bindings.includes(derivedOwner)))
-      ) continue;
+      const ownerBindings = derivedOwner
+        ? bindingsForOwner(derivedOwner, relevantImports, content, inherited?.inherited)
+        : new Set<string>();
+      const receiverBindings = derivedOwner
+        ? receiversConstructedFrom(content, ownerBindings)
+        : new Set<string>();
+      const dependencyOwnedReceivers = new Set([...ownerBindings, ...receiverBindings]);
 
       const matcher = invocationOnly ? invocationMatcherFor(symbol) : matcherFor(symbol);
       if (!matcher) continue;
@@ -931,7 +931,15 @@ function searchFiles(
         // What is written immediately before the match decides whether it is a
         // use of this dependency at all, and neither rule can be expressed in
         // the matcher because both are about a *different* name.
-        if (hit && qualifiedByAnother(searchable, hit.index, importedNames, foreignNames, locallyDefined, candidate.language)) {
+        if (hit && qualifiedByAnother(
+          searchable,
+          hit.index,
+          importedNames,
+          foreignNames,
+          locallyDefined,
+          candidate.language,
+          dependencyOwnedReceivers,
+        )) {
           continue;
         }
         if (hit && isAtomLiteral(searchable, hit.index, candidate.language)) continue;
@@ -953,6 +961,23 @@ function searchFiles(
         const resolvedByPath =
           root !== undefined &&
           (importedNames.has(root) || importedNames.has('*') || matchesImportName(root, names));
+
+        // Surface diffs retain a bare leaf beside a qualified member so direct
+        // imports and destructuring can still be found. The leaf itself is not
+        // ownership evidence. Keep it only when this occurrence is directly
+        // imported, inherited through a re-export, qualified by the imported
+        // owner (including an alias/module path), or reached through a receiver
+        // constructed from that owner. This is name-agnostic: `find`, `open`,
+        // `parse`, and every future generic leaf follow the same rule.
+        let resolvedByOwner = false;
+        if (derivedOwner && !importedNames.has(symbol)) {
+          const inheritedLeaf = inherited?.inherited.has(symbol) ?? false;
+          const ownerOnPath =
+            root !== undefined &&
+            (ownerBindings.has(root) || receiverBindings.has(root) || Boolean(chain?.some((part) => ownerBindings.has(part))));
+          if (!inheritedLeaf && !ownerOnPath) continue;
+          resolvedByOwner = ownerOnPath;
+        }
 
         // `this.render()`, `self.render()`, `super.render()` — a member of the
         // enclosing object, which no import ever binds. This is the single
@@ -983,7 +1008,7 @@ function searchFiles(
           importedNames.has(symbol.split('.')[0] ?? symbol) ||
           importedNames.has('*');
         const resolvable = !symbol.includes('.') && !livesInStringLiteral(symbol);
-        if (bindingsEnumerated && resolvable && !bound && !resolvedByPath) continue;
+        if (bindingsEnumerated && resolvable && !bound && !resolvedByPath && !resolvedByOwner) continue;
 
         // The compiler's answer, reached without a compiler: this call passes
         // arguments the new signature still accepts, in positions whose type
@@ -997,7 +1022,7 @@ function searchFiles(
         // file provably bound from the dependency. `chain` is absent only for
         // an unqualified match, and for the call-opens-on-next-line fallback,
         // where there is no match index on this line to read a receiver from.
-        const unboundReceiver = root !== undefined && !resolvedByPath;
+        const unboundReceiver = root !== undefined && !resolvedByPath && !resolvedByOwner;
 
         sites.push({
           breakingChangeId: change.id,
@@ -1013,7 +1038,7 @@ function searchFiles(
           // absent is honest there, since a fix plan must not invent a
           // position Drift never established.
           ...(hit ? { column: hit.index, matchedText: hit[0] } : {}),
-          confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited, unboundReceiver),
+          confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited, unboundReceiver, resolvedByOwner),
         });
       }
     }
@@ -1267,11 +1292,13 @@ function qualifiedByAnother(
   foreignNames: ReadonlySet<string>,
   locallyDefined: ReadonlySet<string>,
   language: FileIndex['language'],
+  dependencyOwnedReceivers: ReadonlySet<string> = new Set(),
 ): boolean {
   const receiver = receiverChainOf(line, at, language)?.at(-1);
   if (!receiver) return false;
   // A receiver this file bound from *this* dependency is the opposite signal.
   if (importedNames.has(receiver) || importedNames.has('*')) return false;
+  if (dependencyOwnedReceivers.has(receiver)) return false;
   return foreignNames.has(receiver) || locallyDefined.has(receiver);
 }
 
@@ -1406,6 +1433,10 @@ function matcherFor(symbol: string): RegExp | null {
   return new RegExp(`${leading}${escaped}${trailing}`);
 }
 
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /** The owner of a qualified symbol when `symbol` is a derived bare leaf. */
 function ownerForDerivedSymbol(change: BreakingChange, symbol: string): string | undefined {
   if (symbol.includes('.') || symbol.includes('::')) return undefined;
@@ -1417,8 +1448,39 @@ function ownerForDerivedSymbol(change: BreakingChange, symbol: string): string |
   return undefined;
 }
 
-function isPrimitiveLeaf(symbol: string): boolean {
-  return /^(?:u?int(?:8|16|32|64|max|ptr)?_t|size_t|ssize_t|ptrdiff_t|wchar_t|char\d*_t)$/.test(symbol);
+function bindingsForOwner(
+  owner: string,
+  imports: readonly ImportRecord[],
+  content: string,
+  inherited: ReadonlySet<string> | undefined,
+): Set<string> {
+  const bindings = new Set<string>();
+  if (inherited?.has(owner)) bindings.add(owner);
+
+  const lines = content.split('\n');
+  for (const record of imports) {
+    if (record.bindings.includes(owner) || record.bindings.includes('*')) bindings.add(owner);
+    const line = lines[record.line - 1] ?? '';
+    const alias = new RegExp(`\\b${escapeRegExp(owner)}\\s+as\\s+([A-Za-z_$][\\w$]*)`).exec(line)?.[1];
+    if (alias) bindings.add(alias);
+  }
+  return bindings;
+}
+
+function receiversConstructedFrom(content: string, owners: ReadonlySet<string>): Set<string> {
+  const receivers = new Set<string>();
+  for (const owner of owners) {
+    const escaped = escapeRegExp(owner);
+    const patterns = [
+      new RegExp(`\\b(?:const|let|var|final|auto)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:new\\s+)?${escaped}\\s*[({]`, 'g'),
+      new RegExp(`^\\s*([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}\\s*\\(`, 'gm'),
+      new RegExp(`\\b${escaped}(?:\\s*<[^;=(){}]+>)?\\s+([A-Za-z_$][\\w$]*)\\s*(?:[({;=])`, 'g'),
+    ];
+    for (const pattern of patterns) {
+      for (const match of content.matchAll(pattern)) if (match[1]) receivers.add(match[1]);
+    }
+  }
+  return receivers;
 }
 
 /**
@@ -1469,6 +1531,7 @@ function confidenceFor(
   indirect: boolean,
   inherited: ReadonlySet<string> | undefined,
   unboundReceiver: boolean,
+  resolvedByOwner = false,
 ): Confidence {
   const root = symbol.split('.')[0] ?? symbol;
 
@@ -1484,6 +1547,8 @@ function confidenceFor(
   if (importedNames.has(symbol) || importedNames.has(root) || importedNames.has('*')) {
     return 'high';
   }
+
+  if (resolvedByOwner) return 'high';
 
   // A member access on a receiver this file did not bind from the dependency
   // — `dirs.find(...)` in a file that merely happens to import `zod` too —
