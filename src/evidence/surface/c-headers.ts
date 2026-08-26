@@ -478,18 +478,115 @@ function aggregateMembers(body: string, keyword: string): string[] {
  * comparing equal.
  */
 function canonicalOperator(line: string): string | null {
-  const match =
-    /\boperator\s*(\[\]|\(\)|new(?:\[\])?|delete(?:\[\])?|<=>|->\*?|<<=?|>>=?|==|!=|<=|>=|&&|\|\||\+\+|--|[+\-*/%&|^]=?|[<>=!~,]|(?:[\w:]+(?:\s*<[^;()]*>)?[\s*&]*))\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept(?:\([^)]*\))?)?\s*(?:[;{=]|$)/.exec(
-      line,
-    );
-  if (!match) return null;
+  const operatorAt = line.search(/\boperator\b/);
+  if (operatorAt < 0) return null;
 
-  const token = collapse(match[1]!);
-  const suffix = match[3] ? ' const' : '';
-  const symbolic = /^(?:\[\]|\(\)|new(?:\[\])?|delete(?:\[\])?|<=>|->\*?|<<=?|>>=?|==|!=|<=|>=|&&|\|\||\+\+|--|[+\-*/%&|^]=?|[<>=!~,])$/.test(token);
-  return symbolic
-    ? `operator${token}(${parameterTypes(match[2]!)})${suffix}`
-    : `operator ${token}${suffix}`;
+  const declaration = line.slice(operatorAt + 'operator'.length).trimStart();
+  const parsedName = operatorName(declaration);
+  if (!parsedName) return null;
+
+  let cursor = parsedName.end;
+  while (/\s/.test(declaration[cursor] ?? '')) cursor++;
+  if (declaration[cursor] !== '(') return null;
+  const parameters = balancedRange(declaration, cursor);
+  if (!parameters) return null;
+
+  const suffix = operatorQualifiers(declaration.slice(parameters.end + 1));
+  const name = parsedName.conversion
+    ? `operator ${parsedName.name}`
+    : /^[A-Za-z]/.test(parsedName.name)
+      ? `operator ${parsedName.name}(${parameterTypes(parameters.content)})`
+      : `operator${parsedName.name}(${parameterTypes(parameters.content)})`;
+  return `${name}${suffix}`;
+}
+
+interface ParsedOperatorName {
+  name: string;
+  end: number;
+  conversion: boolean;
+}
+
+/** Every overloadable operator name whose identity is not a conversion type. */
+const SYMBOLIC_OPERATORS = [
+  '<=>', '->*', '<<=', '>>=', 'new[]', 'delete[]', '()', '[]', '->', '<<', '>>',
+  '==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=', '-=', '*=', '/=', '%=',
+  '^=', '&=', '|=', 'co_await', 'new', 'delete', '+', '-', '*', '/', '%', '^', '&',
+  '|', '~', '!', '=', '<', '>', ',',
+] as const;
+
+function operatorName(text: string): ParsedOperatorName | null {
+  // User-defined literals are spelled both `operator "" _suffix` and
+  // `operator""_suffix` in real headers. The suffix is part of the operator
+  // name and must not be confused with a conversion target.
+  const literal = /^""\s*([A-Za-z_]\w*)/.exec(text);
+  if (literal) return { name: `""${literal[1]}`, end: literal[0].length, conversion: false };
+
+  for (const candidate of SYMBOLIC_OPERATORS) {
+    const pattern = candidate === 'new[]'
+      ? /^new\s*\[\]/
+      : candidate === 'delete[]'
+        ? /^delete\s*\[\]/
+        : null;
+    const matched = pattern?.exec(text)?.[0] ?? (text.startsWith(candidate) ? candidate : null);
+    if (!matched) continue;
+    if (/^[A-Za-z_]/.test(candidate) && /[A-Za-z0-9_]/.test(text[matched.length] ?? '')) continue;
+    return { name: candidate, end: matched.length, conversion: false };
+  }
+
+  // Everything else up to the declaration's parameter list is a conversion
+  // target (`bool`, `const Widget &`, `ns::type<T>`). Angle brackets are
+  // allowed here; the first top-level parenthesis starts the mandatory empty
+  // conversion-operator parameter list.
+  let angleDepth = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (ch === '<') angleDepth++;
+    else if (ch === '>' && angleDepth > 0) angleDepth--;
+    else if (ch === '(' && angleDepth === 0) {
+      const target = collapse(text.slice(0, i));
+      return target ? { name: target, end: i, conversion: true } : null;
+    }
+  }
+  return null;
+}
+
+function balancedRange(text: string, open: number): { content: string; end: number } | null {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')') {
+      depth--;
+      if (depth === 0) return { content: text.slice(open + 1, i), end: i };
+    }
+  }
+  return null;
+}
+
+/** Canonical cv/ref/exception qualifiers; each changes overload availability. */
+function operatorQualifiers(raw: string): string {
+  const suffix = raw
+    .replace(/\s*(?:;|\{.*|=\s*(?:0|delete|default)\s*;?)\s*$/, '')
+    .trim();
+  const qualifiers: string[] = [];
+  if (/\bconst\b/.test(suffix)) qualifiers.push('const');
+  if (/\bvolatile\b/.test(suffix)) qualifiers.push('volatile');
+
+  const ref = /(&&|&)\s*(?=$|\b(?:noexcept|override|final|requires)\b)/.exec(suffix)?.[1];
+  if (ref) qualifiers.push(ref);
+
+  const noexceptAt = suffix.search(/\bnoexcept\b/);
+  if (noexceptAt >= 0) {
+    let end = noexceptAt + 'noexcept'.length;
+    while (/\s/.test(suffix[end] ?? '')) end++;
+    if (suffix[end] === '(') {
+      const expression = balancedRange(suffix, end);
+      qualifiers.push(expression ? `noexcept(${collapse(expression.content)})` : 'noexcept');
+    } else {
+      qualifiers.push('noexcept');
+    }
+  }
+
+  return qualifiers.length > 0 ? ` ${qualifiers.join(' ')}` : '';
 }
 
 /**
@@ -524,6 +621,16 @@ function parseDeclaration(statement: string, namespacePath: readonly string[] = 
   }
 
   const functionText = stripDeclarationPrefixes(text);
+  const operator = canonicalOperator(functionText);
+  if (operator) {
+    return {
+      name: qualify(namespacePath, operator),
+      kind: 'function',
+      signature: operator,
+      members: [],
+      requiredMembers: [],
+    };
+  }
   const fn =
     /^((?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|class\s+)*[\w:]+(?:\s*<[^>]*>)?[\s*&]+)(\w+)\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept)?\s*[;{]$/.exec(
       functionText,
@@ -595,11 +702,21 @@ function parameterTypes(params: string): string {
       const stripped = withoutDefault.replace(/\s*\[[^\]]*\]\s*$/, '');
       const tokens = stripped.split(/(?<=[\s*&])/);
       if (tokens.length < 2) return stripped;
+      const last = /\b(\w+)\s*$/.exec(stripped)?.[1];
+      if (last && TYPE_ONLY_WORDS.has(last)) return stripped;
+      const words = stripped.match(/\b\w+\b/g) ?? [];
+      if (words.length === 2 && TYPE_PREFIX_WORDS.has(words[0]!)) return stripped;
       const withoutName = stripped.replace(/\b\w+\s*$/, '').trim();
       return withoutName || stripped;
     })
     .join(', ');
 }
+
+const TYPE_ONLY_WORDS = new Set([
+  'void', 'bool', 'char', 'wchar_t', 'char8_t', 'char16_t', 'char32_t', 'short',
+  'int', 'long', 'float', 'double', 'signed', 'unsigned', 'const', 'volatile',
+]);
+const TYPE_PREFIX_WORDS = new Set(['struct', 'class', 'enum', 'union', 'const', 'volatile', 'signed', 'unsigned', 'short', 'long']);
 
 /** Split on commas that are not inside `<>` or `()`. */
 function splitParameters(params: string): string[] {
