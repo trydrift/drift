@@ -147,8 +147,6 @@ function validateCompatibilityEvidence(candidate, recordingName) {
   }
 }
 
-const RUNTIME_STATES = ['compatible', 'incompatible', 'partial', 'unknown'];
-
 /**
  * The structural half of the runtime invariant, checked against the state the
  * engine recorded rather than against the sentences it rendered.
@@ -173,6 +171,7 @@ const RUNTIME_STATES = ['compatible', 'incompatible', 'partial', 'unknown'];
  * text search.
  */
 function validateRuntimeCompatibilityState(candidate, recordingName) {
+  const RUNTIME_STATES = ['compatible', 'incompatible', 'partial', 'unknown'];
   const state = candidate.runtimeCompatibility ?? null;
   const analyses = candidate.runtimeAnalyses ?? [];
   const where = `${recordingName}: ${candidate.name}`;

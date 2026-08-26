@@ -6,10 +6,10 @@
   "language": "PHP",
   "repo": "https://github.com/guzzle/guzzle",
   "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
-  "capturedAt": "2026-08-26T14:18:25.813Z",
+  "capturedAt": "2026-08-26T15:35:04.868Z",
   "commit": "7b7b04a0f5a548bfe9ced4b56f5661deee229ac3",
-  "engine": "c9251e00f8425c00",
-  "durationMs": 790,
+  "engine": "3e09713b12576214",
+  "durationMs": 3228,
   "packagesChecked": 10,
   "manifests": [
     "composer.json",
@@ -21,7 +21,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 105,
+      "at": 336,
       "phase": "Looking for manifests",
       "detail": "guzzle/guzzle",
       "done": 0,
@@ -29,7 +29,7 @@
     },
     {
       "type": "progress",
-      "at": 114,
+      "at": 342,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -37,7 +37,7 @@
     },
     {
       "type": "progress",
-      "at": 116,
+      "at": 345,
       "phase": "Reading manifest",
       "detail": "composer.json",
       "done": 0,
@@ -45,7 +45,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 348,
       "candidate": {
         "id": "composer.json#guzzlehttp/promises@3.0.2",
         "name": "guzzlehttp/promises",
@@ -63,6 +63,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -73,7 +75,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 348,
       "candidate": {
         "id": "composer.json#guzzlehttp/psr7@3.1.0",
         "name": "guzzlehttp/psr7",
@@ -91,6 +93,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -101,7 +105,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 348,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -119,6 +123,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -129,7 +135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 348,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -147,6 +153,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -157,7 +165,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 348,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -175,6 +183,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -185,7 +195,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 348,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -203,6 +213,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -213,7 +225,7 @@
     },
     {
       "type": "progress",
-      "at": 117,
+      "at": 349,
       "phase": "Reading manifest",
       "detail": "vendor-bin/composer-normalize/composer.json",
       "done": 0,
@@ -221,7 +233,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 349,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -239,6 +251,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -249,7 +263,7 @@
     },
     {
       "type": "progress",
-      "at": 117,
+      "at": 349,
       "phase": "Reading manifest",
       "detail": "vendor-bin/php-cs-fixer/composer.json",
       "done": 0,
@@ -257,7 +271,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 117,
+      "at": 350,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -275,6 +289,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -285,7 +301,7 @@
     },
     {
       "type": "progress",
-      "at": 117,
+      "at": 350,
       "phase": "Reading manifest",
       "detail": "vendor-bin/phpstan/composer.json",
       "done": 0,
@@ -293,7 +309,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 350,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -311,6 +327,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -321,7 +339,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 350,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -339,6 +357,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -349,7 +369,7 @@
     },
     {
       "type": "progress",
-      "at": 118,
+      "at": 350,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -357,7 +377,7 @@
     },
     {
       "type": "progress",
-      "at": 118,
+      "at": 350,
       "phase": "Checking registries",
       "detail": "10 direct dependencies",
       "done": 0,
@@ -365,7 +385,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 350,
       "candidate": {
         "id": "composer.json#guzzlehttp/promises@3.0.2",
         "name": "guzzlehttp/promises",
@@ -383,6 +403,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -393,7 +415,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 350,
       "candidate": {
         "id": "composer.json#guzzlehttp/psr7@3.1.0",
         "name": "guzzlehttp/psr7",
@@ -411,6 +433,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -421,7 +445,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 350,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -439,6 +463,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -449,7 +475,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 351,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -467,6 +493,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -477,7 +505,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 351,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -495,6 +523,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -505,7 +535,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 351,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -523,6 +553,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -533,7 +565,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 351,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -551,6 +583,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -561,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 351,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -579,6 +613,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -589,7 +625,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 351,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -607,6 +643,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -617,7 +655,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 351,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -635,6 +673,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -645,7 +685,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 182,
+      "at": 923,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -663,6 +703,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -673,7 +715,7 @@
     },
     {
       "type": "progress",
-      "at": 182,
+      "at": 923,
       "phase": "Outdated",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 1,
@@ -681,33 +723,20 @@
     },
     {
       "type": "candidate-drop",
-      "at": 182,
+      "at": 924,
       "id": "composer.json#guzzlehttp/promises@3.0.2"
     },
     {
       "type": "progress",
-      "at": 182,
+      "at": 924,
       "phase": "Up to date",
       "detail": "guzzlehttp/promises@3.0.2",
       "done": 2,
       "total": 10
     },
     {
-      "type": "candidate-drop",
-      "at": 183,
-      "id": "composer.json#guzzlehttp/psr7@3.1.0"
-    },
-    {
-      "type": "progress",
-      "at": 183,
-      "phase": "Up to date",
-      "detail": "guzzlehttp/psr7@3.1.0",
-      "done": 3,
-      "total": 10
-    },
-    {
       "type": "candidate-upsert",
-      "at": 183,
+      "at": 924,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -725,6 +754,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -735,51 +766,28 @@
     },
     {
       "type": "progress",
-      "at": 183,
+      "at": 924,
       "phase": "Outdated",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
+      "done": 3,
+      "total": 10
+    },
+    {
+      "type": "candidate-drop",
+      "at": 925,
+      "id": "composer.json#guzzlehttp/psr7@3.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 925,
+      "phase": "Up to date",
+      "detail": "guzzlehttp/psr7@3.1.0",
       "done": 4,
       "total": 10
     },
     {
       "type": "candidate-upsert",
-      "at": 184,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php80@1.25.0",
-        "name": "symfony/polyfill-php80",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.25.0",
-        "latest": "1.37.0",
-        "selected": "1.37.0",
-        "safeLatest": "1.37.0",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 184,
-      "phase": "Outdated",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 5,
-      "total": 10
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 184,
+      "at": 925,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -797,6 +805,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -807,20 +817,58 @@
     },
     {
       "type": "progress",
-      "at": 184,
+      "at": 925,
       "phase": "Outdated",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 5,
+      "total": 10
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 926,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php80@1.25.0",
+        "name": "symfony/polyfill-php80",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.25.0",
+        "latest": "1.37.0",
+        "selected": "1.37.0",
+        "safeLatest": "1.37.0",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 926,
+      "phase": "Outdated",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 6,
       "total": 10
     },
     {
       "type": "candidate-drop",
-      "at": 186,
+      "at": 927,
       "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0"
     },
     {
       "type": "progress",
-      "at": 186,
+      "at": 927,
       "phase": "Up to date",
       "detail": "ergebnis/composer-normalize@2.52.0",
       "done": 7,
@@ -828,43 +876,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 186,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.5",
-        "selected": "2.0.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 186,
-      "phase": "Outdated",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 8,
-      "total": 10
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 192,
+      "at": 933,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -882,6 +894,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -892,15 +906,53 @@
     },
     {
       "type": "progress",
-      "at": 192,
+      "at": 933,
       "phase": "Outdated",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
+      "done": 8,
+      "total": 10
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 934,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.5",
+        "selected": "2.0.5",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 934,
+      "phase": "Outdated",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 9,
       "total": 10
     },
     {
       "type": "candidate-upsert",
-      "at": 196,
+      "at": 938,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -918,6 +970,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -928,7 +982,7 @@
     },
     {
       "type": "progress",
-      "at": 196,
+      "at": 938,
       "phase": "Outdated",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 10,
@@ -936,7 +990,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -944,7 +998,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -962,6 +1016,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -972,7 +1028,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Checking package metadata",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -980,7 +1036,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -998,6 +1054,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1008,7 +1066,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -1016,7 +1074,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1034,6 +1092,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1044,7 +1104,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -1052,7 +1112,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1070,6 +1130,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1080,7 +1142,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1088,7 +1150,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1106,6 +1168,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1116,7 +1180,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1124,7 +1188,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1142,6 +1206,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1152,7 +1218,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -1160,7 +1226,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -1178,6 +1244,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1188,7 +1256,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Checking package metadata",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -1196,7 +1264,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -1214,6 +1282,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1224,7 +1294,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -1232,7 +1302,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -1250,6 +1320,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1260,7 +1332,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Checking package metadata",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -1268,7 +1340,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -1286,6 +1358,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1296,7 +1370,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 939,
       "phase": "Reading release notes and changelog",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -1304,7 +1378,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 939,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -1322,6 +1396,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1332,7 +1408,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 940,
       "phase": "Checking package metadata",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -1340,7 +1416,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 940,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -1358,6 +1434,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1368,7 +1446,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 940,
       "phase": "Reading release notes and changelog",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -1376,7 +1454,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 940,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -1394,6 +1472,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1404,7 +1484,7 @@
     },
     {
       "type": "progress",
-      "at": 197,
+      "at": 940,
       "phase": "Checking package metadata",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -1412,7 +1492,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 197,
+      "at": 940,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -1430,6 +1510,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1440,7 +1522,7 @@
     },
     {
       "type": "progress",
-      "at": 198,
+      "at": 940,
       "phase": "Checking repository status",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -1448,7 +1530,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 198,
+      "at": 940,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1466,6 +1548,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1476,7 +1560,7 @@
     },
     {
       "type": "progress",
-      "at": 198,
+      "at": 940,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -1484,7 +1568,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 198,
+      "at": 940,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1502,6 +1586,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1512,7 +1598,7 @@
     },
     {
       "type": "progress",
-      "at": 198,
+      "at": 940,
       "phase": "Checking security advisories",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -1520,7 +1606,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 198,
+      "at": 940,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1538,6 +1624,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1548,7 +1636,7 @@
     },
     {
       "type": "progress",
-      "at": 198,
+      "at": 940,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1556,7 +1644,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 198,
+      "at": 940,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1574,6 +1662,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1584,7 +1674,7 @@
     },
     {
       "type": "progress",
-      "at": 198,
+      "at": 941,
       "phase": "Checking repository status",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -1592,7 +1682,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 198,
+      "at": 941,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -1610,6 +1700,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1620,7 +1712,7 @@
     },
     {
       "type": "progress",
-      "at": 198,
+      "at": 941,
       "phase": "Checking repository status",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -1628,7 +1720,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 198,
+      "at": 941,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -1646,6 +1738,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1656,7 +1750,7 @@
     },
     {
       "type": "progress",
-      "at": 199,
+      "at": 941,
       "phase": "Checking repository status",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -1664,7 +1758,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 199,
+      "at": 941,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -1682,6 +1776,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1692,7 +1788,7 @@
     },
     {
       "type": "progress",
-      "at": 199,
+      "at": 941,
       "phase": "Checking repository status",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -1700,7 +1796,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 199,
+      "at": 941,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -1718,6 +1814,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1728,7 +1826,7 @@
     },
     {
       "type": "progress",
-      "at": 221,
+      "at": 990,
       "phase": "Checking security advisories",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -1736,7 +1834,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 221,
+      "at": 990,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1754,6 +1852,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1764,151 +1864,7 @@
     },
     {
       "type": "progress",
-      "at": 224,
-      "phase": "Checking security advisories",
-      "detail": "psr/http-client 1.0.0 → 1.0.3",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 224,
-      "candidate": {
-        "id": "composer.json#psr/http-client@1.0.0",
-        "name": "psr/http-client",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 224,
-      "phase": "Checking security advisories",
-      "detail": "psr/http-factory 1.0.0 → 1.1.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 225,
-      "candidate": {
-        "id": "composer.json#psr/http-factory@1.0.0",
-        "name": "psr/http-factory",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.0",
-        "latest": "1.0.0",
-        "selected": "1.0.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 225,
-      "phase": "Checking security advisories",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 225,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php80@1.25.0",
-        "name": "symfony/polyfill-php80",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.25.0",
-        "latest": "1.25.0",
-        "selected": "1.25.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 226,
-      "phase": "Checking security advisories",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
-      "done": 0,
-      "total": 7
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 226,
-      "candidate": {
-        "id": "composer.json#symfony/polyfill-php82@1.27.0",
-        "name": "symfony/polyfill-php82",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.27.0",
-        "latest": "1.27.0",
-        "selected": "1.27.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 228,
+      "at": 993,
       "phase": "Checking security advisories",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1916,7 +1872,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 228,
+      "at": 993,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1934,6 +1890,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1944,7 +1902,159 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 993,
+      "phase": "Checking security advisories",
+      "detail": "psr/http-client 1.0.0 → 1.0.3",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 993,
+      "candidate": {
+        "id": "composer.json#psr/http-client@1.0.0",
+        "name": "psr/http-client",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 993,
+      "phase": "Checking security advisories",
+      "detail": "psr/http-factory 1.0.0 → 1.1.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 993,
+      "candidate": {
+        "id": "composer.json#psr/http-factory@1.0.0",
+        "name": "psr/http-factory",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.0",
+        "latest": "1.0.0",
+        "selected": "1.0.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 994,
+      "phase": "Checking security advisories",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 994,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php80@1.25.0",
+        "name": "symfony/polyfill-php80",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.25.0",
+        "latest": "1.25.0",
+        "selected": "1.25.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 997,
+      "phase": "Checking security advisories",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 997,
+      "candidate": {
+        "id": "composer.json#symfony/polyfill-php82@1.27.0",
+        "name": "symfony/polyfill-php82",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.27.0",
+        "latest": "1.27.0",
+        "selected": "1.27.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1208,
       "phase": "Checking license",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -1952,7 +2062,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1208,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1970,6 +2080,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1980,7 +2092,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1208,
       "phase": "Checking license",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -1988,7 +2100,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1208,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2006,6 +2118,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2016,7 +2130,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1208,
       "phase": "Checking license",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -2024,7 +2138,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1208,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2042,6 +2156,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2052,7 +2168,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1208,
       "phase": "Checking license",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -2060,7 +2176,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1208,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -2078,6 +2194,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2088,7 +2206,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1208,
       "phase": "Checking license",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -2096,7 +2214,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1208,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -2114,6 +2232,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2124,7 +2244,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1208,
       "phase": "Checking license",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -2132,7 +2252,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1208,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -2150,6 +2270,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2160,7 +2282,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1208,
       "phase": "Checking license",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -2168,7 +2290,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1208,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -2186,6 +2308,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2196,7 +2320,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -2204,7 +2328,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2222,6 +2346,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2232,7 +2358,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Comparing the public API surface",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22 · 1 evidence source",
       "done": 0,
@@ -2240,7 +2366,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2258,6 +2384,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2268,7 +2396,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -2276,7 +2404,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2294,6 +2422,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2304,7 +2434,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9 · 1 evidence source",
       "done": 0,
@@ -2312,7 +2442,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2330,6 +2460,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2340,7 +2472,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -2348,7 +2480,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2366,6 +2498,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2376,7 +2510,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
       "done": 0,
@@ -2384,7 +2518,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2402,6 +2536,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2412,7 +2548,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -2420,7 +2556,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -2438,6 +2574,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2448,7 +2586,7 @@
     },
     {
       "type": "progress",
-      "at": 661,
+      "at": 1209,
       "phase": "Comparing the public API surface",
       "detail": "psr/http-client 1.0.0 → 1.0.3 · 1 evidence source",
       "done": 0,
@@ -2456,7 +2594,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 661,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -2474,6 +2612,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2484,7 +2624,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -2492,7 +2632,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -2510,6 +2650,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2520,7 +2662,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "Comparing the public API surface",
       "detail": "psr/http-factory 1.0.0 → 1.1.0 · 1 evidence source",
       "done": 0,
@@ -2528,7 +2670,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -2546,6 +2688,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2556,7 +2700,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "Reading release notes and changelog",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -2564,7 +2708,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -2582,6 +2726,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2592,7 +2738,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "Comparing the public API surface",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · 1 evidence source",
       "done": 0,
@@ -2600,7 +2746,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -2618,6 +2764,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2628,7 +2776,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "Reading release notes and changelog",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -2636,7 +2784,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -2654,6 +2802,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2664,7 +2814,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "Comparing the public API surface",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · 1 evidence source",
       "done": 0,
@@ -2672,7 +2822,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -2690,6 +2840,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2700,7 +2852,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "No breaking changes to look for",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -2708,7 +2860,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2726,6 +2878,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2736,7 +2890,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -2744,7 +2898,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2762,6 +2916,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2772,7 +2928,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -2780,7 +2936,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2798,6 +2954,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2808,7 +2966,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "No breaking changes to look for",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -2816,7 +2974,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -2834,6 +2992,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2844,7 +3004,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "No breaking changes to look for",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -2852,7 +3012,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -2870,6 +3030,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2880,7 +3042,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "No breaking changes to look for",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -2888,7 +3050,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -2906,6 +3068,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2916,7 +3080,7 @@
     },
     {
       "type": "progress",
-      "at": 662,
+      "at": 1209,
       "phase": "No breaking changes to look for",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -2924,7 +3088,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 662,
+      "at": 1209,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -2942,6 +3106,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2952,7 +3118,7 @@
     },
     {
       "type": "progress",
-      "at": 711,
+      "at": 3183,
       "phase": "Indexing your code",
       "detail": "140 files indexed · 10 direct dependencies to check",
       "done": 0,
@@ -2960,7 +3126,7 @@
     },
     {
       "type": "progress",
-      "at": 773,
+      "at": 3219,
       "phase": "Weighing what this upgrade is worth",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -2968,7 +3134,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 773,
+      "at": 3219,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2986,6 +3152,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2996,7 +3164,7 @@
     },
     {
       "type": "progress",
-      "at": 775,
+      "at": 3219,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -3004,7 +3172,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 775,
+      "at": 3219,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -3022,6 +3190,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3032,7 +3202,7 @@
     },
     {
       "type": "progress",
-      "at": 776,
+      "at": 3220,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -3040,7 +3210,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 776,
+      "at": 3220,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3058,6 +3228,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3068,7 +3240,7 @@
     },
     {
       "type": "progress",
-      "at": 778,
+      "at": 3221,
       "phase": "Weighing what this upgrade is worth",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -3076,7 +3248,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 778,
+      "at": 3221,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -3094,6 +3266,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3104,7 +3278,7 @@
     },
     {
       "type": "progress",
-      "at": 779,
+      "at": 3222,
       "phase": "Weighing what this upgrade is worth",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -3112,7 +3286,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 779,
+      "at": 3222,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -3130,6 +3304,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3140,7 +3316,7 @@
     },
     {
       "type": "progress",
-      "at": 780,
+      "at": 3222,
       "phase": "Weighing what this upgrade is worth",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -3148,7 +3324,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 780,
+      "at": 3222,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -3166,6 +3342,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3176,7 +3354,7 @@
     },
     {
       "type": "progress",
-      "at": 781,
+      "at": 3223,
       "phase": "Weighing what this upgrade is worth",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -3184,7 +3362,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 781,
+      "at": 3223,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -3202,6 +3380,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3212,7 +3392,7 @@
     },
     {
       "type": "progress",
-      "at": 782,
+      "at": 3224,
       "phase": "Checking maintenance signals",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22",
       "done": 0,
@@ -3220,7 +3400,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 782,
+      "at": 3224,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -3238,6 +3418,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3248,7 +3430,7 @@
     },
     {
       "type": "progress",
-      "at": 785,
+      "at": 3225,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9",
       "done": 0,
@@ -3256,7 +3438,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 785,
+      "at": 3225,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -3274,6 +3456,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3284,7 +3468,7 @@
     },
     {
       "type": "progress",
-      "at": 789,
+      "at": 3227,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -3292,7 +3476,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 789,
+      "at": 3227,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3310,6 +3494,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3320,7 +3506,7 @@
     },
     {
       "type": "progress",
-      "at": 789,
+      "at": 3227,
       "phase": "Checking maintenance signals",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 0,
@@ -3328,7 +3514,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 789,
+      "at": 3227,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -3346,6 +3532,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3356,7 +3544,7 @@
     },
     {
       "type": "progress",
-      "at": 789,
+      "at": 3227,
       "phase": "Checking maintenance signals",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 0,
@@ -3364,7 +3552,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 789,
+      "at": 3227,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -3382,6 +3570,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3392,7 +3582,7 @@
     },
     {
       "type": "progress",
-      "at": 789,
+      "at": 3227,
       "phase": "Checking maintenance signals",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
       "done": 0,
@@ -3400,7 +3590,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 789,
+      "at": 3227,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -3418,6 +3608,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3428,7 +3620,7 @@
     },
     {
       "type": "progress",
-      "at": 789,
+      "at": 3227,
       "phase": "Checking maintenance signals",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
       "done": 0,
@@ -3436,7 +3628,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 789,
+      "at": 3227,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -3454,6 +3646,8 @@
         "summary": "",
         "recommendation": null,
         "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3464,7 +3658,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 790,
+      "at": 3228,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -3482,6 +3676,8 @@
         "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 20 sets of release notes ([v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer 3.95.22 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3494,7 +3690,7 @@
     },
     {
       "type": "progress",
-      "at": 790,
+      "at": 3228,
       "phase": "Checked",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.22 · safe for your code · no breaking changes found — not deeply verified",
       "done": 1,
@@ -3502,7 +3698,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 790,
+      "at": 3228,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -3520,6 +3716,8 @@
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for phpstan/phpstan 2.2.9, and no source repository could be resolved for it.",
         "recommendation": "insufficient-evidence",
         "hasCompatibilityEvidence": false,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3532,7 +3730,7 @@
     },
     {
       "type": "progress",
-      "at": 790,
+      "at": 3228,
       "phase": "Checked",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.9 · not verified · drift found nothing it could check this version against",
       "done": 2,
@@ -3540,7 +3738,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 790,
+      "at": 3228,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3558,6 +3756,8 @@
         "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.0.5 release notes](https://github.com/phpstan/phpstan-deprecation-rules/releases/tag/2.0.5)) for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3570,7 +3770,7 @@
     },
     {
       "type": "progress",
-      "at": 790,
+      "at": 3228,
       "phase": "Checked",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
@@ -3578,7 +3778,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 790,
+      "at": 3228,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.0",
         "name": "psr/http-client",
@@ -3596,6 +3796,8 @@
         "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([1.0.3 release notes](https://github.com/php-fig/http-client/releases/tag/1.0.3), [ release notes](https://github.com/php-fig/http-client/releases/tag/1.0.2), [1.0.1 release notes](https://github.com/php-fig/http-client/releases/tag/1.0.1)) and the changelog ([CHANGELOG.md](https://github.com/php-fig/http-client/blob/master/CHANGELOG.md)) for psr/http-client 1.0.3 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3608,7 +3810,7 @@
     },
     {
       "type": "progress",
-      "at": 790,
+      "at": 3228,
       "phase": "Checked",
       "detail": "psr/http-client 1.0.0 → 1.0.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
@@ -3616,7 +3818,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 790,
+      "at": 3228,
       "candidate": {
         "id": "composer.json#psr/http-factory@1.0.0",
         "name": "psr/http-factory",
@@ -3634,6 +3836,8 @@
         "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes ([ release notes](https://github.com/php-fig/http-factory/releases/tag/1.1.0), [ release notes](https://github.com/php-fig/http-factory/releases/tag/1.0.2)) for psr/http-factory 1.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3646,7 +3850,7 @@
     },
     {
       "type": "progress",
-      "at": 790,
+      "at": 3228,
       "phase": "Checked",
       "detail": "psr/http-factory 1.0.0 → 1.1.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 5,
@@ -3654,7 +3858,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 790,
+      "at": 3228,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@1.25.0",
         "name": "symfony/polyfill-php80",
@@ -3672,6 +3876,8 @@
         "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes ([v1.37.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.37.0), [v1.36.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.36.0), [v1.35.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.35.0), [v1.34.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.34.0)) for symfony/polyfill-php80 1.37.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3684,7 +3890,7 @@
     },
     {
       "type": "progress",
-      "at": 790,
+      "at": 3228,
       "phase": "Checked",
       "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 6,
@@ -3692,7 +3898,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 790,
+      "at": 3228,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@1.27.0",
         "name": "symfony/polyfill-php82",
@@ -3710,6 +3916,8 @@
         "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes ([v1.38.1 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.38.1), [v1.37.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.37.0), [v1.36.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.36.0), [v1.35.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.35.0), [v1.34.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.34.0)) for symfony/polyfill-php82 1.38.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3722,7 +3930,7 @@
     },
     {
       "type": "progress",
-      "at": 790,
+      "at": 3228,
       "phase": "Checked",
       "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · safe for your code · no breaking changes found — not deeply verified",
       "done": 7,
@@ -3747,6 +3955,8 @@
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 20 sets of release notes ([v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer 3.95.22 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -3773,6 +3983,8 @@
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for phpstan/phpstan 2.2.9, and no source repository could be resolved for it.",
       "recommendation": "insufficient-evidence",
       "hasCompatibilityEvidence": false,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -3799,6 +4011,8 @@
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.0.5 release notes](https://github.com/phpstan/phpstan-deprecation-rules/releases/tag/2.0.5)) for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -3825,6 +4039,8 @@
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes ([1.0.3 release notes](https://github.com/php-fig/http-client/releases/tag/1.0.3), [ release notes](https://github.com/php-fig/http-client/releases/tag/1.0.2), [1.0.1 release notes](https://github.com/php-fig/http-client/releases/tag/1.0.1)) and the changelog ([CHANGELOG.md](https://github.com/php-fig/http-client/blob/master/CHANGELOG.md)) for psr/http-client 1.0.3 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -3851,6 +4067,8 @@
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes ([ release notes](https://github.com/php-fig/http-factory/releases/tag/1.1.0), [ release notes](https://github.com/php-fig/http-factory/releases/tag/1.0.2)) for psr/http-factory 1.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -3877,6 +4095,8 @@
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes ([v1.37.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.37.0), [v1.36.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.36.0), [v1.35.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.35.0), [v1.34.0 release notes](https://github.com/symfony/polyfill-php80/releases/tag/v1.34.0)) for symfony/polyfill-php80 1.37.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -3903,6 +4123,8 @@
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes ([v1.38.1 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.38.1), [v1.37.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.37.0), [v1.36.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.36.0), [v1.35.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.35.0), [v1.34.0 release notes](https://github.com/symfony/polyfill-php82/releases/tag/v1.34.0)) for symfony/polyfill-php82 1.38.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
