@@ -587,7 +587,7 @@ function scopedTo<T extends { path: string }>(
     if (owner === member) return true;
 
     const base = basenameOf(f.path);
-    if (shadowedBasenames.has(base) && HIERARCHICAL_VERSION_FILES.has(base)) return false;
+    if (shadowedBasenames.has(base)) return false;
 
     // No member directory claims this file at all — genuinely repository-
     // global by construction (or the root is not itself a registered member).
