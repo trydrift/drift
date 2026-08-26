@@ -1491,7 +1491,11 @@ function directlyImportsQualifiedLeaf(
       if (!record.bindings.includes(symbol)) continue;
       const paths = new Set([record.specifier, record.packageName, ...importKeys(record)].map(normalizedApiPath));
       if (paths.has(ownerPath)) return true;
-      for (const importedPath of paths) {
+      // Re-export inference needs the concrete module specifier. The package
+      // root is too broad: every internal path starts with `cryptography`, but
+      // importing one public function from that package does not make it an
+      // internal Backend method with the same leaf.
+      for (const importedPath of [normalizedApiPath(record.specifier)]) {
         if (!ownerPath.startsWith(`${importedPath}.`)) continue;
         const implementationSuffix = ownerPath.slice(importedPath.length + 1).split('.');
         // Static Python APIs are often re-exported one level above a lowercase
