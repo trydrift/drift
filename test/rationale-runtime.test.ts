@@ -461,6 +461,20 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
     }
   });
 
+  test('reuses container image recognition for GitLab and CircleCI YAML', () => {
+    const fixtures = [
+      ['node', '.gitlab-ci.yml', 'test:\n  image: node:18\n  script: npm test', '18'],
+      ['python', '.circleci/config.yml', 'jobs:\n  test:\n    docker:\n      - image: cimg/python:3.11\n', '3.11'],
+      ['java', '.gitlab-ci.yml', 'image: "eclipse-temurin:21-jdk"', '21'],
+    ] as const;
+
+    for (const [runtime, path, content, expected] of fixtures) {
+      assert.deepEqual(findRuntimeDeclarations([{ path, content }], runtime), [
+        { file: path, line: content.split('\n').findIndex((line) => line.includes('image:')) + 1, requirement: expected },
+      ]);
+    }
+  });
+
   test('runtime ownership never crosses version files or .tool-versions keys', () => {
     const files = [
       { path: '.nvmrc', content: '18' },

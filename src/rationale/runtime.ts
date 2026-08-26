@@ -128,23 +128,28 @@ function toolVersionDeclarations(path: string, content: string, runtime: Runtime
 }
 
 function containerDeclarations(path: string, content: string, runtime: RuntimeName): RuntimeDeclaration[] {
-  const images: Record<RuntimeName, RegExp> = {
-    node: /(?:^|\/)node:([^\s@]+)/i,
-    python: /(?:^|\/)python:([^\s@]+)/i,
-    ruby: /(?:^|\/)ruby:([^\s@]+)/i,
-    go: /(?:^|\/)golang:([^\s@]+)/i,
-    java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):([^\s@]+)/i,
-    rust: /(?:^|\/)rust:([^\s@]+)/i,
-  };
   const out: RuntimeDeclaration[] = [];
   for (const [i, line] of content.split('\n').entries()) {
     const from = /^\s*FROM\s+(?:--platform=\S+\s+)?(\S+)/i.exec(line)?.[1];
     if (!from) continue;
-    const tag = images[runtime].exec(from)?.[1];
-    const requirement = tag ? numericRuntimeTag(tag) : null;
+    const requirement = containerImageRequirement(from, runtime);
     if (requirement) out.push({ file: path, line: i + 1, requirement });
   }
   return out;
+}
+
+/** Read a runtime tag from a container image wherever that image is declared. */
+function containerImageRequirement(image: string, runtime: RuntimeName): string | null {
+  const images: Record<RuntimeName, RegExp> = {
+    node: /(?:^|\/)node:([^\s@'"#]+)/i,
+    python: /(?:^|\/)python:([^\s@'"#]+)/i,
+    ruby: /(?:^|\/)ruby:([^\s@'"#]+)/i,
+    go: /(?:^|\/)golang:([^\s@'"#]+)/i,
+    java: /(?:^|\/)(?:openjdk|eclipse-temurin|amazoncorretto):([^\s@'"#]+)/i,
+    rust: /(?:^|\/)rust:([^\s@'"#]+)/i,
+  };
+  const tag = images[runtime].exec(image)?.[1];
+  return tag ? numericRuntimeTag(tag) : null;
 }
 
 function rubyGemfileDeclarations(path: string, content: string): RuntimeDeclaration[] {
@@ -245,11 +250,22 @@ function ciDeclarations(path: string, content: string, runtime: RuntimeName): Ru
   const out: RuntimeDeclaration[] = [];
   for (const [i, line] of content.split('\n').entries()) {
     const raw = fields[runtime].exec(line)?.[1];
-    if (!raw || /[${}]/.test(raw)) continue;
-    const requirement = numericRuntimeTag(raw);
-    if (requirement) out.push({ file: path, line: i + 1, requirement });
+    if (raw && !/[${}]/.test(raw)) {
+      const requirement = numericRuntimeTag(raw);
+      if (requirement) out.push({ file: path, line: i + 1, requirement });
+    }
+
+    // GitLab CI and CircleCI put authoritative runtimes in container images
+    // rather than setup-action fields. Feed those image values through the
+    // same recognizer Dockerfiles use so image semantics have one source of
+    // truth across every config surface.
+    const image = /^\s*(?:-\s*)?image\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
+    if (image && !/[${}]/.test(image)) {
+      const requirement = containerImageRequirement(image, runtime);
+      if (requirement) out.push({ file: path, line: i + 1, requirement });
+    }
   }
-  return out;
+  return dedupeDeclarations(out);
 }
 
 function lineValue(content: string, pattern: RegExp): { line: number; requirement: string } | null {
