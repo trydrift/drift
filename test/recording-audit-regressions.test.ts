@@ -745,3 +745,136 @@ describe('recording audit: weak localization recommendations', () => {
     assert.equal(weak.recommendation, 'upgrade-after-review');
   });
 });
+
+describe('recording audit: compatibility evidence vs other evidence', () => {
+  const noFindings = {
+    dependency: 'pkg',
+    breakingChanges: [] as never,
+    impactSites: [] as never,
+    evidence: [] as never,
+    license: { verdict: 'ok' as const, statement: 'ok', introduced: [] },
+    gaps: ['No TypeScript declarations could be compared.', 'No changelog, release notes, or migration guide were reachable.', 'No source repository could be resolved.'],
+  };
+
+  test('a clean OSV check, a fine license, and an existing target version cannot make a major bump "safe to upgrade"', () => {
+    const result = assessUpgrade({
+      ...noFindings,
+      maintenance: { facts: [] },
+      security: { checked: true, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' },
+      surfaceCompared: false,
+      proseRead: 0,
+    });
+    assert.equal(result.recommendation, 'insufficient-evidence');
+    assert.notEqual(result.recommendation, 'safe-to-upgrade');
+  });
+
+  test('release notes that were actually fetched and read count as compatibility evidence even with no surface diff', () => {
+    const result = assessUpgrade({
+      ...noFindings,
+      gaps: [],
+      maintenance: { facts: [] },
+      security: { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' },
+      surfaceCompared: false,
+      proseRead: 18,
+    });
+    assert.notEqual(result.recommendation, 'insufficient-evidence');
+    assert.equal(result.confidence, 'medium', 'prose-only evidence stays capped below high confidence');
+  });
+
+  test('a security fix cannot upgrade to "safe" when compatibility could not be verified -- it stays a truthful "upgrade recommended"', () => {
+    const result = assessUpgrade({
+      ...noFindings,
+      maintenance: { facts: [] },
+      security: {
+        checked: true,
+        current: [{ id: 'GHSA-xxxx', severity: 'high' }] as never,
+        target: [],
+        resolved: [{ id: 'GHSA-xxxx', severity: 'high' }] as never,
+        introduced: [],
+        carried: [],
+        direction: 'improves',
+      },
+      surfaceCompared: false,
+      proseRead: 0,
+    });
+    assert.equal(result.recommendation, 'upgrade-recommended');
+    assert.notEqual(result.recommendation, 'safe-to-upgrade');
+  });
+
+  test('a computed surface diff finding nothing is still real compatibility evidence and can reach "safe to upgrade"', () => {
+    const result = assessUpgrade({
+      ...noFindings,
+      gaps: [],
+      maintenance: { facts: [] },
+      security: { checked: true, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' },
+      surfaceCompared: true,
+      proseRead: 0,
+    });
+    assert.equal(result.recommendation, 'safe-to-upgrade');
+  });
+});
+
+describe('recording audit: runtime rationale wording', () => {
+  const baseInput = {
+    dependency: 'pkg',
+    evidence: [] as never,
+    security: { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' as const },
+    maintenance: { facts: [] },
+    license: { verdict: 'ok' as const, statement: 'ok', introduced: [] },
+    gaps: [] as never,
+    surfaceCompared: true,
+  };
+
+  test('a runtime-only impact never says the repository "uses an API"', () => {
+    const runtimeChange = change({ id: 'runtime', kind: 'runtime-requirement', symbols: ['node'] });
+    const result = assessUpgrade({
+      ...baseInput,
+      breakingChanges: [runtimeChange] as never,
+      impactSites: [{
+        breakingChangeId: 'runtime',
+        file: '.nvmrc',
+        line: 1,
+        excerpt: '22',
+        matchedSymbol: 'node',
+        confidence: 'high',
+        runtimeVerdict: 'incompatible',
+      }] as never,
+    });
+    assert.ok(result.reasons.some((reason) => /runtime declaration/.test(reason)), result.reasons.join(' | '));
+    assert.ok(!result.reasons.some((reason) => /uses? an API|call site/i.test(reason)), result.reasons.join(' | '));
+  });
+
+  test('mixed API and runtime impact reports both kinds accurately without inflating the API count', () => {
+    const apiChange = change({ id: 'api', kind: 'removed-export' });
+    const runtimeChange = change({ id: 'runtime', kind: 'runtime-requirement', symbols: ['node'] });
+    const result = assessUpgrade({
+      ...baseInput,
+      breakingChanges: [apiChange, runtimeChange] as never,
+      impactSites: [
+        { breakingChangeId: 'api', file: 'src/a.ts', line: 1, excerpt: 'x()', matchedSymbol: 'x', confidence: 'high' },
+        { breakingChangeId: 'runtime', file: '.nvmrc', line: 1, excerpt: '22', matchedSymbol: 'node', confidence: 'high', runtimeVerdict: 'incompatible' },
+      ] as never,
+    });
+    assert.ok(result.reasons.some((reason) => /^1 place in 1 file uses an API/.test(reason)), result.reasons.join(' | '));
+    assert.ok(result.reasons.some((reason) => /1 runtime declaration.*does not satisfy/.test(reason)), result.reasons.join(' | '));
+  });
+
+  test('an unresolved (dynamic) runtime declaration is reported as unknown, not silently safe', () => {
+    const runtimeChange = change({ id: 'runtime', kind: 'runtime-requirement', symbols: ['node'] });
+    const result = assessUpgrade({
+      ...baseInput,
+      breakingChanges: [runtimeChange] as never,
+      impactSites: [{
+        breakingChangeId: 'runtime',
+        file: '.github/workflows/ci.yml',
+        line: 5,
+        excerpt: "node-version: ${{ matrix.node }}",
+        matchedSymbol: 'node',
+        confidence: 'low',
+        runtimeVerdict: 'unknown',
+      }] as never,
+    });
+    assert.notEqual(result.recommendation, 'safe-to-upgrade');
+    assert.ok(result.reasons.some((reason) => /dynamically defined/.test(reason)), result.reasons.join(' | '));
+  });
+});
