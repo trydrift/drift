@@ -208,6 +208,15 @@ export function describeStatus(status: DriftStatus): string {
     case 'findings': {
       const n = status.plan.breakingChanges.length;
       const files = new Set(status.plan.impactSites.map((s) => s.file)).size;
+      // A runtime requirement Drift could not resolve against this repository
+      // has no file to point at, so it reaches here as `files === 0` -- and
+      // "none used here" would then claim compatibility nothing established.
+      const runtimeUnresolved = (status.plan.rationale ?? []).some(
+        (entry) =>
+          entry.assessment.runtimeCompatibility === 'unknown' ||
+          entry.assessment.runtimeCompatibility === 'partial',
+      );
+      if (runtimeUnresolved) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, runtime compatibility unverified`;
       // An upstream breaking change that this repository never calls is not
       // something to put a number in front of a developer about.
       if (files === 0) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, none used here`;

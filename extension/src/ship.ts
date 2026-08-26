@@ -144,12 +144,20 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
 /** One package, its versions, and what the evidence said about it. */
 function describeUpgrade(candidate: UpgradeCandidate): string {
   const where = candidate.workspace ? ` in ${candidate.workspaceName ?? candidate.workspace}` : '';
+  // "None used here" is a positive claim about this repository, so it may not
+  // be made over an unresolved package-wide runtime condition -- which
+  // produces `impactCount === 0` exactly as a genuinely unaffected package
+  // does.
+  const runtimeUnresolved =
+    candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial';
   const verdict =
-    candidate.breakingCount === 0
+    candidate.breakingCount === 0 && !runtimeUnresolved
       ? 'no breaking changes found'
-      : candidate.impactCount === 0
-        ? `${count(candidate.breakingCount, 'breaking change')} upstream, none used here`
-        : `${count(candidate.breakingCount, 'breaking change')} upstream, ${count(candidate.impactCount, 'site')} affected here`;
+      : runtimeUnresolved
+        ? `${count(candidate.breakingCount, 'breaking change')} upstream, and runtime compatibility could not be established here`
+        : candidate.impactCount === 0
+          ? `${count(candidate.breakingCount, 'breaking change')} upstream, none used here`
+          : `${count(candidate.breakingCount, 'breaking change')} upstream, ${count(candidate.impactCount, 'site')} affected here`;
 
   return `${candidate.name} ${candidate.current} → ${targetVersion(candidate)}${where} (${verdict})`;
 }
