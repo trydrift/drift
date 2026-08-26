@@ -475,6 +475,22 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
     }
   });
 
+  test("GitLab's map-form image (`image:` / `name:`) is recognized like the scalar form", () => {
+    const content = 'test:\n  image:\n    name: node:18\n    entrypoint: [""]\n  script: npm test';
+    assert.deepEqual(findRuntimeDeclarations([{ path: '.gitlab-ci.yml', content }], 'node'), [
+      { file: '.gitlab-ci.yml', line: 3, requirement: '18' },
+    ]);
+  });
+
+  test('a `services:` entry never becomes the job runtime image, in either scalar or map form', () => {
+    const scalarService = 'test:\n  services:\n    - name: postgres:16\n  script: npm test';
+    assert.deepEqual(findRuntimeDeclarations([{ path: '.gitlab-ci.yml', content: scalarService }], 'node'), []);
+
+    // A bare `name:` job key (unrelated to any image) must not be mistaken for one either.
+    const bareName = 'test:\n  name: build-job\n  script: npm test';
+    assert.deepEqual(findRuntimeDeclarations([{ path: '.gitlab-ci.yml', content: bareName }], 'node'), []);
+  });
+
   test('runtime ownership never crosses version files or .tool-versions keys', () => {
     const files = [
       { path: '.nvmrc', content: '18' },

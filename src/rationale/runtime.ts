@@ -359,7 +359,8 @@ function ciDeclarations(path: string, content: string, runtime: RuntimeName): Ru
     rust: /\btoolchain\s*:\s*['"]?([^\s'"#]+)/i,
   };
   const out: RuntimeDeclaration[] = [];
-  for (const [i, line] of content.split('\n').entries()) {
+  const lines = content.split('\n');
+  for (const [i, line] of lines.entries()) {
     const raw = fields[runtime].exec(line)?.[1];
     if (raw && !/[${}]/.test(raw)) {
       const requirement = numericRuntimeTag(raw);
@@ -369,11 +370,36 @@ function ciDeclarations(path: string, content: string, runtime: RuntimeName): Ru
     // GitLab CI and CircleCI put authoritative runtimes in container images
     // rather than setup-action fields. Feed those image values through the
     // same recognizer Dockerfiles use so image semantics have one source of
-    // truth across every config surface.
+    // truth across every config surface. Covers both the inline scalar form
+    // (`image: node:18`, CircleCI's `- image: cimg/python:3.11`) and, below,
+    // GitLab's map form (`image:` followed by an indented `name:`).
     const image = /^\s*(?:-\s*)?image\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
     if (image && !/[${}]/.test(image)) {
       const requirement = containerImageRequirement(image, runtime);
       if (requirement) out.push({ file: path, line: i + 1, requirement });
+      continue;
+    }
+
+    // A bare `image:` with nothing after the colon starts a map — GitLab
+    // accepts `image: { name: ..., entrypoint: [...] }` written as a block.
+    // Only `name:` lines strictly inside *this* block count, so a sibling
+    // `services:` block's own `name:`/`image:` entries (auxiliary service
+    // containers, not the job's runtime) are never reached from here — they
+    // are outside this loop's indentation range entirely.
+    const bareImage = /^(\s*)(?:-\s*)?image\s*:\s*$/i.exec(line);
+    if (bareImage) {
+      const baseIndent = bareImage[1]!.length;
+      for (let j = i + 1; j < lines.length; j++) {
+        const next = lines[j]!;
+        if (!next.trim()) continue;
+        const indent = /^\s*/.exec(next)![0].length;
+        if (indent <= baseIndent) break;
+        const nameValue = /^\s*name\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
+        if (nameValue && !/[${}]/.test(nameValue)) {
+          const requirement = containerImageRequirement(nameValue, runtime);
+          if (requirement) out.push({ file: path, line: j + 1, requirement });
+        }
+      }
     }
   }
   return dedupeDeclarations(out);
