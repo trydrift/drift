@@ -6,10 +6,10 @@
   "language": "OCaml",
   "repo": "https://github.com/mirage/ocaml-cohttp",
   "blurb": "OCaml's HTTP library, from the MirageOS project.",
-  "capturedAt": "2026-08-26T12:44:40.672Z",
+  "capturedAt": "2026-08-26T14:18:32.879Z",
   "commit": "7b77cc7f18778967cbe3f64742290f268782fb7d",
-  "engine": "83814245ff81885d",
-  "durationMs": 965,
+  "engine": "c9251e00f8425c00",
+  "durationMs": 1985,
   "packagesChecked": 22,
   "manifests": [
     "dune-project",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 562,
+      "at": 1150,
       "phase": "Looking for manifests",
       "detail": "mirage/ocaml-cohttp",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 577,
+      "at": 1163,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 580,
+      "at": 1165,
       "phase": "Reading manifest",
       "detail": "dune-project",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -60,6 +60,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -70,7 +71,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -87,6 +88,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -97,7 +99,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -114,6 +116,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -124,7 +127,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -141,6 +144,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -151,7 +155,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -168,6 +172,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -178,7 +183,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -195,6 +200,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -205,7 +211,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -222,6 +228,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -232,7 +239,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -249,6 +256,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -259,7 +267,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -276,6 +284,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -286,7 +295,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -303,6 +312,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -313,7 +323,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -330,6 +340,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -340,7 +351,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -357,6 +368,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -367,7 +379,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -384,6 +396,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -394,7 +407,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -411,6 +424,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -421,7 +435,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -438,6 +452,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -448,7 +463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#conduit@8.0.0",
         "name": "conduit",
@@ -465,6 +480,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -475,7 +491,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#conduit-mirage@8.0.0",
         "name": "conduit-mirage",
@@ -492,6 +508,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -502,7 +519,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -519,6 +536,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -529,7 +547,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -546,6 +564,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -556,7 +575,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#curl@0.10.0",
         "name": "curl",
@@ -573,6 +592,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -583,7 +603,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -600,6 +620,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -610,7 +631,7 @@
     },
     {
       "type": "progress",
-      "at": 583,
+      "at": 1168,
       "phase": "Reading manifest",
       "detail": "cohttp-lwt-jsoo/test/package.json",
       "done": 0,
@@ -618,7 +639,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "cohttp-lwt-jsoo/test/package.json#xmlhttprequest@1.8.0",
         "name": "xmlhttprequest",
@@ -635,6 +656,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -645,7 +667,7 @@
     },
     {
       "type": "progress",
-      "at": 583,
+      "at": 1168,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -653,7 +675,7 @@
     },
     {
       "type": "progress",
-      "at": 583,
+      "at": 1168,
       "phase": "Checking registries",
       "detail": "22 direct dependencies",
       "done": 0,
@@ -661,7 +683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 583,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -678,6 +700,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -688,7 +711,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -705,6 +728,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -715,7 +739,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1168,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -732,6 +756,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -742,7 +767,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -759,6 +784,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -769,7 +795,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -786,6 +812,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -796,7 +823,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -813,6 +840,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -823,7 +851,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -840,6 +868,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -850,7 +879,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -867,6 +896,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -877,7 +907,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -894,6 +924,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -904,7 +935,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 584,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -921,6 +952,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -931,7 +963,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 585,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -948,6 +980,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -958,7 +991,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 585,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -975,6 +1008,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -985,7 +1019,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 585,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -1002,6 +1036,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1012,7 +1047,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 585,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -1029,6 +1064,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1039,7 +1075,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1169,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -1056,6 +1092,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1066,7 +1103,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1170,
       "candidate": {
         "id": "dune-project#conduit@8.0.0",
         "name": "conduit",
@@ -1083,6 +1120,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1093,7 +1131,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1170,
       "candidate": {
         "id": "dune-project#conduit-mirage@8.0.0",
         "name": "conduit-mirage",
@@ -1110,6 +1148,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1120,7 +1159,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1170,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -1137,6 +1176,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1147,7 +1187,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1170,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -1164,6 +1204,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1174,7 +1215,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1170,
       "candidate": {
         "id": "dune-project#curl@0.10.0",
         "name": "curl",
@@ -1191,6 +1232,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1201,7 +1243,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1170,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -1218,6 +1260,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1228,7 +1271,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 586,
+      "at": 1170,
       "candidate": {
         "id": "cohttp-lwt-jsoo/test/package.json#xmlhttprequest@1.8.0",
         "name": "xmlhttprequest",
@@ -1245,6 +1288,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1255,7 +1299,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 606,
+      "at": 1198,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -1272,6 +1316,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1282,7 +1327,7 @@
     },
     {
       "type": "progress",
-      "at": 606,
+      "at": 1198,
       "phase": "Outdated",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 1,
@@ -1290,42 +1335,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 606,
-      "candidate": {
-        "id": "dune-project#re@1.9.0",
-        "name": "re",
-        "ecosystem": "opam",
-        "manifestPath": "dune-project",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.9.0",
-        "latest": "1.14.0",
-        "selected": "1.14.0",
-        "safeLatest": "1.14.0",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 606,
-      "phase": "Outdated",
-      "detail": "re 1.9.0 → 1.14.0",
-      "done": 2,
-      "total": 22
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 606,
+      "at": 1199,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -1342,6 +1352,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1352,15 +1363,51 @@
     },
     {
       "type": "progress",
-      "at": 606,
+      "at": 1199,
       "phase": "Outdated",
       "detail": "base64 3.1.0 → 3.5.2",
+      "done": 2,
+      "total": 22
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1199,
+      "candidate": {
+        "id": "dune-project#re@1.9.0",
+        "name": "re",
+        "ecosystem": "opam",
+        "manifestPath": "dune-project",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.9.0",
+        "latest": "1.14.0",
+        "selected": "1.14.0",
+        "safeLatest": "1.14.0",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1199,
+      "phase": "Outdated",
+      "detail": "re 1.9.0 → 1.14.0",
       "done": 3,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 607,
+      "at": 1200,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -1377,6 +1424,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1387,7 +1435,7 @@
     },
     {
       "type": "progress",
-      "at": 607,
+      "at": 1200,
       "phase": "Outdated",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 4,
@@ -1395,7 +1443,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 607,
+      "at": 1200,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -1412,6 +1460,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1422,7 +1471,7 @@
     },
     {
       "type": "progress",
-      "at": 607,
+      "at": 1200,
       "phase": "Outdated",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 5,
@@ -1430,7 +1479,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 608,
+      "at": 1200,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -1447,6 +1496,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1457,7 +1507,7 @@
     },
     {
       "type": "progress",
-      "at": 608,
+      "at": 1200,
       "phase": "Outdated",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 6,
@@ -1465,77 +1515,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 608,
-      "candidate": {
-        "id": "dune-project#js_of_ocaml-ppx@3.3.0",
-        "name": "js_of_ocaml-ppx",
-        "ecosystem": "opam",
-        "manifestPath": "dune-project",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "3.3.0",
-        "latest": "6.4.1",
-        "selected": "6.4.1",
-        "safeLatest": "6.4.1",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 608,
-      "phase": "Outdated",
-      "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
-      "done": 7,
-      "total": 22
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 609,
-      "candidate": {
-        "id": "dune-project#js_of_ocaml-lwt@3.5.0",
-        "name": "js_of_ocaml-lwt",
-        "ecosystem": "opam",
-        "manifestPath": "dune-project",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "3.5.0",
-        "latest": "6.4.1",
-        "selected": "6.4.1",
-        "safeLatest": "6.4.1",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 609,
-      "phase": "Outdated",
-      "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
-      "done": 8,
-      "total": 22
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 609,
+      "at": 1201,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -1552,6 +1532,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1562,15 +1543,87 @@
     },
     {
       "type": "progress",
-      "at": 609,
+      "at": 1201,
       "phase": "Outdated",
       "detail": "async 0.16.0 → 0.17.0",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1201,
+      "candidate": {
+        "id": "dune-project#js_of_ocaml-lwt@3.5.0",
+        "name": "js_of_ocaml-lwt",
+        "ecosystem": "opam",
+        "manifestPath": "dune-project",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "3.5.0",
+        "latest": "6.4.1",
+        "selected": "6.4.1",
+        "safeLatest": "6.4.1",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1201,
+      "phase": "Outdated",
+      "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1202,
+      "candidate": {
+        "id": "dune-project#js_of_ocaml-ppx@3.3.0",
+        "name": "js_of_ocaml-ppx",
+        "ecosystem": "opam",
+        "manifestPath": "dune-project",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "3.3.0",
+        "latest": "6.4.1",
+        "selected": "6.4.1",
+        "safeLatest": "6.4.1",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1202,
+      "phase": "Outdated",
+      "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 9,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 609,
+      "at": 1202,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -1587,6 +1640,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1597,7 +1651,7 @@
     },
     {
       "type": "progress",
-      "at": 609,
+      "at": 1202,
       "phase": "Outdated",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 10,
@@ -1605,42 +1659,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 610,
-      "candidate": {
-        "id": "dune-project#conduit-async@1.2.0",
-        "name": "conduit-async",
-        "ecosystem": "opam",
-        "manifestPath": "dune-project",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.2.0",
-        "latest": "8.0.0",
-        "selected": "8.0.0",
-        "safeLatest": "8.0.0",
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 610,
-      "phase": "Outdated",
-      "detail": "conduit-async 1.2.0 → 8.0.0",
-      "done": 11,
-      "total": 22
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 610,
+      "at": 1202,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -1657,6 +1676,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1667,15 +1687,15 @@
     },
     {
       "type": "progress",
-      "at": 610,
+      "at": 1202,
       "phase": "Outdated",
       "detail": "core 0.13.0 → 0.17.2",
-      "done": 12,
+      "done": 11,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 610,
+      "at": 1203,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -1692,6 +1712,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1702,31 +1723,32 @@
     },
     {
       "type": "progress",
-      "at": 610,
+      "at": 1203,
       "phase": "Outdated",
       "detail": "core_unix 0.14.0 → 0.17.1",
-      "done": 13,
+      "done": 12,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 610,
+      "at": 1203,
       "candidate": {
-        "id": "dune-project#mirage-flow@2.0.0",
-        "name": "mirage-flow",
+        "id": "dune-project#conduit-async@1.2.0",
+        "name": "conduit-async",
         "ecosystem": "opam",
         "manifestPath": "dune-project",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.0.0",
-        "latest": "5.0.0",
-        "selected": "5.0.0",
-        "safeLatest": "5.0.0",
+        "current": "1.2.0",
+        "latest": "8.0.0",
+        "selected": "8.0.0",
+        "safeLatest": "8.0.0",
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1737,15 +1759,15 @@
     },
     {
       "type": "progress",
-      "at": 610,
+      "at": 1203,
       "phase": "Outdated",
-      "detail": "mirage-flow 2.0.0 → 5.0.0",
-      "done": 14,
+      "detail": "conduit-async 1.2.0 → 8.0.0",
+      "done": 13,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 611,
+      "at": 1203,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -1762,6 +1784,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1772,31 +1795,58 @@
     },
     {
       "type": "progress",
-      "at": 611,
+      "at": 1203,
       "phase": "Outdated",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
+      "done": 14,
+      "total": 22
+    },
+    {
+      "type": "candidate-drop",
+      "at": 1203,
+      "id": "dune-project#conduit@8.0.0"
+    },
+    {
+      "type": "progress",
+      "at": 1203,
+      "phase": "Up to date",
+      "detail": "conduit@8.0.0",
       "done": 15,
       "total": 22
     },
     {
+      "type": "candidate-drop",
+      "at": 1203,
+      "id": "dune-project#conduit-mirage@8.0.0"
+    },
+    {
+      "type": "progress",
+      "at": 1203,
+      "phase": "Up to date",
+      "detail": "conduit-mirage@8.0.0",
+      "done": 16,
+      "total": 22
+    },
+    {
       "type": "candidate-upsert",
-      "at": 611,
+      "at": 1203,
       "candidate": {
-        "id": "dune-project#cstruct@6.0.0",
-        "name": "cstruct",
+        "id": "dune-project#mirage-flow@2.0.0",
+        "name": "mirage-flow",
         "ecosystem": "opam",
         "manifestPath": "dune-project",
         "workspace": "",
         "workspaceName": null,
-        "current": "6.0.0",
-        "latest": "6.2.0",
-        "selected": "6.2.0",
-        "safeLatest": "6.2.0",
+        "current": "2.0.0",
+        "latest": "5.0.0",
+        "selected": "5.0.0",
+        "safeLatest": "5.0.0",
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1807,28 +1857,15 @@
     },
     {
       "type": "progress",
-      "at": 611,
+      "at": 1203,
       "phase": "Outdated",
-      "detail": "cstruct 6.0.0 → 6.2.0",
-      "done": 16,
-      "total": 22
-    },
-    {
-      "type": "candidate-drop",
-      "at": 611,
-      "id": "dune-project#conduit@8.0.0"
-    },
-    {
-      "type": "progress",
-      "at": 611,
-      "phase": "Up to date",
-      "detail": "conduit@8.0.0",
+      "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 17,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 611,
+      "at": 1203,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -1845,6 +1882,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1855,54 +1893,64 @@
     },
     {
       "type": "progress",
-      "at": 611,
+      "at": 1203,
       "phase": "Outdated",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 18,
       "total": 22
     },
     {
-      "type": "candidate-drop",
-      "at": 611,
-      "id": "dune-project#conduit-mirage@8.0.0"
+      "type": "candidate-upsert",
+      "at": 1204,
+      "candidate": {
+        "id": "dune-project#cstruct@6.0.0",
+        "name": "cstruct",
+        "ecosystem": "opam",
+        "manifestPath": "dune-project",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "6.0.0",
+        "latest": "6.2.0",
+        "selected": "6.2.0",
+        "safeLatest": "6.2.0",
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
     },
     {
       "type": "progress",
-      "at": 611,
-      "phase": "Up to date",
-      "detail": "conduit-mirage@8.0.0",
+      "at": 1204,
+      "phase": "Outdated",
+      "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 19,
       "total": 22
     },
     {
       "type": "candidate-drop",
-      "at": 611,
-      "id": "dune-project#curl@0.10.0"
-    },
-    {
-      "type": "progress",
-      "at": 611,
-      "phase": "Up to date",
-      "detail": "curl@0.10.0",
-      "done": 20,
-      "total": 22
-    },
-    {
-      "type": "candidate-drop",
-      "at": 612,
+      "at": 1204,
       "id": "cohttp-lwt-jsoo/test/package.json#xmlhttprequest@1.8.0"
     },
     {
       "type": "progress",
-      "at": 612,
+      "at": 1204,
       "phase": "Up to date",
       "detail": "xmlhttprequest@1.8.0",
-      "done": 21,
+      "done": 20,
       "total": 22
     },
     {
       "type": "candidate-upsert",
-      "at": 613,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -1919,6 +1967,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1929,15 +1978,28 @@
     },
     {
       "type": "progress",
-      "at": 613,
+      "at": 1205,
       "phase": "Outdated",
       "detail": "eio 0.12.0 → 1.5.0",
+      "done": 21,
+      "total": 22
+    },
+    {
+      "type": "candidate-drop",
+      "at": 1205,
+      "id": "dune-project#curl@0.10.0"
+    },
+    {
+      "type": "progress",
+      "at": 1205,
+      "phase": "Up to date",
+      "detail": "curl@0.10.0",
       "done": 22,
       "total": 22
     },
     {
       "type": "progress",
-      "at": 613,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -1945,7 +2007,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 613,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -1962,6 +2024,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -1972,7 +2035,7 @@
     },
     {
       "type": "progress",
-      "at": 613,
+      "at": 1205,
       "phase": "Checking package metadata",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -1980,7 +2043,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 613,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -1997,6 +2060,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2007,7 +2071,7 @@
     },
     {
       "type": "progress",
-      "at": 613,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -2015,7 +2079,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 613,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -2032,6 +2096,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2042,7 +2107,7 @@
     },
     {
       "type": "progress",
-      "at": 613,
+      "at": 1205,
       "phase": "Checking package metadata",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -2050,7 +2115,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 613,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -2067,6 +2132,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2077,7 +2143,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -2085,7 +2151,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -2102,6 +2168,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2112,7 +2179,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Checking package metadata",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -2120,7 +2187,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -2137,6 +2204,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2147,7 +2215,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -2155,7 +2223,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -2172,6 +2240,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2182,7 +2251,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Checking package metadata",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -2190,7 +2259,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -2207,6 +2276,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2217,7 +2287,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -2225,7 +2295,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -2242,6 +2312,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2252,7 +2323,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Checking package metadata",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -2260,7 +2331,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -2277,6 +2348,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2287,7 +2359,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -2295,7 +2367,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -2312,6 +2384,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2322,7 +2395,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Checking package metadata",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -2330,7 +2403,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -2347,6 +2420,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2357,7 +2431,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -2365,7 +2439,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -2382,6 +2456,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2392,7 +2467,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Checking package metadata",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -2400,7 +2475,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -2417,6 +2492,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2427,7 +2503,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1205,
       "phase": "Reading release notes and changelog",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -2435,7 +2511,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1205,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -2452,6 +2528,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2462,7 +2539,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking package metadata",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -2470,7 +2547,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -2487,6 +2564,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2497,7 +2575,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -2505,7 +2583,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -2522,6 +2600,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2532,7 +2611,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -2540,7 +2619,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -2557,6 +2636,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2567,7 +2647,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -2575,7 +2655,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -2592,6 +2672,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2602,7 +2683,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -2610,7 +2691,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -2627,6 +2708,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2637,7 +2719,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -2645,7 +2727,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -2662,6 +2744,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2672,7 +2755,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -2680,7 +2763,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -2697,6 +2780,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2707,7 +2791,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -2715,7 +2799,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -2732,6 +2816,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2742,7 +2827,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -2750,7 +2835,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -2767,6 +2852,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2777,7 +2863,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -2785,7 +2871,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -2802,6 +2888,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2812,7 +2899,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -2820,7 +2907,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -2837,6 +2924,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2847,7 +2935,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -2855,7 +2943,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -2872,6 +2960,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2882,7 +2971,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -2890,7 +2979,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -2907,6 +2996,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2917,7 +3007,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -2925,7 +3015,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -2942,6 +3032,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2952,7 +3043,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -2960,7 +3051,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -2977,6 +3068,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -2987,7 +3079,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking repository status",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -2995,7 +3087,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -3012,6 +3104,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3022,7 +3115,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking security advisories",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -3030,7 +3123,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -3047,6 +3140,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3057,7 +3151,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -3065,7 +3159,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -3082,6 +3176,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3092,7 +3187,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -3100,7 +3195,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -3117,6 +3212,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3127,7 +3223,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -3135,7 +3231,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -3152,6 +3248,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3162,7 +3259,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -3170,7 +3267,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -3187,6 +3284,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3197,7 +3295,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -3205,7 +3303,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -3222,6 +3320,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3232,7 +3331,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -3240,7 +3339,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -3257,6 +3356,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3267,7 +3367,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -3275,7 +3375,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -3292,6 +3392,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3302,7 +3403,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Checking license",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -3310,7 +3411,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -3327,6 +3428,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3337,7 +3439,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -3345,7 +3447,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -3362,6 +3464,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3372,7 +3475,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "async 0.16.0 → 0.17.0 · 1 evidence source",
       "done": 0,
@@ -3380,7 +3483,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -3397,6 +3500,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3407,7 +3511,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -3415,7 +3519,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -3432,6 +3536,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3442,7 +3547,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "base 0.16.0 → 0.17.3 · 1 evidence source",
       "done": 0,
@@ -3450,7 +3555,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 614,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -3467,6 +3572,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3477,7 +3583,7 @@
     },
     {
       "type": "progress",
-      "at": 614,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -3485,7 +3591,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -3502,6 +3608,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3512,7 +3619,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "base64 3.1.0 → 3.5.2 · 1 evidence source",
       "done": 0,
@@ -3520,7 +3627,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -3537,6 +3644,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3547,7 +3655,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -3555,7 +3663,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -3572,6 +3680,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3582,7 +3691,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "cmdliner 2.0.0 → 2.1.1 · 1 evidence source",
       "done": 0,
@@ -3590,7 +3699,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -3607,6 +3716,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3617,7 +3727,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -3625,7 +3735,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -3642,6 +3752,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3652,7 +3763,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "conduit-async 1.2.0 → 8.0.0 · 1 evidence source",
       "done": 0,
@@ -3660,7 +3771,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -3677,6 +3788,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3687,7 +3799,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -3695,7 +3807,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -3712,6 +3824,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3722,7 +3835,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "core 0.13.0 → 0.17.2 · 1 evidence source",
       "done": 0,
@@ -3730,7 +3843,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -3747,6 +3860,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3757,7 +3871,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -3765,7 +3879,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -3782,6 +3896,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3792,7 +3907,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "core_unix 0.14.0 → 0.17.1 · 1 evidence source",
       "done": 0,
@@ -3800,7 +3915,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -3817,6 +3932,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3827,7 +3943,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Reading release notes and changelog",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -3835,7 +3951,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -3852,6 +3968,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3862,7 +3979,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "Comparing the public API surface",
       "detail": "cstruct 6.0.0 → 6.2.0 · 1 evidence source",
       "done": 0,
@@ -3870,7 +3987,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -3887,6 +4004,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3897,7 +4015,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -3905,7 +4023,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -3922,6 +4040,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3932,7 +4051,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -3940,7 +4059,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -3957,6 +4076,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -3967,7 +4087,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -3975,7 +4095,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -3992,6 +4112,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4002,7 +4123,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -4010,7 +4131,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -4027,6 +4148,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4037,7 +4159,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -4045,7 +4167,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -4062,6 +4184,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4072,7 +4195,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -4080,7 +4203,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -4097,6 +4220,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4107,7 +4231,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -4115,7 +4239,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -4132,6 +4256,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4142,7 +4267,7 @@
     },
     {
       "type": "progress",
-      "at": 615,
+      "at": 1206,
       "phase": "No breaking changes to look for",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -4150,7 +4275,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 615,
+      "at": 1206,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -4167,6 +4292,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4177,7 +4303,7 @@
     },
     {
       "type": "progress",
-      "at": 925,
+      "at": 1934,
       "phase": "Indexing your code",
       "detail": "182 files indexed · 22 direct dependencies to check",
       "done": 0,
@@ -4185,7 +4311,7 @@
     },
     {
       "type": "progress",
-      "at": 953,
+      "at": 1959,
       "phase": "Weighing what this upgrade is worth",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -4193,7 +4319,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 953,
+      "at": 1959,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -4210,6 +4336,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4220,7 +4347,7 @@
     },
     {
       "type": "progress",
-      "at": 953,
+      "at": 1960,
       "phase": "Weighing what this upgrade is worth",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -4228,7 +4355,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 953,
+      "at": 1960,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -4245,6 +4372,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4255,7 +4383,7 @@
     },
     {
       "type": "progress",
-      "at": 954,
+      "at": 1960,
       "phase": "Weighing what this upgrade is worth",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -4263,7 +4391,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 954,
+      "at": 1960,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -4280,6 +4408,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4290,7 +4419,7 @@
     },
     {
       "type": "progress",
-      "at": 954,
+      "at": 1961,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -4298,7 +4427,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 954,
+      "at": 1961,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -4315,6 +4444,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4325,7 +4455,7 @@
     },
     {
       "type": "progress",
-      "at": 955,
+      "at": 1962,
       "phase": "Weighing what this upgrade is worth",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -4333,7 +4463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 955,
+      "at": 1962,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -4350,6 +4480,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4360,7 +4491,7 @@
     },
     {
       "type": "progress",
-      "at": 955,
+      "at": 1963,
       "phase": "Weighing what this upgrade is worth",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -4368,7 +4499,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 955,
+      "at": 1963,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -4385,6 +4516,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4395,7 +4527,7 @@
     },
     {
       "type": "progress",
-      "at": 956,
+      "at": 1963,
       "phase": "Weighing what this upgrade is worth",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -4403,7 +4535,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 956,
+      "at": 1963,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -4420,6 +4552,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4430,7 +4563,7 @@
     },
     {
       "type": "progress",
-      "at": 956,
+      "at": 1964,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -4438,7 +4571,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 956,
+      "at": 1964,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -4455,6 +4588,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4465,7 +4599,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
@@ -4473,7 +4607,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -4490,6 +4624,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4500,7 +4635,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
@@ -4508,7 +4643,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -4525,6 +4660,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4535,7 +4671,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
@@ -4543,7 +4679,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -4560,6 +4696,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4570,7 +4707,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
@@ -4578,7 +4715,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -4595,6 +4732,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4605,7 +4743,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
@@ -4613,7 +4751,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -4630,6 +4768,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4640,7 +4779,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
@@ -4648,7 +4787,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -4665,6 +4804,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4675,7 +4815,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
@@ -4683,7 +4823,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -4700,6 +4840,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4710,7 +4851,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checking maintenance signals",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
@@ -4718,7 +4859,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -4735,6 +4876,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4745,7 +4887,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#async@0.16.0",
         "name": "async",
@@ -4762,6 +4904,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for async 0.17.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4775,7 +4918,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "async 0.16.0 → 0.17.0 · not verified · drift found nothing it could check this version against",
       "done": 1,
@@ -4783,7 +4926,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#base@0.16.0",
         "name": "base",
@@ -4800,6 +4943,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for base 0.17.3, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4813,7 +4957,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "base 0.16.0 → 0.17.3 · not verified · drift found nothing it could check this version against",
       "done": 2,
@@ -4821,7 +4965,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#base64@3.1.0",
         "name": "base64",
@@ -4838,6 +4982,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for base64 3.5.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4851,7 +4996,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "base64 3.1.0 → 3.5.2 · not verified · drift found nothing it could check this version against",
       "done": 3,
@@ -4859,7 +5004,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#cmdliner@2.0.0",
         "name": "cmdliner",
@@ -4876,6 +5021,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for cmdliner 2.1.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4889,7 +5035,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "cmdliner 2.0.0 → 2.1.1 · not verified · drift found nothing it could check this version against",
       "done": 4,
@@ -4897,7 +5043,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#conduit-async@1.2.0",
         "name": "conduit-async",
@@ -4914,6 +5060,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for conduit-async 8.0.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4927,7 +5074,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "conduit-async 1.2.0 → 8.0.0 · not verified · drift found nothing it could check this version against",
       "done": 5,
@@ -4935,7 +5082,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#core@0.13.0",
         "name": "core",
@@ -4952,6 +5099,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for core 0.17.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -4965,7 +5113,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "core 0.13.0 → 0.17.2 · not verified · drift found nothing it could check this version against",
       "done": 6,
@@ -4973,7 +5121,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#core_unix@0.14.0",
         "name": "core_unix",
@@ -4990,6 +5138,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for core_unix 0.17.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5003,7 +5152,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "core_unix 0.14.0 → 0.17.1 · not verified · drift found nothing it could check this version against",
       "done": 7,
@@ -5011,7 +5160,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#cstruct@6.0.0",
         "name": "cstruct",
@@ -5028,6 +5177,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for cstruct 6.2.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5041,7 +5191,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Checked",
       "detail": "cstruct 6.0.0 → 6.2.0 · not verified · drift found nothing it could check this version against",
       "done": 8,
@@ -5049,7 +5199,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1965,
       "phase": "Reading release notes and changelog",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -5057,7 +5207,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1965,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -5074,6 +5224,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5084,7 +5235,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1966,
       "phase": "Checking package metadata",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -5092,7 +5243,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1966,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -5109,6 +5260,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5119,7 +5271,7 @@
     },
     {
       "type": "progress",
-      "at": 957,
+      "at": 1966,
       "phase": "Reading release notes and changelog",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -5127,7 +5279,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 957,
+      "at": 1966,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -5144,6 +5296,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5154,7 +5307,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1966,
       "phase": "Checking package metadata",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -5162,7 +5315,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1966,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -5179,6 +5332,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5189,7 +5343,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1966,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -5197,7 +5351,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1966,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -5214,6 +5368,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5224,7 +5379,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1966,
       "phase": "Checking package metadata",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -5232,7 +5387,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1966,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -5249,6 +5404,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5259,7 +5415,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1966,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -5267,7 +5423,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1966,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -5284,6 +5440,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5294,7 +5451,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1967,
       "phase": "Checking package metadata",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -5302,7 +5459,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1967,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -5319,6 +5476,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5329,7 +5487,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1967,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -5337,7 +5495,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1967,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -5354,6 +5512,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5364,7 +5523,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1967,
       "phase": "Checking package metadata",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -5372,7 +5531,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1968,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -5389,6 +5548,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5399,7 +5559,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1968,
       "phase": "Reading release notes and changelog",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -5407,7 +5567,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1968,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -5424,6 +5584,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5434,7 +5595,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1968,
       "phase": "Checking package metadata",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -5442,7 +5603,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1968,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -5459,6 +5620,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5469,7 +5631,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1968,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -5477,7 +5639,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1968,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -5494,6 +5656,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5504,7 +5667,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1968,
       "phase": "Checking package metadata",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -5512,7 +5675,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1968,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -5529,6 +5692,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5539,7 +5703,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1968,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -5547,7 +5711,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1968,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -5564,6 +5728,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5574,7 +5739,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1968,
       "phase": "Checking package metadata",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -5582,7 +5747,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1968,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -5599,6 +5764,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5609,7 +5775,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -5617,7 +5783,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -5634,6 +5800,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5644,7 +5811,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -5652,7 +5819,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -5669,6 +5836,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5679,7 +5847,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -5687,7 +5855,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -5704,6 +5872,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5714,7 +5883,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -5722,7 +5891,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -5739,6 +5908,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5749,7 +5919,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -5757,7 +5927,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -5774,6 +5944,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5784,7 +5955,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -5792,7 +5963,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -5809,6 +5980,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5819,7 +5991,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -5827,7 +5999,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -5844,6 +6016,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5854,7 +6027,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -5862,7 +6035,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -5879,6 +6052,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5889,7 +6063,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -5897,7 +6071,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -5914,6 +6088,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5924,7 +6099,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -5932,7 +6107,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -5949,6 +6124,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5959,7 +6135,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -5967,7 +6143,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -5984,6 +6160,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -5994,7 +6171,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -6002,7 +6179,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -6019,6 +6196,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6029,7 +6207,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -6037,7 +6215,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -6054,6 +6232,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6064,7 +6243,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -6072,7 +6251,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -6089,6 +6268,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6099,7 +6279,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking repository status",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -6107,7 +6287,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -6124,6 +6304,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6134,7 +6315,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking security advisories",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -6142,7 +6323,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -6159,6 +6340,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6169,7 +6351,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -6177,7 +6359,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -6194,6 +6376,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6204,7 +6387,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -6212,7 +6395,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -6229,6 +6412,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6239,7 +6423,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -6247,7 +6431,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -6264,6 +6448,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6274,7 +6459,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -6282,7 +6467,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -6299,6 +6484,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6309,7 +6495,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -6317,7 +6503,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -6334,6 +6520,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6344,7 +6531,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -6352,7 +6539,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -6369,6 +6556,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6379,7 +6567,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -6387,7 +6575,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -6404,6 +6592,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6414,7 +6603,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Checking license",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -6422,7 +6611,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -6439,6 +6628,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6449,7 +6639,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -6457,7 +6647,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -6474,6 +6664,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6484,7 +6675,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "eio 0.12.0 → 1.5.0 · 1 evidence source",
       "done": 8,
@@ -6492,7 +6683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -6509,6 +6700,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6519,7 +6711,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -6527,7 +6719,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -6544,6 +6736,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6554,7 +6747,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "ipaddr 5.6.0 → 5.6.2 · 1 evidence source",
       "done": 8,
@@ -6562,7 +6755,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -6579,6 +6772,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6589,7 +6783,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -6597,7 +6791,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -6614,6 +6808,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6624,7 +6819,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1 · 1 evidence source",
       "done": 8,
@@ -6632,7 +6827,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -6649,6 +6844,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6659,7 +6855,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -6667,7 +6863,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -6684,6 +6880,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6694,7 +6891,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1 · 1 evidence source",
       "done": 8,
@@ -6702,7 +6899,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -6719,6 +6916,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6729,7 +6927,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -6737,7 +6935,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -6754,6 +6952,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6764,7 +6963,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1 · 1 evidence source",
       "done": 8,
@@ -6772,7 +6971,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -6789,6 +6988,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6799,7 +6999,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -6807,7 +7007,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -6824,6 +7024,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6834,7 +7035,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "lwt 5.3.0 → 6.1.2 · 1 evidence source",
       "done": 8,
@@ -6842,7 +7043,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -6859,6 +7060,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6869,7 +7071,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -6877,7 +7079,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -6894,6 +7096,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6904,7 +7107,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "mirage-channel 4.0.0 → 5.0.0 · 1 evidence source",
       "done": 8,
@@ -6912,7 +7115,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -6929,6 +7132,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6939,7 +7143,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -6947,7 +7151,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1969,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -6964,6 +7168,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -6974,7 +7179,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1969,
       "phase": "Comparing the public API surface",
       "detail": "mirage-flow 2.0.0 → 5.0.0 · 1 evidence source",
       "done": 8,
@@ -6982,7 +7187,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -6999,6 +7204,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7009,7 +7215,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -7017,7 +7223,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -7034,6 +7240,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7044,7 +7251,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -7052,7 +7259,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 958,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -7069,6 +7276,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7079,7 +7287,7 @@
     },
     {
       "type": "progress",
-      "at": 958,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -7087,7 +7295,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -7104,6 +7312,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7114,7 +7323,7 @@
     },
     {
       "type": "progress",
-      "at": 959,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -7122,7 +7331,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -7139,6 +7348,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7149,7 +7359,7 @@
     },
     {
       "type": "progress",
-      "at": 959,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -7157,7 +7367,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -7174,6 +7384,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7184,7 +7395,7 @@
     },
     {
       "type": "progress",
-      "at": 959,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -7192,7 +7403,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -7209,6 +7420,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7219,7 +7431,7 @@
     },
     {
       "type": "progress",
-      "at": 959,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -7227,7 +7439,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -7244,6 +7456,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7254,7 +7467,7 @@
     },
     {
       "type": "progress",
-      "at": 959,
+      "at": 1970,
       "phase": "No breaking changes to look for",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -7262,7 +7475,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -7279,6 +7492,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7289,7 +7503,7 @@
     },
     {
       "type": "progress",
-      "at": 959,
+      "at": 1970,
       "phase": "Weighing what this upgrade is worth",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -7297,7 +7511,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1970,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -7314,6 +7528,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7324,7 +7539,7 @@
     },
     {
       "type": "progress",
-      "at": 959,
+      "at": 1971,
       "phase": "Weighing what this upgrade is worth",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -7332,7 +7547,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 959,
+      "at": 1971,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -7349,6 +7564,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7359,7 +7575,7 @@
     },
     {
       "type": "progress",
-      "at": 960,
+      "at": 1972,
       "phase": "Weighing what this upgrade is worth",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -7367,7 +7583,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 960,
+      "at": 1972,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -7384,6 +7600,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7394,7 +7611,7 @@
     },
     {
       "type": "progress",
-      "at": 960,
+      "at": 1973,
       "phase": "Weighing what this upgrade is worth",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -7402,7 +7619,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 960,
+      "at": 1973,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -7419,6 +7636,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7429,7 +7647,7 @@
     },
     {
       "type": "progress",
-      "at": 960,
+      "at": 1974,
       "phase": "Weighing what this upgrade is worth",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -7437,7 +7655,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 960,
+      "at": 1974,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -7454,6 +7672,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7464,7 +7683,7 @@
     },
     {
       "type": "progress",
-      "at": 961,
+      "at": 1979,
       "phase": "Weighing what this upgrade is worth",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -7472,7 +7691,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 961,
+      "at": 1979,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -7489,6 +7708,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7499,7 +7719,7 @@
     },
     {
       "type": "progress",
-      "at": 961,
+      "at": 1980,
       "phase": "Weighing what this upgrade is worth",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -7507,7 +7727,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 961,
+      "at": 1980,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -7524,6 +7744,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7534,7 +7755,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1980,
       "phase": "Weighing what this upgrade is worth",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -7542,7 +7763,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1980,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -7559,6 +7780,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7569,7 +7791,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
@@ -7577,7 +7799,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -7594,6 +7816,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7604,7 +7827,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
@@ -7612,7 +7835,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -7629,6 +7852,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7639,7 +7863,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
@@ -7647,7 +7871,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -7664,6 +7888,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7674,7 +7899,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
@@ -7682,7 +7907,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -7699,6 +7924,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7709,7 +7935,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
@@ -7717,7 +7943,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -7734,6 +7960,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7744,7 +7971,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
@@ -7752,7 +7979,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -7769,6 +7996,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7779,7 +8007,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
@@ -7787,7 +8015,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -7804,6 +8032,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7814,7 +8043,7 @@
     },
     {
       "type": "progress",
-      "at": 962,
+      "at": 1981,
       "phase": "Checking maintenance signals",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
@@ -7822,7 +8051,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 962,
+      "at": 1981,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -7839,6 +8068,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7849,7 +8079,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#eio@0.12.0",
         "name": "eio",
@@ -7866,6 +8096,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.5.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7879,7 +8110,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "eio 0.12.0 → 1.5.0 · not verified · drift found nothing it could check this version against",
       "done": 9,
@@ -7887,7 +8118,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#ipaddr@5.6.0",
         "name": "ipaddr",
@@ -7904,6 +8135,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for ipaddr 5.6.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7917,7 +8149,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "ipaddr 5.6.0 → 5.6.2 · not verified · drift found nothing it could check this version against",
       "done": 10,
@@ -7925,7 +8157,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#js_of_ocaml@3.3.0",
         "name": "js_of_ocaml",
@@ -7942,6 +8174,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for js_of_ocaml 6.4.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7955,7 +8188,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1 · not verified · drift found nothing it could check this version against",
       "done": 11,
@@ -7963,7 +8196,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#js_of_ocaml-lwt@3.5.0",
         "name": "js_of_ocaml-lwt",
@@ -7980,6 +8213,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for js_of_ocaml-lwt 6.4.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -7993,7 +8227,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1 · not verified · drift found nothing it could check this version against",
       "done": 12,
@@ -8001,7 +8235,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#js_of_ocaml-ppx@3.3.0",
         "name": "js_of_ocaml-ppx",
@@ -8018,6 +8252,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for js_of_ocaml-ppx 6.4.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8031,7 +8266,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1 · not verified · drift found nothing it could check this version against",
       "done": 13,
@@ -8039,7 +8274,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#lwt@5.3.0",
         "name": "lwt",
@@ -8056,6 +8291,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for lwt 6.1.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8069,7 +8305,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "lwt 5.3.0 → 6.1.2 · not verified · drift found nothing it could check this version against",
       "done": 14,
@@ -8077,7 +8313,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#mirage-channel@4.0.0",
         "name": "mirage-channel",
@@ -8094,6 +8330,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for mirage-channel 5.0.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8107,7 +8344,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "mirage-channel 4.0.0 → 5.0.0 · not verified · drift found nothing it could check this version against",
       "done": 15,
@@ -8115,7 +8352,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#mirage-flow@2.0.0",
         "name": "mirage-flow",
@@ -8132,6 +8369,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for mirage-flow 5.0.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8145,7 +8383,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checked",
       "detail": "mirage-flow 2.0.0 → 5.0.0 · not verified · drift found nothing it could check this version against",
       "done": 16,
@@ -8153,7 +8391,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8161,7 +8399,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8178,6 +8416,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8188,7 +8427,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking package metadata",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8196,7 +8435,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8213,6 +8452,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8223,7 +8463,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Reading release notes and changelog",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8231,7 +8471,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8248,6 +8488,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8258,7 +8499,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking package metadata",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8266,7 +8507,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8283,6 +8524,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8293,7 +8535,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking repository status",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8301,7 +8543,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8318,6 +8560,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8328,7 +8571,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking security advisories",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8336,7 +8579,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8353,6 +8596,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8363,7 +8607,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking repository status",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8371,7 +8615,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8388,6 +8632,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8398,7 +8643,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking security advisories",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8406,7 +8651,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8423,6 +8668,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8433,7 +8679,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking license",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8441,7 +8687,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8458,6 +8704,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8468,7 +8715,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Checking license",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8476,7 +8723,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1982,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8493,6 +8740,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8503,7 +8751,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1982,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8511,7 +8759,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1983,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8528,6 +8776,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8538,7 +8787,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1983,
       "phase": "Comparing the public API surface",
       "detail": "mirage-kv 6.0.1 → 6.1.1 · 1 evidence source",
       "done": 16,
@@ -8546,7 +8795,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1983,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8563,6 +8812,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8573,7 +8823,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1983,
       "phase": "Reading release notes and changelog",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8581,7 +8831,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1983,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8598,6 +8848,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8608,7 +8859,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1983,
       "phase": "Comparing the public API surface",
       "detail": "re 1.9.0 → 1.14.0 · 1 evidence source",
       "done": 16,
@@ -8616,7 +8867,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1983,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8633,6 +8884,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8643,7 +8895,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1983,
       "phase": "No breaking changes to look for",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8651,7 +8903,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1983,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8668,6 +8920,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8678,7 +8931,7 @@
     },
     {
       "type": "progress",
-      "at": 963,
+      "at": 1983,
       "phase": "No breaking changes to look for",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8686,7 +8939,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 963,
+      "at": 1983,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8703,6 +8956,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8713,7 +8967,7 @@
     },
     {
       "type": "progress",
-      "at": 964,
+      "at": 1983,
       "phase": "Weighing what this upgrade is worth",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8721,7 +8975,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 964,
+      "at": 1983,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8738,6 +8992,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8748,7 +9003,7 @@
     },
     {
       "type": "progress",
-      "at": 964,
+      "at": 1983,
       "phase": "Weighing what this upgrade is worth",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8756,7 +9011,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 964,
+      "at": 1984,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8773,6 +9028,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8783,7 +9039,7 @@
     },
     {
       "type": "progress",
-      "at": 965,
+      "at": 1984,
       "phase": "Checking maintenance signals",
       "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
@@ -8791,7 +9047,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 965,
+      "at": 1984,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8808,6 +9064,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8818,7 +9075,7 @@
     },
     {
       "type": "progress",
-      "at": 965,
+      "at": 1984,
       "phase": "Checking maintenance signals",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
@@ -8826,7 +9083,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 965,
+      "at": 1984,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8843,6 +9100,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8853,7 +9111,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 965,
+      "at": 1984,
       "candidate": {
         "id": "dune-project#mirage-kv@6.0.1",
         "name": "mirage-kv",
@@ -8870,6 +9128,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for mirage-kv 6.1.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8883,7 +9142,7 @@
     },
     {
       "type": "progress",
-      "at": 965,
+      "at": 1984,
       "phase": "Checked",
       "detail": "mirage-kv 6.0.1 → 6.1.1 · not verified · drift found nothing it could check this version against",
       "done": 17,
@@ -8891,7 +9150,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 965,
+      "at": 1984,
       "candidate": {
         "id": "dune-project#re@1.9.0",
         "name": "re",
@@ -8908,6 +9167,7 @@
         "risk": "none",
         "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for re 1.14.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
         "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -8921,7 +9181,7 @@
     },
     {
       "type": "progress",
-      "at": 965,
+      "at": 1984,
       "phase": "Checked",
       "detail": "re 1.9.0 → 1.14.0 · not verified · drift found nothing it could check this version against",
       "done": 18,
@@ -8945,6 +9205,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for async 0.17.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -8971,6 +9232,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for base 0.17.3, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -8997,6 +9259,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for base64 3.5.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9023,6 +9286,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for cmdliner 2.1.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9049,6 +9313,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for conduit-async 8.0.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9075,6 +9340,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for core 0.17.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9101,6 +9367,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for core_unix 0.17.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9127,6 +9394,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for cstruct 6.2.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9153,6 +9421,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.5.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9179,6 +9448,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for ipaddr 5.6.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9205,6 +9475,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for js_of_ocaml 6.4.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9231,6 +9502,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for js_of_ocaml-lwt 6.4.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9257,6 +9529,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for js_of_ocaml-ppx 6.4.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9283,6 +9556,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for lwt 6.1.2, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9309,6 +9583,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for mirage-channel 5.0.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9335,6 +9610,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for mirage-flow 5.0.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9361,6 +9637,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for mirage-kv 6.1.1, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -9387,6 +9664,7 @@
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for re 1.14.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
+      "hasCompatibilityEvidence": false,
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,

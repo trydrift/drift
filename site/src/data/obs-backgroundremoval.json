@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-08-26T12:44:45.420Z",
+  "capturedAt": "2026-08-26T14:18:34.167Z",
   "commit": "9384c55c0165b82661b17120a4259f0e198fd0c2",
-  "engine": "83814245ff81885d",
-  "durationMs": 4458,
+  "engine": "c9251e00f8425c00",
+  "durationMs": 1278,
   "packagesChecked": 4,
   "manifests": [
     "vcpkg.json",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 731,
+      "at": 324,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 743,
+      "at": 332,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 751,
+      "at": 333,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 751,
+      "at": 334,
       "phase": "Reading manifest",
       "detail": "pages/package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 341,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -68,6 +68,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -78,7 +79,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 342,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -95,6 +96,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -105,7 +107,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 342,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -122,6 +124,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -132,7 +135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 342,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -149,6 +152,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -159,7 +163,7 @@
     },
     {
       "type": "progress",
-      "at": 758,
+      "at": 342,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -167,7 +171,7 @@
     },
     {
       "type": "progress",
-      "at": 758,
+      "at": 342,
       "phase": "Checking registries",
       "detail": "4 direct dependencies",
       "done": 0,
@@ -175,7 +179,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 342,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -192,6 +196,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -202,7 +207,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 342,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -219,6 +224,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -229,7 +235,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 342,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -246,6 +252,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -256,7 +263,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 758,
+      "at": 342,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -273,6 +280,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -283,12 +291,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 797,
+      "at": 420,
       "id": "pages/package.json#pretty-bytes@7.1.1"
     },
     {
       "type": "progress",
-      "at": 797,
+      "at": 420,
       "phase": "Up to date",
       "detail": "pretty-bytes@7.1.1",
       "done": 1,
@@ -296,12 +304,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 807,
+      "at": 433,
       "id": "pages/package.json#@octokit/rest@22.0.1"
     },
     {
       "type": "progress",
-      "at": 807,
+      "at": 433,
       "phase": "Up to date",
       "detail": "@octokit/rest@22.0.1",
       "done": 2,
@@ -309,7 +317,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 893,
+      "at": 571,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -326,6 +334,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -336,7 +345,7 @@
     },
     {
       "type": "progress",
-      "at": 893,
+      "at": 571,
       "phase": "Outdated",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 3,
@@ -344,12 +353,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1210,
+      "at": 673,
       "id": "pages/package.json#typescript@7.0.2"
     },
     {
       "type": "progress",
-      "at": 1210,
+      "at": 673,
       "phase": "Up to date",
       "detail": "typescript@7.0.2",
       "done": 4,
@@ -357,7 +366,7 @@
     },
     {
       "type": "progress",
-      "at": 1211,
+      "at": 673,
       "phase": "Reading release notes and changelog",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -365,7 +374,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1211,
+      "at": 673,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -382,6 +391,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -392,7 +402,7 @@
     },
     {
       "type": "progress",
-      "at": 1211,
+      "at": 674,
       "phase": "Checking package metadata",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -400,7 +410,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1211,
+      "at": 674,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -417,6 +427,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -427,7 +438,7 @@
     },
     {
       "type": "progress",
-      "at": 1405,
+      "at": 682,
       "phase": "Indexing your code",
       "detail": "72 files indexed · 4 direct dependencies to check",
       "done": 0,
@@ -435,7 +446,7 @@
     },
     {
       "type": "progress",
-      "at": 1928,
+      "at": 1061,
       "phase": "Checking repository status",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -443,7 +454,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1928,
+      "at": 1061,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -460,6 +471,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -470,7 +482,7 @@
     },
     {
       "type": "progress",
-      "at": 1955,
+      "at": 1072,
       "phase": "Checking security advisories",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -478,7 +490,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1955,
+      "at": 1072,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -495,6 +507,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -505,7 +518,7 @@
     },
     {
       "type": "progress",
-      "at": 1962,
+      "at": 1264,
       "phase": "Checking license",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -513,7 +526,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1962,
+      "at": 1264,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -530,6 +543,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -540,7 +554,7 @@
     },
     {
       "type": "progress",
-      "at": 4444,
+      "at": 1264,
       "phase": "Reading release notes and changelog",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -548,7 +562,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4444,
+      "at": 1264,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -565,6 +579,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -575,7 +590,7 @@
     },
     {
       "type": "progress",
-      "at": 4444,
+      "at": 1264,
       "phase": "Comparing the public API surface",
       "detail": "astro 6.4.8 → 7.2.7 · 6 evidence sources",
       "done": 0,
@@ -583,7 +598,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4444,
+      "at": 1264,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -600,6 +615,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -610,7 +626,7 @@
     },
     {
       "type": "progress",
-      "at": 4445,
+      "at": 1265,
       "phase": "Searching your code for 43 breaking changes",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -618,7 +634,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4445,
+      "at": 1265,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -635,6 +651,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -645,7 +662,7 @@
     },
     {
       "type": "progress",
-      "at": 4450,
+      "at": 1271,
       "phase": "Weighing what this upgrade is worth",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -653,7 +670,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4450,
+      "at": 1271,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -670,6 +687,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -680,7 +698,7 @@
     },
     {
       "type": "progress",
-      "at": 4452,
+      "at": 1273,
       "phase": "Checking maintenance signals",
       "detail": "astro 6.4.8 → 7.2.7",
       "done": 0,
@@ -688,7 +706,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4452,
+      "at": 1273,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -705,6 +723,7 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -715,7 +734,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4458,
+      "at": 1278,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -732,6 +751,7 @@
         "risk": "none",
         "summary": "Upgrade recommended. 43 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
         "recommendation": "upgrade-recommended",
+        "hasCompatibilityEvidence": true,
         "breakingCount": 43,
         "impactCount": 0,
         "impactFiles": 0,
@@ -843,7 +863,7 @@
     },
     {
       "type": "progress",
-      "at": 4458,
+      "at": 1278,
       "phase": "Checked",
       "detail": "astro 6.4.8 → 7.2.7 · safe for your code · 43 upstream changes, none used here — not deeply verified",
       "done": 1,
@@ -867,6 +887,7 @@
       "risk": "none",
       "summary": "Upgrade recommended. 43 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
       "recommendation": "upgrade-recommended",
+      "hasCompatibilityEvidence": true,
       "breakingCount": 43,
       "impactCount": 0,
       "impactFiles": 0,
