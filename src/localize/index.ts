@@ -934,6 +934,21 @@ function searchFiles(
           continue;
         }
 
+        if (
+          hit &&
+          change.fromKind === 'function' &&
+          (candidate.language === 'c' || candidate.language === 'cpp') &&
+          /^\s*::/.test(searchable.slice(hit.index + hit[0].length))
+        ) {
+          // A C++ function cannot own a nested name. `spdlog::level::trace`
+          // therefore cannot be a use of a removed function named
+          // `spdlog::level`; it is a namespace/type path that happens to share
+          // the prefix.
+          continue;
+        }
+
+        if (hit && declarationOccurrence(searchable, hit.index, candidate.language)) continue;
+
         // What is written immediately before the match decides whether it is a
         // use of this dependency at all, and neither rule can be expressed in
         // the matcher because both are about a *different* name.
@@ -1328,7 +1343,7 @@ function receiverChainOf(
   language: FileIndex['language'],
 ): string[] | undefined {
   const pattern =
-    language === 'php'
+    language === 'php' || language === 'c' || language === 'cpp'
       ? /([A-Za-z_$][\w$]*)\s*(?:\.|::|->)\s*$/
       : /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/;
 
@@ -1345,6 +1360,19 @@ function receiverChainOf(
   }
 
   return chain.length > 0 ? chain : undefined;
+}
+
+function declarationOccurrence(
+  line: string,
+  at: number,
+  language: FileIndex['language'],
+): boolean {
+  if (language !== 'c' && language !== 'cpp') return false;
+  const before = line.slice(0, at).trim();
+  const after = line.slice(at);
+  if (!before || !/^\w+\s*\(/.test(after)) return false;
+  if (/(?:\.|::|->)\s*$/.test(before)) return false;
+  return /^(?:(?:virtual|static|inline|constexpr|consteval|constinit|explicit|friend|extern)\s+)*(?:const\s+)?(?:(?:unsigned|signed|long|short)\s+)*[\w:<>]+(?:\s*[*&])?$/.test(before);
 }
 
 /**

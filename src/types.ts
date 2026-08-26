@@ -309,6 +309,10 @@ export interface BreakingChange {
    */
   before?: string;
   after?: string;
+  /** Observed declaration shape before removal/change, when the surface provider knows it. */
+  fromKind?: string;
+  /** Observed declaration shape after a kind change. */
+  toKind?: string;
   /**
    * The real upstream source declaring the changed symbol, as a GitHub blob
    * URL with a line number — set after localization, only for a breaking

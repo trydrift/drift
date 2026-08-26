@@ -131,6 +131,8 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
       summary: finding.detail,
       before: finding.before,
       after: finding.after,
+      ...(finding.fromKind ? { fromKind: finding.fromKind } : {}),
+      ...(finding.toKind ? { toKind: finding.toKind } : {}),
       remediation: remediationForFinding(finding, record.dependency),
       symbols: symbolsFromFinding(finding),
       ...(moduleSystem

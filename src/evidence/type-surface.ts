@@ -96,7 +96,7 @@ export interface SurfaceChange {
   after?: string;
   /** See `StructuredFinding.changed`. Only ever set on `signature-changed`. */
   changed?: 'parameters' | 'return-type' | 'both';
-  /** See `StructuredFinding.fromKind`/`toKind`. Only ever set on `kind-changed`. */
+  /** The old declaration kind, set for removals and kind changes. */
   fromKind?: string;
   toKind?: string;
   moduleSystem?: {
@@ -1867,6 +1867,7 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
         symbol: name,
         detail: `\`${name}\` is no longer exported (was a ${oldEntry.kind})${origin}.`,
         before: oldEntry.signature,
+        fromKind: oldEntry.kind,
       });
       continue;
     }
