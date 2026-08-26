@@ -53,6 +53,8 @@
     "eval:typecheck": "tsc -p eval/tsconfig.json",
     "prepublishOnly": "npm run build",
     "release:check": "node scripts/release-check.mjs",
+    "release:version": "node scripts/check-release-version.mjs",
+    "version:set": "node scripts/set-version.mjs",
     "serve": "node dist/runners/webhook.js",
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",
     "test": "npm run build && node --test --experimental-strip-types \"test/*.test.ts\"",

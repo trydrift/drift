@@ -19,6 +19,8 @@ function sh(cmd, args, opts = {}) {
   execFileSync(cmd, args, { stdio: 'inherit', cwd: repoRoot, ...opts });
 }
 
+step('release: cross-manifest version consistency (root/extension package + lockfile)', () =>
+  sh('npm', ['run', 'release:version']));
 step('root: typecheck', () => sh('npm', ['run', 'typecheck']));
 step('root: tests (build + test/*.test.ts)', () => sh('npm', ['test']));
 step('root: benchmark review/adjudication integrity', () => sh('npm', ['run', 'eval:review:validate']));

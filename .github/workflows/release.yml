@@ -59,6 +59,15 @@ jobs:
       # ---- Validation phase: nothing here publishes anything. ----
 
       - run: npm ci
+
+      # The tag just pushed must exactly match every manifest's version, and
+      # every manifest must match each other, before a single further step
+      # runs. This is deliberately the first thing after `npm ci`: a mismatch
+      # here is a maintainer error, not a code regression, and should fail in
+      # seconds, not after the full validation phase.
+      - name: Validate release tag and version consistency
+        run: node scripts/check-release-version.mjs --tag "${{ github.ref_name }}"
+
       - run: npm run typecheck
       - run: npm test
       - run: npm run eval:review:validate
