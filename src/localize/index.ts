@@ -886,6 +886,12 @@ function searchFiles(
         ? receiversConstructedFrom(content, ownerBindings)
         : new Set<string>();
       const dependencyOwnedReceivers = new Set([...ownerBindings, ...receiverBindings]);
+      const directlyImportedLeaf = derivedOwner
+        ? directlyImportsQualifiedLeaf(change, symbol, relevantImports)
+        : importedNames.has(symbol);
+      const topLevelQualifiedLeaf = derivedOwner
+        ? qualifiedLeafBelongsToDependencyRoot(change, symbol, names)
+        : false;
 
       const matcher = invocationOnly ? invocationMatcherFor(symbol) : matcherFor(symbol);
       if (!matcher) continue;
@@ -970,8 +976,8 @@ function searchFiles(
         // constructed from that owner. This is name-agnostic: `find`, `open`,
         // `parse`, and every future generic leaf follow the same rule.
         let resolvedByOwner = false;
-        if (derivedOwner && !importedNames.has(symbol)) {
-          const inheritedLeaf = inherited?.inherited.has(symbol) ?? false;
+        if (derivedOwner && !directlyImportedLeaf) {
+          const inheritedLeaf = topLevelQualifiedLeaf && (inherited?.inherited.has(symbol) ?? false);
           const ownerOnPath =
             root !== undefined &&
             (ownerBindings.has(root) || receiverBindings.has(root) || Boolean(chain?.some((part) => ownerBindings.has(part))));
@@ -1446,6 +1452,70 @@ function ownerForDerivedSymbol(change: BreakingChange, symbol: string): string |
     if (parts.at(-1) === symbol && parts.length >= 2) return parts.at(-2);
   }
   return undefined;
+}
+
+function qualifiedCandidatesForLeaf(change: BreakingChange, symbol: string): string[] {
+  return change.symbols.filter((candidate) => {
+    if (candidate === symbol || (!candidate.includes('.') && !candidate.includes('::'))) return false;
+    return candidate.split(/[.:]+/).filter(Boolean).at(-1) === symbol;
+  });
+}
+
+function normalizedApiPath(value: string): string {
+  return value
+    .replace(/^@/, '')
+    .replace(/::|[\\/]/g, '.')
+    .replace(/\.+/g, '.')
+    .replace(/^\.|\.$/g, '')
+    .toLowerCase();
+}
+
+/**
+ * A bare imported leaf belongs to a qualified finding only when the import's
+ * module is the finding's actual owner path. Merely importing the same package
+ * is insufficient: `QueryDataOptions.onError` is not the top-level `onError`
+ * exported from `@apollo/client/link/error`, and an internal
+ * `Backend.load_pem_private_key` is not cryptography's public serialization
+ * function of the same name.
+ */
+function directlyImportsQualifiedLeaf(
+  change: BreakingChange,
+  symbol: string,
+  imports: readonly ImportRecord[],
+): boolean {
+  for (const candidate of qualifiedCandidatesForLeaf(change, symbol)) {
+    const parts = candidate.split(/[.:]+/).filter(Boolean);
+    const ownerPath = normalizedApiPath(parts.slice(0, -1).join('.'));
+    if (!ownerPath) continue;
+    for (const record of imports) {
+      if (!record.bindings.includes(symbol)) continue;
+      const paths = new Set([record.specifier, record.packageName, ...importKeys(record)].map(normalizedApiPath));
+      if (paths.has(ownerPath)) return true;
+      for (const importedPath of paths) {
+        if (!ownerPath.startsWith(`${importedPath}.`)) continue;
+        const implementationSuffix = ownerPath.slice(importedPath.length + 1).split('.');
+        // Static Python APIs are often re-exported one level above a lowercase
+        // implementation module (`cryptography.x509.base.Certificate` from
+        // `cryptography.x509`). Permit that accountable path relation, but not
+        // a class/member suffix such as `Backend.load_*` or
+        // `QueryDataOptions.onError`.
+        if (implementationSuffix.every((part) => /^[a-z_][a-z0-9_]*$/.test(part))) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function qualifiedLeafBelongsToDependencyRoot(
+  change: BreakingChange,
+  symbol: string,
+  dependencyNames: readonly string[],
+): boolean {
+  const roots = new Set(dependencyNames.map(normalizedApiPath));
+  return qualifiedCandidatesForLeaf(change, symbol).some((candidate) => {
+    const parts = candidate.split(/[.:]+/).filter(Boolean);
+    return roots.has(normalizedApiPath(parts.slice(0, -1).join('.')));
+  });
 }
 
 function bindingsForOwner(
