@@ -158,7 +158,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
   const lines = source.split('\n');
 
   let depth = 0;
-  const namespaceScopes: { path: string[]; depth: number }[] = [];
+  const namespaceScopes: { path: string[]; depth: number; inline: boolean }[] = [];
   /** Brace depth at which a private namespace opened, or `null` outside one. */
   let privateAt: number | null = null;
   /**
@@ -203,12 +203,18 @@ export function parseHeader(content: string): SurfaceEntry[] {
       continue;
     }
 
-    const namespace = /^(?:inline\s+)?namespace\s+([\w:]+)?/.exec(trimmed);
+    const namespace = /^(inline\s+)?namespace\s+([\w:]+)?/.exec(trimmed);
     if (namespace) {
-      if (namespace[1] && PRIVATE_NAMESPACE.test(namespace[1]) && privateAt === null) {
+      const name = namespace[2];
+      const isInline = Boolean(namespace[1]);
+      if (name && PRIVATE_NAMESPACE.test(name) && privateAt === null) {
         privateAt = depth;
-      } else if (namespace[1]) {
-        namespaceScopes.push({ path: namespace[1].split('::').filter(Boolean), depth });
+      } else if (name) {
+        // Inline namespaces are deliberately transparent to consumer lookup:
+        // `fmt::v10::print` and `fmt::v11::print` are both written as
+        // `fmt::print`. Keep a scope entry for brace bookkeeping, but do not
+        // put the ABI/version namespace into the public identity.
+        namespaceScopes.push({ path: isInline ? [] : name.split('::').filter(Boolean), depth, inline: isInline });
       }
       advance(i, i);
       continue;
@@ -434,8 +440,14 @@ function aggregateMembers(body: string, keyword: string): string[] {
     // contributing members called `return`, `if`, and `sizeof` — which is how
     // FastLED came to report seven hundred removed exports for a release that
     // had reorganised some inline code.
+    const operator = canonicalOperator(line);
+    if (operator) {
+      members.push(operator);
+      continue;
+    }
+
     const method = /(\w+)\s*\([^)]*\)\s*(?:const\s*)?(?:noexcept\s*)?[;{=]/.exec(line);
-    if (method?.[1] && !RESERVED.has(method[1]) && !/^operator\b/.test(line)) {
+    if (method?.[1] && !RESERVED.has(method[1])) {
       members.push(method[1]);
       continue;
     }
@@ -449,6 +461,30 @@ function aggregateMembers(body: string, keyword: string): string[] {
   }
 
   return [...new Set(members)];
+}
+
+/**
+ * Canonical identity for a public C++ operator declaration.
+ *
+ * Conversion operators have no ordinary method name: the target type is the
+ * identity (`operator uint8_t`, never the fake member `uint8_t`). Symbolic
+ * operators retain their parameter types so overload/signature changes remain
+ * visible to `diffSurfaces` as a removed callable member rather than silently
+ * comparing equal.
+ */
+function canonicalOperator(line: string): string | null {
+  const match =
+    /\boperator\s*(\[\]|\(\)|new(?:\[\])?|delete(?:\[\])?|<=>|->\*?|<<=?|>>=?|==|!=|<=|>=|&&|\|\||\+\+|--|[+\-*/%&|^]=?|[<>=!~,]|(?:[\w:]+(?:\s*<[^;()]*>)?[\s*&]*))\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept(?:\([^)]*\))?)?\s*(?:[;{=]|$)/.exec(
+      line,
+    );
+  if (!match) return null;
+
+  const token = collapse(match[1]!);
+  const suffix = match[3] ? ' const' : '';
+  const symbolic = /^(?:\[\]|\(\)|new(?:\[\])?|delete(?:\[\])?|<=>|->\*?|<<=?|>>=?|==|!=|<=|>=|&&|\|\||\+\+|--|[+\-*/%&|^]=?|[<>=!~,])$/.test(token);
+  return symbolic
+    ? `operator${token}(${parameterTypes(match[2]!)})${suffix}`
+    : `operator ${token}${suffix}`;
 }
 
 /**
