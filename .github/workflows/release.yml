@@ -6,12 +6,12 @@ name: Release
 # Release, and moves the floating `v0` tag so `uses: trydrift/drift@v0`
 # resolves to the newest `v0.x.y`.
 #
-# Requires two repository secrets this workflow does not and cannot create:
-#   NPM_TOKEN   — an npm automation token with publish rights on @usedrift/cli
-#   VSCE_PAT    — a VS Code Marketplace personal access token for the
-#                 `drift` publisher
-# Nothing here fabricates or assumes those exist; the publish steps simply
-# fail (and the workflow run goes red) if they are missing.
+# Publishing uses OIDC on both registries — npm Trusted Publishing and the
+# VS Code Marketplace's `vsce ... --oidc` — so there is no long-lived
+# NPM_TOKEN or VSCE_PAT secret in this repository. Both trust relationships
+# are configured externally (npmjs.com, the Marketplace publisher settings),
+# not here; see docs/deployment.md. `id-token: write` below is what lets this
+# job mint the OIDC token each registry verifies.
 #
 # Ordering is deliberate: every validation step below runs to completion
 # before the first irreversible action (an npm publish). A failure in
@@ -30,8 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     # `gh release create` and moving the floating v0 tag both need contents:
     # write; scoped to this one job rather than the whole workflow. id-token:
-    # write is for `npm publish --provenance`, which needs to mint an OIDC
-    # token to get the package's Sigstore-signed provenance attestation.
+    # write is for OIDC — both `npm publish` (Trusted Publishing) and
+    # `vsce publish --oidc` mint a token from this to prove the publish is
+    # coming from this exact workflow, in place of a stored credential.
     permissions:
       contents: write
       id-token: write
@@ -55,6 +56,12 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
+
+      # npm Trusted Publishing needs an npm CLI new enough to mint and send
+      # the OIDC token; do not rely on whatever a given runner image happens
+      # to ship.
+      - name: Upgrade npm for Trusted Publishing
+        run: npm install --global npm@11
 
       # ---- Validation phase: nothing here publishes anything. ----
 
@@ -126,16 +133,22 @@ jobs:
       # ---- Everything above must pass before anything below runs. ----
       # ---- Publish phase: each step here is a public, irreversible action. ----
 
+      # No NODE_AUTH_TOKEN / NPM_TOKEN: npm Trusted Publishing authenticates
+      # this exact workflow via the OIDC token id-token: write lets it mint,
+      # and provenance is attached automatically — no --provenance flag
+      # needed. Trusted Publishing for @usedrift/cli must already be
+      # configured on npmjs.com (see docs/deployment.md); it cannot be set up
+      # by this workflow.
       - name: Publish CLI to npm
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
 
+      # No VSCE_PAT: --oidc authenticates via the same GitHub Actions OIDC
+      # token, which the `drift` Marketplace publisher must already trust
+      # (see docs/deployment.md). Publishes the exact VSIX validation just
+      # produced, not a fresh source build.
       - name: Publish extension to the VS Code Marketplace
         working-directory: extension
-        run: npx --yes @vscode/vsce publish --no-dependencies --packagePath drift.vsix
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx --yes @vscode/vsce publish --oidc --no-dependencies --packagePath drift.vsix
 
       - name: Create GitHub Release
         env:
