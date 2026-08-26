@@ -74,4 +74,3 @@ export function validateRuntimeCompatibilityState(candidate, recordingName) {
     }
   }
 }
-
