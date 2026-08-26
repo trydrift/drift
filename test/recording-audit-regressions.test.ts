@@ -279,8 +279,33 @@ describe('recording audit: owner-aware localization', () => {
   test('direct and destructured dependency members remain high-confidence positives', () => {
     const files = [file('src/direct.ts', 'typescript', "import { parse } from 'pkg';\nparse(input);")];
     const sites = localize(
-      [change({ symbols: ['Parser.parse', 'parse'] })],
+      [change({ symbols: ['pkg.parse', 'parse'] })],
       [dependency('pkg', 'npm')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+    assert.ok(sites.length >= 1);
+    assert.ok(sites.every((site) => site.confidence === 'high'));
+  });
+
+  test('a same-package top-level export cannot impersonate an unrelated class member', () => {
+    const files = [file('src/error.ts', 'typescript', "import { onError } from '@apollo/client/link/error';\nonError(handler);")];
+    const sites = localize(
+      [change({ dependency: '@apollo/client', symbols: ['QueryDataOptions.onError', 'onError'] })],
+      [dependency('@apollo/client', 'npm')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+    assert.equal(sites.length, 0);
+  });
+
+  test('a direct import from the qualified API module remains a real positive', () => {
+    const files = [file('tests/server.py', 'python', 'from twisted.web.util import Redirect\nRedirect()')];
+    const sites = localize(
+      [change({ dependency: 'twisted', symbols: ['twisted.web.util.Redirect', 'Redirect'] })],
+      [dependency('twisted', 'pypi')],
       buildIndex(files),
       files,
       { logger },
