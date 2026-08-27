@@ -28,8 +28,6 @@
   },
   "files": [
     "dist",
-    "action",
-    "action.yml",
     "README.md"
   ],
   "scripts": {
@@ -53,6 +51,9 @@
     "eval:typecheck": "tsc -p eval/tsconfig.json",
     "prepublishOnly": "npm run build",
     "release:check": "node scripts/release-check.mjs",
+    "release:version": "node scripts/check-release-version.mjs",
+    "test:release": "node --test scripts/check-release-version.test.mjs scripts/release-workflow.test.mjs scripts/set-version.test.mjs",
+    "version:set": "node scripts/set-version.mjs",
     "serve": "node dist/runners/webhook.js",
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",
     "test": "npm run build && node --test --experimental-strip-types \"test/*.test.ts\"",

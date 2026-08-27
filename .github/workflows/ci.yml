@@ -47,6 +47,16 @@ jobs:
 
       - run: npm ci
 
+      # Root/extension package.json and package-lock.json must all report the
+      # same product version, so a release never has to notice this after a
+      # tag is already public. No tag exists on a PR, so this only checks
+      # cross-manifest agreement — release.yml adds the tag comparison itself.
+      - name: Verify version consistency across manifests
+        run: npm run release:version
+
+      - name: Test release tooling
+        run: npm run test:release
+
       - name: Typecheck
         run: npm run typecheck
 

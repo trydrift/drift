@@ -102,10 +102,6 @@ per-package configs.
 
 ## 2 · CLI
 
-> **Not published to npm yet.** Until a release runs, clone the repo, run
-> `npm install && npm run build`, and use `node dist/cli.js` in place of
-> `drift` below.
-
 ```bash
 npm install -g @usedrift/cli
 drift analyze
@@ -256,32 +252,104 @@ the repositories where you want fixes dispatched.
 
 ## Publishing a release
 
-Everything below is a repository or account setting. None of it lives in
-source, and none of it can be created by a workflow — `release.yml` reads these
-and fails loudly if one is missing, rather than pretending.
+Release publishing uses OIDC on both registries — there is no npm or VS Code
+Marketplace token stored in this repository, and there should never be one.
+The workflow keeps validation and publication in separate trust domains:
 
-Before the first public tag:
+- `validate` has read-only repository access and no OIDC permission. It runs
+  every dependency install, test, eval, and build, then creates, tests, and
+  uploads the exact npm tarball and VSIX together with their checksums.
+- `publish` starts only after `validate` succeeds. It has the OIDC and
+  repository write permissions required for publishing, downloads and verifies
+  those artifacts, and publishes them unchanged. It does not checkout the
+  repository, install repository dependencies, rebuild, or run project code.
+
+This makes the artifact tested in the unprivileged job the artifact published
+by the privileged job. Short-lived publishing authority is unavailable while
+repository and dependency code executes.
+
+Two trust relationships have to exist before the first tag, and both are
+account-level settings only a maintainer with the right access can create —
+`release.yml` cannot create them itself:
 
 | Prerequisite | Where | Why |
 | --- | --- | --- |
 | The repository is **public** | GitHub → Settings → General | `uses: trydrift/drift@v0` cannot resolve from a private repository, and the Marketplace listing links to it |
-| **`NPM_TOKEN`** repository secret | npm automation token with publish rights on `@usedrift/cli` | Publishes the CLI. The package name is `@usedrift/cli`; the binary it installs is `drift` |
-| **`VSCE_PAT`** repository secret | VS Code Marketplace personal access token for the `drift` publisher | Publishes the extension. `extension/package.json` must keep `"publisher": "drift"` and the `name`/`displayName`/`icon` it ships with — the Marketplace item id is `drift.drift` |
+| npm **Trusted Publisher** configured for `@usedrift/cli` | [npmjs.com](https://www.npmjs.com) → package → Settings → Trusted Publisher | Lets `npm publish` succeed with no token, authenticated as GitHub owner `trydrift`, repository `drift`, workflow `release.yml`. **The package must already exist** — see bootstrap below |
+| VS Code Marketplace **Trusted Publisher** configured for publisher `drift` | Marketplace publisher management (`vsce` docs) | Lets `vsce publish --oidc` succeed with no PAT, trusting `trydrift/drift` → `.github/workflows/release.yml` |
 | **GitHub Pages enabled**, source **GitHub Actions** | GitHub → Settings → Pages | `pages.yml` deploys the site with `actions/deploy-pages`, which fails outright if the source is still set to a branch |
 
-Then tag:
+### The npm bootstrap problem
+
+npm Trusted Publishing can only be configured for a package that already
+exists, and `@usedrift/cli` doesn't yet. This is a one-time, manual prerelease,
+external step — never automated into `release.yml` — before Trusted Publishing
+can be turned on. Automated tag-driven releases accept exact stable `vX.Y.Z`
+tags only:
+
+1. Confirm every version (`package.json`, `package-lock.json`,
+   `extension/package.json`, `extension/package-lock.json`) is `0.1.0` — run
+   `npm run release:version` to check.
+2. From a trusted maintainer machine, publish a **prerelease bootstrap
+   version** manually — not `0.1.0` itself, because npm versions are
+   immutable and publishing `0.1.0` here would leave the automated release
+   unable to publish stable `0.1.0` later:
+   ```bash
+   npm version 0.1.0-beta.0 --no-git-tag-version
+   npm publish --access public
+   git checkout -- package.json package-lock.json   # restore 0.1.0
+   ```
+3. On [npmjs.com](https://www.npmjs.com), open `@usedrift/cli` → Settings →
+   Trusted Publisher, and configure GitHub owner `trydrift`, repository
+   `drift`, workflow `release.yml`.
+4. Confirm the repository versions are still (or once again) `0.1.0`
+   everywhere.
+5. Tag and push as below. `release.yml` publishes stable `0.1.0` through
+   OIDC — no token involved.
+
+The VS Code Marketplace has no equivalent bootstrap problem: the `drift`
+publisher and `drift.drift` extension id can be registered ahead of the first
+release, and its Trusted Publisher trust can be configured before anything is
+ever published.
+
+### Releasing
+
+Once both Trusted Publisher relationships exist:
 
 ```bash
+npm run release:check   # local mirror of the validation phase; no tag needed yet
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-`release.yml` validates every artifact before publishing any of them — the same
-checks `npm run release:check` runs locally — then publishes the CLI to npm and
-the extension to the Marketplace, creates the GitHub Release with the VSIX
-attached, and moves the floating **`v0`** tag onto `v0.1.0` so
-`uses: trydrift/drift@v0` resolves to it.
+`release.yml` rejects prerelease and malformed tags, then validates the stable
+tag against every manifest's version (see `scripts/check-release-version.mjs`).
+Its unprivileged `validate` job runs the same validation phase
+`npm run release:check` runs locally and uploads the tested npm tarball and
+VSIX. Only after that succeeds does the privileged `publish` job download and
+publish those exact artifacts, create the GitHub Release with the same VSIX
+attached, and move the floating **`v0`** tag onto `v0.1.0` so
+`uses: trydrift/drift@v0` resolves to it. A prerelease tag, version mismatch,
+or any validation failure stops the workflow before anything is published.
 
-Run `npm run release:check` first. It is the same validation phase, step for
-step, so a failure found locally is a failure that would have gone red in CI
-after the tag was already public.
+Listing the Action on the GitHub Marketplace is a separate, one-time manual
+step from the repository's own "Draft a release" / Marketplace tooling — it
+does not affect whether `uses: trydrift/drift@v0` resolves, which only needs
+the tag to exist.
+
+### Bumping the version for a future release
+
+Use `scripts/set-version.mjs` rather than hand-editing four files:
+
+```bash
+node scripts/set-version.mjs 0.1.1
+npm run release:check
+git add -A && git commit -m "release: 0.1.1"
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+It updates `package.json`, `package-lock.json`, `extension/package.json`, and
+`extension/package-lock.json` together and nothing else. It never creates a
+git tag itself — bumping the version and tagging a release stay separate,
+deliberate actions.

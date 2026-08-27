@@ -70,12 +70,6 @@ Drift's intended failure mode is asking you too often. Not editing code it shoul
 
 ### 1. Add the workflow
 
-> **Not released yet** — `uses: trydrift/drift@v0` will not resolve until a
-> `v0.1.0` tag is pushed and the `v0` tag is moved to it (see
-> [`.github/workflows/release.yml`](.github/workflows/release.yml)).
-> Until then, reference your own fork, or see
-> [testing on a real repo](docs/testing-on-a-real-repo.md).
-
 Copy [`examples/workflows/drift.yml`](examples/workflows/drift.yml) to
 `.github/workflows/drift.yml`.
 
@@ -150,11 +144,6 @@ and set `outdated.enabled: true`. See [configuration.md](docs/configuration.md#c
 ---
 
 ## Try it with zero permissions
-
-> **Not published to npm yet.** `npm install -g @usedrift/cli` will work once
-> [`release.yml`](.github/workflows/release.yml) has run against a tag. Until
-> then, clone this repo, run `npm install && npm run build`, and use
-> `node dist/cli.js` in place of `drift` below.
 
 ```bash
 npm install -g @usedrift/cli
