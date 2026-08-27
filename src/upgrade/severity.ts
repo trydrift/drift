@@ -154,11 +154,27 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // zeroing the whole candidate because its runtime is unresolved would erase
   // independent API impact. Only the runtime declaration sites are held back
   // for review; the API sites still count.
+  //
+  // When the caller also omits `runtimeDeclarationSiteCount`, there is no
+  // structural way to subtract the runtime site out of `impactCount` — so the
+  // fallback cannot tell "one unresolved runtime declaration and nothing
+  // else" from "one unresolved runtime declaration plus a confirmed API
+  // impact" by count alone. It leans on the confidence signal it already has:
+  // `impactConfidence: 'high'` is the same fact `assessLocalImpact` uses
+  // everywhere else in this module to mean "a real, direct local match", so a
+  // legacy caller reporting one is reporting *something* concrete Drift found
+  // in the repository, not the mere existence of the unresolved runtime
+  // declaration. Anything less certain (low/medium, or simply not supplied —
+  // which here means "unknown", not "certain", because there is no resolved
+  // runtime state to fall back on being irrelevant) stays conservative at 0,
+  // so a bare unresolved runtime site is never promoted to `affected`.
   const actionableImpactCount = candidate.actionableImpactCount ?? (
     runtimeUnresolved
-      ? (candidate.runtimeDeclarationSiteCount === undefined
-        ? 0
-        : Math.max(0, candidate.impactCount - candidate.runtimeDeclarationSiteCount))
+      ? (candidate.runtimeDeclarationSiteCount !== undefined
+        ? Math.max(0, candidate.impactCount - candidate.runtimeDeclarationSiteCount)
+        : candidate.impactConfidence === 'high'
+          ? candidate.impactCount
+          : 0)
       : candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
         ? 0
         : candidate.impactCount
@@ -292,7 +308,11 @@ export function describeSeverity(candidate: SeverityInput): string {
         (candidate.actionableImpactCount ?? 0) === 0 && candidate.impactCount > 0;
       if (reviewOnly) {
         const n = candidate.impactCount;
-        return candidate.impactConfidence === 'low'
+        // Hedged the same way `affected`'s `verb` is: a low- or
+        // medium-confidence match is real enough to flag but not certain
+        // enough to say flatly, and the two must read the same way here as
+        // they do there.
+        return candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
           ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — Review required; check before upgrading`
           : `Review required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`;
       }

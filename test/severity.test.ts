@@ -111,3 +111,108 @@ describe('impact wording is hedged to match how sure the match actually is', () 
     assert.match(describeSeverity(candidate), /^Affects your code/);
   });
 });
+
+/**
+ * Regression for #131: a direct/legacy caller that supplies only the fields
+ * that predate `actionableImpactCount`/`runtimeDeclarationSiteCount` must
+ * never have an unresolved runtime declaration promoted to `affected` by the
+ * fallback — but a confirmed, high-confidence API impact reported alongside
+ * that same unresolved runtime evidence must not be erased either. See
+ * `src/upgrade/severity.ts`.
+ */
+describe('legacy-caller fallback stays conservative about unresolved runtime evidence', () => {
+  test('unknown runtime, one site, low confidence, no canonical counts -> unchecked, never affected', () => {
+    const candidate = {
+      status: 'ready',
+      breakingCount: 1,
+      impactCount: 1,
+      impactFiles: 1,
+      impactConfidence: 'low' as const,
+      runtimeCompatibility: 'unknown' as const,
+    };
+    assert.equal(severityOf(candidate), 'unchecked');
+  });
+
+  test('partial runtime, one site, low confidence, no canonical counts -> unchecked, never affected', () => {
+    const candidate = {
+      status: 'ready',
+      breakingCount: 1,
+      impactCount: 1,
+      impactFiles: 1,
+      impactConfidence: 'low' as const,
+      runtimeCompatibility: 'partial' as const,
+    };
+    assert.equal(severityOf(candidate), 'unchecked');
+  });
+
+  test('unknown runtime, no confidence supplied at all, no canonical counts -> unchecked, never affected', () => {
+    // Absent confidence cannot be read as "certain" here the way it can when
+    // runtime is resolved: there is no way to tell a bare unresolved runtime
+    // site from a confirmed API site without either a confidence signal or
+    // `runtimeDeclarationSiteCount`, so the fallback must stay conservative.
+    const candidate = {
+      status: 'ready',
+      breakingCount: 1,
+      impactCount: 1,
+      impactFiles: 1,
+      runtimeCompatibility: 'unknown' as const,
+    };
+    assert.equal(severityOf(candidate), 'unchecked');
+  });
+
+  test('medium-confidence API-only impact with no canonical actionable count reads as review, not affected', () => {
+    const candidate = {
+      status: 'ready',
+      breakingCount: 1,
+      impactCount: 1,
+      impactFiles: 1,
+      impactConfidence: 'medium' as const,
+    };
+    assert.equal(severityOf(candidate), 'unchecked');
+  });
+
+  test('mixed: unresolved runtime evidence plus a confirmed high-confidence API impact stays affected', () => {
+    // The legacy caller cannot separate the runtime site out of `impactCount`
+    // (no `runtimeDeclarationSiteCount`), but `impactConfidence: 'high'` is
+    // the same signal the resolved-runtime branch already trusts to mean "a
+    // real local match was found" — so the confirmed impact must survive.
+    const candidate = {
+      status: 'ready',
+      breakingCount: 1,
+      impactCount: 2,
+      impactFiles: 2,
+      impactConfidence: 'high' as const,
+      runtimeCompatibility: 'unknown' as const,
+    };
+    assert.equal(severityOf(candidate), 'affected');
+  });
+
+  test('canonical caller with actionableImpactCount: 0 stays unchecked regardless of confidence', () => {
+    const candidate = {
+      status: 'ready',
+      breakingCount: 1,
+      impactCount: 2,
+      impactFiles: 2,
+      actionableImpactCount: 0,
+      actionableImpactFiles: 0,
+      runtimeDeclarationSiteCount: 2,
+      impactConfidence: 'high' as const,
+      runtimeCompatibility: 'unknown' as const,
+    };
+    assert.equal(severityOf(candidate), 'unchecked');
+  });
+
+  test('canonical caller with a nonzero actionableImpactCount is affected even with unresolved runtime', () => {
+    const candidate = {
+      status: 'ready',
+      breakingCount: 1,
+      impactCount: 2,
+      impactFiles: 2,
+      actionableImpactCount: 1,
+      actionableImpactFiles: 1,
+      runtimeDeclarationSiteCount: 1,
+      runtimeCompatibility: 'unknown' as const,
+    };
+    assert.equal(severityOf(candidate), 'affected');
+  });
+});
