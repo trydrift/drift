@@ -1874,6 +1874,93 @@ describe('what a measurement does to a candidate row', () => {
     );
   });
 
+  describe('#134: derived state is re-derived from the verified plan, never left stale', () => {
+    const sig = { ...change('sig-a'), kind: 'signature-change', summary: 'renderTo(node) lost its second argument' };
+    const beh = { ...change('beh-b'), kind: 'behaviour-change', summary: 'parse() now throws instead of returning null' };
+
+    const twoActionable = () => {
+      const dispositions = [
+        { changeId: 'sig-a', state: 'actionable', reason: 'high-confidence-impact', sites: [{ id: 'sa', breakingChangeId: 'sig-a', file: 'src/a.ts', line: 1, confidence: 'high' }], actionableSites: [{ id: 'sa', breakingChangeId: 'sig-a', file: 'src/a.ts', line: 1, confidence: 'high' }] },
+        { changeId: 'beh-b', state: 'actionable', reason: 'high-confidence-impact', sites: [{ id: 'sb', breakingChangeId: 'beh-b', file: 'src/b.ts', line: 2, confidence: 'high' }], actionableSites: [{ id: 'sb', breakingChangeId: 'beh-b', file: 'src/b.ts', line: 2, confidence: 'high' }] },
+      ];
+      const rationaleEntry = {
+        dependency: 'zod',
+        from: '2.0.0',
+        to: '3.0.0',
+        security: { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' },
+        maintenance: { facts: [] },
+        improvements: [],
+        license: { verdict: 'ok', statement: 'ok', introduced: [] },
+        summary: { changes: [], unrelated: 0 },
+        gaps: [],
+        hasCompatibilityEvidence: true,
+        assessment: {
+          recommendation: 'manual-migration-required',
+          reasons: [
+            '2 places in 2 files use an API this upgrade changes.',
+            '1 locally affected change requires a developer decision rather than a substitution.',
+          ],
+          confidence: 'high',
+          confidenceBasis: 'The computed API diff and the OSV advisory database agree.',
+        },
+      };
+      return {
+        ...oneImpactedFinding(),
+        breakingCount: 2,
+        impactCount: 2,
+        rationale: rationaleEntry,
+        plan: {
+          ...oneImpactedFinding().plan,
+          breakingChanges: [sig, beh],
+          upstreamBreakingCount: 2,
+          impactSites: [
+            { id: 'sa', breakingChangeId: 'sig-a', file: 'src/a.ts', line: 1, confidence: 'high' },
+            { id: 'sb', breakingChangeId: 'beh-b', file: 'src/b.ts', line: 2, confidence: 'high' },
+          ],
+          dispositions,
+          commits: [
+            { id: 'c-a', breakingChangeIds: ['sig-a'], dependsOn: [], dependencyReasons: [] },
+            { id: 'c-b', breakingChangeIds: ['beh-b'], dependsOn: [], dependencyReasons: [] },
+          ],
+          changes: [{ name: 'zod', ecosystem: 'npm', from: '2.0.0', to: '3.0.0', kind: 'production', bump: 'major', manifestPath: 'package.json' }],
+          rationale: [rationaleEntry],
+        },
+      };
+    };
+
+    test('A. a full prune leaves no local-impact reason and a safe verdict', () => {
+      const onlySig = () => {
+        const c = twoActionable();
+        c.plan.breakingChanges = [sig];
+        c.plan.upstreamBreakingCount = 1;
+        c.plan.impactSites = [c.plan.impactSites[0]];
+        c.plan.dispositions = [c.plan.dispositions[0]];
+        c.plan.commits = [c.plan.commits[0]];
+        return c;
+      };
+      const verified = applyVerification(onlySig(), compileCapablePass);
+
+      assert.equal(verified.actionableImpactCount, 0, 'the one compiler-provable finding was disproved');
+      const reasons = verified.rationale.assessment.reasons;
+      assert.ok(!reasons.some((r) => /use an API this upgrade changes|developer decision/.test(r)), reasons.join(' | '));
+      assert.notEqual(verified.rationale.assessment.recommendation, 'manual-migration-required');
+      assert.equal(verified.risk, 'none');
+      assert.equal(verified.plan.upstreamBreakingCount, 1, 'upstream count is not walked back');
+    });
+
+    test('B. a partial prune keeps only the surviving finding’s rationale', () => {
+      const verified = applyVerification(twoActionable(), compileCapablePass);
+
+      assert.equal(verified.plan.breakingChanges.length, 1, 'the behavioural finding survives');
+      assert.equal(verified.plan.breakingChanges[0].id, 'beh-b');
+      assert.equal(verified.actionableImpactCount, 1);
+
+      const reasons = verified.rationale.assessment.reasons;
+      assert.ok(reasons.some((r) => /developer decision/.test(r)), `rationale still describes B: ${reasons.join(' | ')}`);
+      assert.ok(!reasons.some((r) => /2 places in 2 files/.test(r)), `rationale must not describe the pruned A: ${reasons.join(' | ')}`);
+    });
+  });
+
   test('the transient path — batch fails, falls back to solo — lands on the same verdict as a batch that never had to fall back', () => {
     // What actually varies between "a batch happened to succeed" and "a batch
     // happened to fail for an unrelated reason and this package was probed

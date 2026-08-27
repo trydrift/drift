@@ -442,12 +442,15 @@ export async function finalizeRationale(
         license,
         summary,
         assessment,
-        runtimeAnalyses: runtimeAnalyses.map(({ changeId, runtime, requirement, state, reason }) => ({
+        runtimeAnalyses: runtimeAnalyses.map(({ changeId, runtime, requirement, state, reason, statement }) => ({
           changeId,
           runtime,
           requirement,
           state,
           reason,
+          // Carried so a post-verification re-derivation of the assessment can
+          // restate this runtime result without re-running discovery.
+          statement,
         })),
         gaps,
         // Whether Drift actually obtained evidence bearing on *compatibility*

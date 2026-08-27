@@ -58,28 +58,20 @@ export function applyVerification(
       .filter((d) => d.runtimeAnalysis !== undefined)
       .reduce((n, d) => n + d.sites.length, 0);
   }
+  // `applyVerificationToPlan` re-derives the plan's dispositions, per-dependency
+  // rationale assessment (recommendation, reasons, runtime compatibility) and
+  // aggregate risk from the pruned structural plan whenever a pass actually
+  // cleared a prediction. Read those through rather than hand-patching the
+  // flattened copies here — the old shortcut ("keep the whole pre-verification
+  // reason list whenever any actionable finding survives") left reasons
+  // describing predictions the compiler had already disproved.
   if (verified.rationale) {
-    const rationale = verified.rationale;
-    const runtimeUnresolved = rationale.assessment.runtimeCompatibility === 'unknown' || rationale.assessment.runtimeCompatibility === 'partial';
-    const hasActionable = (verified.actionableImpactCount ?? 0) > 0;
-    const recommendation = !hasActionable && rationale.assessment.recommendation === 'manual-migration-required'
-      ? (runtimeUnresolved ? 'upgrade-after-review' : 'safe-to-upgrade')
-      : rationale.assessment.recommendation;
-    // Reasons are derived from the pre-verification assessment.  Once all
-    // actionable dispositions have been pruned, none of those local reasons
-    // is still authoritative; never recover state by parsing rendered prose.
-    // Surviving actionable dispositions retain the original structured
-    // assessment (and therefore its reasons).
-    const reasons = hasActionable ? rationale.assessment.reasons : [];
-    verified.rationale = {
-      ...rationale,
-      assessment: { ...rationale.assessment, recommendation, reasons },
-    };
+    verified.rationale =
+      verified.plan.rationale?.find((entry) => entry.dependency === verified.rationale!.dependency) ??
+      verified.plan.rationale?.[0] ??
+      verified.rationale;
   }
-  if (verified.actionableImpactCount === 0) {
-    const hasReview = (dispositions ?? []).some((d) => d.state === 'review-only' || d.state === 'unknown');
-    verified.risk = hasReview || (verified.rationale && (verified.rationale.assessment.runtimeCompatibility === 'unknown' || verified.rationale.assessment.runtimeCompatibility === 'partial')) ? 'low' : 'none';
-  }
+  verified.risk = verified.plan.risk;
   // Whether the "affected" verdict above rests on evidence a batch pass could
   // not give it. A compile-capable pass that ran scoped to a batch is not
   // licensed to prune a compiler-provable finding (see `applyVerificationToPlan`),

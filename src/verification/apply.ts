@@ -1,6 +1,10 @@
 import type { RemediationPlan } from '../types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
 import type { UpgradeVerification } from './upgrade-probe.js';
+import { assessRisk } from '../plan/index.js';
+import { assessUpgrade } from '../rationale/assess.js';
+import type { RuntimeRequirementAnalysis } from '../rationale/compatibility.js';
+import { deriveBreakingChangeDispositions } from '../disposition.js';
 
 /**
  * Reconciling what Drift predicted with what the toolchain measured.
@@ -137,7 +141,7 @@ function prunePlan(
 
   const kept = new Set(commits.map((commit) => commit.id));
 
-  return {
+  const pruned: RemediationPlan = {
     ...plan,
     breakingChanges,
     impactSites,
@@ -150,6 +154,101 @@ function prunePlan(
       dependencyReasons: commit.dependencyReasons.filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
     })),
   };
+
+  return rederivePlanLocalState(pruned);
+}
+
+/**
+ * Recompute every repository-local derived field from the pruned structural
+ * plan.
+ *
+ * `prunePlan` removes the disproved changes and everything anchored to them,
+ * but the plan also carries *derived* state — dispositions, the rationale's
+ * assessment (recommendation, reasons, runtime compatibility), and the
+ * aggregate risk — that was computed against the full prediction set. Left
+ * alone, a partial prune keeps the old rationale wholesale: if finding A was
+ * disproved while finding B survived, the reasons still describe A.
+ *
+ * So the derived fields are rebuilt here, deterministically, from the pruned
+ * plan — never by filtering the rendered prose. `upstreamBreakingCount` is
+ * deliberately untouched: local verification disproving a predicted impact
+ * does not change what upstream published.
+ */
+function rederivePlanLocalState(plan: RemediationPlan): RemediationPlan {
+  const runtimeById = new Map<string, RuntimeRequirementAnalysis>();
+  for (const entry of plan.rationale ?? []) {
+    for (const analysis of entry.runtimeAnalyses ?? []) {
+      // A runtime requirement is never compiler-provable, so pruning never
+      // removes one — but the analysis is stored trimmed, so it is rehydrated
+      // to the shape `assessUpgrade`/`deriveBreakingChangeDispositions` expect.
+      runtimeById.set(analysis.changeId, {
+        changeId: analysis.changeId,
+        runtime: analysis.runtime,
+        requirement: analysis.requirement ?? '',
+        state: analysis.state,
+        reason: analysis.reason,
+        declarations: [],
+        unresolved: [],
+        sites: plan.impactSites.filter((site) => site.breakingChangeId === analysis.changeId),
+        statement: analysis.statement ?? '',
+      });
+    }
+  }
+  const runtimeAnalyses = [...runtimeById.values()].filter((analysis) =>
+    plan.breakingChanges.some((change) => change.id === analysis.changeId),
+  );
+
+  const dispositions = deriveBreakingChangeDispositions(
+    plan.breakingChanges,
+    plan.impactSites,
+    runtimeAnalyses,
+    plan.localizationRan ?? true,
+  );
+
+  const rationale = (plan.rationale ?? []).map((entry) => {
+    const workspace = plan.changes.find((change) => change.name === entry.dependency)?.workspace;
+    const breakingChanges = plan.breakingChanges.filter(
+      (change) => change.dependency === entry.dependency && (workspace === undefined || change.workspace === workspace),
+    );
+    const relevantIds = new Set(breakingChanges.map((change) => change.id));
+    const reassessed = assessUpgrade({
+      dependency: entry.dependency,
+      ...(workspace !== undefined ? { workspace } : {}),
+      breakingChanges,
+      impactSites: plan.impactSites.filter((site) => relevantIds.has(site.breakingChangeId)),
+      evidence: plan.evidence,
+      security: entry.security,
+      maintenance: entry.maintenance,
+      license: entry.license,
+      gaps: entry.gaps,
+      // Only consulted on the zero-breaking-change branch; `hasCompatibilityEvidence`
+      // is the recorded superset of "a surface diff ran or compatibility prose
+      // was read", which is exactly what that branch gates on.
+      surfaceCompared: entry.hasCompatibilityEvidence,
+      runtimeAnalyses: runtimeAnalyses.filter((analysis) => relevantIds.has(analysis.changeId)),
+      localizationRan: plan.localizationRan ?? true,
+    });
+    return {
+      ...entry,
+      assessment: {
+        ...reassessed,
+        // Verification changes which predictions survived, not which sources
+        // were consulted — so how much they agree is unchanged.
+        confidence: entry.assessment.confidence,
+        confidenceBasis: entry.assessment.confidenceBasis,
+      },
+    };
+  });
+
+  const risk = assessRisk(
+    plan.changes,
+    plan.breakingChanges,
+    plan.impactSites,
+    rationale.map((entry) => entry.assessment.runtimeCompatibility),
+    dispositions,
+  );
+
+  return { ...plan, dispositions, risk, ...(plan.rationale ? { rationale } : {}) };
 }
 
 /**

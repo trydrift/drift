@@ -223,8 +223,12 @@ export interface UpgradeRationale {
   runtimeAnalyses?: Array<{
     changeId: string;
     runtime: import('../types.js').RuntimeName;
+    /** Exact upstream requirement answered; runtime names alone are not unique. */
+    requirement?: string;
     state: RuntimeCompatibilityState;
     reason: import('../types.js').RuntimeCompatibilityReason;
+    /** The sentence the report states for this result, matched to the state. */
+    statement?: string;
   }>;
   /**
    * Why this analysis is incomplete, in the developer's terms.
