@@ -33,6 +33,8 @@ export interface SurfaceEntry {
   signature: string;
   /** Member names for classes/interfaces/enums, so we can diff them too. */
   members: string[];
+  /** Optional semantic signatures for members whose identity is not enough. */
+  memberSignatures?: Record<string, string>;
   /** Required member names, so optional -> required is detectable. */
   requiredMembers: string[];
   /**
@@ -1892,6 +1894,18 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
           symbol: `${name}.${member}`,
           detail: `\`${name}.${member}\` was removed${origin}.`,
         });
+      } else {
+        const beforeMember = oldEntry.memberSignatures?.[member];
+        const afterMember = newEntry.memberSignatures?.[member];
+        if (beforeMember && afterMember && beforeMember !== afterMember) {
+          changes.push({
+            kind: 'signature-changed',
+            symbol: `${name}.${member}`,
+            detail: `The signature of \`${name}.${member}\` changed${origin}.`,
+            before: beforeMember,
+            after: afterMember,
+          });
+        }
       }
     }
 

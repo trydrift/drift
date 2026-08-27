@@ -389,7 +389,7 @@ function parseAggregate(
       name: qualifiedName,
       kind: kindOfAggregate(keyword),
       signature: collapse(`${keyword} ${qualifiedName}`),
-      members: aggregateMembers(body.join('\n'), keyword),
+      ...aggregateMemberData(body.join('\n'), keyword),
       requiredMembers: [],
     },
     endLine: end,
@@ -410,9 +410,9 @@ function kindOfAggregate(keyword: string): SurfaceKind {
  * class that reorganises its internals would otherwise produce a page of
  * findings that are all wrong.
  */
-function aggregateMembers(body: string, keyword: string): string[] {
+function aggregateMemberData(body: string, keyword: string): { members: string[]; memberSignatures?: Record<string, string> } {
   if (keyword === 'enum') {
-    return [
+    return { members: [
       ...new Set(
         body
           .replace(/\{|\}[^}]*$/g, '')
@@ -420,10 +420,11 @@ function aggregateMembers(body: string, keyword: string): string[] {
           .map((part) => /^\s*(\w+)/.exec(part)?.[1])
           .filter((name): name is string => Boolean(name)),
       ),
-    ];
+    ] };
   }
 
   const members: string[] = [];
+  const memberSignatures: Record<string, string> = {};
   // C++'s default access differs by keyword: everything before the first
   // label is private in a `class` and public in a `struct`. Getting this
   // wrong is not cosmetic — it puts every private field of every class into
@@ -454,9 +455,10 @@ function aggregateMembers(body: string, keyword: string): string[] {
     // contributing members called `return`, `if`, and `sizeof` — which is how
     // FastLED came to report seven hundred removed exports for a release that
     // had reorganised some inline code.
-    const operator = canonicalOperator(line);
+    const operator = parseOperator(line);
     if (operator) {
-      members.push(operator);
+      members.push(operator.identity);
+      memberSignatures[operator.identity] = operator.signature;
       continue;
     }
 
@@ -474,7 +476,7 @@ function aggregateMembers(body: string, keyword: string): string[] {
     if (field?.[1] && !RESERVED.has(field[1]) && !PRIMITIVE.test(field[1])) members.push(field[1]);
   }
 
-  return [...new Set(members)];
+  return { members: [...new Set(members)], memberSignatures };
 }
 
 /**
@@ -487,6 +489,10 @@ function aggregateMembers(body: string, keyword: string): string[] {
  * comparing equal.
  */
 function canonicalOperator(line: string): string | null {
+  return parseOperator(line)?.identity ?? null;
+}
+
+function parseOperator(line: string): { identity: string; signature: string } | null {
   const operatorAt = line.search(/\boperator\b/);
   if (operatorAt < 0) return null;
 
@@ -507,7 +513,10 @@ function canonicalOperator(line: string): string | null {
     : /^[A-Za-z]/.test(parsedName.name)
       ? `operator ${parsedName.name}(${parameterTypes(parameters.content)})`
       : `operator${parsedName.name}(${parameterTypes(parameters.content)})`;
-  return `${name}${suffix}`;
+  const prefix = collapse(line.slice(0, operatorAt));
+  const identity = `${name}${suffix}`;
+  const signature = `${prefix ? `${prefix} ` : ''}operator ${parsedName.name}(${parameterTypes(parameters.content)})${suffix}`;
+  return { identity, signature };
 }
 
 interface ParsedOperatorName {
@@ -636,10 +645,11 @@ function parseDeclaration(statement: string, namespacePath: readonly string[] = 
   const functionText = stripDeclarationPrefixes(text);
   const operator = canonicalOperator(functionText);
   if (operator) {
+    const parsed = parseOperator(functionText)!;
     return {
-      name: qualify(namespacePath, operator),
+      name: qualify(namespacePath, parsed.identity),
       kind: 'function',
-      signature: operator,
+      signature: parsed.signature,
       members: [],
       requiredMembers: [],
     };
