@@ -590,6 +590,18 @@ function mavenJavaDeclarations(path: string, content: string, found: RuntimeDecl
   for (const match of content.matchAll(pattern)) {
     positions.push({ line: content.slice(0, match.index).split('\n').length, raw: match[1]! });
   }
+  // A compiler setting that points outside this file is still useful
+  // provenance, but it is not an authoritative JVM pin. Preserve the missing
+  // indirection as review evidence without creating an edit target.
+  const compilerBlocks = content.match(/<plugin>[\s\S]*?<artifactId>maven-compiler-plugin<\/artifactId>[\s\S]*?<\/plugin>/g) ?? [];
+  for (const block of compilerBlocks) {
+    const blockStart = content.indexOf(block);
+    for (const match of block.matchAll(/<(?:release|source|target)>\s*(\$\{[^}]+\})\s*<\//g)) {
+      if (!resolveMavenProperty(content, match[1]!)) {
+        found.unresolved.push({ runtime: 'java', file: path, line: content.slice(0, blockStart + match.index).split('\n').length, rawText: match[1]!, source: 'build-config' });
+      }
+    }
+  }
   for (const { line, raw } of positions) {
     if (/^\s*\$\{[^}]+\}\s*$/.test(raw) && resolveMavenProperty(content, raw)) continue;
     const resolved = resolveMavenProperty(content, raw);
