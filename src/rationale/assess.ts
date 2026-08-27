@@ -101,7 +101,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   const apiSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind !== 'runtime-requirement');
   const apiFiles = new Set(apiSites.map((site) => site.file)).size;
   const runtimeSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind === 'runtime-requirement');
-  const runtimeChanges = input.breakingChanges.filter((change) => change.kind === 'runtime-requirement');
+  const runtimeChanges = input.breakingChanges.filter((change) => change.kind === 'runtime-requirement' && change.runtime?.runtime);
   const completeAnalyses = completeRuntimeAnalyses(input.breakingChanges, input.runtimeAnalyses ?? []);
   const runtimeState = worstRuntimeState(completeAnalyses);
   const runtimeUnresolved = runtimeChanges.length > 0 && runtimeCompatibilityIsUnresolved(runtimeState ?? 'unknown');

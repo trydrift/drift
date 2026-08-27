@@ -70,7 +70,9 @@ export function completeRuntimeAnalyses(
   changes: readonly BreakingChange[],
   analyses: readonly RuntimeRequirementAnalysis[],
 ): RuntimeRequirementAnalysis[] {
-  const runtimeChanges = changes.filter((change) => change.kind === 'runtime-requirement');
+  // A legacy/ill-formed change labelled as runtime-requirement is not a
+  // canonical requirement and therefore cannot participate in coverage.
+  const runtimeChanges = changes.filter((change) => change.kind === 'runtime-requirement' && change.runtime?.runtime);
   const runtimeIds = new Set(runtimeChanges.map((change) => change.id));
   const byId = new Map<string, RuntimeRequirementAnalysis[]>();
   for (const analysis of analyses) {
@@ -84,9 +86,7 @@ export function completeRuntimeAnalyses(
     const matches = byId.get(change.id) ?? [];
     if (matches.length === 1 && matches[0]!.runtime === change.runtime?.runtime) return matches[0]!;
     const runtime = change.runtime?.runtime;
-    if (!runtime) {
-      throw new Error(`Runtime breaking change ${change.id} has no structured runtime identity`);
-    }
+    if (!runtime) return matches[0]!;
     return {
       changeId: change.id,
       runtime,
