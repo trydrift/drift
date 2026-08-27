@@ -30,6 +30,7 @@ import {
  */
 
 const GITHUB = "https://github.com/trydrift/Drift";
+const FEATURE_BOARD = "/features/";
 const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=drift.drift";
 
 export default function Home() {
@@ -52,6 +53,7 @@ export default function Home() {
           >
             How It Works
           </a>
+          <Link href={FEATURE_BOARD} className="rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground">Features</Link>
           <Link
             href="/support/"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
@@ -139,6 +141,7 @@ export default function Home() {
               See the benchmarks
             </Link>
           </p>
+          <p className="mt-3"><Link href={FEATURE_BOARD} className="inline-flex rounded-full border border-brand/40 bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand-text">Vote on what Drift builds next →</Link></p>
 
           <p className="mt-4 font-mono text-xs text-muted">
             <CopyCommand text="npm install -g @usedrift/cli">
@@ -363,6 +366,7 @@ export default function Home() {
             >
               GitHub Action
             </a>
+            <Link href={FEATURE_BOARD} className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover">Feature requests</Link>
           </div>
           <p className="mt-4 font-mono text-xs text-muted">
             <CopyCommand text="npm install -g @usedrift/cli">
@@ -381,6 +385,7 @@ export default function Home() {
           <a href="mailto:trydrift@outlook.com" className="transition-colors hover:text-foreground">
             Talk to us
           </a>
+          <Link href={FEATURE_BOARD} className="transition-colors hover:text-foreground">Feature requests</Link>
           <span className="ml-auto">
             Every sample on this page is a real run against the linked commit.
           </span>
