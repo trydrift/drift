@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-08-27T14:13:29.674Z",
+  "capturedAt": "2026-08-27T15:17:02.008Z",
   "commit": "7d3aac802ff5bf0117a9b3e933ba8afa19e4af19",
-  "engine": "4e4b90805a12539a",
-  "durationMs": 1647,
+  "engine": "cfeb3fbb67628a77",
+  "durationMs": 2105,
   "packagesChecked": 3,
   "manifests": [
     "conanfile.txt"
@@ -18,7 +18,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 159,
+      "at": 172,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
@@ -26,7 +26,7 @@
     },
     {
       "type": "progress",
-      "at": 164,
+      "at": 178,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
@@ -34,7 +34,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 165,
+      "at": 179,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -71,7 +71,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 165,
+      "at": 179,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -108,7 +108,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 165,
+      "at": 179,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -145,7 +145,7 @@
     },
     {
       "type": "progress",
-      "at": 165,
+      "at": 179,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -153,7 +153,7 @@
     },
     {
       "type": "progress",
-      "at": 165,
+      "at": 179,
       "phase": "Checking registries",
       "detail": "3 direct dependencies",
       "done": 0,
@@ -161,7 +161,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 165,
+      "at": 179,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -198,7 +198,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 166,
+      "at": 179,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -235,7 +235,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 166,
+      "at": 179,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -272,97 +272,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 174,
-      "candidate": {
-        "id": "conanfile.txt#gtest@1.10.0",
-        "name": "gtest",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.18.0",
-        "selected": "1.18.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 174,
-      "phase": "Outdated",
-      "detail": "gtest 1.10.0 → 1.18.0",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 174,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "4.0.1",
-        "selected": "4.0.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 174,
-      "phase": "Outdated",
-      "detail": "openssl 1.1.1 → 4.0.1",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 175,
+      "at": 188,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -399,15 +309,105 @@
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 188,
       "phase": "Outdated",
       "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 188,
+      "candidate": {
+        "id": "conanfile.txt#gtest@1.10.0",
+        "name": "gtest",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.18.0",
+        "selected": "1.18.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 188,
+      "phase": "Outdated",
+      "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 188,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "4.0.1",
+        "selected": "4.0.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 188,
+      "phase": "Outdated",
+      "detail": "openssl 1.1.1 → 4.0.1",
       "done": 3,
       "total": 3
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 188,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -415,7 +415,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 175,
+      "at": 188,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -452,7 +452,7 @@
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 188,
       "phase": "Checking package metadata",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -460,7 +460,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 175,
+      "at": 188,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -497,7 +497,7 @@
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 188,
       "phase": "Reading release notes and changelog",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -505,7 +505,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 175,
+      "at": 188,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -542,7 +542,7 @@
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 188,
       "phase": "Checking package metadata",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -550,7 +550,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 175,
+      "at": 188,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -587,7 +587,7 @@
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 189,
       "phase": "Reading release notes and changelog",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -595,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 175,
+      "at": 189,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -632,7 +632,7 @@
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 189,
       "phase": "Checking package metadata",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -640,7 +640,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 175,
+      "at": 189,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -677,7 +677,7 @@
     },
     {
       "type": "progress",
-      "at": 176,
+      "at": 189,
       "phase": "Checking repository status",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -685,7 +685,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 176,
+      "at": 189,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -722,7 +722,7 @@
     },
     {
       "type": "progress",
-      "at": 176,
+      "at": 190,
       "phase": "Checking repository status",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -730,7 +730,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 176,
+      "at": 190,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -767,7 +767,7 @@
     },
     {
       "type": "progress",
-      "at": 176,
+      "at": 190,
       "phase": "Checking repository status",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -775,7 +775,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 176,
+      "at": 190,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -812,7 +812,7 @@
     },
     {
       "type": "progress",
-      "at": 177,
+      "at": 191,
       "phase": "Checking security advisories",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -820,7 +820,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 191,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -857,7 +857,7 @@
     },
     {
       "type": "progress",
-      "at": 177,
+      "at": 191,
       "phase": "Checking license",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -865,7 +865,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 177,
+      "at": 191,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -902,7 +902,7 @@
     },
     {
       "type": "progress",
-      "at": 185,
+      "at": 209,
       "phase": "Checking security advisories",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -910,7 +910,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 185,
+      "at": 209,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -947,7 +947,7 @@
     },
     {
       "type": "progress",
-      "at": 186,
+      "at": 209,
       "phase": "Checking license",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -955,7 +955,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 186,
+      "at": 209,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -992,7 +992,7 @@
     },
     {
       "type": "progress",
-      "at": 192,
+      "at": 219,
       "phase": "Checking security advisories",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1000,7 +1000,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 192,
+      "at": 219,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1037,7 +1037,7 @@
     },
     {
       "type": "progress",
-      "at": 192,
+      "at": 219,
       "phase": "Checking license",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1045,7 +1045,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 192,
+      "at": 219,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1082,7 +1082,7 @@
     },
     {
       "type": "progress",
-      "at": 899,
+      "at": 1436,
       "phase": "Comparing the public API surface",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1090,7 +1090,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 899,
+      "at": 1436,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1127,7 +1127,7 @@
     },
     {
       "type": "progress",
-      "at": 912,
+      "at": 1443,
       "phase": "Comparing the public API surface",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1135,7 +1135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 912,
+      "at": 1443,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1172,7 +1172,7 @@
     },
     {
       "type": "progress",
-      "at": 913,
+      "at": 1444,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1180,7 +1180,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 913,
+      "at": 1444,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1217,7 +1217,7 @@
     },
     {
       "type": "progress",
-      "at": 913,
+      "at": 1444,
       "phase": "Comparing the public API surface",
       "detail": "gtest 1.10.0 → 1.18.0 · 6 evidence sources",
       "done": 0,
@@ -1225,7 +1225,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 913,
+      "at": 1444,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1262,7 +1262,7 @@
     },
     {
       "type": "progress",
-      "at": 921,
+      "at": 1448,
       "phase": "Searching your code for 214 breaking changes",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1270,7 +1270,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 921,
+      "at": 1448,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1307,7 +1307,7 @@
     },
     {
       "type": "progress",
-      "at": 937,
+      "at": 1550,
       "phase": "Reading release notes and changelog",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1315,7 +1315,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 937,
+      "at": 1550,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1352,7 +1352,7 @@
     },
     {
       "type": "progress",
-      "at": 938,
+      "at": 1550,
       "phase": "Comparing the public API surface",
       "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
       "done": 0,
@@ -1360,7 +1360,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 938,
+      "at": 1550,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1397,7 +1397,7 @@
     },
     {
       "type": "progress",
-      "at": 940,
+      "at": 1575,
       "phase": "Searching your code for 189 breaking changes",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1405,7 +1405,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 940,
+      "at": 1575,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1442,7 +1442,7 @@
     },
     {
       "type": "progress",
-      "at": 1020,
+      "at": 1649,
       "phase": "Reading release notes and changelog",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1450,7 +1450,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1020,
+      "at": 1649,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1487,7 +1487,7 @@
     },
     {
       "type": "progress",
-      "at": 1021,
+      "at": 1649,
       "phase": "Comparing the public API surface",
       "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
       "done": 0,
@@ -1495,7 +1495,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1021,
+      "at": 1649,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1532,7 +1532,7 @@
     },
     {
       "type": "progress",
-      "at": 1022,
+      "at": 1650,
       "phase": "Searching your code for 6 breaking changes",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1540,7 +1540,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1025,
+      "at": 1650,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1577,7 +1577,7 @@
     },
     {
       "type": "progress",
-      "at": 1281,
+      "at": 1719,
       "phase": "Indexing your code",
       "detail": "132 files indexed · 3 direct dependencies to check",
       "done": 0,
@@ -1585,7 +1585,7 @@
     },
     {
       "type": "progress",
-      "at": 1431,
+      "at": 1896,
       "phase": "Weighing what this upgrade is worth",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1593,7 +1593,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1431,
+      "at": 1896,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1630,7 +1630,7 @@
     },
     {
       "type": "progress",
-      "at": 1624,
+      "at": 2069,
       "phase": "Weighing what this upgrade is worth",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1638,7 +1638,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1624,
+      "at": 2069,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1675,7 +1675,7 @@
     },
     {
       "type": "progress",
-      "at": 1638,
+      "at": 2091,
       "phase": "Weighing what this upgrade is worth",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1683,7 +1683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1638,
+      "at": 2091,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1720,7 +1720,7 @@
     },
     {
       "type": "progress",
-      "at": 1639,
+      "at": 2093,
       "phase": "Checking maintenance signals",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1728,7 +1728,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1639,
+      "at": 2093,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1765,7 +1765,7 @@
     },
     {
       "type": "progress",
-      "at": 1641,
+      "at": 2095,
       "phase": "Checking maintenance signals",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1773,7 +1773,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1642,
+      "at": 2095,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1810,7 +1810,7 @@
     },
     {
       "type": "progress",
-      "at": 1642,
+      "at": 2097,
       "phase": "Checking maintenance signals",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1818,7 +1818,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1642,
+      "at": 2097,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1855,7 +1855,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1646,
+      "at": 2103,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -3722,7 +3722,7 @@
     },
     {
       "type": "progress",
-      "at": 1647,
+      "at": 2104,
       "phase": "Checked",
       "detail": "gtest 1.10.0 → 1.18.0 · review required · 2 local sites drift flagged but could not confirm — check before upgrading",
       "done": 1,
@@ -3730,7 +3730,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1647,
+      "at": 2104,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -5381,7 +5381,7 @@
     },
     {
       "type": "progress",
-      "at": 1647,
+      "at": 2104,
       "phase": "Checked",
       "detail": "spdlog 1.12.0 → 1.17.0 · safe for your code · 189 upstream changes, none used here — not deeply verified",
       "done": 2,
@@ -5389,7 +5389,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1647,
+      "at": 2104,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -5618,7 +5618,7 @@
     },
     {
       "type": "progress",
-      "at": 1647,
+      "at": 2104,
       "phase": "Checked",
       "detail": "openssl 1.1.1 → 4.0.1 · review required · 5 local sites drift flagged but could not confirm — check before upgrading",
       "done": 3,
