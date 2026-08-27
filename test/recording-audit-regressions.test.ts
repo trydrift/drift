@@ -193,6 +193,27 @@ describe('recording audit: C and C++ public surface identity', () => {
     assert.ok(entry?.members.includes('operator[](size_t) const volatile &'));
   });
 
+  test('operator return type, explicitness, constexpr, and requires remain semantic changes', () => {
+    const before = parseHeaderSurface([{ path: 'api.h', content: [
+      'class Value {',
+      ' public:',
+      '  constexpr int operator+(int other) const requires true;',
+      '  explicit constexpr operator bool() const;',
+      '};',
+    ].join('\n') }]);
+    const after = parseHeaderSurface([{ path: 'api.h', content: [
+      'class Value {',
+      ' public:',
+      '  constexpr long operator+(int other) const requires true;',
+      '  constexpr operator bool() const;',
+      '};',
+    ].join('\n') }]);
+    const changes = diffSurfaces(before, after);
+    assert.ok(changes.some((finding) => finding.symbol === 'Value.operator+(int) const requires true'));
+    assert.ok(changes.some((finding) => finding.symbol === 'Value.operator bool const'));
+    assert.equal(after.get('Value')?.members.includes('operator+(int) const requires true'), true);
+  });
+
   test('ref-qualifier changes are breaking and uncommon public operators are retained', () => {
     const before = parseHeaderSurface([{ path: 'api.h', content: [
       'class Awaitable {',

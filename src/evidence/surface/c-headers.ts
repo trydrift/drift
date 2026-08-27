@@ -513,10 +513,17 @@ function parseOperator(line: string): { identity: string; signature: string } | 
     : /^[A-Za-z]/.test(parsedName.name)
       ? `operator ${parsedName.name}(${parameterTypes(parameters.content)})`
       : `operator${parsedName.name}(${parameterTypes(parameters.content)})`;
-  const prefix = collapse(line.slice(0, operatorAt));
+  const prefix = normalizeOperatorPrefix(line.slice(0, operatorAt));
   const identity = `${name}${suffix}`;
   const signature = `${prefix ? `${prefix} ` : ''}operator ${parsedName.name}(${parameterTypes(parameters.content)})${suffix}`;
   return { identity, signature };
+}
+
+function normalizeOperatorPrefix(raw: string): string {
+  return collapse(raw)
+    .replace(/\b(?:extern|static|inline|virtual|friend|__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 interface ParsedOperatorName {
@@ -643,9 +650,13 @@ function parseDeclaration(statement: string, namespacePath: readonly string[] = 
   }
 
   const functionText = stripDeclarationPrefixes(text);
-  const operator = canonicalOperator(functionText);
+  // Parse operators before stripping semantic specifiers. `explicit`,
+  // `constexpr`, and `consteval` affect whether a call is legal and therefore
+  // belong in the semantic signature even though they are prefixes on the
+  // declaration.
+  const operator = canonicalOperator(text);
   if (operator) {
-    const parsed = parseOperator(functionText)!;
+    const parsed = parseOperator(text)!;
     return {
       name: qualify(namespacePath, parsed.identity),
       kind: 'function',
