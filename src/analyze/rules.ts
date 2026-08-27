@@ -604,7 +604,7 @@ function parseRuntimeDisjunction(
   ruleId: string,
 ): RuntimeRequirement | null {
   const branches = rawRequirement
-    .split(/\s*\|\|\s*/)
+    .split('||')
     .map((branch) => branch.trim())
     .filter(Boolean);
   if (branches.length < 2) return null;
