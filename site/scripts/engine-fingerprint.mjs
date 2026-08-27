@@ -25,6 +25,7 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
+import { RECORDING_ENGINE_PATHS } from './recording-engine-manifest.mjs';
 
 /**
  * The engine, as far as a recording is concerned.
@@ -34,33 +35,9 @@ import { join, relative, sep } from 'node:path';
  * `cli/`, `runners/`, `github/`, `dispatch/` and the extension remain absent:
  * they decide how a result is presented or delivered, never what is recorded.
  */
-const ENGINE_PATHS = [
-  'src/analyze',
-  'src/confidence',
-  'src/detect',
-  'src/evidence',
-  'src/index',
-  'src/localize',
-  'src/plan',
-  'src/rationale',
-  'src/repo',
-  'src/upgrade',
-  'src/verification',
-  'src/analysis.ts',
-  'src/config/schema.ts',
-  'src/pipeline.ts',
-  'src/types.ts',
-  'site/scripts/capture.mjs',
-  'site/scripts/recording-validation.mjs',
-  'site/scripts/runtime-recording-validation.mjs',
-  'site/scripts/validate-recordings.mjs',
-  'site/scripts/engine-fingerprint.mjs',
-  'site/src/lib/recordings.ts',
-];
-
 /** Source files whose contents can change a recording or its lifecycle contract. */
 function counts(path) {
-  return (path.endsWith('.ts') && !path.endsWith('.d.ts')) || path.endsWith('.mjs');
+  return (path.endsWith('.ts') && !path.endsWith('.d.ts')) || path.endsWith('.mjs') || path.endsWith('package-lock.json');
 }
 
 async function filesUnder(root, relPath) {
@@ -88,7 +65,7 @@ async function filesUnder(root, relPath) {
  * module is a change rather than a coincidence.
  */
 export async function engineFingerprint(repoRoot) {
-  const paths = (await Promise.all(ENGINE_PATHS.map((path) => filesUnder(repoRoot, path)))).flat().sort();
+  const paths = (await Promise.all(RECORDING_ENGINE_PATHS.map((path) => filesUnder(repoRoot, path)))).flat().sort();
 
   const hash = createHash('sha256');
   for (const path of paths) {

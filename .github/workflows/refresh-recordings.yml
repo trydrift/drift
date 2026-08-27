@@ -45,11 +45,16 @@ on:
       - 'src/verification/**'
       - 'src/analysis.ts'
       - 'src/config/schema.ts'
+      - 'src/disposition.ts'
       - 'src/pipeline.ts'
       - 'src/types.ts'
+      - 'package-lock.json'
+      - 'site/package-lock.json'
       - 'site/scripts/capture.mjs'
       - 'site/scripts/recording-validation.mjs'
+      - 'site/scripts/runtime-recording-validation.mjs'
       - 'site/scripts/validate-recordings.mjs'
+      - 'site/scripts/recording-engine-manifest.mjs'
       - 'site/src/lib/recordings.ts'
       - 'site/scripts/engine-fingerprint.mjs'
       - '.github/workflows/refresh-recordings.yml'
@@ -218,7 +223,10 @@ jobs:
           NODE
 
       - name: Validate recording corpus
-        run: node site/scripts/validate-recordings.mjs
+        # Failed targets intentionally retain stale artifacts. Validate every
+        # artifact structurally, but require the current fingerprint only for
+        # files this run actually changed.
+        run: node site/scripts/validate-recordings.mjs --allow-stale --fresh-from-git
 
       - name: Open a pull request
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8

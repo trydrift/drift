@@ -2,52 +2,43 @@
 
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { validateRecording } from './recording-validation.mjs';
 import { engineFingerprint } from './engine-fingerprint.mjs';
 import { validateRuntimeCompatibilityState } from './runtime-recording-validation.mjs';
 
-const RECORDING_SCHEMA_VERSION = 2;
-const here = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(here, '..', 'src', 'data');
-const expectedEngine = await engineFingerprint(join(here, '..', '..'));
-const names = (await readdir(dataDir)).filter((name) => name.endsWith('.json')).sort();
+export const RECORDING_SCHEMA_VERSION = 2;
 
-let checked = 0;
-let legacy = 0;
-const failures = [];
-
-for (const name of names) {
-  let recording;
-  try {
-    recording = JSON.parse(await readFile(join(dataDir, name), 'utf8'));
-  } catch (error) {
-    failures.push(`${name}: could not parse (${error instanceof Error ? error.message : String(error)})`);
-    continue;
+/**
+ * Names of recordings under `dataRoot` that this run produced or changed, so
+ * `--fresh-from-git` can require the current engine fingerprint on exactly
+ * those. `git diff --name-only` reports only tracked modifications; a recording
+ * the run newly generated is untracked and would be missed, letting it keep an
+ * old fingerprint unchallenged. Porcelain status reports both.
+ */
+export async function freshRecordingNames(repoRoot, dataRelPath = 'site/src/data') {
+  const { stdout } = await promisify(execFile)('git', ['status', '--porcelain', '--', dataRelPath], { cwd: repoRoot });
+  const names = new Set();
+  for (const line of stdout.split('\n').filter(Boolean)) {
+    const entry = line.slice(3).trim();
+    const path = entry.includes(' -> ') ? entry.slice(entry.indexOf(' -> ') + 4) : entry;
+    if (path) names.add(path.split('/').at(-1));
   }
-
-  // Pre-lifecycle artifacts are intentionally hidden by loadRecordings(). They
-  // remain allowed until the refresh workflow regenerates them; every artifact
-  // that is eligible to render must pass the strict lifecycle validator below.
-  if (recording?.schemaVersion !== RECORDING_SCHEMA_VERSION) {
-    legacy += 1;
-    continue;
-  }
-
-  checked += 1;
-  try {
-    validateRecording(recording, RECORDING_SCHEMA_VERSION);
-    validateAuditInvariants(recording, name);
-  } catch (error) {
-    failures.push(`${name}: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  return names;
 }
 
-function validateAuditInvariants(recording, name) {
-  if (recording.engine !== expectedEngine) {
-    throw new Error(`stale engine fingerprint (expected ${expectedEngine}, got ${recording.engine ?? 'none'})`);
-  }
-
+export function validateAuditInvariants(recording, name, freshnessRequired, expectedEngine) {
+  // ---------------------------------------------------------------------------
+  // Layer A — baseline artifact validity. Always enforced, current or stale.
+  //
+  // A recording retained because a real-repository recapture failed is still
+  // rejected if it is malformed: broken structure, a fixture manifest that
+  // leaked in as a project, a runtime requirement that is not structured, a
+  // known-surviving symbol reported as changed. `--allow-stale` keeps an old
+  // recording alive; it never lets a corrupt one through.
+  // ---------------------------------------------------------------------------
   for (const manifest of recording.manifests ?? []) {
     if (/(^|\/)tests?\/registry\/npm(?:\/|$)|(^|\/)tests?\/testdata(?:\/|$)/i.test(manifest)) {
       throw new Error(`fixture manifest was discovered as a project: ${manifest}`);
@@ -60,8 +51,6 @@ function validateAuditInvariants(recording, name) {
       validateRuntime(change);
       validateRuntimeSites(change);
     }
-    validateCompatibilityEvidence(candidate, name);
-    validateRuntimeCompatibilityState(candidate, name);
     validateCorpusRegressionTripwires(recording, candidate);
   }
 
@@ -76,6 +65,27 @@ function validateAuditInvariants(recording, name) {
         }
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Layer B — current-engine semantic invariants. Enforced only on recordings
+  // expected to be current with this engine fingerprint.
+  //
+  // These assert relationships this engine's capture emits — the disposition /
+  // runtime-analysis bijection, the severity ⇄ recommendation ⇄ compatibility
+  // agreement, `hasCompatibilityEvidence`. A stale recording predates that
+  // contract, and `--allow-stale` exists precisely so it can be retained
+  // without being judged by invariants that did not exist when it was made.
+  // ---------------------------------------------------------------------------
+  if (!freshnessRequired) return;
+
+  if (recording.engine !== expectedEngine) {
+    throw new Error(`stale engine fingerprint (expected ${expectedEngine}, got ${recording.engine ?? 'none'})`);
+  }
+
+  for (const candidate of recording.candidates) {
+    validateCompatibilityEvidence(candidate, name);
+    validateRuntimeCompatibilityState(candidate, name);
   }
 }
 
@@ -347,9 +357,54 @@ function satisfies(version, requirement) {
   return compared >= 0;
 }
 
-if (failures.length > 0) {
-  process.stderr.write(`Invalid site recording artifacts:\n${failures.map((failure) => `- ${failure}`).join('\n')}\n`);
-  process.exitCode = 1;
-} else {
-  process.stdout.write(`Validated ${checked} lifecycle recording(s); ${legacy} legacy artifact(s) remain hidden.\n`);
+async function main() {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const repoRoot = join(here, '..', '..');
+  const dataDir = join(here, '..', 'src', 'data');
+  const expectedEngine = await engineFingerprint(repoRoot);
+  const allowStale = process.argv.includes('--allow-stale');
+  const freshFromGit = process.argv.includes('--fresh-from-git');
+  const requireFresh = freshFromGit ? await freshRecordingNames(repoRoot) : new Set();
+  const names = (await readdir(dataDir)).filter((name) => name.endsWith('.json')).sort();
+
+  let checked = 0;
+  let legacy = 0;
+  const failures = [];
+
+  for (const name of names) {
+    let recording;
+    try {
+      recording = JSON.parse(await readFile(join(dataDir, name), 'utf8'));
+    } catch (error) {
+      failures.push(`${name}: could not parse (${error instanceof Error ? error.message : String(error)})`);
+      continue;
+    }
+
+    // Pre-lifecycle artifacts are intentionally hidden by loadRecordings(). They
+    // remain allowed until the refresh workflow regenerates them; every artifact
+    // that is eligible to render must pass the strict lifecycle validator below.
+    if (recording?.schemaVersion !== RECORDING_SCHEMA_VERSION) {
+      legacy += 1;
+      continue;
+    }
+
+    checked += 1;
+    try {
+      validateRecording(recording, RECORDING_SCHEMA_VERSION);
+      validateAuditInvariants(recording, name, !allowStale || requireFresh.has(name), expectedEngine);
+    } catch (error) {
+      failures.push(`${name}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    process.stderr.write(`Invalid site recording artifacts:\n${failures.map((failure) => `- ${failure}`).join('\n')}\n`);
+    process.exitCode = 1;
+  } else {
+    process.stdout.write(`Validated ${checked} lifecycle recording(s); ${legacy} legacy artifact(s) remain hidden.\n`);
+  }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  await main();
 }
