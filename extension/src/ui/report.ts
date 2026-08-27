@@ -288,6 +288,25 @@ function renderPlan(plan: RemediationPlan, state: DriftState, focus?: FocusTarge
   const files = new Set(actionableSites.map((s) => s.file)).size;
   const reviewFiles = new Set(reviewOnlySites.map((s) => s.file)).size;
   const runtimeDeclarationSites = plan.impactSites.filter((site) => site.runtimeVerdict !== undefined).length;
+
+  // The verdict is read off the canonical disposition states, never off the
+  // site count. A `BreakingChangeDisposition` can be `state: 'unknown'` with
+  // zero sites — Drift did not establish locality — and that is emphatically
+  // not `unaffected`. Only when *every* disposition is `unaffected` may the
+  // page say the strong "nothing here, safe to upgrade"; `review-only` and
+  // `unknown` require review even with `sites.length === 0`. When a plan
+  // predates dispositions, fall back to the old site-derived reading.
+  const hasDispositions = dispositions.length > 0;
+  const hasActionableDisposition = hasDispositions
+    ? dispositions.some((d) => d.state === 'actionable')
+    : actionableSites.length > 0;
+  const hasReviewDisposition = hasDispositions
+    ? dispositions.some((d) => d.state === 'review-only' || d.state === 'unknown')
+    : reviewOnlySites.length > 0;
+  const allUnaffected = hasDispositions
+    ? dispositions.every((d) => d.state === 'unaffected')
+    : actionableSites.length === 0 && reviewOnlySites.length === 0 && !runtimeUnresolved(plan);
+
   const status = state.status;
   const pendingUpgrade = isPendingUpgradePlan(plan, state);
 
@@ -335,7 +354,7 @@ ${
   // Drift could not resolve against this repository has no file to point at
   // and therefore reaches here with zero impact sites, exactly as a genuinely
   // unaffected upgrade does -- the two must not read the same.
-  actionableSites.length > 0
+  hasActionableDisposition
     ? `${pendingUpgrade
       ? `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here would use an API or runtime that needs an edit in the selected upgrade.</p>`
       : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API or runtime that needs an edit.</p>`}${runtimeUnresolved(plan) ? `<p class="verdict-hit">Runtime compatibility also remains unresolved and requires review.</p>` : ''}`
@@ -343,11 +362,15 @@ ${
       ? `<p class="verdict-hit">Drift could not establish this repository's runtime compatibility with these changes. Check the declared runtime before upgrading.</p>`
     : reviewOnlySites.length > 0
     ? `<p class="verdict-hit">${reviewFiles} file${reviewFiles === 1 ? '' : 's'} here contain changes Drift flagged for review but will not edit automatically. Check them before upgrading.</p>`
-    : `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
+    : hasReviewDisposition
+    ? `<p class="verdict-hit">Drift did not establish whether these changes affect this repository. Review the changes below before upgrading — the absence of a local match is not evidence they are safe.</p>`
+    : allUnaffected
+    ? `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
+    : `<p class="verdict-hit">Drift could not establish whether these changes affect this repository. Review before upgrading.</p>`
 }
 
 <div class="stats">
-  ${stat(String(files), 'file' + (files === 1 ? '' : 's') + ' affected here', actionableSites.length || reviewOnlySites.length ? '' : 'risk-none')}
+  ${stat(String(files), 'file' + (files === 1 ? '' : 's') + ' affected here', !actionableSites.length && !reviewOnlySites.length && allUnaffected ? 'risk-none' : '')}
   ${stat(String(actionableSites.length), 'actionable site' + (actionableSites.length === 1 ? '' : 's'))}
   ${stat(String(runtimeDeclarationSites), 'runtime declaration' + (runtimeDeclarationSites === 1 ? '' : 's'))}
   ${stat(String(plan.commits.length), 'planned commit' + (plan.commits.length === 1 ? '' : 's'))}
