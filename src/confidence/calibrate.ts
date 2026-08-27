@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { BreakingChange, Confidence, Evidence, EvidenceSource, ImpactSite } from '../types.js';
+import type { BreakingChange, Confidence, Evidence, EvidenceSource, ImpactSite, RuntimeCompatibilityState } from '../types.js';
 import {
   bandFor,
   OVERALL_LABEL,
@@ -229,6 +229,7 @@ export interface LocalImpactInput {
   sites: readonly ImpactSite[];
   /** False when there was no checkout to search. */
   localizationRan: boolean;
+  runtimeState?: RuntimeCompatibilityState;
 }
 
 /**
@@ -257,6 +258,16 @@ export function assessLocalImpact(input: LocalImpactInput): ConfidenceScore {
           delta: 0,
         },
       ],
+      calibration: CALIBRATION_VERSION,
+    };
+  }
+
+  if (taxonomy.scope === 'runtime' && input.runtimeState === 'compatible') {
+    return {
+      score: 0.85,
+      band: 'high',
+      evidence: [{ code: 'runtime-compatible', detail: 'The repository runtime declaration satisfies the requirement.', delta: 0.85 }],
+      penalties: [],
       calibration: CALIBRATION_VERSION,
     };
   }
@@ -516,6 +527,7 @@ export interface AssessmentInput {
   outcomes?: readonly VerificationOutcome[];
   checkedSurfaces?: readonly CheckedSurface[];
   gaps?: readonly AnalysisGap[];
+  runtimeState?: RuntimeCompatibilityState;
 }
 
 /** Assemble the full assessment for one finding. */
@@ -526,6 +538,7 @@ export function assess(input: AssessmentInput): ConfidenceAssessment {
     taxonomy: input.taxonomy,
     sites: input.sites,
     localizationRan: input.localizationRan,
+    runtimeState: input.runtimeState,
   });
   const verification = assessVerification({
     outcomes: input.outcomes ?? [],

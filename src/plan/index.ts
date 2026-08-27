@@ -175,6 +175,7 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
     // Normalised here so every finding on a plan carries one, whatever the
     // caller supplied.
     const taxonomy = taxonomyOf(change);
+    const runtimeState = (input.runtimeAnalyses ?? []).find((analysis) => analysis.changeId === change.id)?.state;
     // An outcome with no `dependency` is a repo-wide check (typecheck, build)
     // and applies to every finding. One that names `breakingChangeIds` is
     // scoped to those exact findings — the precise case, since a dependency
@@ -196,6 +197,7 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
       evidence,
       sites,
       localizationRan,
+      runtimeState,
       outcomes,
       checkedSurfaces: input.checkedSurfaces ?? [],
       gaps: [],

@@ -124,7 +124,7 @@ export function discoverRuntimeDeclarations(
       continue;
     }
     if (runtime === 'ruby') {
-      if (base === 'gemfile') rubyGemfileDeclarations(path, content, found);
+      if (base === 'gemfile') rubyGemfileDeclarations(path, content, found, scoped);
       else if (base.endsWith('.gemspec')) rubyGemspecDeclarations(path, content, found);
     } else if (runtime === 'go' && base === 'go.mod') {
       goModDeclarations(path, content, found);
@@ -530,11 +530,24 @@ function pythonManifestDeclarations(
   record(found, 'python', path, located.line, located.requirement, 'manifest', dynamicOr(located.requirement));
 }
 
-function rubyGemfileDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
+function rubyGemfileDeclarations(
+  path: string,
+  content: string,
+  found: RuntimeDeclarationDiscovery,
+  files: readonly { path: string; content: string }[],
+): void {
   for (const [i, line] of content.split('\n').entries()) {
     const call = /^\s*ruby\s+(.+?)\s*(?:#.*)?$/.exec(line)?.[1]?.trim();
     if (!call) continue;
     const literal = /^(['"])([^'"]+)\1/.exec(call)?.[2];
+    const fileRef = /^file\s*:\s*(['"])([^'"]+)\1/.exec(call)?.[2];
+    if (fileRef) {
+      const referenced = files.find((file) => file.path === fileRef || file.path.endsWith(`/${fileRef}`));
+      if (referenced) {
+        const value = referenced.content.trim().split(/\s+/)[0];
+        if (value && !isDynamicValue(value)) continue;
+      }
+    }
     record(found, 'ruby', path, i + 1, call, 'manifest', literal ? dynamicOr(literal) : null);
   }
 }
@@ -924,7 +937,7 @@ function scopedTo<T extends { path: string; content: string }>(
 
     // No member directory claims this file at all — genuinely repository-
     // global by construction (or the root is not itself a registered member).
-    if (owner === null) return true;
+    if (owner === null) return isCiPath(f.path) ? ciAppliesToMember(f.content, member) : true;
     if (owner === '') {
       // The root workspace's own files. A CI workflow, `.nvmrc`, or Dockerfile
       // at the root conventionally governs the whole build regardless of

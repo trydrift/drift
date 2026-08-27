@@ -83,9 +83,10 @@ export function summarize(
     detail.push("this upgrade's runtime requirement could not be checked against this repository");
   }
 
-  if (apiSites.length === 0 && runtimeSites.length === 0 && breakingCount > 0 && !runtimeUnresolved) {
+  const apiBreakingCount = breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length;
+  if (apiSites.length === 0 && runtimeSites.length === 0 && apiBreakingCount > 0 && !runtimeUnresolved) {
     detail.push(
-      `${breakingCount} upstream breaking change${breakingCount === 1 ? '' : 's'}, none of which this repository uses`,
+      `${apiBreakingCount} upstream API breaking change${apiBreakingCount === 1 ? '' : 's'}, none of which this repository uses`,
     );
   }
 

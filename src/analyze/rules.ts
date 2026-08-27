@@ -222,7 +222,7 @@ const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted
 const RUNTIME_NAME = String.raw`(node(?:\.js)?|python|go|ruby|java|rust)\b`;
 // An optional `v` covers "Node v20" / "Node.js v18"; the parser strips it back
 // off before the range is normalized so the captured value stays canonical.
-const RUNTIME_RANGE = String.raw`([<>=^~]*\s*v?\d+(?:\.\d+){0,3})`;
+const RUNTIME_RANGE = String.raw`([<>=^~]*\s*v?\d+(?:\.\d+){0,3}(?:(?:\s*,\s*|\s+)\s*[<>=^~]*\s*v?\d+(?:\.\d+){0,3})*)`;
 // The gap between "version" and the number: "is", a colon, or nothing at all.
 const RUNTIME_VERSION_SEP = String.raw`(?:versions?\s*)?(?:is\s+|:\s*)?`;
 
