@@ -19,22 +19,22 @@
   "negativeControls": 16168,
   "confusion": {
     "tp": 131,
-    "fp": 30,
-    "tn": 16138,
+    "fp": 31,
+    "tn": 16137,
     "fn": 34
   },
   "classification": {
     "precision": {
       "numerator": 131,
-      "denominator": 161,
-      "value": 0.8136645962732919
+      "denominator": 162,
+      "value": 0.808641975308642
     },
     "recall": {
       "numerator": 131,
       "denominator": 165,
       "value": 0.793939393939394
     },
-    "f1": 0.8036809815950922
+    "f1": 0.8012232415902141
   },
   "baseline": {
     "name": "conventional-commits marker",
