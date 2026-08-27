@@ -167,7 +167,7 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
       ? (candidate.runtimeDeclarationSiteCount === undefined
         ? 0
         : Math.max(0, candidate.impactCount - candidate.runtimeDeclarationSiteCount))
-      : candidate.impactConfidence !== undefined && candidate.impactConfidence !== 'high'
+      : candidate.impactConfidence === 'low'
         ? 0
         : candidate.impactCount
   );
@@ -300,7 +300,9 @@ export function describeSeverity(candidate: SeverityInput): string {
         (candidate.actionableImpactCount ?? 0) === 0 && candidate.impactCount > 0;
       if (reviewOnly) {
         const n = candidate.impactCount;
-        return `Review required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`;
+        return candidate.impactConfidence === 'low'
+          ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`
+          : `Review required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`;
       }
       return 'Not verified · Drift found nothing it could check this version against';
     }

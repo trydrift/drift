@@ -1715,7 +1715,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       }
 
-      const files = new Set(plan.impactSites.map((site) => site.file)).size;
+      const files = new Set(
+        (plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file)),
+      ).size;
       step.done(`${plan.changes.length} dependency change${plan.changes.length === 1 ? '' : 's'} analysed`);
 
       // The packages that moved are what a developer looks this conversation
@@ -3352,7 +3354,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // watching this can tell what is about to happen while there is still time
     // to stop it, and afterwards can see which sites the agent actually changed
     // — neither of which is legible in a stream of agent chatter.
-    const files = new Set(plan.impactSites.map((site) => site.file)).size;
+    const files = new Set(
+      (plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file)),
+    ).size;
     const commitMode = this.session.commitMode;
     const landing = upgraded
       ? `on \`${branch.name}\`, alongside the upgrade itself`
@@ -3370,7 +3374,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         ? 'Each concern is committed as soon as it is finished.'
         : 'Nothing is committed until you keep it.';
     const tasks = this.session.tasks(
-      `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
+      `${this.agentLabel()} is fixing ${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0)} site${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0) === 1 ? '' : 's'}`,
       `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${evidence}`,
       buildTaskGroups(plan),
     );
