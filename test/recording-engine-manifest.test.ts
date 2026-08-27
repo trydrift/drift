@@ -8,7 +8,8 @@ import {
   validateAuditInvariants,
   freshRecordingNames,
 } from '../site/scripts/validate-recordings.mjs';
-import { engineFingerprint } from '../site/scripts/engine-fingerprint.mjs';
+import { engineFingerprint, analyzerEnvironmentIdentity } from '../site/scripts/engine-fingerprint.mjs';
+import { RECORDING_ANALYZER_ENVIRONMENT } from '../site/scripts/analyzer-environment.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CURRENT = await engineFingerprint(repoRoot);
@@ -112,5 +113,60 @@ describe('recording freshness: what --allow-stale legitimately keeps alive', () 
     // The same recording judged as current would be rejected — the invariants
     // are still enforced, just not on artifacts that predate them.
     assert.throws(() => validateAuditInvariants(old, 'scrapy.json', true, CURRENT));
+  });
+});
+
+/**
+ * #138: the recording engine fingerprint's analyzer-environment identity must
+ * treat two Python patch releases as equivalent, two different minor
+ * releases as materially different, and a missing interpreter as an
+ * explicit failure — never a shared "unavailable" placeholder every broken
+ * environment could collide on. See `analyzer-environment.mjs` for the
+ * documented contract.
+ */
+describe('#138: analyzer environment identity is normalized, reproducible, and fails loudly when absent', () => {
+  const okCommand = (output: string) => async () => ({ stdout: output, stderr: '' });
+  const manifest = { python: RECORDING_ANALYZER_ENVIRONMENT.python };
+
+  test('two different Python patch releases normalize to the same identity', async () => {
+    const local = await analyzerEnvironmentIdentity(manifest, okCommand('Python 3.12.3\n'));
+    const ci = await analyzerEnvironmentIdentity(manifest, okCommand('Python 3.12.9\n'));
+    assert.deepEqual(local, ci);
+    assert.deepEqual(local, ['python=3.12']);
+  });
+
+  test('a materially different Python minor version normalizes to a different identity', async () => {
+    const py312 = await analyzerEnvironmentIdentity(manifest, okCommand('Python 3.12.3\n'));
+    const py311 = await analyzerEnvironmentIdentity(manifest, okCommand('Python 3.11.9\n'));
+    assert.notDeepEqual(py312, py311);
+  });
+
+  test('a locally-captured recording under the intended analyzer environment matches CI’s engine identity', async () => {
+    // Local and CI both pin Python 3.12 (see .github/workflows/refresh-recordings.yml
+    // and RECORDING_ANALYZER_ENVIRONMENT.python.declared) but can legitimately run
+    // different patch releases of it; the fingerprint they contribute to must agree.
+    const local = await analyzerEnvironmentIdentity(manifest, okCommand('Python 3.12.1\n'));
+    const ci = await analyzerEnvironmentIdentity(manifest, okCommand('Python 3.12.8\n'));
+    assert.deepEqual(local, ci);
+  });
+
+  test('a missing required analyzer fails explicitly rather than becoming a reusable "unavailable" identity', async () => {
+    const missing = async () => {
+      throw new Error('spawn python3 ENOENT');
+    };
+    await assert.rejects(() => analyzerEnvironmentIdentity(manifest, missing), /requires `python3`/);
+  });
+
+  test('output the normalizer cannot parse fails explicitly rather than silently omitting the tool', async () => {
+    await assert.rejects(
+      () => analyzerEnvironmentIdentity(manifest, okCommand('not a version string')),
+      /Could not read a python version/,
+    );
+  });
+
+  test('the normalizer itself: major.minor only, patch and build metadata dropped', () => {
+    assert.equal(RECORDING_ANALYZER_ENVIRONMENT.python.normalize('Python 3.12.7'), '3.12');
+    assert.equal(RECORDING_ANALYZER_ENVIRONMENT.python.normalize('Python 3.12.0rc1'), '3.12');
+    assert.equal(RECORDING_ANALYZER_ENVIRONMENT.python.normalize('not a version'), null);
   });
 });

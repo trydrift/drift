@@ -20,6 +20,16 @@
  * recording, and re-capturing seventeen real projects over an hour because
  * somebody renamed a variable in `src/cli.ts` is how a freshness check gets
  * turned off. Only scan-output code and the recording contract are counted.
+ *
+ * Source and lockfiles are not the whole engine, either (#138). A few
+ * evidence surfaces hand the analysed package to an external interpreter or
+ * toolchain and let it do the parsing, so a materially different installed
+ * version of that tool is a materially different analyzer even when not one
+ * byte of Drift's own source moved. `analyzerEnvironmentIdentity()` below
+ * folds each such tool's *semantically normalized* version — see
+ * `analyzer-environment.mjs` for the full reproducibility contract — into
+ * this same fingerprint, so two equivalent environments agree and two
+ * materially different ones do not.
  */
 
 import { createHash } from 'node:crypto';
@@ -32,17 +42,46 @@ import { RECORDING_ANALYZER_ENVIRONMENT } from './analyzer-environment.mjs';
 
 const execFileAsync = promisify(execFile);
 
-async function analyzerEnvironmentIdentity() {
+/**
+ * The analyzer environment's contribution to the fingerprint: one
+ * `tool=majorMinor` entry per manifest tool, normalized identically wherever
+ * this runs — see the reproducibility contract documented in
+ * `analyzer-environment.mjs`.
+ *
+ * A tool that cannot be run at all, or whose version output this cannot
+ * parse, throws rather than folding into a shared placeholder identity: a
+ * recording captured without a required analyzer available is not evidence
+ * of what Drift actually does, and every environment missing the same tool
+ * must not silently collide on one fingerprint.
+ *
+ * `manifest` and `runVersionCommand` are parameters (defaulting to the real
+ * contract and a real subprocess call) so tests can exercise the
+ * equivalent/materially-different/missing-tool behavior against a fake
+ * environment without needing to control which interpreters are actually
+ * installed on the machine running the test.
+ */
+export async function analyzerEnvironmentIdentity(
+  manifest = RECORDING_ANALYZER_ENVIRONMENT,
+  runVersionCommand = (executable, args) => execFileAsync(executable, args, { timeout: 5000 }),
+) {
   const entries = [];
-  for (const [tool, declared] of Object.entries(RECORDING_ANALYZER_ENVIRONMENT)) {
-    const executable = tool === 'python' ? 'python3' : tool;
+  for (const [tool, contract] of Object.entries(manifest)) {
+    let rawOutput;
     try {
-      const { stdout, stderr } = await execFileAsync(executable, ['--version'], { timeout: 5000 });
-      const actual = `${stdout}${stderr}`.trim();
-      entries.push(`${tool}=${declared};actual=${actual}`);
+      const { stdout, stderr } = await runVersionCommand(contract.executable, contract.versionArgs);
+      rawOutput = `${stdout}${stderr}`;
     } catch (error) {
-      entries.push(`${tool}=${declared};actual=unavailable`);
+      throw new Error(
+        `Recording capture/validation requires \`${contract.executable}\` (the ${tool} analyzer contract in analyzer-environment.mjs) and it could not be run: ${error.message}`,
+      );
     }
+    const normalized = contract.normalize(rawOutput);
+    if (!normalized) {
+      throw new Error(
+        `Could not read a ${tool} version out of \`${contract.executable} ${contract.versionArgs.join(' ')}\` output: ${JSON.stringify(rawOutput.trim())}`,
+      );
+    }
+    entries.push(`${tool}=${normalized}`);
   }
   return entries.sort();
 }
