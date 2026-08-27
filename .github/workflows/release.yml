@@ -25,6 +25,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Require release commit to be on main
+        shell: bash
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}^{commit}" origin/main; then
+            echo "::error::Release tags must point to a commit contained in main."
+            exit 1
+          fi
+
       # The Action declares `using: node24`. Preserve the binary before
       # restoring Node 22 for the rest of the repository validation.
       - name: Install Node 24 for the Action runtime check
