@@ -1,6 +1,7 @@
 import type { BreakingChange, Evidence, ImpactSite } from '../types.js';
 import {
   runtimeCompatibilityIsUnresolved,
+  completeRuntimeAnalyses,
   worstRuntimeState,
   type RuntimeRequirementAnalysis,
 } from './compatibility.js';
@@ -100,18 +101,15 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   const apiSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind !== 'runtime-requirement');
   const apiFiles = new Set(apiSites.map((site) => site.file)).size;
   const runtimeSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind === 'runtime-requirement');
-  const runtimeState = worstRuntimeState(input.runtimeAnalyses);
   const runtimeChanges = input.breakingChanges.filter((change) => change.kind === 'runtime-requirement');
-  const runtimeIds = new Set(runtimeChanges.map((change) => change.id));
-  const analysisCounts = new Map<string, number>();
-  for (const analysis of input.runtimeAnalyses ?? []) if (runtimeIds.has(analysis.changeId)) analysisCounts.set(analysis.changeId, (analysisCounts.get(analysis.changeId) ?? 0) + 1);
-  const analyzedIds = new Set([...analysisCounts].filter(([, count]) => count === 1).map(([id]) => id));
-  const runtimeUnresolved = runtimeChanges.some((change) => !analyzedIds.has(change.id)) || runtimeCompatibilityIsUnresolved(runtimeState);
-  const effectiveRuntimeState = runtimeUnresolved && !runtimeState ? 'unknown' : runtimeState;
+  const completeAnalyses = completeRuntimeAnalyses(input.breakingChanges, input.runtimeAnalyses ?? []);
+  const runtimeState = worstRuntimeState(completeAnalyses);
+  const runtimeUnresolved = runtimeChanges.length > 0 && runtimeCompatibilityIsUnresolved(runtimeState ?? 'unknown');
+  const effectiveRuntimeState = runtimeChanges.length > 0 ? (runtimeState ?? 'unknown') : undefined;
   const dispositions = deriveBreakingChangeDispositions(
     input.breakingChanges,
     impactSites,
-    input.runtimeAnalyses ?? [],
+    completeAnalyses,
     input.localizationRan ?? true,
   );
   const actionableIds = new Set(

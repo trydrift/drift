@@ -65,6 +65,7 @@ export interface MaintenanceInput {
    */
   analyzedRuntimeRequirements?: readonly { runtime: string; requirement: string }[];
   /** Legacy name-only input; retained conservatively for direct callers. */
+  /** @deprecated Name-only coverage is unsafe and is ignored. */
   analyzedRuntimes?: readonly string[];
 }
 
@@ -140,7 +141,9 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     targetVersion,
     input.repoRuntime ?? [],
     input.pythonRuntime ?? [],
-    input.analyzedRuntimeRequirements ?? (input.analyzedRuntimes ?? []).map((runtime) => ({ runtime, requirement: '' })),
+    // A runtime name does not identify the upstream constraint.  In
+    // particular it must not suppress a distinct target requirement.
+    input.analyzedRuntimeRequirements ?? [],
   );
   if (runtimeChange) facts.push(runtimeChange);
 
