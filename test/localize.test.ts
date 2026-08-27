@@ -621,6 +621,12 @@ const other = require('@scope/other/features/foo');`,
       ...removedExport,
       kind: 'runtime-requirement' as const,
       symbols: ['Node.js'],
+      runtime: {
+        kind: 'minimum-runtime' as const,
+        runtime: 'node' as const,
+        requirement: '>=14',
+        sourceText: 'Requires Node.js 14 or later',
+      },
     };
 
     const sites = localize([runtimeChange], [dependencyChange], buildIndex(files), files, { logger });
@@ -857,9 +863,9 @@ describe('a site has to be somewhere there is work to do', () => {
     id: 'bc1',
     dependency: 'cryptography',
     kind: 'type-change' as const,
-    summary: '`base.Certificate` changed from a class to a variable.',
+    summary: '`cryptography.x509.base.Certificate` changed from a class to a variable.',
     remediation: 'Update declarations, `new` expressions, and type positions.',
-    symbols: ['Certificate', 'base.Certificate'],
+    symbols: ['Certificate', 'cryptography.x509.base.Certificate'],
     confidence: 'medium' as const,
     citations: ['e1'],
   };

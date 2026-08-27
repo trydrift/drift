@@ -17,9 +17,10 @@ import { assessSecurity, assessSecurityBatch, unchecked, type OsvOptions, type S
 import { assessMaintenance } from './maintenance.js';
 import { assessLicense } from './license.js';
 import { describeAdditions, improvementsFrom, summarizeRelease } from './summary.js';
-import { assessUpgrade } from './assess.js';
+import { assessUpgrade, hasCompatibilityEvidence } from './assess.js';
 import type { LicenseFinding, SecurityAssessment, UpgradeRationale } from './types.js';
 import type { RuntimeDeclaration } from './runtime.js';
+import type { RuntimeRequirementAnalysis } from './compatibility.js';
 import { startSpan as diagSpan, withSpan as diagWithSpan } from '../util/diagnostics.js';
 
 /**
@@ -111,6 +112,15 @@ export interface RationaleInput {
   evidence: readonly Evidence[];
   breakingChanges: readonly BreakingChange[];
   impactSites: readonly ImpactSite[];
+  /**
+   * Runtime compatibility states produced by localization, keyed to their
+   * breaking change by `changeId`. Absent when the caller did not run the
+   * runtime analysis — which is *not* the same as "every runtime requirement
+   * came back compatible", and `assessUpgrade` treats it as the former.
+   */
+  runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
+  /** Whether API/runtime localization actually ran for this repository. */
+  localizationRan?: boolean;
 }
 
 /**
@@ -338,6 +348,15 @@ export async function finalizeRationale(
       const report = (phase: string) => ctx.onProgress?.(change, phase);
       const { registry, repository, currentVersion, targetVersion, security, license } = facts;
 
+      const breakingChanges = input.breakingChanges.filter(
+        (b) => b.dependency === change.name && b.workspace === change.workspace,
+      );
+      const relevantIds = new Set(breakingChanges.map((b) => b.id));
+      const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
+      // Scoped by the same change-id set as the sites, so a monorepo member's
+      // runtime state never decides a sibling's recommendation.
+      const runtimeAnalyses = (input.runtimeAnalyses ?? []).filter((a) => relevantIds.has(a.changeId));
+
       report('Checking maintenance signals');
       const maintenance = config.rationale.maintenance
         ? assessMaintenance({
@@ -355,14 +374,16 @@ export async function finalizeRationale(
             pythonRuntime:
               (change.workspace !== undefined ? ctx.pythonRuntimeByWorkspace?.get(change.workspace) : undefined) ??
               ctx.pythonRuntime,
+            // Runtimes the canonical RuntimeRequirementAnalysis already ruled
+            // on for this dependency. Maintenance states the upstream fact for
+            // those but does not re-derive the repository verdict — one
+            // authority per question.
+            analyzedRuntimeRequirements: runtimeAnalyses.map((a) => ({
+              runtime: a.runtime,
+              requirement: a.requirement,
+            })),
           })
         : { facts: [] };
-
-      const breakingChanges = input.breakingChanges.filter(
-        (b) => b.dependency === change.name && b.workspace === change.workspace,
-      );
-      const relevantIds = new Set(breakingChanges.map((b) => b.id));
-      const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
 
       const key = dependencyEcosystemKey(change);
       const computed = ctx.additions?.get(key);
@@ -392,7 +413,7 @@ export async function finalizeRationale(
         licenseUnknown: license.verdict === 'unknown',
       });
 
-      const assessment = assessUpgrade({
+      const assessmentInput = {
         dependency: change.name,
         workspace: change.workspace,
         breakingChanges,
@@ -404,7 +425,10 @@ export async function finalizeRationale(
         gaps,
         surfaceCompared,
         proseRead: prose.length,
-      });
+        runtimeAnalyses,
+        localizationRan: input.localizationRan,
+      };
+      const assessment = assessUpgrade(assessmentInput);
 
       logger.debug(`${change.name} ${from} → ${to}: ${assessment.recommendation}`);
 
@@ -418,7 +442,26 @@ export async function finalizeRationale(
         license,
         summary,
         assessment,
+        runtimeAnalyses: runtimeAnalyses.map(({ changeId, runtime, requirement, state, reason, statement }) => ({
+          changeId,
+          runtime,
+          requirement,
+          state,
+          reason,
+          // Carried so a post-verification re-derivation of the assessment can
+          // restate this runtime result without re-running discovery.
+          statement,
+        })),
         gaps,
+        // Whether Drift actually obtained evidence bearing on *compatibility*
+        // (a computed surface diff, or compatibility prose fetched and read) —
+        // as opposed to evidence that answers some other question (a clean
+        // security check, a fine license, a version that merely exists).
+        // Exposed alongside `assessment` so downstream consumers (recording
+        // capture, the corpus validator) can check the "safe to upgrade
+        // implies real evidence" invariant structurally, without re-parsing
+        // `gaps` prose.
+        hasCompatibilityEvidence: hasCompatibilityEvidence(assessmentInput),
       };
     },
   );
@@ -582,6 +625,7 @@ function degraded(change: DependencyChange, reason: string): UpgradeRationale {
     improvements: [],
     license: { verdict: 'unknown', statement: 'Not checked.', introduced: [] },
     summary: { changes: [], unrelated: 0 },
+    hasCompatibilityEvidence: false,
     assessment: {
       recommendation: 'insufficient-evidence',
       reasons: [reason],
@@ -596,10 +640,19 @@ export * from './types.js';
 export { assessSecurity, assessSecurityBatch, mergeAliases, cvssBaseScore } from './osv.js';
 export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js';
 export {
+  analyzeRuntimeRequirement,
+  worstRuntimeState,
+  runtimeCompatibilityIsUnresolved,
+  type RuntimeRequirementAnalysis,
+} from './compatibility.js';
+export {
   checkNodeCompatibility,
   checkPythonCompatibility,
+  checkRuntimeCompatibility,
   findNodeDeclarations,
   findPythonDeclarations,
+  findRuntimeDeclarations,
+  discoverRuntimeDeclarations,
 } from './runtime.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';

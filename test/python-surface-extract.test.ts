@@ -17,6 +17,12 @@ describe('deciding where an archive entry may be written', () => {
     assert.equal(safeRelativePath('pkg/typed.pyi'), 'pkg/typed.pyi');
   });
 
+  test('packaging metadata needed to establish import roots keeps its path', () => {
+    assert.equal(safeRelativePath('pkg-1.0/pyproject.toml'), 'pkg-1.0/pyproject.toml');
+    assert.equal(safeRelativePath('pkg-1.0/setup.cfg'), 'pkg-1.0/setup.cfg');
+    assert.equal(safeRelativePath('pkg-1.0/pkg.egg-info/top_level.txt'), 'pkg-1.0/pkg.egg-info/top_level.txt');
+  });
+
   test('anything the parser will not open is not written', () => {
     assert.equal(safeRelativePath('pkg/README.md'), null);
     assert.equal(safeRelativePath('pkg/_speedups.c'), null);

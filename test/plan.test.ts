@@ -57,6 +57,26 @@ const site = (file: string, line = 1, breakingChangeId = 'bc_1') => ({
   confidence: 'high' as const,
 });
 
+const incompatibleRuntime = (changeId = 'bc_runtime') => ({
+  changeId,
+  runtime: 'node' as const,
+  state: 'incompatible' as const,
+  reason: 'violates' as const,
+  declarations: [],
+  unresolved: [],
+  sites: [],
+  statement: 'The declared Node runtime is incompatible.',
+});
+
+const runtimeBreaking = (overrides: Record<string, unknown> = {}) =>
+  breaking({
+    id: 'bc_runtime',
+    kind: 'runtime-requirement',
+    symbols: ['node'],
+    runtime: { kind: 'minimum-runtime', runtime: 'node', requirement: '>=24' },
+    ...overrides,
+  });
+
 describe('config', () => {
   test('defaults to approval-required', () => {
     assert.equal(DEFAULT_CONFIG.mode, 'approve');
@@ -159,9 +179,9 @@ describe('commit planning', () => {
   test('orders build-enabling changes before semantic ones', () => {
     const changes = [
       breaking({ id: 'bc_behaviour', kind: 'behaviour-change', symbols: ['x'] }),
-      breaking({ id: 'bc_runtime', kind: 'runtime-requirement', symbols: ['y'] }),
+      runtimeBreaking({ symbols: ['y'] }),
     ];
-    const sites = [site('src/a.ts', 1, 'bc_behaviour'), site('src/b.ts', 1, 'bc_runtime')];
+    const sites = [site('src/a.ts', 1, 'bc_behaviour'), { ...site('src/b.ts', 1, 'bc_runtime'), runtimeVerdict: 'incompatible' as const }];
 
     const plan = buildPlan({
       repo,
@@ -170,6 +190,7 @@ describe('commit planning', () => {
       evidence,
       breakingChanges: changes,
       impactSites: sites,
+      runtimeAnalyses: [incompatibleRuntime()],
     });
 
     assert.ok(
@@ -268,12 +289,12 @@ describe('commit planning', () => {
 
   test('runtime prerequisite units precede source fixes without a linear chain', () => {
     const changes = [
-      breaking({ id: 'bc_runtime', kind: 'runtime-requirement', symbols: ['node'] }),
+      runtimeBreaking(),
       breaking({ id: 'bc_removed', kind: 'removed-export', symbols: ['createClient'] }),
       breaking({ id: 'bc_other', kind: 'removed-export', dependency: 'other-sdk', symbols: ['makeOther'] }),
     ];
     const sites = [
-      site('package.json', 1, 'bc_runtime'),
+      { ...site('package.json', 1, 'bc_runtime'), runtimeVerdict: 'incompatible' as const },
       site('src/a.ts', 1, 'bc_removed'),
       site('src/other.ts', 1, 'bc_other'),
     ];
@@ -285,6 +306,7 @@ describe('commit planning', () => {
       evidence,
       breakingChanges: changes,
       impactSites: sites,
+      runtimeAnalyses: [incompatibleRuntime()],
     });
 
     const runtime = plan.commits.find((commit) => commit.breakingChangeIds.includes('bc_runtime'))!;

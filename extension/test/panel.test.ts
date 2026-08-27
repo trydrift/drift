@@ -482,7 +482,7 @@ test('an upstream-only package is not framed as an alarm', () => {
 });
 
 test('a package that does affect the repo says so, with counts', () => {
-  const c = candidate({ impactCount: 4, impactFiles: 2 });
+  const c = candidate({ impactCount: 4, impactFiles: 2, actionableImpactCount: 4, actionableImpactFiles: 2 });
   assert.equal(severityOf(c), 'affected');
 
   const html = renderPanel(
@@ -1590,6 +1590,7 @@ test('the panel shows what an upgrade buys, not only what it costs', () => {
       improvements: [],
       license: { verdict: 'ok', statement: '', introduced: [] },
       summary: { changes: [], unrelated: 0 },
+      hasCompatibilityEvidence: true,
       assessment: { recommendation: 'upgrade-recommended', reasons: [], confidence: 'high', confidenceBasis: '' },
       gaps: [],
     },
@@ -1650,6 +1651,7 @@ test('overflow security advisories are expandable', () => {
       improvements: [],
       license: { verdict: 'ok', statement: '', introduced: [] },
       summary: { changes: [], unrelated: 0 },
+      hasCompatibilityEvidence: true,
       assessment: { recommendation: 'upgrade-recommended', reasons: [], confidence: 'high', confidenceBasis: '' },
       gaps: [],
     },

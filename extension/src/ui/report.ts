@@ -256,8 +256,57 @@ function renderEmpty(state: DriftState): string {
     </div>`);
 }
 
+/**
+ * Did any dependency in this plan leave a runtime compatibility question
+ * unanswered?
+ *
+ * Read off the rationale's recorded state rather than counted from impact
+ * sites, because `unknown` and `partial` both routinely produce none — which
+ * is the whole reason the state exists.
+ */
+function runtimeUnresolved(plan: RemediationPlan): boolean {
+  return (plan.rationale ?? []).some(
+    (entry) =>
+      entry.assessment.runtimeCompatibility === 'unknown' ||
+      entry.assessment.runtimeCompatibility === 'partial',
+  );
+}
+
 function renderPlan(plan: RemediationPlan, state: DriftState, focus?: FocusTarget): string {
-  const files = new Set(plan.impactSites.map((s) => s.file)).size;
+  const dispositions = plan.dispositions ?? [];
+  const actionableSites = dispositions.length
+    ? dispositions.flatMap((disposition) => disposition.actionableSites)
+    : plan.impactSites.filter((site) => site.runtimeVerdict !== 'partial' && site.runtimeVerdict !== 'unknown');
+  // Sites Drift found but will not auto-edit: low-confidence API matches, and
+  // runtime declarations under an unresolved compatibility result. Real local
+  // evidence — enough to block any "safe / not used here" verdict — but never
+  // a reason to generate a commit or show the fix control.
+  const reviewOnlySites = dispositions.length
+    ? dispositions
+        .flatMap((disposition) => disposition.sites.filter((site) => !disposition.actionableSites.includes(site)))
+    : plan.impactSites.filter((site) => !actionableSites.includes(site));
+  const files = new Set(actionableSites.map((s) => s.file)).size;
+  const reviewFiles = new Set(reviewOnlySites.map((s) => s.file)).size;
+  const runtimeDeclarationSites = plan.impactSites.filter((site) => site.runtimeVerdict !== undefined).length;
+
+  // The verdict is read off the canonical disposition states, never off the
+  // site count. A `BreakingChangeDisposition` can be `state: 'unknown'` with
+  // zero sites — Drift did not establish locality — and that is emphatically
+  // not `unaffected`. Only when *every* disposition is `unaffected` may the
+  // page say the strong "nothing here, safe to upgrade"; `review-only` and
+  // `unknown` require review even with `sites.length === 0`. When a plan
+  // predates dispositions, fall back to the old site-derived reading.
+  const hasDispositions = dispositions.length > 0;
+  const hasActionableDisposition = hasDispositions
+    ? dispositions.some((d) => d.state === 'actionable')
+    : actionableSites.length > 0;
+  const hasReviewDisposition = hasDispositions
+    ? dispositions.some((d) => d.state === 'review-only' || d.state === 'unknown')
+    : reviewOnlySites.length > 0;
+  const allUnaffected = hasDispositions
+    ? dispositions.every((d) => d.state === 'unaffected')
+    : actionableSites.length === 0 && reviewOnlySites.length === 0 && !runtimeUnresolved(plan);
+
   const status = state.status;
   const pendingUpgrade = isPendingUpgradePlan(plan, state);
 
@@ -299,23 +348,38 @@ ${
   // Lead with the verdict for *this* repository. A page that opens with a
   // breaking-change count reads as an alarm even when the answer is "nothing to
   // do", and an alarm that turns out to be nothing gets ignored next time.
-  plan.impactSites.length === 0
+  //
+  // "Safe to upgrade" is the strongest thing this page says, so it is gated on
+  // compatibility having actually been established. A runtime requirement
+  // Drift could not resolve against this repository has no file to point at
+  // and therefore reaches here with zero impact sites, exactly as a genuinely
+  // unaffected upgrade does -- the two must not read the same.
+  hasActionableDisposition
+    ? `${pendingUpgrade
+      ? `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here would use an API or runtime that needs an edit in the selected upgrade.</p>`
+      : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API or runtime that needs an edit.</p>`}${runtimeUnresolved(plan) ? `<p class="verdict-hit">Runtime compatibility also remains unresolved and requires review.</p>` : ''}`
+    : runtimeUnresolved(plan)
+      ? `<p class="verdict-hit">Drift could not establish this repository's runtime compatibility with these changes. Check the declared runtime before upgrading.</p>`
+    : reviewOnlySites.length > 0
+    ? `<p class="verdict-hit">${reviewFiles} file${reviewFiles === 1 ? '' : 's'} here contain changes Drift flagged for review but will not edit automatically. Check them before upgrading.</p>`
+    : hasReviewDisposition
+    ? `<p class="verdict-hit">Drift did not establish whether these changes affect this repository. Review the changes below before upgrading — the absence of a local match is not evidence they are safe.</p>`
+    : allUnaffected
     ? `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
-    : pendingUpgrade
-      ? `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here would use an API that changes in the selected upgrade.</p>`
-      : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API that changed.</p>`
+    : `<p class="verdict-hit">Drift could not establish whether these changes affect this repository. Review before upgrading.</p>`
 }
 
 <div class="stats">
-  ${stat(String(files), 'file' + (files === 1 ? '' : 's') + ' affected here', plan.impactSites.length ? '' : 'risk-none')}
-  ${stat(String(plan.impactSites.length), 'code site' + (plan.impactSites.length === 1 ? '' : 's'))}
+  ${stat(String(files), 'file' + (files === 1 ? '' : 's') + ' affected here', !actionableSites.length && !reviewOnlySites.length && allUnaffected ? 'risk-none' : '')}
+  ${stat(String(actionableSites.length), 'actionable site' + (actionableSites.length === 1 ? '' : 's'))}
+  ${stat(String(runtimeDeclarationSites), 'runtime declaration' + (runtimeDeclarationSites === 1 ? '' : 's'))}
   ${stat(String(plan.commits.length), 'planned commit' + (plan.commits.length === 1 ? '' : 's'))}
   ${stat(String(plan.breakingChanges.length), 'upstream change' + (plan.breakingChanges.length === 1 ? '' : 's'))}
   ${stat(plan.risk, 'repo risk', riskClass(plan.risk))}
 </div>
 
 <div class="actions">
-  <button class="primary" data-command="drift.fixAll">Fix with my AI agent</button>
+  ${plan.commits.length > 0 ? '<button class="primary" data-command="drift.fixAll">Fix with my AI agent</button>' : ''}
   <button data-command="drift.selectAgent">Change agent</button>
   <button data-command="drift.disableEditorSignals">Hide editor flags</button>
   <button data-command="drift.analyze">Re-analyse</button>
@@ -522,6 +586,11 @@ function renderChangeCard(
   // The one number a reader sees first — the three-dimension breakdown in
   // `renderConfidenceDetail` stays underneath for anyone who wants the working.
   const display = confidenceDisplay(change);
+  const runtimeState =
+    change.kind === 'runtime-requirement'
+      ? plan.dispositions?.find((entry) => entry.changeId === change.id)?.runtimeAnalysis?.state ??
+        plan.rationale?.flatMap((entry) => entry.runtimeAnalyses ?? []).find((analysis) => analysis.changeId === change.id)?.state
+      : undefined;
 
   const siteList = sites.length
     ? `<ul class="sites">
@@ -538,6 +607,10 @@ function renderChangeCard(
           )
           .join('')}
        </ul>`
+    : change.kind === 'runtime-requirement'
+      ? runtimeState === 'unknown' || runtimeState === 'partial'
+        ? `<p class="muted">Drift has no concrete runtime declaration edit to point at, and compatibility remains <b>${escapeHtml(runtimeState)}</b>. Confirm the runtime used to build and deploy before upgrading.</p>`
+        : `<p class="muted">The repository's runtime declaration satisfies this requirement, so no runtime configuration edit is planned.</p>`
     : notSearched(change)
       // "Searched and found nothing" and "could not search" produce the same
       // empty list and mean opposite things. The panel must not render them
@@ -586,7 +659,13 @@ function renderChangeCard(
           .join(' · ')}</p>`
       : ''
   }
-  <p class="muted">${escapeHtml(sites.length ? 'Repo risk is based on these local matches.' : 'Repo risk stays none when there are no local matches to edit.')}</p>
+  <p class="muted">${escapeHtml(
+    sites.length
+      ? 'Repo risk is based on these local matches.'
+      : runtimeState === 'unknown' || runtimeState === 'partial'
+        ? 'No local match is not evidence of runtime compatibility.'
+        : 'Repo risk stays none when there are no local matches to edit.',
+  )}</p>
   ${siteList}
 </article>`;
 }

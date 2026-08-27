@@ -439,7 +439,7 @@ function renderOutdatedTable(candidates: readonly UpgradeCandidate[]): string {
 
   const rows = candidates.map((c) => {
     const version = c.selected === c.latest ? `${c.current} → ${c.selected}` : `${c.current} → ${c.selected} (latest ${c.latest})`;
-    const impact = c.breakingCount > 0 ? `${c.impactCount} site(s) in ${c.impactFiles} file(s)` : '—';
+    const impact = c.breakingCount > 0 ? `${c.actionableImpactCount ?? 0} actionable site(s) in ${c.actionableImpactFiles ?? 0} file(s)` : '—';
     return `| ${c.name} | ${DEPENDENCY_KIND_LABELS[c.kind]} | ${version} | ${c.breakingCount} | ${impact} | ${c.risk} |`;
   });
 

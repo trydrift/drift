@@ -40,6 +40,17 @@ export interface EvidenceRef {
   locator: string | null;
 }
 
+interface RuntimeRequirementBase {
+  runtime: "node" | "python" | "go" | "ruby" | "java" | "rust";
+  requirement: string;
+  sourceText: string;
+  rangeParseStatus?: "parsed" | "unknown";
+}
+
+export type RuntimeRequirement =
+  | (RuntimeRequirementBase & { kind: "minimum-runtime" })
+  | (RuntimeRequirementBase & { kind: "unsupported-runtime-range"; derivedMinimum?: string });
+
 /** The single customer-facing number — see `deriveOverallConfidence` in core. */
 export interface OverallConfidence {
   score: number;
@@ -59,6 +70,7 @@ export interface BreakingChange {
    * rather than a fabricated number.
    */
   overall?: OverallConfidence | null;
+  runtime?: RuntimeRequirement | null;
   symbols: string[];
   evidence?: EvidenceRef[];
   sites: ImpactSite[];
@@ -80,6 +92,38 @@ export interface Candidate {
   risk: string;
   summary: string;
   recommendation: string | null;
+  /**
+   * What Drift established about this repository's runtime for this upgrade's
+   * runtime requirements. `null` when it announced none — deliberately not
+   * `"compatible"`, since "nothing asked" is not "asked and satisfied".
+   * Absent in recordings captured before the state existed.
+   */
+  runtimeCompatibility?: "compatible" | "incompatible" | "partial" | "unknown" | null;
+  /** The per-requirement breakdown behind {@link runtimeCompatibility}. */
+  runtimeAnalyses?: {
+    changeId: string;
+    runtime: string;
+    state: "compatible" | "incompatible" | "partial" | "unknown";
+    reason: string;
+    siteCount: number;
+    declarationCount: number;
+    unresolvedCount: number;
+  }[];
+  severity?: "affected" | "verification-failed" | "upstream-only" | "unchecked" | "clean" | "error" | "pending";
+  independentActionableFindingCount?: number;
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  runtimeDeclarationSiteCount?: number;
+  /** Complete runtime-finding identity set; unlike `breaking`, never sliced. */
+  runtimeChanges?: { id: string; runtime: RuntimeRequirement["runtime"] }[];
+  dispositions?: {
+    changeId: string;
+    state: "actionable" | "review-only" | "unaffected" | "unknown";
+    reason: string;
+    siteCount: number;
+    actionableSiteCount: number;
+    runtimeState: "compatible" | "incompatible" | "partial" | "unknown" | null;
+  }[];
   breakingCount: number;
   impactCount: number;
   impactFiles: number;
@@ -169,7 +213,16 @@ function asSeverityInput(candidate: Candidate): SeverityInput {
       : confidences.includes("low")
         ? "low"
         : "none";
-  return { ...candidate, recommendation: candidate.recommendation ?? undefined, impactConfidence };
+  // Same `null`-for-absent translation as `recommendation`: an upgrade with
+  // no runtime requirement records `null`, and `severityOf` must see an
+  // absent field rather than a state it would have to interpret.
+  const { runtimeCompatibility, ...rest } = candidate;
+  return {
+    ...rest,
+    recommendation: candidate.recommendation ?? undefined,
+    impactConfidence,
+    ...(runtimeCompatibility ? { runtimeCompatibility } : {}),
+  };
 }
 
 /** Mirrors `OVERALL_LABEL` in `src/confidence/types.ts`, for recordings with no stored score to read a label from. */

@@ -1270,8 +1270,8 @@ export function renderCandidateBody(candidate: UpgradeCandidate, lazySections = 
             ? ''
             : `${renderUpgradeActions(candidate)}
         ${
-          candidate.impactCount > 0
-            ? `<button class="primary" data-action="fixPackage" data-id="${escapeAttr(candidate.id)}">Upgrade and fix ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'}</button>`
+          (candidate.actionableImpactCount ?? 0) > 0
+            ? `<button class="primary" data-action="fixPackage" data-id="${escapeAttr(candidate.id)}">Upgrade and fix ${candidate.actionableImpactCount} site${candidate.actionableImpactCount === 1 ? '' : 's'}</button>`
             : ''
         }
         <button data-action="fileIssuePackage" data-id="${escapeAttr(candidate.id)}" title="Create a GitHub issue tracking this upgrade instead of acting on it now">Create issue</button>`

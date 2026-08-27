@@ -1,5 +1,6 @@
 import type {
   BreakingChange,
+  BreakingChangeDisposition,
   Confidence,
   DependencyChange,
   Evidence,
@@ -29,6 +30,8 @@ import { assess, deriveLegacyConfidence } from '../confidence/calibrate.js';
 import { isLocallyUnprovable, taxonomyOf } from '../confidence/taxonomy.js';
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from '../confidence/types.js';
 import { PLAN_SCHEMA_VERSION } from '../approval/digest.js';
+import { deriveBreakingChangeDispositions } from '../disposition.js';
+import type { RuntimeRequirementAnalysis } from '../rationale/compatibility.js';
 
 /**
  * Plan assembly: turn findings into a proposal, and decide whether Drift is
@@ -48,6 +51,8 @@ export interface BuildPlanInput {
   evidence: readonly Evidence[];
   breakingChanges: readonly BreakingChange[];
   impactSites: readonly ImpactSite[];
+  /** Exactly one analysis per runtime breaking change. */
+  runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
   /** Reasons from triage, surfaced so nothing looks silently dropped. */
   skipped?: readonly { change: DependencyChange; reason: string }[];
   /** Why each upgrade might be worth taking. Absent when the stage was skipped. */
@@ -100,10 +105,17 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
   // Assessments first: the guardrails below decide on local impact, which does
   // not exist until localization has run and cannot be known inside `analyze`.
   const breakingChanges = assessAll(input);
+  const dispositions = deriveBreakingChangeDispositions(
+    breakingChanges,
+    impactSites,
+    input.runtimeAnalyses ?? input.rationale?.flatMap((entry) => entry.runtimeAnalyses ?? []) ?? [],
+    input.localizationRan ?? true,
+  );
 
   const graph = planCommitGraph({
     breakingChanges,
     impactSites,
+    dispositions,
     config,
     changes,
     codemods: input.codemods,
@@ -111,7 +123,13 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     fixPlans: input.fixPlans,
   });
   const commits = graph.commits;
-  const risk = assessRisk(changes, breakingChanges, impactSites);
+  const risk = assessRisk(
+    changes,
+    breakingChanges,
+    impactSites,
+    (input.rationale ?? []).map((entry) => entry.assessment.runtimeCompatibility),
+    dispositions,
+  );
   const gaps = collectGaps(input, breakingChanges, commits);
   const { blockers, warnings } = evaluateGuardrails(input, breakingChanges, commits, risk, gaps);
 
@@ -126,6 +144,8 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     breakingChanges,
     upstreamBreakingCount: breakingChanges.length,
     impactSites: [...impactSites],
+    dispositions,
+    localizationRan: input.localizationRan ?? true,
     commits,
     planEdges: graph.edges,
     upgradeCohorts: graph.cohorts,
@@ -156,6 +176,7 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
     // Normalised here so every finding on a plan carries one, whatever the
     // caller supplied.
     const taxonomy = taxonomyOf(change);
+    const runtimeState = (input.runtimeAnalyses ?? []).find((analysis) => analysis.changeId === change.id)?.state;
     // An outcome with no `dependency` is a repo-wide check (typecheck, build)
     // and applies to every finding. One that names `breakingChangeIds` is
     // scoped to those exact findings — the precise case, since a dependency
@@ -177,6 +198,7 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
       evidence,
       sites,
       localizationRan,
+      runtimeState,
       outcomes,
       checkedSurfaces: input.checkedSurfaces ?? [],
       gaps: [],
@@ -370,19 +392,37 @@ export function assessRisk(
   changes: readonly DependencyChange[],
   breakingChanges: readonly BreakingChange[],
   impactSites: readonly ImpactSite[],
+  /**
+   * Runtime compatibility states from the rationale, when one was computed.
+   *
+   * Passed in because `'none'` — the strongest thing this function says — is
+   * otherwise reached purely by `impactSites` being empty, which a runtime
+   * requirement Drift could not resolve produces just as readily as an
+   * upgrade that provably touches nothing.
+   */
+  runtimeStates: readonly (string | undefined)[] = [],
+  dispositions?: readonly BreakingChangeDisposition[],
 ): RiskLevel {
-  if (breakingChanges.length === 0 || impactSites.length === 0) return 'none';
+  const runtimeUnresolved = runtimeStates.some((state) => state === 'unknown' || state === 'partial');
+  const localReview = dispositions?.some((d) => d.state === 'review-only' || d.state === 'unknown') ?? false;
+  const actionableSites = dispositions
+    ? dispositions.flatMap((disposition) => disposition.actionableSites)
+    : impactSites;
+  if (breakingChanges.length === 0 || actionableSites.length === 0) return runtimeUnresolved || localReview ? 'low' : 'none';
 
   let risk: RiskLevel = 'low';
   const raise = (level: RiskLevel) => {
     if (compareRisk(level, risk) > 0) risk = level;
   };
 
-  const fileCount = new Set(impactSites.map((s) => s.file)).size;
-  if (fileCount > 5 || impactSites.length > 20) raise('medium');
-  if (fileCount > 20 || impactSites.length > 75) raise('high');
+  const fileCount = new Set(actionableSites.map((s) => s.file)).size;
+  if (fileCount > 5 || actionableSites.length > 20) raise('medium');
+  if (fileCount > 20 || actionableSites.length > 75) raise('high');
 
-  for (const change of breakingChanges) {
+  const relevantChangeIds = new Set(
+    (dispositions ?? []).filter((d) => d.state !== 'unaffected').map((d) => d.changeId),
+  );
+  for (const change of breakingChanges.filter((change) => relevantChangeIds.size === 0 || relevantChangeIds.has(change.id))) {
     // Behaviour changes are the dangerous class: the code still compiles, so
     // neither the type checker nor an agent's smoke test will catch a wrong fix.
     if (change.kind === 'behaviour-change' || change.kind === 'default-change') raise('high');
@@ -397,7 +437,7 @@ export function assessRisk(
 
   // Test files being touched is a warning sign worth escalating: the fix may
   // be adjusting the test rather than the code the test protects.
-  if (impactSites.some((s) => isTestPath(s.file))) raise('medium');
+  if (actionableSites.some((s) => isTestPath(s.file))) raise('medium');
 
   return risk;
 }

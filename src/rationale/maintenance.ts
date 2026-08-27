@@ -3,12 +3,7 @@ import type { Ecosystem } from '../types.js';
 import { normalizeVersion } from '../detect/version.js';
 import type { RegistryInfo, RepositoryStatus, VersionInfo } from '../evidence/registry.js';
 import type { MaintenanceAssessment, MaintenanceFact } from './types.js';
-import {
-  checkNodeCompatibility,
-  checkPythonCompatibility,
-  type RuntimeCompatibility,
-  type RuntimeDeclaration,
-} from './runtime.js';
+import type { RuntimeDeclaration } from './runtime.js';
 
 /**
  * Whether this package is still looked after — stated, not scored.
@@ -54,6 +49,19 @@ export interface MaintenanceInput {
    * compare the wrong language's numbers.
    */
   pythonRuntime?: readonly RuntimeDeclaration[];
+  /**
+   * Runtimes (`'node'`, `'python'`, `'go'`, `'ruby'`, `'java'`, `'rust'`) for
+   * which a canonical `RuntimeRequirementAnalysis` already answered
+   * compatibility for this dependency. Maintenance still states the upstream
+   * fact for those, but does not run its own repository check against them —
+   * that verdict has one owner, and two independent answers is precisely how
+   * the report ends up contradicting itself (rationale says the repository
+   * satisfies the floor while maintenance tells the reader to go check it).
+   */
+  analyzedRuntimeRequirements?: readonly { runtime: string; requirement: string }[];
+  /** Legacy name-only input; retained conservatively for direct callers. */
+  /** @deprecated Name-only coverage is unsafe and is ignored. */
+  analyzedRuntimes?: readonly string[];
 }
 
 export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessment {
@@ -113,12 +121,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     facts.push({ statement: `The target version was released ${describeAge(targetVersion.releasedAt, now)}.` });
   }
 
-  const runtimeChange = describeRuntimeChange(
-    currentVersion,
-    targetVersion,
-    input.repoRuntime ?? [],
-    input.pythonRuntime ?? [],
-  );
+  const runtimeChange = describeRuntimeChange(currentVersion, targetVersion);
   if (runtimeChange) facts.push(runtimeChange);
 
   const releaseLine = describeReleaseLine(input, latestStable);
@@ -143,44 +146,24 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
 function describeRuntimeChange(
   current: VersionInfo | null,
   target: VersionInfo | null,
-  repoRuntime: readonly RuntimeDeclaration[],
-  pythonRuntime: readonly RuntimeDeclaration[],
 ): MaintenanceFact | null {
   const before = current?.runtime;
   const after = target?.runtime;
   if (!after) return null;
   if (before && before.requirement === after.requirement) return null;
 
-  // A brand-new requirement is exactly as checkable against this repository's
-  // declared runtime as a raised one -- the installed version had no floor,
-  // the target does, and that floor either fits this repository or it does
-  // not. Returning early here (as this used to) skipped the check entirely
-  // and could let a genuinely incompatible upgrade through unflagged.
   const introduced = !before;
   const statement = introduced
     ? `The target version requires ${after.name} ${after.requirement}.`
     : `The required ${after.name} version changed from ${before!.requirement} to ${after.requirement}.`;
 
-  const verified =
-    after.name === 'Node.js'
-      ? describeRuntimeVerification(repoRuntime, after.requirement, checkNodeCompatibility)
-      : after.name === 'Python'
-        ? describeRuntimeVerification(pythonRuntime, after.requirement, checkPythonCompatibility)
-        : null;
-  if (verified) {
-    return { statement: `${statement} ${verified.statement}`, concerning: verified.concerning, polarity: verified.polarity };
-  }
-
-  // No repository declaration to check this against. The floor may or may not
-  // have actually gone up (or may be brand new), which is worth surfacing --
-  // but Drift has not confirmed incompatibility, so this must stay context
-  // rather than a blocker or a reason to recommend upgrading.
-  const concerning = introduced || raisesMinimum(before!.requirement, after.requirement);
-  return {
-    statement: `${statement} Check this against the runtimes this repository builds and deploys on.`,
-    concerning,
-    polarity: 'context',
-  };
+  // Maintenance states the upstream fact and nothing more. Whether this
+  // repository satisfies, violates, partially overlaps, or leaves unknown this
+  // floor — and whether that blocks the upgrade — is decided once, by the
+  // canonical `RuntimeRequirementAnalysis` that every runtime metadata bump now
+  // flows through (see `evidence/index.ts` -> `analyze/index.ts`). A second
+  // verdict here would only ever agree redundantly or contradict it.
+  return { statement, concerning: false, polarity: 'context' };
 }
 
 /**
@@ -248,44 +231,4 @@ export function describeAge(iso: string, now: Date): string {
   const months = Math.round(days / 30.44);
   if (months < 24) return `about ${months} months ago`;
   return `about ${Math.round(days / 365.25)} years ago`;
-}
-
-/**
- * Turn a raised runtime floor from something the reader has to go check into
- * something Drift already checked, wherever it found this repository's own
- * declaration of that floor. The comparator is injected because "does this
- * declaration satisfy that requirement" means something different per
- * language — semver subset for Node, PEP 440 interval containment for
- * Python — while the reporting shape is identical either way.
- */
-function describeRuntimeVerification(
-  repoRuntime: readonly RuntimeDeclaration[],
-  requirement: string,
-  check: (declarations: readonly RuntimeDeclaration[], requirement: string) => RuntimeCompatibility[],
-): { statement: string; concerning: boolean; polarity: 'blocks' | 'context' } | null {
-  const results = check(repoRuntime, requirement);
-  if (results.length === 0) return null;
-
-  const incompatible = results.filter((r) => r.verdict === 'incompatible');
-  if (incompatible.length > 0) {
-    const where = incompatible.map((r) => `${r.file} (declares ${r.requirement})`).join(', ');
-    return { statement: `This repository does not satisfy it: ${where}.`, concerning: true, polarity: 'blocks' };
-  }
-
-  const partial = results.filter((r) => r.verdict === 'partial');
-  if (partial.length > 0) {
-    const where = partial.map((r) => `${r.file} (declares ${r.requirement})`).join(', ');
-    return {
-      statement: `This repository's declared range is only partially compatible: ${where} allows versions the new floor rejects.`,
-      concerning: true,
-      polarity: 'blocks',
-    };
-  }
-
-  const where = [...new Set(results.map((r) => r.file))].join(', ');
-  return {
-    statement: `This repository already satisfies it (${where}).`,
-    concerning: false,
-    polarity: 'context',
-  };
 }

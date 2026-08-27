@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-08-25T18:27:06.729Z",
-  "commit": "9772c540279cc84b8c5be5442c50ccb00b399a6e",
-  "engine": "833292abc0cde7ce",
-  "durationMs": 14089,
+  "capturedAt": "2026-08-27T20:03:14.872Z",
+  "commit": "9384c55c0165b82661b17120a4259f0e198fd0c2",
+  "engine": "dca29fd67cb0580b",
+  "durationMs": 7245,
   "packagesChecked": 4,
   "manifests": [
     "vcpkg.json",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 98,
+      "at": 663,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 101,
+      "at": 672,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 101,
+      "at": 674,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 101,
+      "at": 674,
       "phase": "Reading manifest",
       "detail": "pages/package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 104,
+      "at": 682,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -68,6 +68,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -78,7 +88,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 104,
+      "at": 682,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -95,6 +105,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -105,7 +125,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 104,
+      "at": 682,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -122,6 +142,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -132,7 +162,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 104,
+      "at": 682,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -149,6 +179,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -159,7 +199,7 @@
     },
     {
       "type": "progress",
-      "at": 104,
+      "at": 682,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -167,7 +207,7 @@
     },
     {
       "type": "progress",
-      "at": 105,
+      "at": 682,
       "phase": "Checking registries",
       "detail": "4 direct dependencies",
       "done": 0,
@@ -175,7 +215,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 105,
+      "at": 682,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -192,6 +232,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -202,7 +252,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 105,
+      "at": 682,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -219,6 +269,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -229,7 +289,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 105,
+      "at": 683,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -246,6 +306,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -256,7 +326,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 105,
+      "at": 683,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -273,6 +343,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -282,21 +362,13 @@
       }
     },
     {
-      "type": "progress",
-      "at": 331,
-      "phase": "Indexing your code",
-      "detail": "73 files indexed · 4 direct dependencies to check",
-      "done": 0,
-      "total": 4
-    },
-    {
       "type": "candidate-drop",
-      "at": 463,
+      "at": 1642,
       "id": "pages/package.json#pretty-bytes@7.1.1"
     },
     {
       "type": "progress",
-      "at": 463,
+      "at": 1642,
       "phase": "Up to date",
       "detail": "pretty-bytes@7.1.1",
       "done": 1,
@@ -304,12 +376,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 862,
+      "at": 1715,
       "id": "pages/package.json#@octokit/rest@22.0.1"
     },
     {
       "type": "progress",
-      "at": 862,
+      "at": 1715,
       "phase": "Up to date",
       "detail": "@octokit/rest@22.0.1",
       "done": 2,
@@ -317,7 +389,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2361,
+      "at": 2369,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -326,14 +398,24 @@
         "workspace": "pages",
         "workspaceName": "obs-backgroundremoval-pages",
         "current": "6.4.8",
-        "latest": "7.2.6",
-        "selected": "7.2.6",
+        "latest": "7.2.8",
+        "selected": "7.2.8",
         "safeLatest": null,
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -344,20 +426,20 @@
     },
     {
       "type": "progress",
-      "at": 2361,
+      "at": 2369,
       "phase": "Outdated",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 3,
       "total": 4
     },
     {
       "type": "candidate-drop",
-      "at": 4670,
+      "at": 3050,
       "id": "pages/package.json#typescript@7.0.2"
     },
     {
       "type": "progress",
-      "at": 4670,
+      "at": 3050,
       "phase": "Up to date",
       "detail": "typescript@7.0.2",
       "done": 4,
@@ -365,15 +447,15 @@
     },
     {
       "type": "progress",
-      "at": 4672,
+      "at": 3050,
       "phase": "Reading release notes and changelog",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 4672,
+      "at": 3050,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -390,6 +472,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -400,15 +492,15 @@
     },
     {
       "type": "progress",
-      "at": 4672,
+      "at": 3051,
       "phase": "Checking package metadata",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 4672,
+      "at": 3051,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -425,6 +517,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -435,15 +537,23 @@
     },
     {
       "type": "progress",
-      "at": 5452,
+      "at": 3411,
+      "phase": "Indexing your code",
+      "detail": "72 files indexed · 4 direct dependencies to check",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "type": "progress",
+      "at": 4905,
       "phase": "Checking repository status",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 5452,
+      "at": 4905,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -460,6 +570,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -470,15 +590,15 @@
     },
     {
       "type": "progress",
-      "at": 5788,
+      "at": 5015,
       "phase": "Checking security advisories",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 5788,
+      "at": 5015,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -495,6 +615,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -505,15 +635,15 @@
     },
     {
       "type": "progress",
-      "at": 5923,
+      "at": 5015,
       "phase": "Checking license",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 5923,
+      "at": 5015,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -530,6 +660,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -540,15 +680,15 @@
     },
     {
       "type": "progress",
-      "at": 14003,
+      "at": 7224,
       "phase": "Reading release notes and changelog",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 14003,
+      "at": 7224,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -565,6 +705,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -575,15 +725,15 @@
     },
     {
       "type": "progress",
-      "at": 14003,
+      "at": 7224,
       "phase": "Comparing the public API surface",
-      "detail": "astro 6.4.8 → 7.2.6 · 6 evidence sources",
+      "detail": "astro 6.4.8 → 7.2.8 · 6 evidence sources",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 14003,
+      "at": 7224,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -600,6 +750,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -610,15 +770,15 @@
     },
     {
       "type": "progress",
-      "at": 14014,
+      "at": 7225,
       "phase": "Searching your code for 43 breaking changes",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 14014,
+      "at": 7225,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -635,6 +795,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -645,15 +815,15 @@
     },
     {
       "type": "progress",
-      "at": 14043,
+      "at": 7231,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 14043,
+      "at": 7231,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -670,6 +840,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -680,15 +860,15 @@
     },
     {
       "type": "progress",
-      "at": 14044,
+      "at": 7239,
       "phase": "Checking maintenance signals",
-      "detail": "astro 6.4.8 → 7.2.6",
+      "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
       "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 14044,
+      "at": 7239,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -705,6 +885,16 @@
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
         "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
@@ -715,7 +905,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 14089,
+      "at": 7245,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -724,14 +914,369 @@
         "workspace": "pages",
         "workspaceName": "obs-backgroundremoval-pages",
         "current": "6.4.8",
-        "latest": "7.2.6",
-        "selected": "7.2.6",
+        "latest": "7.2.8",
+        "selected": "7.2.8",
         "safeLatest": null,
         "status": "ready",
         "phase": null,
         "risk": "none",
-        "summary": "Upgrade recommended. 43 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
+        "summary": "Upgrade recommended. 43 upstream API breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
         "recommendation": "upgrade-recommended",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "upstream-only",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [
+          {
+            "changeId": "bc_f1fb366812",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fe86ec79dd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_928967d616",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_47bdcc814f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8ae68dafa3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_34929b5ee0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5951fd7211",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c9e426bd3b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f15b382009",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_94e4970352",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0195b6df80",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_818bf30ba3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8e83f82800",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_22ad465210",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fc6e1181c9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_05dfa639be",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_69ac7f4889",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f57fc91d4c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_75ee6f5803",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7eb22acae9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_db6c976b26",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1f6e52dd03",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c4c399b64e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_99834a29e1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5f3f871089",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_21a8c00e87",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2f9d476295",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_634103cb82",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_911891b35b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7825d1ce59",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_13bef5d58d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_040bb21e9f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6eaf0f93d3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8098063932",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_edc2d97884",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e8116e1e4b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3ab176e126",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d5821f1515",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_74deeefdc1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6e41a224bb",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_986160298c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_51ae804388",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0c40533189",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          }
+        ],
         "breakingCount": 43,
         "impactCount": 0,
         "impactFiles": 0,
@@ -743,6 +1288,7 @@
             "summary": "`SSRManifest.experimentalQueuedRendering` was removed.",
             "remediation": "The member `SSRManifest.experimentalQueuedRendering` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
             "confidence": "high",
+            "runtime": null,
             "overall": {
               "score": 55,
               "band": "medium",
@@ -756,8 +1302,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -767,6 +1313,7 @@
             "summary": "`SSRManifest.poolSize` was removed.",
             "remediation": "The member `SSRManifest.poolSize` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
             "confidence": "high",
+            "runtime": null,
             "overall": {
               "score": 55,
               "band": "medium",
@@ -780,8 +1327,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -791,6 +1338,7 @@
             "summary": "`SSRManifest.contentCache` was removed.",
             "remediation": "The member `SSRManifest.contentCache` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
             "confidence": "high",
+            "runtime": null,
             "overall": {
               "score": 55,
               "band": "medium",
@@ -804,8 +1352,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -815,6 +1363,7 @@
             "summary": "`SSRManifest.experimentalLogger` was removed.",
             "remediation": "The member `SSRManifest.experimentalLogger` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
             "confidence": "high",
+            "runtime": null,
             "overall": {
               "score": 55,
               "band": "medium",
@@ -828,8 +1377,8 @@
               {
                 "source": "type-surface-diff",
                 "title": "40 API surface change(s) in astro",
-                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+                "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+                "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
               }
             ],
             "sites": []
@@ -839,9 +1388,9 @@
     },
     {
       "type": "progress",
-      "at": 14089,
+      "at": 7245,
       "phase": "Checked",
-      "detail": "astro 6.4.8 → 7.2.6 · safe for your code · 43 upstream changes, none used here — not deeply verified",
+      "detail": "astro 6.4.8 → 7.2.8 · safe for your code · 43 upstream changes, none used here — not deeply verified",
       "done": 1,
       "total": 1
     }
@@ -855,14 +1404,369 @@
       "workspace": "pages",
       "workspaceName": "obs-backgroundremoval-pages",
       "current": "6.4.8",
-      "latest": "7.2.6",
-      "selected": "7.2.6",
+      "latest": "7.2.8",
+      "selected": "7.2.8",
       "safeLatest": null,
       "status": "ready",
       "phase": null,
       "risk": "none",
-      "summary": "Upgrade recommended. 43 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
+      "summary": "Upgrade recommended. 43 upstream API breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
       "recommendation": "upgrade-recommended",
+      "hasCompatibilityEvidence": true,
+      "runtimeCompatibility": null,
+      "runtimeAnalyses": [],
+      "severity": "upstream-only",
+      "independentActionableFindingCount": 0,
+      "actionableImpactCount": 0,
+      "actionableImpactFiles": 0,
+      "runtimeDeclarationSiteCount": 0,
+      "runtimeChanges": [],
+      "dispositions": [
+        {
+          "changeId": "bc_f1fb366812",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_fe86ec79dd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_928967d616",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_47bdcc814f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8ae68dafa3",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_34929b5ee0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5951fd7211",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c9e426bd3b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f15b382009",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_94e4970352",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_0195b6df80",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_818bf30ba3",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8e83f82800",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_22ad465210",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_fc6e1181c9",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_05dfa639be",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_69ac7f4889",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f57fc91d4c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_75ee6f5803",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7eb22acae9",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_db6c976b26",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_1f6e52dd03",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c4c399b64e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_99834a29e1",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5f3f871089",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_21a8c00e87",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2f9d476295",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_634103cb82",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_911891b35b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7825d1ce59",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_13bef5d58d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_040bb21e9f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6eaf0f93d3",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8098063932",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_edc2d97884",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_e8116e1e4b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_3ab176e126",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_d5821f1515",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_74deeefdc1",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6e41a224bb",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_986160298c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_51ae804388",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_0c40533189",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        }
+      ],
       "breakingCount": 43,
       "impactCount": 0,
       "impactFiles": 0,
@@ -874,6 +1778,7 @@
           "summary": "`SSRManifest.experimentalQueuedRendering` was removed.",
           "remediation": "The member `SSRManifest.experimentalQueuedRendering` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "runtime": null,
           "overall": {
             "score": 55,
             "band": "medium",
@@ -887,8 +1792,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -898,6 +1803,7 @@
           "summary": "`SSRManifest.poolSize` was removed.",
           "remediation": "The member `SSRManifest.poolSize` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "runtime": null,
           "overall": {
             "score": 55,
             "band": "medium",
@@ -911,8 +1817,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -922,6 +1828,7 @@
           "summary": "`SSRManifest.contentCache` was removed.",
           "remediation": "The member `SSRManifest.contentCache` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "runtime": null,
           "overall": {
             "score": 55,
             "band": "medium",
@@ -935,8 +1842,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -946,6 +1853,7 @@
           "summary": "`SSRManifest.experimentalLogger` was removed.",
           "remediation": "The member `SSRManifest.experimentalLogger` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "runtime": null,
           "overall": {
             "score": 55,
             "band": "medium",
@@ -959,8 +1867,8 @@
             {
               "source": "type-surface-diff",
               "title": "40 API surface change(s) in astro",
-              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.6/dist/index.d.ts",
-              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.6:dist/index.d.ts + package.json"
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.8/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts + package.json → astro@7.2.8:dist/index.d.ts + package.json"
             }
           ],
           "sites": []

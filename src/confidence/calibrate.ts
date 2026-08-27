@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { BreakingChange, Confidence, Evidence, EvidenceSource, ImpactSite } from '../types.js';
+import type { BreakingChange, Confidence, Evidence, EvidenceSource, ImpactSite, RuntimeCompatibilityState } from '../types.js';
 import {
   bandFor,
   OVERALL_LABEL,
@@ -229,6 +229,7 @@ export interface LocalImpactInput {
   sites: readonly ImpactSite[];
   /** False when there was no checkout to search. */
   localizationRan: boolean;
+  runtimeState?: RuntimeCompatibilityState;
 }
 
 /**
@@ -261,21 +262,39 @@ export function assessLocalImpact(input: LocalImpactInput): ConfidenceScore {
     };
   }
 
+  if (taxonomy.scope === 'runtime' && input.runtimeState === 'compatible') {
+    return {
+      score: 0.85,
+      band: 'high',
+      evidence: [{ code: 'runtime-compatible', detail: 'The repository runtime declaration satisfies the requirement.', delta: 0.85 }],
+      penalties: [],
+      calibration: CALIBRATION_VERSION,
+    };
+  }
+
   if (sites.length === 0) {
     // Searched and found nothing. That is a real, useful answer — but only for
     // the surfaces a search can cover. An endpoint change has no import edge,
     // so finding nothing says almost nothing.
     const unprovable = isLocallyUnprovable(taxonomy);
+    // A runtime requirement has no symbol and no call site, so "searched the
+    // importers and found no usage" is not merely unhelpful here -- it is
+    // false, and it is the sentence that made an unresolved runtime condition
+    // read as a clean search. The runtime scope gets its own honest wording:
+    // where the answer lives is the declared runtime, not the source tree.
+    const runtimeScoped = taxonomy.scope === 'runtime';
     return {
       score: 0,
       band: 'none',
       evidence: [],
       penalties: [
         {
-          code: unprovable ? 'not-locally-checkable' : 'no-usage-found',
-          detail: unprovable
-            ? 'This change is only observable at runtime, so a source search cannot establish whether this repository is affected.'
-            : 'Drift searched the files that import this dependency and found no usage of the affected symbols.',
+          code: runtimeScoped ? 'runtime-compatibility-unresolved' : unprovable ? 'not-locally-checkable' : 'no-usage-found',
+          detail: runtimeScoped
+            ? "This is a requirement on the runtime this repository builds and deploys on, not on any code it calls. No source search can answer it; the repository's own declared runtime version is what decides."
+            : unprovable
+              ? 'This change is only observable at runtime, so a source search cannot establish whether this repository is affected.'
+              : 'Drift searched the files that import this dependency and found no usage of the affected symbols.',
           delta: 0,
         },
       ],
@@ -508,6 +527,7 @@ export interface AssessmentInput {
   outcomes?: readonly VerificationOutcome[];
   checkedSurfaces?: readonly CheckedSurface[];
   gaps?: readonly AnalysisGap[];
+  runtimeState?: RuntimeCompatibilityState;
 }
 
 /** Assemble the full assessment for one finding. */
@@ -518,6 +538,7 @@ export function assess(input: AssessmentInput): ConfidenceAssessment {
     taxonomy: input.taxonomy,
     sites: input.sites,
     localizationRan: input.localizationRan,
+    runtimeState: input.runtimeState,
   });
   const verification = assessVerification({
     outcomes: input.outcomes ?? [],

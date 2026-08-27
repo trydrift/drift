@@ -252,7 +252,7 @@ describe('maintenance facts', () => {
     assert.match(result.facts[0]!.statement, /published in error/);
   });
 
-  test('a raised runtime minimum is concerning; a lowered one is not', () => {
+  test('a changed runtime minimum is stated as context, not judged by maintenance (#110)', () => {
     const version = (requirement: string) => ({
       version: 'v',
       license: null,
@@ -262,19 +262,16 @@ describe('maintenance facts', () => {
       withdrawn: null,
     });
 
-    const raised = assessMaintenance({
-      ...base,
-      currentVersion: version('>=14'),
-      targetVersion: version('>=18'),
-    });
-    assert.ok(raised.facts.some((f) => f.concerning && /Node\.js version changed/.test(f.statement)));
-
-    const lowered = assessMaintenance({
-      ...base,
-      currentVersion: version('>=18'),
-      targetVersion: version('>=14'),
-    });
-    assert.ok(lowered.facts.some((f) => !f.concerning && /Node\.js version changed/.test(f.statement)));
+    // Both directions produce the same plain, non-blocking context fact.
+    // Whether the change matters to this repository is the canonical
+    // RuntimeRequirementAnalysis's call now, not maintenance's.
+    for (const [from, to] of [['>=14', '>=18'], ['>=18', '>=14']] as const) {
+      const result = assessMaintenance({ ...base, currentVersion: version(from), targetVersion: version(to) });
+      const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
+      assert.ok(fact, `${from} -> ${to}`);
+      assert.equal(fact!.concerning, false);
+      assert.equal(fact!.polarity, 'context');
+    }
   });
 
   test('raisesMinimum reads the floor out of a requirement string', () => {
@@ -1076,12 +1073,13 @@ describe('assembling the rationale', () => {
       const factFor = (r: (typeof rationales)[number]) =>
         r.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
 
-      assert.equal(factFor(rationales[0]!)?.concerning, false, 'the api workspace already satisfies the new floor');
-      assert.equal(
-        factFor(rationales[1]!)?.concerning,
-        true,
-        "the worker workspace does not, and must not borrow the api workspace's declaration",
-      );
+      // Maintenance states the same upstream fact for both members and
+      // fabricates no per-member verdict — cross-member runtime scoping is now
+      // the canonical discovery/analysis path's job (see rationale-runtime).
+      for (const r of rationales) {
+        assert.equal(factFor(r)?.concerning, false);
+        assert.equal(factFor(r)?.polarity, 'context');
+      }
     } finally {
       globalThis.fetch = realFetch;
       clearHttpCache();

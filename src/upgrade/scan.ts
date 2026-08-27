@@ -53,7 +53,7 @@ import type { ProseSource } from '../evidence/index.js';
 import { analyze } from '../analyze/index.js';
 import { walkSourceFiles } from '../index/walk.js';
 import { buildIndex } from '../index/metarag.js';
-import { localize } from '../localize/index.js';
+import { localizeWithRuntime } from '../localize/index.js';
 import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey, upstreamUpgradeKey } from '../util/id.js';
@@ -160,6 +160,15 @@ export interface UpgradeCandidate {
   evidenceCount: number;
   breakingCount: number;
   impactCount: number;
+  /**
+   * Sites whose canonical disposition permits a remediation edit. Always set
+   * by the scan pipeline; optional only so hand-built candidate fixtures
+   * typecheck. `severityOf` falls back to `impactCount` when absent.
+   */
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  /** Runtime declarations shown for review, whether or not actionable. */
+  runtimeDeclarationSiteCount?: number;
   /** Distinct repository files with at least one impact site. */
   impactFiles: number;
   /**
@@ -170,6 +179,36 @@ export interface UpgradeCandidate {
    * actually traced. See `SeverityInput.impactConfidence`.
    */
   impactConfidence: 'high' | 'medium' | 'low' | 'none';
+  /**
+   * What Drift established about this repository's runtime relative to this
+   * upgrade's runtime requirements, or absent when it announced none.
+   *
+   * Carried on the candidate rather than recomputed by each consumer because
+   * it is the one fact about a package-wide compatibility condition that no
+   * count on this row can express: `unknown` and `partial` both routinely
+   * come with `impactCount === 0`. `severityOf` reads it, and site
+   * recordings capture it so the corpus validator can assert the invariant
+   * structurally.
+   */
+  runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+  /**
+   * The per-requirement breakdown behind {@link runtimeCompatibility}: which
+   * upstream runtime requirement, which runtime, what state, and why.
+   *
+   * Kept as structure rather than prose so a recording can capture it and the
+   * corpus validator can assert invariants against the state directly —
+   * "unknown may not be safe", "a generic image is attached to no runtime" —
+   * instead of grepping the rendered sentences for them.
+   */
+  runtimeAnalyses?: readonly {
+    changeId: string;
+    runtime: string;
+    state: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+    reason: string;
+    siteCount: number;
+    declarationCount: number;
+    unresolvedCount: number;
+  }[];
   /**
    * `impactCount` includes a compiler-provable finding that only a batch pass
    * has weighed in on — not because isolated evidence found it real, but
@@ -2188,17 +2227,18 @@ async function analyzeUpgrade(args: {
     awaitIndex.end();
     const localizing = span('localize', target.manager.ecosystem, { changes: breakingChanges.length });
     const localization = diagSpan('localization', { package: args.dep.name, changes: breakingChanges.length, filesConsidered: files.length });
-    const impactSites = localize(breakingChanges, [change], index, files, {
+    const { sites: impactSites, runtimeAnalyses } = localizeWithRuntime(breakingChanges, [change], index, files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
+      members: args.allMembers,
       ...(moduleMaps ? { moduleMaps } : {}),
     });
     localizing.end({ sites: impactSites.length });
     localization.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
     const [rationale] = await measure('rationale', target.manager.ecosystem, () => buildRationale(
-      { changes: [change], evidence, breakingChanges, impactSites },
+      { changes: [change], evidence, breakingChanges, impactSites, runtimeAnalyses, localizationRan: true },
       {
         config: args.config,
         logger: args.logger,
@@ -2229,6 +2269,7 @@ async function analyzeUpgrade(args: {
       evidence,
       breakingChanges,
       impactSites,
+      runtimeAnalyses,
       ...(rationale ? { rationale: [rationale] } : {}),
     });
 
@@ -2238,17 +2279,44 @@ async function analyzeUpgrade(args: {
       evidenceCount: evidence.length,
       breakingCount: breakingChanges.length,
       impactCount: impactSites.length,
+      actionableImpactCount: (plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0),
+      actionableImpactFiles: new Set((plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file))).size,
+      runtimeDeclarationSiteCount: (plan.dispositions ?? [])
+        .filter((disposition) => disposition.runtimeAnalysis !== undefined)
+        .reduce((count, disposition) => count + disposition.sites.length, 0),
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
       impactConfidence: strongestImpactConfidence(impactSites),
       risk: plan.risk,
-      summary: summarize(breakingChanges.length, impactSites.length, args.dep.name, rationale),
+      summary: summarize(breakingChanges.length, breakingChanges, impactSites, args.dep.name, rationale),
       // Kept even when there are findings: "two breaking changes, and the type
       // surface could not be read" is a different claim from "two breaking
       // changes", and the weaker one is the true one.
       gaps: rationale?.gaps ?? [],
       toolRequests: installRequests(surfaceGaps),
       ...(rationale
-        ? { rationale, recommendation: rationale.assessment.recommendation }
+        ? {
+            rationale,
+            recommendation: rationale.assessment.recommendation,
+            // Structural, not derived from `impactCount`: the two states that
+            // must never render as safe -- `unknown` and `partial` -- can
+            // both come with zero sites. See `severityOf`.
+            ...(rationale.assessment.runtimeCompatibility
+              ? { runtimeCompatibility: rationale.assessment.runtimeCompatibility }
+              : {}),
+            ...(runtimeAnalyses.length > 0
+              ? {
+                  runtimeAnalyses: runtimeAnalyses.map((analysis) => ({
+                    changeId: analysis.changeId,
+                    runtime: analysis.runtime,
+                    state: analysis.state,
+                    reason: analysis.reason,
+                    siteCount: analysis.sites.length,
+                    declarationCount: analysis.declarations.length,
+                    unresolvedCount: analysis.unresolved.length,
+                  })),
+                }
+              : {}),
+          }
         : {}),
       plan,
     };
@@ -2259,6 +2327,9 @@ async function analyzeUpgrade(args: {
       evidenceCount: 0,
       breakingCount: 0,
       impactCount: 0,
+      actionableImpactCount: 0,
+      actionableImpactFiles: 0,
+      runtimeDeclarationSiteCount: 0,
       impactFiles: 0,
       impactConfidence: 'none',
       risk: 'unknown',
@@ -2345,6 +2416,9 @@ function pendingCandidate(args: {
     evidenceCount: 0,
     breakingCount: 0,
     impactCount: 0,
+    actionableImpactCount: 0,
+    actionableImpactFiles: 0,
+    runtimeDeclarationSiteCount: 0,
     impactFiles: 0,
     impactConfidence: 'none',
     risk: 'unknown',

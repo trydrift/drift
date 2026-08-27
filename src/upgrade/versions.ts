@@ -123,11 +123,12 @@ export async function lookupVersions(request: VersionLookupRequest): Promise<Ver
 async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
   const { name, ecosystem, current, range } = request;
   const source = versionSourceLabel(ecosystem);
+  const comparisonCurrent = ecosystem === 'swift' ? normalizeVersion(current) ?? current : current;
 
   // Everything below compares against `current`. If that is not a version
   // semver can order, no comparison is meaningful and every answer would be
   // arbitrary — which is exactly the case that used to render as "up to date".
-  if (!semver.valid(current)) {
+  if (!semver.valid(comparisonCurrent)) {
     return {
       outcome: 'unchecked',
       reason: `${name} is installed at “${current}”, which Drift cannot compare against published versions.`,
@@ -139,6 +140,13 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
     return { outcome: 'unchecked', reason: `Drift could not reach ${source} for ${name}.` };
   }
 
+  if (published.complete === false) {
+    return {
+      outcome: 'unchecked',
+      reason: `Drift could not enumerate all of ${source} for ${name}, so it cannot establish whether a newer compatible version exists.`,
+    };
+  }
+
   if (published.versions.length === 0) {
     return {
       outcome: 'unchecked',
@@ -146,46 +154,68 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
     };
   }
 
-  const normalized = published.versions
+  const compatiblePublished =
+    ecosystem === 'swift'
+      ? published.versions.filter((version) => versionFamily(version) === versionFamily(current))
+      : published.versions;
+  const normalized = compatiblePublished
     .map((raw) => normalizeVersion(raw))
     .filter((version): version is string => Boolean(version));
 
   // Versions came back and not one of them parsed. That is a source Drift
   // cannot read, not a package that is current.
   if (normalized.length === 0) {
+    if (ecosystem === 'swift') {
+      return {
+        outcome: 'unchecked',
+        reason: `${source} returned no tags in the installed version's ${versionFamily(current)} family for ${name}.`,
+      };
+    }
     return {
       outcome: 'unchecked',
       reason: `Drift could not read any of the ${published.versions.length} version numbers ${source} published for ${name}.`,
     };
   }
 
-  const newer = normalized.filter((version) => semver.gt(version, current)).sort(semver.rcompare);
+  const newer = normalized.filter((version) => semver.gt(version, comparisonCurrent)).sort(semver.rcompare);
 
-  const latest = published.latest ?? newer.find((v) => !semver.prerelease(v)) ?? newer[0];
-  if (!latest || !semver.gt(latest, current)) return { outcome: 'up-to-date' };
+  const latest =
+    ecosystem === 'swift'
+      ? normalized.filter((version) => !semver.prerelease(version)).sort(semver.rcompare)[0] ?? normalized[0]
+      : published.latest ?? newer.find((v) => !semver.prerelease(v)) ?? newer[0];
+  if (!latest || !semver.gt(latest, comparisonCurrent)) return { outcome: 'up-to-date' };
 
   // Computed over every published version, never over the truncated list the
   // caller shows: `maxSatisfying` of the twenty newest releases of a busy
   // package is `null` for anything still on the previous major, which left
   // `safeLatest` undefined precisely where it mattered most.
-  const safe = safeLatest(newer, current, range, ecosystem);
+  const safe = safeLatest(newer, comparisonCurrent, range, ecosystem);
 
   // Prereleases are noise unless the developer is already on one. Twenty
   // versions of zod came back as one release and nine canaries, with no 3.x in
   // sight — the safe upgrade was not merely hard to find, it was not on the
   // list. The in-range version is now pinned into the list by construction.
-  const onPrerelease = Boolean(semver.prerelease(current));
+  const onPrerelease = Boolean(semver.prerelease(comparisonCurrent));
   const stable = newer.filter((version) => onPrerelease || !semver.prerelease(version));
 
-  const withinMajor = latestWithinMajor(stable, current);
+  const withinMajor = latestWithinMajor(stable, comparisonCurrent);
 
   const versions = [
     ...new Set([latest, ...(safe ? [safe] : []), ...(withinMajor ? [withinMajor] : []), ...stable.slice(0, 18)]),
   ]
-    .filter((version) => semver.gt(version, current))
+    .filter((version) => semver.gt(version, comparisonCurrent))
     .sort(semver.rcompare);
 
   return { outcome: 'upgrade', latest, safeLatest: safe, latestMinor: withinMajor, versions };
+}
+
+type VersionFamily = 'semver' | 'calendar' | 'unknown';
+
+/** Classify tag schemes before normalization puts incompatible versions together. */
+function versionFamily(raw: string): VersionFamily {
+  const value = raw.trim().replace(/^[^\d]*/, '');
+  if (/^\d{4}[.-]\d{1,2}[.-]\d{1,2}(?:[.-]\d+)?(?:$|[-+])/.test(value)) return 'calendar';
+  return normalizeVersion(raw) ? 'semver' : 'unknown';
 }
 
 /**
@@ -197,7 +227,7 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
  */
 async function publishedVersions(
   request: VersionLookupRequest,
-): Promise<{ latest: string | null; versions: string[] } | null> {
+): Promise<{ latest: string | null; versions: string[]; complete?: boolean } | null> {
   switch (request.ecosystem) {
     case 'npm':
       return npmVersions(request.name);
@@ -274,19 +304,28 @@ function githubHeaders(token?: string): Record<string, string> {
 async function swiftTagVersions(
   name: string,
   token?: string,
-): Promise<{ latest: string | null; versions: string[] } | null> {
+): Promise<{ latest: string | null; versions: string[]; complete: boolean } | null> {
   if (!/^[\w.-]+\/[\w.-]+$/.test(name)) return null;
 
-  const tags = await fetchJson<{ name?: string }[]>(
-    `https://api.github.com/repos/${name}/tags?per_page=100`,
-    { headers: githubHeaders(token) },
-  );
-  if (!tags) return null;
+  // GitHub caps this endpoint at 100 tags per page. A single page can omit the
+  // installed package's entire tag family, and an omitted family is not proof
+  // that it has no upgrades. Twenty pages bounds scan cost while making the
+  // truncation explicit: reaching the bound returns an incomplete result that
+  // `lookup` must report as unchecked.
+  const perPage = 100;
+  const maxPages = 20;
+  const versions: string[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const tags = await fetchJson<{ name?: string }[]>(
+      `https://api.github.com/repos/${name}/tags?per_page=${perPage}&page=${page}`,
+      { headers: githubHeaders(token) },
+    );
+    if (!tags) return page === 1 ? null : { latest: null, versions: [...new Set(versions)], complete: false };
+    versions.push(...tags.map((tag) => tag.name).filter((tag): tag is string => Boolean(tag)));
+    if (tags.length < perPage) return { latest: null, versions: [...new Set(versions)], complete: true };
+  }
 
-  return {
-    latest: null,
-    versions: tags.map((tag) => tag.name).filter((tag): tag is string => Boolean(tag)),
-  };
+  return { latest: null, versions: [...new Set(versions)], complete: false };
 }
 
 /**

@@ -33,6 +33,8 @@ export interface SurfaceEntry {
   signature: string;
   /** Member names for classes/interfaces/enums, so we can diff them too. */
   members: string[];
+  /** Optional semantic signatures for members whose identity is not enough. */
+  memberSignatures?: Record<string, string>;
   /** Required member names, so optional -> required is detectable. */
   requiredMembers: string[];
   /**
@@ -96,7 +98,7 @@ export interface SurfaceChange {
   after?: string;
   /** See `StructuredFinding.changed`. Only ever set on `signature-changed`. */
   changed?: 'parameters' | 'return-type' | 'both';
-  /** See `StructuredFinding.fromKind`/`toKind`. Only ever set on `kind-changed`. */
+  /** The old declaration kind, set for removals and kind changes. */
   fromKind?: string;
   toKind?: string;
   moduleSystem?: {
@@ -1867,6 +1869,7 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
         symbol: name,
         detail: `\`${name}\` is no longer exported (was a ${oldEntry.kind})${origin}.`,
         before: oldEntry.signature,
+        fromKind: oldEntry.kind,
       });
       continue;
     }
@@ -1891,6 +1894,18 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
           symbol: `${name}.${member}`,
           detail: `\`${name}.${member}\` was removed${origin}.`,
         });
+      } else {
+        const beforeMember = oldEntry.memberSignatures?.[member];
+        const afterMember = newEntry.memberSignatures?.[member];
+        if (beforeMember && afterMember && beforeMember !== afterMember) {
+          changes.push({
+            kind: 'signature-changed',
+            symbol: `${name}.${member}`,
+            detail: `The signature of \`${name}.${member}\` changed${origin}.`,
+            before: beforeMember,
+            after: afterMember,
+          });
+        }
       }
     }
 

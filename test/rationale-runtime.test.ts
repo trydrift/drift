@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {
   checkNodeCompatibility,
   checkPythonCompatibility,
+  checkRuntimeCompatibility,
+  discoverRuntimeDeclarations,
+  findRuntimeDeclarations,
   findNodeDeclarations,
   findPythonDeclarations,
 } from '../dist/rationale/index.js';
@@ -90,16 +93,24 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
   });
 
-  test('a non-root member still sees a repo-global CI workflow declaration', () => {
+  test('a non-root member sees an unattributed CI job as evidence, but not as a resolved, authoritative pin (#123)', () => {
+    // `test:` names no member at all. In this real, three-member monorepo
+    // that ownership cannot be established from the file alone — see #123 —
+    // so it must not become a `resolved` declaration `findNodeDeclarations`
+    // (and therefore `checkNodeCompatibility`) could treat as a definite
+    // per-member verdict. It is still real evidence, so it stays visible in
+    // `discoverRuntimeDeclarations`'s `unresolved` half.
     const files = [
       {
         path: '.github/workflows/ci.yml',
         content: ['jobs:', '  test:', '    steps:', "      - uses: actions/setup-node@v5", '        with:', "          node-version: '22'"].join('\n'),
       },
     ];
-    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
-    assert.equal(declarations.length, 1);
-    assert.equal(declarations[0].file, '.github/workflows/ci.yml');
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
+    const discovery = discoverRuntimeDeclarations(files, 'node', 'packages/api', allMembers);
+    assert.deepEqual(discovery.resolved, []);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
   });
 
   test('a non-root member still sees a root-level declaration', () => {
@@ -107,6 +118,42 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
       { file: '.nvmrc', line: 1, requirement: '22.6.0' },
     ]);
+  });
+
+  test("a member's own .nvmrc shadows the root's, the way nvm/asdf actually resolve one", () => {
+    const files = [
+      { path: '.nvmrc', content: '18' },
+      { path: 'packages/api/.nvmrc', content: '20' },
+    ];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20' },
+    ]);
+  });
+
+  test("a member's own .tool-versions shadows the root's", () => {
+    const files = [
+      { path: '.tool-versions', content: 'nodejs 18' },
+      { path: 'packages/api/.tool-versions', content: 'nodejs 20' },
+    ];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: 'packages/api/.tool-versions', line: 1, requirement: '20' },
+    ]);
+  });
+
+  test('an unattributed CI workflow does not out-vote a member’s own .nvmrc, but is still surfaced (#123)', () => {
+    // Unlike a version-pin file, CI is not shadowed by a member's own file —
+    // but per #123, a CI declaration whose job names no member at all is not
+    // proof it governs this specific one either, in a repository with
+    // siblings it could instead belong to. `packages/api/.nvmrc` still
+    // resolves normally; the CI line is real evidence but stays unresolved.
+    const files = [
+      { path: 'packages/api/.nvmrc', content: '20' },
+      { path: '.github/workflows/ci.yml', content: 'jobs:\n  build:\n    steps:\n      - uses: actions/setup-node@v4\n        with:\n' + "          node-version: '18'" },
+    ];
+    const discovery = discoverRuntimeDeclarations(files, 'node', 'packages/api', allMembers);
+    assert.deepEqual(discovery.resolved, [{ file: 'packages/api/.nvmrc', line: 1, requirement: '20' }]);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
   });
 
   test('the root workspace (member === "") does not inherit a sibling’s .nvmrc', () => {
@@ -126,11 +173,13 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     ]);
   });
 
-  test('the root workspace still sees a repo-global CI workflow declaration', () => {
+  test('the root workspace sees an unattributed CI workflow as evidence, not a resolved pin, in a real monorepo (#123)', () => {
     const files = [
       { path: '.github/workflows/ci.yml', content: "          node-version: '22'" },
     ];
-    assert.equal(findNodeDeclarations(files, '', allMembers).length, 1);
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), []);
+    const discovery = discoverRuntimeDeclarations(files, 'node', '', allMembers);
+    assert.equal(discovery.unresolved.length, 1);
   });
 
   test('a root package.json engines field does not leak into a sibling member when the root is itself a member', () => {
@@ -176,6 +225,92 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   });
 });
 
+describe('#123: CI runtime declarations are attributed to the job that owns a workspace', () => {
+  const allMembers = ['', 'packages/api', 'packages/web'];
+  // Normal top-level GitHub Actions indentation: `jobs:` at column 0, job keys
+  // at two spaces, each job scoped to its package via
+  // defaults.run.working-directory.
+  const workflow = [
+    'name: CI',
+    'on: [push]',
+    'jobs:',
+    '  api:',
+    '    runs-on: ubuntu-latest',
+    '    defaults:',
+    '      run:',
+    '        working-directory: packages/api',
+    '    steps:',
+    '      - uses: actions/setup-node@v4',
+    '        with:',
+    '          node-version: 22',
+    '',
+    '  web:',
+    '    runs-on: ubuntu-latest',
+    '    defaults:',
+    '      run:',
+    '        working-directory: packages/web',
+    '    steps:',
+    '      - uses: actions/setup-node@v4',
+    '        with:',
+    '          node-version: 18',
+  ].join('\n');
+  const files = [{ path: '.github/workflows/ci.yml', content: workflow }];
+
+  test('packages/api sees Node 22 and not Node 18', () => {
+    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
+    const versions = declarations.map((d) => d.requirement);
+    assert.deepEqual(versions, ['22']);
+    assert.ok(!versions.includes('18'), 'the web job must not contaminate the api workspace');
+  });
+
+  test('packages/web sees Node 18 and not Node 22', () => {
+    const declarations = findNodeDeclarations(files, 'packages/web', allMembers);
+    const versions = declarations.map((d) => d.requirement);
+    assert.deepEqual(versions, ['18']);
+    assert.ok(!versions.includes('22'), 'the api job must not contaminate the web workspace');
+  });
+
+  test('a job with no workspace selector is unattributed, not repository-wide, once there is a sibling it might instead belong to', () => {
+    // This was the actual #123 false positive: an unscoped root job used to
+    // become authoritative for every member unconditionally, so a build/lint
+    // job on a version one member's dependency upgrade would need could make
+    // an unrelated member look incompatible. Ownership is unestablished
+    // here, not repository-wide — the declaration is real evidence (kept
+    // `unresolved`) but never a `resolved`, votable pin for a member it may
+    // not govern. Single-package repositories are unaffected — see the
+    // 'a job with no workspace selector at all...' test below.
+    const global = [
+      'jobs:',
+      '  lint:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: actions/setup-node@v4',
+      '        with:',
+      '          node-version: 20',
+    ].join('\n');
+    const lintFile = [{ path: '.github/workflows/lint.yml', content: global }];
+    assert.deepEqual(findNodeDeclarations(lintFile, 'packages/api', allMembers), []);
+    const discovery = discoverRuntimeDeclarations(lintFile, 'node', 'packages/api', allMembers);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].rawText, '20');
+  });
+
+  test('a job with no workspace selector at all is repository-wide when there is no sibling it could instead belong to', () => {
+    const global = [
+      'jobs:',
+      '  lint:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: actions/setup-node@v4',
+      '        with:',
+      '          node-version: 20',
+    ].join('\n');
+    const lintFile = [{ path: '.github/workflows/lint.yml', content: global }];
+    // Single-package repository: no workspace context at all.
+    assert.deepEqual(findNodeDeclarations(lintFile).map((d) => d.requirement), ['20']);
+  });
+});
+
 describe("finding this repository's own Python declarations", () => {
   test('reads requires-python out of pyproject.toml’s [project] table', () => {
     const files = [
@@ -214,9 +349,12 @@ describe("finding this repository's own Python declarations", () => {
     assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 5, requirement: '>=3.10' }]);
   });
 
-  test('a computed python_requires in setup.py is left out rather than evaluated', () => {
+  test('a computed python_requires in setup.py remains an unresolved declaration', () => {
     const files = [{ path: 'setup.py', content: 'setup(python_requires=MIN_PYTHON)' }];
     assert.deepEqual(findPythonDeclarations(files), []);
+    const discovery = discoverRuntimeDeclarations(files, 'python');
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0]?.rawText, 'MIN_PYTHON');
   });
 
   test('reads .python-version as a pin', () => {
@@ -396,6 +534,181 @@ describe("finding this repository's own Python declarations", () => {
   });
 });
 
+describe('shared runtime declaration discovery across supported runtimes', () => {
+  const cases = [
+    {
+      runtime: 'node', requirement: '>=24', compatibleRequirement: '>=18',
+      file: { path: '.nvmrc', content: '22' }, expected: '22',
+    },
+    {
+      runtime: 'python', requirement: '>=3.13', compatibleRequirement: '>=3.10',
+      file: { path: 'Containerfile', content: 'FROM python:3.11-slim' }, expected: '3.11',
+    },
+    {
+      runtime: 'ruby', requirement: '>=3.4', compatibleRequirement: '>=3.2',
+      file: { path: '.ruby-version', content: '3.3' }, expected: '3.3',
+    },
+    {
+      runtime: 'go', requirement: '>=1.25', compatibleRequirement: '>=1.22',
+      file: { path: 'go.mod', content: 'module example.com/demo\n\ngo 1.23\ntoolchain go1.24.1\n' }, expected: '1.23',
+    },
+    {
+      runtime: 'java', requirement: '>=21', compatibleRequirement: '>=17',
+      file: { path: 'Dockerfile', content: 'FROM eclipse-temurin:17-jdk' }, expected: '17',
+    },
+    {
+      runtime: 'rust', requirement: '>=1.90', compatibleRequirement: '>=1.80',
+      file: { path: 'rust-toolchain', content: '1.82' }, expected: '1.82',
+    },
+  ] as const;
+
+  for (const fixture of cases) {
+    test(`${fixture.runtime}: discovers declarations and distinguishes compatible from incompatible`, () => {
+      const declarations = findRuntimeDeclarations([fixture.file], fixture.runtime);
+      assert.ok(declarations.some((declaration) => declaration.requirement === fixture.expected));
+      assert.ok(checkRuntimeCompatibility(fixture.runtime, declarations, fixture.requirement).some((result) => result.verdict !== 'compatible'));
+      assert.ok(checkRuntimeCompatibility(fixture.runtime, declarations, fixture.compatibleRequirement).every((result) => result.verdict === 'compatible'));
+    });
+  }
+
+  test('discovers static manifests, containers, and GitHub Actions declarations for every runtime', () => {
+    const fixtures = [
+      ['node', 'package.json', '{"engines":{"node":">=20"}}', '>=20'],
+      ['python', 'setup.cfg', '[options]\npython_requires = >=3.10', '>=3.10'],
+      ['python', '.github/workflows/ci.yml', 'python-version: "3.12"', '3.12'],
+      ['ruby', 'Gemfile', "ruby '3.3.1'", '3.3.1'],
+      ['ruby', 'demo.gemspec', "spec.required_ruby_version = '>= 3.2'", '>= 3.2'],
+      ['ruby', 'Dockerfile', 'FROM ruby:3.3-slim', '3.3'],
+      ['go', 'Dockerfile', 'FROM golang:1.24-alpine', '1.24'],
+      ['go', '.github/workflows/ci.yml', 'go-version: "1.24"', '1.24'],
+      // #137: a bare <java.version> is convention-level evidence, not an
+      // authoritative pin — see the dedicated "#137" describe block for that
+      // distinction. Toolchain-provisioning it here keeps this test's own
+      // purpose (declaration discovery works across every manifest surface)
+      // unaffected by that change.
+      [
+        'java',
+        'pom.xml',
+        '<project><properties><java.version>21</java.version></properties><build><plugins>' +
+          '<plugin><artifactId>maven-toolchains-plugin</artifactId><configuration><toolchains><jdk><version>${java.version}</version></jdk></toolchains></configuration></plugin>' +
+          '</plugins></build></project>',
+        '21',
+      ],
+      ['java', 'build.gradle.kts', 'languageVersion = JavaLanguageVersion.of(21)', '21'],
+      ['java', '.github/workflows/ci.yml', 'java-version: "21"', '21'],
+      ['rust', 'rust-toolchain.toml', '[toolchain]\nchannel = "1.84"', '1.84'],
+      ['rust', 'Cargo.toml', '[package]\nrust-version = "1.81"', '1.81'],
+      ['rust', 'Dockerfile', 'FROM rust:1.82-slim', '1.82'],
+      ['rust', '.github/workflows/ci.yml', 'toolchain: "1.83"', '1.83'],
+    ] as const;
+    for (const [runtime, path, content, expected] of fixtures) {
+      assert.ok(
+        findRuntimeDeclarations([{ path, content }], runtime).some((declaration) => declaration.requirement === expected),
+        `${runtime} ${path}`,
+      );
+    }
+  });
+
+  test('Java bytecode targets are not mistaken for the runtime JVM', () => {
+    assert.deepEqual(
+      findRuntimeDeclarations([{ path: 'pom.xml', content: '<maven.compiler.release>8</maven.compiler.release>' }], 'java'),
+      [],
+    );
+    assert.deepEqual(
+      findRuntimeDeclarations([{ path: 'build.gradle', content: 'sourceCompatibility = 8\ntargetCompatibility = 8' }], 'java'),
+      [],
+    );
+  });
+
+  test('reuses container image recognition for GitLab and CircleCI YAML', () => {
+    const fixtures = [
+      ['node', '.gitlab-ci.yml', 'test:\n  image: node:18\n  script: npm test', '18'],
+      ['python', '.circleci/config.yml', 'jobs:\n  test:\n    docker:\n      - image: cimg/python:3.11\n', '3.11'],
+      ['java', '.gitlab-ci.yml', 'image: "eclipse-temurin:21-jdk"', '21'],
+    ] as const;
+
+    for (const [runtime, path, content, expected] of fixtures) {
+      assert.deepEqual(findRuntimeDeclarations([{ path, content }], runtime), [
+        { file: path, line: content.split('\n').findIndex((line) => line.includes('image:')) + 1, requirement: expected },
+      ]);
+    }
+  });
+
+  test("GitLab's map-form image (`image:` / `name:`) is recognized like the scalar form", () => {
+    const content = 'test:\n  image:\n    name: node:18\n    entrypoint: [""]\n  script: npm test';
+    assert.deepEqual(findRuntimeDeclarations([{ path: '.gitlab-ci.yml', content }], 'node'), [
+      { file: '.gitlab-ci.yml', line: 3, requirement: '18' },
+    ]);
+  });
+
+  test('a `services:` entry never becomes the job runtime image, in either scalar or map form', () => {
+    const scalarService = 'test:\n  services:\n    - name: postgres:16\n  script: npm test';
+    assert.deepEqual(findRuntimeDeclarations([{ path: '.gitlab-ci.yml', content: scalarService }], 'node'), []);
+
+    // A bare `name:` job key (unrelated to any image) must not be mistaken for one either.
+    const bareName = 'test:\n  name: build-job\n  script: npm test';
+    assert.deepEqual(findRuntimeDeclarations([{ path: '.gitlab-ci.yml', content: bareName }], 'node'), []);
+  });
+
+  test('runtime ownership never crosses version files or .tool-versions keys', () => {
+    const files = [
+      { path: '.nvmrc', content: '18' },
+      { path: '.ruby-version', content: '3.1' },
+      { path: 'go.mod', content: 'go 1.22' },
+      { path: '.tool-versions', content: 'nodejs 20\npython 3.11\nruby 3.3\ngolang 1.24\njava temurin-21\nrust 1.82' },
+    ];
+    assert.deepEqual(findRuntimeDeclarations(files, 'node').map((declaration) => declaration.file), ['.nvmrc', '.tool-versions']);
+    assert.deepEqual(findRuntimeDeclarations(files, 'ruby').map((declaration) => declaration.file), ['.ruby-version', '.tool-versions']);
+    assert.deepEqual(findRuntimeDeclarations(files, 'python').map((declaration) => declaration.file), ['.tool-versions']);
+    assert.deepEqual(findRuntimeDeclarations(files, 'go').map((declaration) => declaration.file), ['go.mod', '.tool-versions']);
+  });
+
+  test('runtime-specific manifest positions never disappear when their values are computed', () => {
+    const fixtures = [
+      ['node', 'package.json', '{"engines":{"node":42}}'],
+      ['python', 'setup.py', 'setup(python_requires=MIN_PYTHON)'],
+      ['ruby', 'Gemfile', 'ruby RUBY_VERSION'],
+      ['ruby', 'demo.gemspec', 'spec.required_ruby_version = RUBY_VERSION'],
+    ] as const;
+    for (const [runtime, path, content] of fixtures) {
+      const discovery = discoverRuntimeDeclarations([{ path, content }], runtime);
+      assert.deepEqual(discovery.resolved, [], `${runtime} ${path}`);
+      assert.equal(discovery.unresolved.length, 1, `${runtime} ${path}`);
+    }
+  });
+
+  test('shared discovery preserves workspace ownership; an unattributed CI declaration is evidence, not a resolved sibling-crossing pin (#123)', () => {
+    const files = [
+      { path: 'packages/api/.ruby-version', content: '3.3' },
+      { path: 'packages/web/.ruby-version', content: '2.7' },
+      { path: '.github/workflows/ci.yml', content: 'ruby-version: "3.2"' },
+    ];
+    const members = ['', 'packages/api', 'packages/web'];
+    assert.deepEqual(
+      findRuntimeDeclarations(files, 'ruby', 'packages/api', members).map((declaration) => declaration.file),
+      ['packages/api/.ruby-version'],
+    );
+    const discovery = discoverRuntimeDeclarations(files, 'ruby', 'packages/api', members);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
+  });
+
+  test('root package manifests do not leak into sibling workspaces for any runtime', () => {
+    const members = ['', 'packages/api'];
+    const manifests = [
+      ['ruby', 'Gemfile', "ruby '2.7'"],
+      ['ruby', 'demo.gemspec', "spec.required_ruby_version = '>=2.7'"],
+      ['go', 'go.mod', 'go 1.20'],
+      ['java', 'pom.xml', '<maven.compiler.release>17</maven.compiler.release>'],
+      ['java', 'build.gradle', 'sourceCompatibility = 17'],
+      ['rust', 'Cargo.toml', '[package]\nrust-version = "1.70"'],
+    ] as const;
+    for (const [runtime, path, content] of manifests) {
+      assert.deepEqual(findRuntimeDeclarations([{ path, content }], runtime, 'packages/api', members), [], `${runtime} ${path}`);
+    }
+  });
+});
+
 describe('checking this repository against a raised requirement', () => {
   test('a floor entirely inside the new range is compatible', () => {
     const results = checkNodeCompatibility(
@@ -421,10 +734,13 @@ describe('checking this repository against a raised requirement', () => {
     assert.equal(results[0].verdict, 'partial');
   });
 
-  test('a declaration this cannot parse as a range is left out, not misjudged', () => {
+  test('a declaration this cannot parse as a range comes back unknown, not misjudged and not dropped', () => {
+    // Dropping it (which this used to do) makes an unreadable declaration
+    // indistinguishable from a repository that never wrote one — and the
+    // caller then reads the resulting empty list as compatibility.
     assert.deepEqual(
       checkNodeCompatibility([{ file: 'Dockerfile', line: 1, requirement: 'lts' }], '>=22.13.0'),
-      [],
+      [{ file: 'Dockerfile', line: 1, requirement: 'lts', verdict: 'unknown' }],
     );
   });
 });
@@ -446,7 +762,7 @@ describe('checking this repository against a raised Python requirement', () => {
   });
 });
 
-describe('the runtime-requirement maintenance fact', () => {
+describe('the runtime-requirement maintenance fact (#110: states the upstream fact only)', () => {
   const base = {
     name: 'pkg',
     ecosystem: 'npm',
@@ -465,121 +781,71 @@ describe('the runtime-requirement maintenance fact', () => {
     withdrawn: null,
   });
 
-  test('a repository that already clears the new floor is told so, not asked to check', () => {
+  // Maintenance no longer runs its own Node/Python compatibility check. It
+  // states the upstream fact as plain context; the repository verdict —
+  // satisfied, violated, partial, unknown, and whether it blocks — belongs to
+  // the canonical RuntimeRequirementAnalysis that every runtime metadata bump
+  // now flows through.
+
+  test('a changed floor is stated as context, never a repository verdict', () => {
     const result = assessMaintenance({
       ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=24.0.0' }],
+      currentVersion: version('>=14'),
+      targetVersion: version('>=18'),
     });
     const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
+    assert.ok(fact);
+    assert.equal(fact.statement, 'The required Node.js version changed from >=14 to >=18.');
+    assert.equal(fact.polarity, 'context');
     assert.equal(fact.concerning, false);
-    assert.match(fact.statement, /already satisfies it \(package\.json\)/);
+    assert.doesNotMatch(fact.statement, /satisfies it|does not satisfy|Check this against/);
   });
 
-  test('a repository that falls short is told which file, and it is concerning', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.18.0' }],
-    });
-    const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.match(fact.statement, /does not satisfy it: \.nvmrc/);
-  });
-
-  test('with nothing gathered, it falls back to asking the reader to check', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-    });
-    const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
-  });
-
-  test('an installed version with no runtime requirement is still checked when the target introduces one (Node incompatible)', () => {
-    // Regression: describeRuntimeChange() used to return immediately when
-    // `before` was undefined, before ever calling checkNodeCompatibility --
-    // so a newly-introduced floor was never verified against this
-    // repository's own declaration, even when Drift had gathered one.
+  test('an introduced floor is stated as "The target version requires ..."', () => {
     const result = assessMaintenance({
       ...base,
       currentVersion: { ...version('unused', 'Node.js'), runtime: null },
       targetVersion: version('>=22', 'Node.js'),
+    });
+    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
+    assert.ok(fact);
+    assert.equal(fact.statement, 'The target version requires Node.js >=22.');
+    assert.equal(fact.polarity, 'context');
+    assert.equal(fact.concerning, false);
+  });
+
+  test('the repository declaration is never consulted, whatever it says', () => {
+    const shortfall = assessMaintenance({
+      ...base,
+      currentVersion: version('>=14'),
+      targetVersion: version('>=22'),
       repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.0.0' }],
     });
-    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.equal(fact.polarity, 'blocks');
-    assert.match(fact.statement, /does not satisfy it: \.nvmrc/);
+    const clears = assessMaintenance({
+      ...base,
+      currentVersion: version('>=14'),
+      targetVersion: version('>=22'),
+      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '24.0.0' }],
+    });
+    for (const result of [shortfall, clears]) {
+      const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
+      assert.ok(fact);
+      assert.equal(fact.polarity, 'context');
+      assert.equal(fact.concerning, false);
+      assert.doesNotMatch(fact.statement, /\.nvmrc|satisfies|does not satisfy|Check this/);
+    }
   });
 
-  test('an installed version with no runtime requirement, target introduces a floor this repository already meets (Node compatible)', () => {
+  test('an unchanged floor produces no fact', () => {
     const result = assessMaintenance({
       ...base,
-      currentVersion: { ...version('unused', 'Node.js'), runtime: null },
-      targetVersion: version('>=22', 'Node.js'),
-      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '22.6.0' }],
+      currentVersion: version('>=18'),
+      targetVersion: version('>=18'),
     });
-    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
-    assert.equal(fact.concerning, false);
-    assert.equal(fact.polarity, 'context');
-    assert.match(fact.statement, /already satisfies it \(\.nvmrc\)/);
+    assert.equal(result.facts.some((f) => /Node\.js/.test(f.statement)), false);
   });
 
-  test('an installed version with no runtime requirement is checked when the target introduces one (Python incompatible)', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: { ...version('unused', 'Python'), runtime: null },
-      targetVersion: version('>=3.11', 'Python'),
-      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.9' }],
-    });
-    const fact = result.facts.find((f) => /requires Python/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.equal(fact.polarity, 'blocks');
-    assert.match(fact.statement, /does not satisfy it: \.python-version/);
-  });
-
-  test('an installed version with no runtime requirement, target introduces a Python floor this repository already meets', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: { ...version('unused', 'Python'), runtime: null },
-      targetVersion: version('>=3.11', 'Python'),
-      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.11' }],
-    });
-    const fact = result.facts.find((f) => /requires Python/.test(f.statement));
-    assert.equal(fact.concerning, false);
-    assert.equal(fact.polarity, 'context');
-  });
-
-  test('runtime facts verified as incompatible or partial carry polarity blocks; verified-compatible and unverified do not', () => {
-    const incompatible = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.18.0' }],
-    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(incompatible.polarity, 'blocks');
-
-    const partial = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=22.6.0' }],
-    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(partial.polarity, 'blocks');
-
-    const unverified = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(unverified.polarity, 'context');
-  });
-
-  test("a non-Node runtime bump is never checked against this repository's Node declarations", () => {
+  test('a non-Node runtime bump is stated the same plain way', () => {
     const result = assessMaintenance({
       ...base,
       currentVersion: version('>=1.20', 'Go'),
@@ -587,22 +853,12 @@ describe('the runtime-requirement maintenance fact', () => {
       repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=22.13.0' }],
     });
     const fact = result.facts.find((f) => /Go version changed/.test(f.statement));
-    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
+    assert.ok(fact);
+    assert.equal(fact.statement, 'The required Go version changed from >=1.20 to >=1.23.');
+    assert.equal(fact.polarity, 'context');
   });
 
-  test('a raised Python floor is verified automatically, the same way Node is', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('>=3.8', 'Python'),
-      targetVersion: version('>=3.9', 'Python'),
-      pythonRuntime: [{ file: 'pyproject.toml', line: 3, requirement: '>=3.11' }],
-    });
-    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
-    assert.equal(fact.concerning, false);
-    assert.match(fact.statement, /already satisfies it \(pyproject\.toml\)/);
-  });
-
-  test('a Python floor this repository falls short of is concerning, and names the file', () => {
+  test('a Python bump is stated as context, not checked against declarations', () => {
     const result = assessMaintenance({
       ...base,
       currentVersion: version('>=3.6', 'Python'),
@@ -610,18 +866,9 @@ describe('the runtime-requirement maintenance fact', () => {
       pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.6' }],
     });
     const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.match(fact.statement, /does not satisfy it: \.python-version/);
-  });
-
-  test('a Python bump is never checked against this repository’s Node declarations', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('>=3.8', 'Python'),
-      targetVersion: version('>=3.9', 'Python'),
-      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=3.9' }],
-    });
-    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
-    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
+    assert.ok(fact);
+    assert.equal(fact.polarity, 'context');
+    assert.equal(fact.concerning, false);
+    assert.doesNotMatch(fact.statement, /\.python-version|satisfies|does not satisfy|Check this/);
   });
 });
