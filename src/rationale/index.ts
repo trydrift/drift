@@ -378,7 +378,10 @@ export async function finalizeRationale(
             // on for this dependency. Maintenance states the upstream fact for
             // those but does not re-derive the repository verdict — one
             // authority per question.
-            analyzedRuntimes: runtimeAnalyses.map((a) => a.runtime),
+            analyzedRuntimeRequirements: runtimeAnalyses.map((a) => ({
+              runtime: a.runtime,
+              requirement: a.requirement,
+            })),
           })
         : { facts: [] };
 
@@ -439,9 +442,10 @@ export async function finalizeRationale(
         license,
         summary,
         assessment,
-        runtimeAnalyses: runtimeAnalyses.map(({ changeId, runtime, state, reason }) => ({
+        runtimeAnalyses: runtimeAnalyses.map(({ changeId, runtime, requirement, state, reason }) => ({
           changeId,
           runtime,
+          requirement,
           state,
           reason,
         })),

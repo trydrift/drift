@@ -42,6 +42,8 @@ import {
 export interface RuntimeRequirementAnalysis {
   /** The `BreakingChange.id` this answers. */
   changeId: string;
+  /** Exact upstream requirement answered; runtime names alone are not unique facts. */
+  requirement: string;
   runtime: RuntimeName;
   state: RuntimeCompatibilityState;
   reason: RuntimeCompatibilityReason;
@@ -88,6 +90,7 @@ export function completeRuntimeAnalyses(
     return {
       changeId: change.id,
       runtime,
+      requirement: change.runtime?.requirement ?? '',
       state: 'unknown',
       reason: 'not-analyzed',
       declarations: [],
@@ -131,6 +134,7 @@ export function analyzeRuntimeRequirement(
     return {
       changeId: change.id,
       runtime,
+      requirement: requirement.requirement,
       state: 'unknown',
       reason: 'unparseable',
       declarations: [],
@@ -152,6 +156,7 @@ export function analyzeRuntimeRequirement(
   return {
     changeId: change.id,
     runtime,
+    requirement: requirement.requirement,
     state,
     reason,
     declarations,

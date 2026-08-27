@@ -63,7 +63,7 @@ export interface MaintenanceInput {
    * the report ends up contradicting itself (rationale says the repository
    * satisfies the floor while maintenance tells the reader to go check it).
    */
-  analyzedRuntimes?: readonly string[];
+  analyzedRuntimeRequirements?: readonly { runtime: string; requirement: string }[];
 }
 
 /** `VersionInfo.runtime.name` is a display label; the analysis speaks in RuntimeName. */
@@ -138,7 +138,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     targetVersion,
     input.repoRuntime ?? [],
     input.pythonRuntime ?? [],
-    input.analyzedRuntimes ?? [],
+    input.analyzedRuntimeRequirements ?? [],
   );
   if (runtimeChange) facts.push(runtimeChange);
 
@@ -166,7 +166,7 @@ function describeRuntimeChange(
   target: VersionInfo | null,
   repoRuntime: readonly RuntimeDeclaration[],
   pythonRuntime: readonly RuntimeDeclaration[],
-  analyzedRuntimes: readonly string[],
+  analyzedRuntimeRequirements: readonly { runtime: string; requirement: string }[],
 ): MaintenanceFact | null {
   const before = current?.runtime;
   const after = target?.runtime;
@@ -188,7 +188,8 @@ function describeRuntimeChange(
   // verdict, the "blocks" polarity, and the recommendation all come from that
   // analysis, and a second opinion here is only ever noise or a contradiction.
   const canonicalName = RUNTIME_DISPLAY_TO_NAME[after.name];
-  if (canonicalName && analyzedRuntimes.includes(canonicalName)) {
+  if (canonicalName && analyzedRuntimeRequirements.some((analysis) =>
+    analysis.runtime === canonicalName && equivalentRuntimeRequirement(analysis.requirement, after.requirement))) {
     return { statement, concerning: false, polarity: 'context' };
   }
 
@@ -212,6 +213,10 @@ function describeRuntimeChange(
     concerning,
     polarity: 'context',
   };
+}
+
+function equivalentRuntimeRequirement(left: string, right: string): boolean {
+  return left.replace(/\s+/g, '') === right.replace(/\s+/g, '');
 }
 
 /**
