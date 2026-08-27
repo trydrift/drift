@@ -48,6 +48,7 @@ export function excerptFromBody(body: unknown): string {
     .replace(/^[-*+]\s+/gm, "")
     .replace(/^>\s?/gm, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/<[^>]*>/g, " ")
     .replace(/[*_`~]/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -99,10 +100,33 @@ export function sortShipped(features: readonly Feature[]): Feature[] {
 }
 
 export interface FeatureCache { schema: number; cachedAt: number; features: Feature[]; }
-export function readFeatureCache(raw: string | null, now = Date.now()): Feature[] | null {
-  if (!raw) return null;
-  try { const cache = JSON.parse(raw) as FeatureCache; return cache.schema === CACHE_SCHEMA && now - cache.cachedAt < CACHE_TTL && Array.isArray(cache.features) ? cache.features : null; }
-  catch { return null; }
+export type FeatureCacheState =
+  | { kind: "invalid" }
+  | { kind: "fresh"; features: Feature[] }
+  | { kind: "stale"; features: Feature[] };
+
+function isFeature(value: unknown): value is Feature {
+  const feature = record(value);
+  return !!feature && typeof feature.number === "number" && Number.isInteger(feature.number) && feature.number > 0 &&
+    typeof feature.title === "string" && typeof feature.excerpt === "string" && typeof feature.htmlUrl === "string" &&
+    (feature.state === "open" || feature.state === "closed") &&
+    (["Requested", "Planned", "In Progress", "Shipped", "Closed"] as string[]).includes(feature.status as string) &&
+    typeof feature.votes === "number" && Number.isFinite(feature.votes) && feature.votes >= 0 &&
+    typeof feature.comments === "number" && Number.isFinite(feature.comments) && feature.comments >= 0 &&
+    typeof feature.createdAt === "string" && typeof feature.updatedAt === "string" &&
+    (feature.closedAt === null || typeof feature.closedAt === "string");
+}
+
+export function readFeatureCache(raw: string | null, now = Date.now()): FeatureCacheState {
+  if (!raw) return { kind: "invalid" };
+  try {
+    const cache = JSON.parse(raw) as Partial<FeatureCache>;
+    if (cache.schema !== CACHE_SCHEMA || typeof cache.cachedAt !== "number" || !Number.isFinite(cache.cachedAt) ||
+        !Array.isArray(cache.features) || !cache.features.every(isFeature)) return { kind: "invalid" };
+    return now - cache.cachedAt < CACHE_TTL
+      ? { kind: "fresh", features: cache.features }
+      : { kind: "stale", features: cache.features };
+  } catch { return { kind: "invalid" }; }
 }
 export function writeFeatureCache(features: Feature[], cachedAt = Date.now()): string {
   return JSON.stringify({ schema: CACHE_SCHEMA, cachedAt, features } satisfies FeatureCache);
