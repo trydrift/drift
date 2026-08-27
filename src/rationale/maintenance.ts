@@ -54,7 +54,27 @@ export interface MaintenanceInput {
    * compare the wrong language's numbers.
    */
   pythonRuntime?: readonly RuntimeDeclaration[];
+  /**
+   * Runtimes (`'node'`, `'python'`, `'go'`, `'ruby'`, `'java'`, `'rust'`) for
+   * which a canonical `RuntimeRequirementAnalysis` already answered
+   * compatibility for this dependency. Maintenance still states the upstream
+   * fact for those, but does not run its own repository check against them —
+   * that verdict has one owner, and two independent answers is precisely how
+   * the report ends up contradicting itself (rationale says the repository
+   * satisfies the floor while maintenance tells the reader to go check it).
+   */
+  analyzedRuntimes?: readonly string[];
 }
+
+/** `VersionInfo.runtime.name` is a display label; the analysis speaks in RuntimeName. */
+const RUNTIME_DISPLAY_TO_NAME: Readonly<Record<string, string>> = {
+  'Node.js': 'node',
+  Python: 'python',
+  Go: 'go',
+  Ruby: 'ruby',
+  Java: 'java',
+  Rust: 'rust',
+};
 
 export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessment {
   const { name, registry, repository, currentVersion, targetVersion } = input;
@@ -118,6 +138,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     targetVersion,
     input.repoRuntime ?? [],
     input.pythonRuntime ?? [],
+    input.analyzedRuntimes ?? [],
   );
   if (runtimeChange) facts.push(runtimeChange);
 
@@ -145,6 +166,7 @@ function describeRuntimeChange(
   target: VersionInfo | null,
   repoRuntime: readonly RuntimeDeclaration[],
   pythonRuntime: readonly RuntimeDeclaration[],
+  analyzedRuntimes: readonly string[],
 ): MaintenanceFact | null {
   const before = current?.runtime;
   const after = target?.runtime;
@@ -160,6 +182,15 @@ function describeRuntimeChange(
   const statement = introduced
     ? `The target version requires ${after.name} ${after.requirement}.`
     : `The required ${after.name} version changed from ${before!.requirement} to ${after.requirement}.`;
+
+  // The canonical RuntimeRequirementAnalysis already ruled on this runtime for
+  // this dependency. State the upstream fact and stop -- the repository
+  // verdict, the "blocks" polarity, and the recommendation all come from that
+  // analysis, and a second opinion here is only ever noise or a contradiction.
+  const canonicalName = RUNTIME_DISPLAY_TO_NAME[after.name];
+  if (canonicalName && analyzedRuntimes.includes(canonicalName)) {
+    return { statement, concerning: false, polarity: 'context' };
+  }
 
   const verified =
     after.name === 'Node.js'

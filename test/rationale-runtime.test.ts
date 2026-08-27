@@ -813,4 +813,44 @@ describe('the runtime-requirement maintenance fact', () => {
     const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
     assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
   });
+
+  // When the canonical RuntimeRequirementAnalysis already ruled on the runtime,
+  // maintenance states the upstream fact and defers the repository verdict.
+  // The report has one runtime-compatibility authority, so there is no
+  // "already satisfies it" / "does not satisfy it" / "check this" from here
+  // that could agree or disagree with the canonical statement.
+  for (const [label, requirement, declared] of [
+    ['compatible', '>=20', '22.0.0'],
+    ['incompatible', '>=22', '18.0.0'],
+    ['unknown', '>=22', 'lts/hydrogen'],
+  ]) {
+    test(`a canonically ${label} runtime leaves maintenance stating only the upstream fact`, () => {
+      const result = assessMaintenance({
+        ...base,
+        currentVersion: { ...version('>=14'), runtime: null },
+        targetVersion: version(requirement),
+        repoRuntime: [{ file: '.nvmrc', line: 1, requirement: declared }],
+        analyzedRuntimes: ['node'],
+      });
+      const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
+      assert.ok(fact, 'the upstream fact is still stated');
+      assert.equal(fact.statement, `The target version requires Node.js ${requirement}.`);
+      assert.doesNotMatch(fact.statement, /satisfies it|does not satisfy|Check this against/);
+      assert.equal(fact.concerning, false);
+      assert.equal(fact.polarity, 'context');
+    });
+  }
+
+  test('a runtime the canonical analysis did not cover still gets the maintenance check', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: { ...version('>=3.8', 'Python'), runtime: { name: 'Python', requirement: '>=3.8' } },
+      targetVersion: version('>=3.11', 'Python'),
+      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.9' }],
+      analyzedRuntimes: ['node'],
+    });
+    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
+    assert.match(fact.statement, /does not satisfy it: \.python-version/);
+    assert.equal(fact.polarity, 'blocks');
+  });
 });

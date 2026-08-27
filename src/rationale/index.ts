@@ -346,6 +346,15 @@ export async function finalizeRationale(
       const report = (phase: string) => ctx.onProgress?.(change, phase);
       const { registry, repository, currentVersion, targetVersion, security, license } = facts;
 
+      const breakingChanges = input.breakingChanges.filter(
+        (b) => b.dependency === change.name && b.workspace === change.workspace,
+      );
+      const relevantIds = new Set(breakingChanges.map((b) => b.id));
+      const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
+      // Scoped by the same change-id set as the sites, so a monorepo member's
+      // runtime state never decides a sibling's recommendation.
+      const runtimeAnalyses = (input.runtimeAnalyses ?? []).filter((a) => relevantIds.has(a.changeId));
+
       report('Checking maintenance signals');
       const maintenance = config.rationale.maintenance
         ? assessMaintenance({
@@ -363,17 +372,13 @@ export async function finalizeRationale(
             pythonRuntime:
               (change.workspace !== undefined ? ctx.pythonRuntimeByWorkspace?.get(change.workspace) : undefined) ??
               ctx.pythonRuntime,
+            // Runtimes the canonical RuntimeRequirementAnalysis already ruled
+            // on for this dependency. Maintenance states the upstream fact for
+            // those but does not re-derive the repository verdict — one
+            // authority per question.
+            analyzedRuntimes: runtimeAnalyses.map((a) => a.runtime),
           })
         : { facts: [] };
-
-      const breakingChanges = input.breakingChanges.filter(
-        (b) => b.dependency === change.name && b.workspace === change.workspace,
-      );
-      const relevantIds = new Set(breakingChanges.map((b) => b.id));
-      const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
-      // Scoped by the same change-id set as the sites, so a monorepo member's
-      // runtime state never decides a sibling's recommendation.
-      const runtimeAnalyses = (input.runtimeAnalyses ?? []).filter((a) => relevantIds.has(a.changeId));
 
       const key = dependencyEcosystemKey(change);
       const computed = ctx.additions?.get(key);
