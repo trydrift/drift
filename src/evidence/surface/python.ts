@@ -838,6 +838,14 @@ def declared_project_name(path):
             if name: return name.group(1).strip()
         except OSError:
             pass
+    setup_py = os.path.join(path, 'setup.py')
+    if os.path.isfile(setup_py):
+        try:
+            text = open(setup_py, encoding='utf-8', errors='replace').read()
+            name = re.search(r'(?m)\b(?:setuptools\.)?setup\s*\([^)]*\bname\s*=\s*[\x22\x27]([^\x22\x27]+)', text, re.S)
+            if name: return name.group(1)
+        except OSError:
+            pass
     return None
 
 # Locate the project through packaging metadata. A sole directory without an
@@ -919,11 +927,14 @@ def package_roots(root):
         for name in entries:
             path = os.path.join(base, name)
             if os.path.isdir(path):
-                if name in excluded_dirs or not re.match(r'^[A-Za-z_]\\w*$', name):
+                if (name in excluded_dirs and name not in metadata) or not re.match(r'^[A-Za-z_]\\w*$', name):
                     continue
                 if base == root and name == 'src':
                     continue
-                if has_package_marker(path) or name in hinted:
+                implicit_namespace = (not metadata and any(
+                    f.endswith(('.py', '.pyi')) for _, _, fs in os.walk(path) for f in fs
+                ))
+                if has_package_marker(path) or name in hinted or implicit_namespace:
                     package_names.add(name)
             elif name.endswith(('.py', '.pyi')):
                 stem = name.rsplit('.', 1)[0]
