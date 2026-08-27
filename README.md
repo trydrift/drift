@@ -31,7 +31,7 @@ npm install
 npm run package
 ```
 
-Then install the generated `drift.vsix` with **Extensions: Install from VSIX...** in VS Code.
+Then use **Extensions: Install from VSIX...** in VS Code to install the generated package.
 
 ### GitHub Action
 
