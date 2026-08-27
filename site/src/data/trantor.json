@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-08-27T13:46:25.449Z",
+  "capturedAt": "2026-08-27T14:13:29.674Z",
   "commit": "7d3aac802ff5bf0117a9b3e933ba8afa19e4af19",
-  "engine": "84f6ab9575f3e2a1",
-  "durationMs": 1980,
+  "engine": "4e4b90805a12539a",
+  "durationMs": 1647,
   "packagesChecked": 3,
   "manifests": [
     "conanfile.txt"
@@ -18,7 +18,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 246,
+      "at": 159,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
@@ -26,7 +26,7 @@
     },
     {
       "type": "progress",
-      "at": 252,
+      "at": 164,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
@@ -34,7 +34,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 253,
+      "at": 165,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -71,7 +71,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 253,
+      "at": 165,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -108,7 +108,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 253,
+      "at": 165,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -145,7 +145,7 @@
     },
     {
       "type": "progress",
-      "at": 253,
+      "at": 165,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -153,7 +153,7 @@
     },
     {
       "type": "progress",
-      "at": 253,
+      "at": 165,
       "phase": "Checking registries",
       "detail": "3 direct dependencies",
       "done": 0,
@@ -161,7 +161,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 253,
+      "at": 165,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -198,7 +198,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 253,
+      "at": 166,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -235,7 +235,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 253,
+      "at": 166,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -272,97 +272,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 459,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "4.0.1",
-        "selected": "4.0.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 459,
-      "phase": "Outdated",
-      "detail": "openssl 1.1.1 → 4.0.1",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 460,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.17.0",
-        "selected": "1.17.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 460,
-      "phase": "Outdated",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 460,
+      "at": 174,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -399,15 +309,105 @@
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 174,
       "phase": "Outdated",
       "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 174,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "4.0.1",
+        "selected": "4.0.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 174,
+      "phase": "Outdated",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 175,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.17.0",
+        "selected": "1.17.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 175,
+      "phase": "Outdated",
+      "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 3,
       "total": 3
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 175,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -415,7 +415,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 460,
+      "at": 175,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -452,7 +452,7 @@
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 175,
       "phase": "Checking package metadata",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -460,7 +460,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 460,
+      "at": 175,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -497,7 +497,7 @@
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 175,
       "phase": "Reading release notes and changelog",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -505,7 +505,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 460,
+      "at": 175,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -542,7 +542,7 @@
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 175,
       "phase": "Checking package metadata",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -550,7 +550,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 460,
+      "at": 175,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -587,7 +587,7 @@
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 175,
       "phase": "Reading release notes and changelog",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -595,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 460,
+      "at": 175,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -632,7 +632,7 @@
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 175,
       "phase": "Checking package metadata",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -640,7 +640,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 460,
+      "at": 175,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -677,7 +677,7 @@
     },
     {
       "type": "progress",
-      "at": 461,
+      "at": 176,
       "phase": "Checking repository status",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -685,7 +685,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 461,
+      "at": 176,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -722,7 +722,7 @@
     },
     {
       "type": "progress",
-      "at": 461,
+      "at": 176,
       "phase": "Checking repository status",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -730,7 +730,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 461,
+      "at": 176,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -767,7 +767,7 @@
     },
     {
       "type": "progress",
-      "at": 461,
+      "at": 176,
       "phase": "Checking repository status",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -775,7 +775,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 461,
+      "at": 176,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -812,7 +812,7 @@
     },
     {
       "type": "progress",
-      "at": 461,
+      "at": 177,
       "phase": "Checking security advisories",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -820,7 +820,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 461,
+      "at": 177,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -857,7 +857,7 @@
     },
     {
       "type": "progress",
-      "at": 462,
+      "at": 177,
       "phase": "Checking license",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -865,7 +865,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 462,
+      "at": 177,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -902,97 +902,7 @@
     },
     {
       "type": "progress",
-      "at": 478,
-      "phase": "Checking security advisories",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 478,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 478,
-      "phase": "Checking license",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 478,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 478,
+      "at": 185,
       "phase": "Checking security advisories",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1000,7 +910,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 478,
+      "at": 185,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1037,7 +947,7 @@
     },
     {
       "type": "progress",
-      "at": 478,
+      "at": 186,
       "phase": "Checking license",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1045,7 +955,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 478,
+      "at": 186,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1082,7 +992,97 @@
     },
     {
       "type": "progress",
-      "at": 866,
+      "at": 192,
+      "phase": "Checking security advisories",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 192,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 192,
+      "phase": "Checking license",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 192,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 899,
       "phase": "Comparing the public API surface",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1090,7 +1090,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 866,
+      "at": 899,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1127,7 +1127,7 @@
     },
     {
       "type": "progress",
-      "at": 884,
+      "at": 912,
       "phase": "Comparing the public API surface",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1135,7 +1135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 884,
+      "at": 912,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1172,7 +1172,7 @@
     },
     {
       "type": "progress",
-      "at": 885,
+      "at": 913,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1180,7 +1180,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 885,
+      "at": 913,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1217,7 +1217,7 @@
     },
     {
       "type": "progress",
-      "at": 885,
+      "at": 913,
       "phase": "Comparing the public API surface",
       "detail": "gtest 1.10.0 → 1.18.0 · 6 evidence sources",
       "done": 0,
@@ -1225,7 +1225,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 885,
+      "at": 913,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1262,15 +1262,15 @@
     },
     {
       "type": "progress",
-      "at": 891,
-      "phase": "Searching your code for 213 breaking changes",
+      "at": 921,
+      "phase": "Searching your code for 214 breaking changes",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 891,
+      "at": 921,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1283,7 +1283,7 @@
         "selected": "1.10.0",
         "safeLatest": null,
         "status": "pending",
-        "phase": "Searching your code for 213 breaking changes",
+        "phase": "Searching your code for 214 breaking changes",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1307,7 +1307,277 @@
     },
     {
       "type": "progress",
-      "at": 1336,
+      "at": 937,
+      "phase": "Reading release notes and changelog",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 937,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 938,
+      "phase": "Comparing the public API surface",
+      "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 938,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 940,
+      "phase": "Searching your code for 189 breaking changes",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 940,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Searching your code for 189 breaking changes",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1020,
+      "phase": "Reading release notes and changelog",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1020,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "1.1.1",
+        "selected": "1.1.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1021,
+      "phase": "Comparing the public API surface",
+      "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1021,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "1.1.1",
+        "selected": "1.1.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1022,
+      "phase": "Searching your code for 6 breaking changes",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1025,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "1.1.1",
+        "selected": "1.1.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Searching your code for 6 breaking changes",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1281,
       "phase": "Indexing your code",
       "detail": "132 files indexed · 3 direct dependencies to check",
       "done": 0,
@@ -1315,7 +1585,7 @@
     },
     {
       "type": "progress",
-      "at": 1454,
+      "at": 1431,
       "phase": "Weighing what this upgrade is worth",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1323,7 +1593,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1454,
+      "at": 1431,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1360,7 +1630,97 @@
     },
     {
       "type": "progress",
-      "at": 1455,
+      "at": 1624,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1624,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1638,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1638,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "1.1.1",
+        "selected": "1.1.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1639,
       "phase": "Checking maintenance signals",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -1368,7 +1728,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1455,
+      "at": 1639,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -1404,8 +1764,98 @@
       }
     },
     {
+      "type": "progress",
+      "at": 1641,
+      "phase": "Checking maintenance signals",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
       "type": "candidate-upsert",
-      "at": 1459,
+      "at": 1642,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1642,
+      "phase": "Checking maintenance signals",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1642,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "1.1.1",
+        "selected": "1.1.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1646,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -2881,6 +3331,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_3c22797bca",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_28a20a4626",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -3137,7 +3595,7 @@
             "runtimeState": null
           }
         ],
-        "breakingCount": 213,
+        "breakingCount": 214,
         "impactCount": 2,
         "impactFiles": 1,
         "evidenceCount": 6,
@@ -3162,7 +3620,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "213 API surface change(s) in gtest",
+                "title": "214 API surface change(s) in gtest",
                 "url": null,
                 "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
               }
@@ -3202,7 +3660,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "213 API surface change(s) in gtest",
+                "title": "214 API surface change(s) in gtest",
                 "url": null,
                 "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
               }
@@ -3227,7 +3685,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "213 API surface change(s) in gtest",
+                "title": "214 API surface change(s) in gtest",
                 "url": null,
                 "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
               }
@@ -3252,7 +3710,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "213 API surface change(s) in gtest",
+                "title": "214 API surface change(s) in gtest",
                 "url": null,
                 "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
               }
@@ -3264,702 +3722,15 @@
     },
     {
       "type": "progress",
-      "at": 1459,
+      "at": 1647,
       "phase": "Checked",
       "detail": "gtest 1.10.0 → 1.18.0 · review required · 2 local sites drift flagged but could not confirm — check before upgrading",
       "done": 1,
       "total": 3
     },
     {
-      "type": "progress",
-      "at": 1592,
-      "phase": "Reading release notes and changelog",
-      "detail": "openssl 1.1.1 → 4.0.1",
-      "done": 1,
-      "total": 3
-    },
-    {
       "type": "candidate-upsert",
-      "at": 1592,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "1.1.1",
-        "selected": "1.1.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1592,
-      "phase": "Comparing the public API surface",
-      "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1592,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "1.1.1",
-        "selected": "1.1.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1593,
-      "phase": "Searching your code for 6 breaking changes",
-      "detail": "openssl 1.1.1 → 4.0.1",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1593,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "1.1.1",
-        "selected": "1.1.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Searching your code for 6 breaking changes",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1602,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "openssl 1.1.1 → 4.0.1",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1602,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "1.1.1",
-        "selected": "1.1.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1603,
-      "phase": "Checking maintenance signals",
-      "detail": "openssl 1.1.1 → 4.0.1",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1603,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "1.1.1",
-        "selected": "1.1.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1604,
-      "candidate": {
-        "id": "conanfile.txt#openssl@1.1.1",
-        "name": "openssl",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.1.1",
-        "latest": "4.0.1",
-        "selected": "4.0.1",
-        "safeLatest": null,
-        "status": "ready",
-        "phase": null,
-        "risk": "low",
-        "summary": "Upgrade after review. 5 places in this repository use an API that openssl changed.",
-        "recommendation": "upgrade-after-review",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "unchecked",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [
-          {
-            "changeId": "bc_34feaeb97e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e8298295be",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9d1cb66539",
-            "state": "review-only",
-            "reason": "low-confidence-impact",
-            "siteCount": 4,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_decb3e5e05",
-            "state": "review-only",
-            "reason": "low-confidence-impact",
-            "siteCount": 1,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_cee138bad0",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_df200fa1dd",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          }
-        ],
-        "breakingCount": 6,
-        "impactCount": 5,
-        "impactFiles": 1,
-        "evidenceCount": 18,
-        "gaps": [
-          "No source archive is published for openssl 1.1.1 in ConanCenter, so its headers could not be read.",
-          "OSV has no advisory coverage for conan packages, so this upgrade's effect on known vulnerabilities could not be looked up."
-        ],
-        "breaking": [
-          {
-            "kind": "behaviour-change",
-            "summary": "`SSL_get_error` no longer depends on the state of the error stack,",
-            "remediation": "Behaviour changed: `SSL_get_error` no longer depends on the state of the error stack,. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 60,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "SSL_get_error"
-            ],
-            "evidence": [
-              {
-                "source": "changelog",
-                "title": "openssl CHANGELOG § 3.6.0",
-                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1659",
-                "locator": "CHANGES.md:1659"
-              }
-            ],
-            "sites": [
-              {
-                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
-                "line": 973,
-                "excerpt": "const auto error = SSL_get_error(ssl_, result);",
-                "matchedSymbol": "SSL_get_error",
-                "confidence": "medium"
-              },
-              {
-                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
-                "line": 1006,
-                "excerpt": "const auto error = SSL_get_error(ssl_, n);",
-                "matchedSymbol": "SSL_get_error",
-                "confidence": "medium"
-              },
-              {
-                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
-                "line": 1160,
-                "excerpt": "int err = SSL_get_error(ssl_, ret);",
-                "matchedSymbol": "SSL_get_error",
-                "confidence": "medium"
-              },
-              {
-                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
-                "line": 1298,
-                "excerpt": "const int error = n <= 0 ? SSL_get_error(ssl_, n) : SSL_ERROR_NONE;",
-                "matchedSymbol": "SSL_get_error",
-                "confidence": "medium"
-              }
-            ]
-          },
-          {
-            "kind": "behaviour-change",
-            "summary": "`OPENSSL_cleanup` no longer by default free global",
-            "remediation": "Behaviour changed: `OPENSSL_cleanup` no longer by default free global. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 60,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "OPENSSL_cleanup"
-            ],
-            "evidence": [
-              {
-                "source": "changelog",
-                "title": "openssl CHANGELOG § 3.6.0",
-                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1659",
-                "locator": "CHANGES.md:1659"
-              }
-            ],
-            "sites": [
-              {
-                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
-                "line": 36,
-                "excerpt": "atexit(OPENSSL_cleanup);",
-                "matchedSymbol": "OPENSSL_cleanup",
-                "confidence": "medium"
-              }
-            ]
-          },
-          {
-            "kind": "behaviour-change",
-            "summary": "`libcrypto` no longer cleans up globally allocated data via `atexit()`",
-            "remediation": "Behaviour changed: `libcrypto` no longer cleans up globally allocated data via `atexit()`. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "libcrypto"
-            ],
-            "evidence": [
-              {
-                "source": "github-release",
-                "title": "openssl OpenSSL 4.0.0-alpha1 release notes",
-                "url": "https://github.com/openssl/openssl/releases/tag/openssl-4.0.0-alpha1",
-                "locator": null
-              },
-              {
-                "source": "changelog",
-                "title": "openssl CHANGELOG § 3.6.0",
-                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1659",
-                "locator": "CHANGES.md:1659"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "behaviour-change",
-            "summary": "`ec_point_formats` no longer affects TLS 1",
-            "remediation": "Behaviour changed: `ec_point_formats` no longer affects TLS 1. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "ec_point_formats"
-            ],
-            "evidence": [
-              {
-                "source": "changelog",
-                "title": "openssl CHANGELOG § 4.0.0",
-                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L32",
-                "locator": "CHANGES.md:32"
-              }
-            ],
-            "sites": []
-          }
-        ]
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1604,
-      "phase": "Checked",
-      "detail": "openssl 1.1.1 → 4.0.1 · review required · 5 local sites drift flagged but could not confirm — check before upgrading",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "progress",
-      "at": 1850,
-      "phase": "Reading release notes and changelog",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1850,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1850,
-      "phase": "Comparing the public API surface",
-      "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1850,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1853,
-      "phase": "Searching your code for 186 breaking changes",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1853,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Searching your code for 186 breaking changes",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1976,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1976,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1977,
-      "phase": "Checking maintenance signals",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1977,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1980,
+      "at": 1647,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -3974,7 +3745,7 @@
         "status": "ready",
         "phase": null,
         "risk": "none",
-        "summary": "Safe to upgrade. 186 upstream API breaking changes, none of which this repository uses.",
+        "summary": "Safe to upgrade. 189 upstream API breaking changes, none of which this repository uses.",
         "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
         "runtimeCompatibility": null,
@@ -4179,6 +3950,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_0369b90d3c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_5aa860cacf",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -4348,6 +4127,14 @@
           },
           {
             "changeId": "bc_fecc116e5a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8ee336610e",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5203,6 +4990,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_c5f66d0cff",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_75f84d8042",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -5475,7 +5270,7 @@
             "runtimeState": null
           }
         ],
-        "breakingCount": 186,
+        "breakingCount": 189,
         "impactCount": 0,
         "impactFiles": 0,
         "evidenceCount": 2,
@@ -5502,7 +5297,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "186 API surface change(s) in spdlog",
+                "title": "189 API surface change(s) in spdlog",
                 "url": null,
                 "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
               }
@@ -5526,7 +5321,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "186 API surface change(s) in spdlog",
+                "title": "189 API surface change(s) in spdlog",
                 "url": null,
                 "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
               }
@@ -5550,7 +5345,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "186 API surface change(s) in spdlog",
+                "title": "189 API surface change(s) in spdlog",
                 "url": null,
                 "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
               }
@@ -5574,7 +5369,7 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "186 API surface change(s) in spdlog",
+                "title": "189 API surface change(s) in spdlog",
                 "url": null,
                 "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
               }
@@ -5586,9 +5381,246 @@
     },
     {
       "type": "progress",
-      "at": 1980,
+      "at": 1647,
       "phase": "Checked",
-      "detail": "spdlog 1.12.0 → 1.17.0 · safe for your code · 186 upstream changes, none used here — not deeply verified",
+      "detail": "spdlog 1.12.0 → 1.17.0 · safe for your code · 189 upstream changes, none used here — not deeply verified",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1647,
+      "candidate": {
+        "id": "conanfile.txt#openssl@1.1.1",
+        "name": "openssl",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.1.1",
+        "latest": "4.0.1",
+        "selected": "4.0.1",
+        "safeLatest": null,
+        "status": "ready",
+        "phase": null,
+        "risk": "low",
+        "summary": "Upgrade after review. 5 places in this repository use an API that openssl changed.",
+        "recommendation": "upgrade-after-review",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "unchecked",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [
+          {
+            "changeId": "bc_34feaeb97e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e8298295be",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9d1cb66539",
+            "state": "review-only",
+            "reason": "low-confidence-impact",
+            "siteCount": 4,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_decb3e5e05",
+            "state": "review-only",
+            "reason": "low-confidence-impact",
+            "siteCount": 1,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cee138bad0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_df200fa1dd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          }
+        ],
+        "breakingCount": 6,
+        "impactCount": 5,
+        "impactFiles": 1,
+        "evidenceCount": 18,
+        "gaps": [
+          "No source archive is published for openssl 1.1.1 in ConanCenter, so its headers could not be read.",
+          "OSV has no advisory coverage for conan packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+        ],
+        "breaking": [
+          {
+            "kind": "behaviour-change",
+            "summary": "`SSL_get_error` no longer depends on the state of the error stack,",
+            "remediation": "Behaviour changed: `SSL_get_error` no longer depends on the state of the error stack,. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+            "confidence": "medium",
+            "runtime": null,
+            "overall": {
+              "score": 60,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "SSL_get_error"
+            ],
+            "evidence": [
+              {
+                "source": "changelog",
+                "title": "openssl CHANGELOG § 3.6.0",
+                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1659",
+                "locator": "CHANGES.md:1659"
+              }
+            ],
+            "sites": [
+              {
+                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+                "line": 973,
+                "excerpt": "const auto error = SSL_get_error(ssl_, result);",
+                "matchedSymbol": "SSL_get_error",
+                "confidence": "medium"
+              },
+              {
+                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+                "line": 1006,
+                "excerpt": "const auto error = SSL_get_error(ssl_, n);",
+                "matchedSymbol": "SSL_get_error",
+                "confidence": "medium"
+              },
+              {
+                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+                "line": 1160,
+                "excerpt": "int err = SSL_get_error(ssl_, ret);",
+                "matchedSymbol": "SSL_get_error",
+                "confidence": "medium"
+              },
+              {
+                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+                "line": 1298,
+                "excerpt": "const int error = n <= 0 ? SSL_get_error(ssl_, n) : SSL_ERROR_NONE;",
+                "matchedSymbol": "SSL_get_error",
+                "confidence": "medium"
+              }
+            ]
+          },
+          {
+            "kind": "behaviour-change",
+            "summary": "`OPENSSL_cleanup` no longer by default free global",
+            "remediation": "Behaviour changed: `OPENSSL_cleanup` no longer by default free global. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+            "confidence": "medium",
+            "runtime": null,
+            "overall": {
+              "score": 60,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "OPENSSL_cleanup"
+            ],
+            "evidence": [
+              {
+                "source": "changelog",
+                "title": "openssl CHANGELOG § 3.6.0",
+                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1659",
+                "locator": "CHANGES.md:1659"
+              }
+            ],
+            "sites": [
+              {
+                "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+                "line": 36,
+                "excerpt": "atexit(OPENSSL_cleanup);",
+                "matchedSymbol": "OPENSSL_cleanup",
+                "confidence": "medium"
+              }
+            ]
+          },
+          {
+            "kind": "behaviour-change",
+            "summary": "`libcrypto` no longer cleans up globally allocated data via `atexit()`",
+            "remediation": "Behaviour changed: `libcrypto` no longer cleans up globally allocated data via `atexit()`. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+            "confidence": "medium",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "libcrypto"
+            ],
+            "evidence": [
+              {
+                "source": "github-release",
+                "title": "openssl OpenSSL 4.0.0-alpha1 release notes",
+                "url": "https://github.com/openssl/openssl/releases/tag/openssl-4.0.0-alpha1",
+                "locator": null
+              },
+              {
+                "source": "changelog",
+                "title": "openssl CHANGELOG § 3.6.0",
+                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1659",
+                "locator": "CHANGES.md:1659"
+              }
+            ],
+            "sites": []
+          },
+          {
+            "kind": "behaviour-change",
+            "summary": "`ec_point_formats` no longer affects TLS 1",
+            "remediation": "Behaviour changed: `ec_point_formats` no longer affects TLS 1. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+            "confidence": "medium",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "ec_point_formats"
+            ],
+            "evidence": [
+              {
+                "source": "changelog",
+                "title": "openssl CHANGELOG § 4.0.0",
+                "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L32",
+                "locator": "CHANGES.md:32"
+              }
+            ],
+            "sites": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1647,
+      "phase": "Checked",
+      "detail": "openssl 1.1.1 → 4.0.1 · review required · 5 local sites drift flagged but could not confirm — check before upgrading",
       "done": 3,
       "total": 3
     }
@@ -7294,6 +7326,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_3c22797bca",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_28a20a4626",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -7550,7 +7590,7 @@
           "runtimeState": null
         }
       ],
-      "breakingCount": 213,
+      "breakingCount": 214,
       "impactCount": 2,
       "impactFiles": 1,
       "evidenceCount": 6,
@@ -7575,7 +7615,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "213 API surface change(s) in gtest",
+              "title": "214 API surface change(s) in gtest",
               "url": null,
               "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
             }
@@ -7615,7 +7655,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "213 API surface change(s) in gtest",
+              "title": "214 API surface change(s) in gtest",
               "url": null,
               "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
             }
@@ -7640,7 +7680,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "213 API surface change(s) in gtest",
+              "title": "214 API surface change(s) in gtest",
               "url": null,
               "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
             }
@@ -7665,7 +7705,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "213 API surface change(s) in gtest",
+              "title": "214 API surface change(s) in gtest",
               "url": null,
               "locator": "gtest 1.10.0 → 1.18.0 (public headers) · computed by header diff"
             }
@@ -7688,7 +7728,7 @@
       "status": "ready",
       "phase": null,
       "risk": "none",
-      "summary": "Safe to upgrade. 186 upstream API breaking changes, none of which this repository uses.",
+      "summary": "Safe to upgrade. 189 upstream API breaking changes, none of which this repository uses.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
       "runtimeCompatibility": null,
@@ -7893,6 +7933,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_0369b90d3c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_5aa860cacf",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -8062,6 +8110,14 @@
         },
         {
           "changeId": "bc_fecc116e5a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8ee336610e",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -8917,6 +8973,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_c5f66d0cff",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_75f84d8042",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -9189,7 +9253,7 @@
           "runtimeState": null
         }
       ],
-      "breakingCount": 186,
+      "breakingCount": 189,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 2,
@@ -9216,7 +9280,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "186 API surface change(s) in spdlog",
+              "title": "189 API surface change(s) in spdlog",
               "url": null,
               "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
             }
@@ -9240,7 +9304,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "186 API surface change(s) in spdlog",
+              "title": "189 API surface change(s) in spdlog",
               "url": null,
               "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
             }
@@ -9264,7 +9328,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "186 API surface change(s) in spdlog",
+              "title": "189 API surface change(s) in spdlog",
               "url": null,
               "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
             }
@@ -9288,7 +9352,7 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "186 API surface change(s) in spdlog",
+              "title": "189 API surface change(s) in spdlog",
               "url": null,
               "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
             }
