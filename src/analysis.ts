@@ -585,7 +585,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   /* Stage 7 — rationale */
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
-    { changes: actionable, evidence, breakingChanges, impactSites, runtimeAnalyses: completeAnalyses },
+    { changes: actionable, evidence, breakingChanges, impactSites, runtimeAnalyses: completeAnalyses, localizationRan },
     {
       config,
       logger,

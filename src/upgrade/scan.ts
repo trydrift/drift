@@ -2238,7 +2238,7 @@ async function analyzeUpgrade(args: {
     localization.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
     const [rationale] = await measure('rationale', target.manager.ecosystem, () => buildRationale(
-      { changes: [change], evidence, breakingChanges, impactSites, runtimeAnalyses },
+      { changes: [change], evidence, breakingChanges, impactSites, runtimeAnalyses, localizationRan: true },
       {
         config: args.config,
         logger: args.logger,

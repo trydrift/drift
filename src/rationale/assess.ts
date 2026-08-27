@@ -66,6 +66,8 @@ export interface AssessmentInput {
    * an empty array indistinguishable from "checked, and fine".
    */
   runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
+  /** Whether repository localization actually completed. */
+  localizationRan?: boolean;
 }
 
 /**
@@ -104,7 +106,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     input.breakingChanges,
     impactSites,
     input.runtimeAnalyses ?? [],
-    true,
+    input.localizationRan ?? true,
   );
   const actionableIds = new Set(
     dispositions.filter((disposition) => disposition.state === 'actionable').map((disposition) => disposition.changeId),

@@ -119,6 +119,8 @@ export interface RationaleInput {
    * came back compatible", and `assessUpgrade` treats it as the former.
    */
   runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
+  /** Whether API/runtime localization actually ran for this repository. */
+  localizationRan?: boolean;
 }
 
 /**
@@ -421,6 +423,7 @@ export async function finalizeRationale(
         surfaceCompared,
         proseRead: prose.length,
         runtimeAnalyses,
+        localizationRan: input.localizationRan,
       };
       const assessment = assessUpgrade(assessmentInput);
 
