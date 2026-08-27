@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -77,6 +77,11 @@ test('CLI executes when invoked from a path containing spaces', () => {
   try {
     mkdirSync(join(tempRoot, 'scripts'), { recursive: true });
     mkdirSync(join(tempRoot, 'extension'), { recursive: true });
+    symlinkSync(
+      join(repoRoot, 'node_modules'),
+      join(tempRoot, 'node_modules'),
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
     for (const path of [
       'scripts/set-version.mjs',
       'scripts/semver-utils.mjs',
