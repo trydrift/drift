@@ -481,7 +481,7 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
       ['ruby', 'Dockerfile', 'FROM ruby:3.3-slim', '3.3'],
       ['go', 'Dockerfile', 'FROM golang:1.24-alpine', '1.24'],
       ['go', '.github/workflows/ci.yml', 'go-version: "1.24"', '1.24'],
-      ['java', 'pom.xml', '<maven.compiler.release>21</maven.compiler.release>', '21'],
+      ['java', 'pom.xml', '<java.version>21</java.version>', '21'],
       ['java', 'build.gradle.kts', 'languageVersion = JavaLanguageVersion.of(21)', '21'],
       ['java', '.github/workflows/ci.yml', 'java-version: "21"', '21'],
       ['rust', 'rust-toolchain.toml', '[toolchain]\nchannel = "1.84"', '1.84'],
@@ -495,6 +495,17 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
         `${runtime} ${path}`,
       );
     }
+  });
+
+  test('Java bytecode targets are not mistaken for the runtime JVM', () => {
+    assert.deepEqual(
+      findRuntimeDeclarations([{ path: 'pom.xml', content: '<maven.compiler.release>8</maven.compiler.release>' }], 'java'),
+      [],
+    );
+    assert.deepEqual(
+      findRuntimeDeclarations([{ path: 'build.gradle', content: 'sourceCompatibility = 8\ntargetCompatibility = 8' }], 'java'),
+      [],
+    );
   });
 
   test('reuses container image recognition for GitLab and CircleCI YAML', () => {
