@@ -28,7 +28,11 @@ export function isActionableImpact(
 ): boolean {
   if (site.breakingChangeId !== change.id || site.confidence !== 'high') return false;
   if (change.kind !== 'runtime-requirement') return true;
-  return runtimeAnalysis?.changeId === change.id && runtimeAnalysis.state === 'incompatible';
+  return (
+    runtimeAnalysis?.changeId === change.id &&
+    runtimeAnalysis.state === 'incompatible' &&
+    site.runtimeVerdict === 'incompatible'
+  );
 }
 
 export function deriveBreakingChangeDispositions(
