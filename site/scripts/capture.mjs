@@ -544,13 +544,27 @@ function slimCandidate(candidate) {
     // The application's actual verdict. The validator consumes this instead
     // of reconstructing a second severity algorithm from counts.
     severity: severityOf(candidate),
-    independentActionableFindingCount: new Set(
-      (candidate.plan?.impactSites ?? [])
-        .filter((site) => site.confidence === 'high')
-        .map((site) => (candidate.plan?.breakingChanges ?? []).find((change) => change.id === site.breakingChangeId))
-        .filter((change) => change && change.kind !== 'runtime-requirement')
-        .map((change) => change.id),
-    ).size,
+    independentActionableFindingCount: (candidate.plan?.dispositions ?? [])
+      .filter((disposition) => disposition.state === 'actionable')
+      .filter((disposition) =>
+        (candidate.plan?.breakingChanges ?? []).some(
+          (change) => change.id === disposition.changeId && change.kind !== 'runtime-requirement',
+        ),
+      ).length,
+    actionableImpactCount: candidate.actionableImpactCount ?? 0,
+    actionableImpactFiles: candidate.actionableImpactFiles ?? 0,
+    runtimeDeclarationSiteCount: candidate.runtimeDeclarationSiteCount ?? 0,
+    runtimeChanges: (candidate.plan?.breakingChanges ?? [])
+      .filter((change) => change.kind === 'runtime-requirement' && change.runtime)
+      .map((change) => ({ id: change.id, runtime: change.runtime.runtime })),
+    dispositions: (candidate.plan?.dispositions ?? []).map((disposition) => ({
+      changeId: disposition.changeId,
+      state: disposition.state,
+      reason: disposition.reason,
+      siteCount: disposition.sites.length,
+      actionableSiteCount: disposition.actionableSites.length,
+      runtimeState: disposition.runtimeAnalysis?.state ?? null,
+    })),
     breakingCount: candidate.breakingCount,
     impactCount: candidate.impactCount,
     impactFiles: candidate.impactFiles,

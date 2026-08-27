@@ -216,6 +216,12 @@ export function describeStatus(status: DriftStatus): string {
           entry.assessment.runtimeCompatibility === 'unknown' ||
           entry.assessment.runtimeCompatibility === 'partial',
       );
+      const actionableFiles = new Set(
+        (status.plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file)),
+      ).size;
+      if (actionableFiles > 0) {
+        return `Drift: ${actionableFiles} file${actionableFiles === 1 ? '' : 's'} affected${runtimeUnresolved ? '; runtime also unverified' : ''}`;
+      }
       if (runtimeUnresolved) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, runtime compatibility unverified`;
       // An upstream breaking change that this repository never calls is not
       // something to put a number in front of a developer about.

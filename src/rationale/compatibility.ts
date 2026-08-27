@@ -60,6 +60,45 @@ export interface RuntimeRequirementAnalysis {
 }
 
 /**
+ * Close runtime-analysis coverage before any downstream decision is made.
+ * Every runtime finding leaves this function with exactly one answer. Missing
+ * or duplicate answers are analysis failures, never implicit compatibility.
+ */
+export function completeRuntimeAnalyses(
+  changes: readonly BreakingChange[],
+  analyses: readonly RuntimeRequirementAnalysis[],
+): RuntimeRequirementAnalysis[] {
+  const runtimeChanges = changes.filter((change) => change.kind === 'runtime-requirement');
+  const runtimeIds = new Set(runtimeChanges.map((change) => change.id));
+  const byId = new Map<string, RuntimeRequirementAnalysis[]>();
+  for (const analysis of analyses) {
+    if (!runtimeIds.has(analysis.changeId)) continue;
+    const bucket = byId.get(analysis.changeId);
+    if (bucket) bucket.push(analysis);
+    else byId.set(analysis.changeId, [analysis]);
+  }
+
+  return runtimeChanges.map((change) => {
+    const matches = byId.get(change.id) ?? [];
+    if (matches.length === 1 && matches[0]!.runtime === change.runtime?.runtime) return matches[0]!;
+    const runtime = change.runtime?.runtime;
+    if (!runtime) {
+      throw new Error(`Runtime breaking change ${change.id} has no structured runtime identity`);
+    }
+    return {
+      changeId: change.id,
+      runtime,
+      state: 'unknown',
+      reason: 'not-analyzed',
+      declarations: [],
+      unresolved: [],
+      sites: [],
+      statement: `Drift could not complete runtime compatibility analysis for this ${runtime} requirement.`,
+    };
+  });
+}
+
+/**
  * Answer one upstream runtime requirement against this repository.
  *
  * Returns `null` only when the change carries no structured runtime
@@ -269,6 +308,10 @@ function describe(
   if (reason === 'unparseable') {
     const unreadable = declarations.filter((d) => d.verdict === 'unknown');
     return `${upstream}; this repository's ${label} declaration (${where(unreadable)}) is not a version range Drift could evaluate, so it could not determine compatibility.`;
+  }
+
+  if (reason === 'not-analyzed') {
+    return `${upstream}; Drift did not complete localization, so runtime compatibility remains unknown.`;
   }
 
   return `${upstream}; Drift could not find an authoritative ${label} version declaration for this workspace.`;

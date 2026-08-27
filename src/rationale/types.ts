@@ -219,6 +219,13 @@ export interface UpgradeRationale {
   license: LicenseFinding;
   summary: ReleaseSummary;
   assessment: UpgradeAssessment;
+  /** Per-finding runtime result; consumers resolve by changeId, never package. */
+  runtimeAnalyses?: Array<{
+    changeId: string;
+    runtime: import('../types.js').RuntimeName;
+    state: RuntimeCompatibilityState;
+    reason: import('../types.js').RuntimeCompatibilityReason;
+  }>;
   /**
    * Why this analysis is incomplete, in the developer's terms.
    *

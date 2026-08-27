@@ -557,16 +557,50 @@ describe('runtime severity: unresolved compatibility can never render as safe', 
     assert.equal(severityOf({ ...baseCandidate, runtimeCompatibility: 'partial' }), 'unchecked');
   });
 
-  test('runtime partial with a site hedges rather than stating the code is affected', () => {
+  test('runtime partial with a site is review-only rather than affected', () => {
     const candidate = {
       ...baseCandidate,
       impactCount: 1,
       impactFiles: 1,
+      // The one site is the runtime declaration itself — held for review, not
+      // an actionable API hit.
+      runtimeDeclarationSiteCount: 1,
       impactConfidence: 'high' as const,
       runtimeCompatibility: 'partial' as const,
     };
+    assert.equal(severityOf(candidate), 'unchecked');
+    assert.doesNotMatch(describeSeverity(candidate), /affect your code/i);
+  });
+
+  test('an independent API impact survives an unresolved runtime on the same candidate', () => {
+    // 3 impact sites: 2 high-confidence API hits + 1 runtime declaration under
+    // an unknown result. The unresolved runtime must not zero the API impact.
+    const candidate = {
+      ...baseCandidate,
+      impactCount: 3,
+      impactFiles: 2,
+      runtimeDeclarationSiteCount: 1,
+      impactConfidence: 'high' as const,
+      runtimeCompatibility: 'unknown' as const,
+    };
     assert.equal(severityOf(candidate), 'affected');
-    assert.match(describeSeverity(candidate), /^May affect your code/);
+    assert.match(describeSeverity(candidate), /Affects your code/);
+  });
+
+  test('a low-confidence API hit is review-only, never a false all-clear', () => {
+    const candidate = {
+      ...baseCandidate,
+      breakingCount: 1,
+      impactCount: 1,
+      impactFiles: 1,
+      actionableImpactCount: 0,
+      actionableImpactFiles: 0,
+      impactConfidence: 'low' as const,
+    };
+    assert.equal(severityOf(candidate), 'unchecked');
+    const line = describeSeverity(candidate);
+    assert.doesNotMatch(line, /none used here|Safe for your code|Not verified/);
+    assert.match(line, /Review required/);
   });
 
   test('a proven-unused symbol-level change is still allowed to be upstream-only', () => {
@@ -589,7 +623,7 @@ describe('runtime recording validator consumes recorded structure', () => {
     independentActionableFindingCount: 0,
     breakingCount: 1,
     impactCount: 0,
-    breaking: [{ kind: 'runtime-requirement' }],
+    breaking: [{ kind: 'runtime-requirement', id: 'runtime-change', runtime: { runtime: 'node' } }],
     runtimeAnalyses: [{
       changeId: 'runtime-change',
       runtime: 'node',

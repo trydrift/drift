@@ -13,6 +13,7 @@ import type {
   UpgradeAssessment,
 } from './types.js';
 import { worstSeverity } from './types.js';
+import { deriveBreakingChangeDispositions } from '../disposition.js';
 
 /**
  * The one thing Drift is willing to conclude, and why.
@@ -99,12 +100,16 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   const runtimeSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind === 'runtime-requirement');
   const runtimeState = worstRuntimeState(input.runtimeAnalyses);
   const runtimeUnresolved = runtimeCompatibilityIsUnresolved(runtimeState);
-  const highConfidenceChangeIds = new Set(
-    impactSites
-      .filter((site) => isActionableSite(site))
-      .map((site) => site.breakingChangeId),
+  const dispositions = deriveBreakingChangeDispositions(
+    input.breakingChanges,
+    impactSites,
+    input.runtimeAnalyses ?? [],
+    true,
   );
-  const actionableChanges = input.breakingChanges.filter((change) => highConfidenceChangeIds.has(change.id));
+  const actionableIds = new Set(
+    dispositions.filter((disposition) => disposition.state === 'actionable').map((disposition) => disposition.changeId),
+  );
+  const actionableChanges = input.breakingChanges.filter((change) => actionableIds.has(change.id));
   const actionableDecisions = actionableChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
   const actionableMechanical = actionableChanges.length - actionableDecisions.length;
 
@@ -157,14 +162,17 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
         `${actionableDecisions.length} locally affected ${plural(actionableDecisions.length, 'change requires', 'changes require')} a developer decision rather than a substitution.`,
       );
     }
-  } else if (input.breakingChanges.length > 0 && !runtimeUnresolved) {
+  } else if (
+    input.breakingChanges.some((change) => change.kind !== 'runtime-requirement') &&
+    !runtimeUnresolved
+  ) {
     // "None of which this repository uses" is a positive claim about this
     // repository, and it may only be made when compatibility was actually
     // established. With a runtime requirement left `unknown` or `partial`,
     // the true sentence is the analysis statement pushed above — Drift did
     // not find a local use *and* did not establish there isn't one.
     reasons.push(
-      `${input.breakingChanges.length} upstream breaking ${plural(input.breakingChanges.length, 'change', 'changes')}, none of which this repository uses.`,
+      `${input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length} upstream API breaking ${plural(input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length, 'change', 'changes')}, none of which this repository uses.`,
     );
   }
 
@@ -218,12 +226,6 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
  * actionable. `partial` and `unknown` are review, never a migration headline
  * and never a reason to call anything safe.
  */
-function isActionableSite(site: ImpactSite): boolean {
-  if (site.confidence !== 'high') return false;
-  if (site.runtimeVerdict === undefined) return true;
-  return site.runtimeVerdict === 'incompatible';
-}
-
 function decide(
   input: AssessmentInput,
   counts: { affected: number; decisions: number; actionable: boolean; runtimeUnresolved: boolean },

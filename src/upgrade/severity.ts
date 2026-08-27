@@ -25,6 +25,9 @@ export interface SeverityInput {
   status: string;
   breakingCount: number;
   impactCount: number;
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  runtimeDeclarationSiteCount?: number;
   impactFiles: number;
   /**
    * Reasons this upgrade could not actually be checked — no declarations to
@@ -144,11 +147,30 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // the one wrong answer this module exists to prevent.
   if (candidate.status === 'pending') return 'pending';
   if (candidate.status === 'error') return 'error';
-  if (candidate.impactCount > 0) return 'affected';
+  const runtimeUnresolved =
+    candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial';
+  // The canonical count, when the plan supplied one. The fallback for a direct
+  // caller that did not is deliberately *not* `runtime unknown ? 0 : impact`:
+  // zeroing the whole candidate because its runtime is unresolved would erase
+  // independent API impact. Only the runtime declaration sites are held back
+  // for review; the API sites still count.
+  const actionableImpactCount =
+    candidate.actionableImpactCount ??
+    (runtimeUnresolved
+      ? Math.max(0, candidate.impactCount - (candidate.runtimeDeclarationSiteCount ?? 0))
+      : candidate.impactCount);
+  if (actionableImpactCount > 0) return 'affected';
   // Static analysis found nothing to point at, but the project's own toolchain
   // — running for real, not predicting — disagrees. That is a stronger signal
   // than a clean diff and must outrank it, not be silently absorbed by it.
   if (candidate.verification?.status === 'failed') return 'verification-failed';
+
+  // Local evidence that is real but not actionable — a low-confidence API
+  // match, a runtime declaration under a partial/unknown result — is still
+  // evidence. It cannot be `affected` (nothing here is safe to auto-edit) and
+  // it must never fall through to `upstream-only` or `clean`, both of which
+  // tell the developer this repository is unaffected.
+  if (candidate.impactCount > 0) return 'unchecked';
 
   // Checked *before* `breakingCount`, and before the recommendation/gap
   // ladder below, because every verdict past this point tells the developer
@@ -202,7 +224,13 @@ export function describeSeverity(candidate: SeverityInput): string {
     case 'error':
       return 'Could not check';
     case 'affected': {
-      const files = candidate.impactFiles;
+      // "actionable" only when the plan actually separated actionable sites
+      // from review-only ones. A direct caller that supplied a raw
+      // `impactCount` keeps today's plain "N sites" wording.
+      const hasCanonicalCounts = candidate.actionableImpactCount !== undefined;
+      const files = candidate.actionableImpactFiles ?? candidate.impactFiles;
+      const actionable = candidate.actionableImpactCount ?? candidate.impactCount;
+      const siteNoun = hasCanonicalCounts ? 'actionable site' : 'site';
       // Hedged unless the strongest match is a direct, imported usage — a
       // textual-only or wrapper-mediated match is real enough to surface, but
       // not certain enough to tell someone flatly that their code is affected.
@@ -230,7 +258,11 @@ export function describeSeverity(candidate: SeverityInput): string {
       // than left to the generic `deepNote`, which only speaks to whether
       // verification ran, not to what it found.
       const measured = state === 'failed' ? ' — and its own checks fail with this installed, measured not predicted' : deepNote;
-      return `${verb} your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${unconfirmed}${measured}`;
+      const runtimeReview = (candidate.runtimeDeclarationSiteCount ?? 0) > 0 &&
+        (candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial')
+        ? ` · ${candidate.runtimeDeclarationSiteCount} runtime declaration${candidate.runtimeDeclarationSiteCount === 1 ? '' : 's'} to review`
+        : '';
+      return `${verb} your code · ${actionable} ${siteNoun}${actionable === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${runtimeReview}${unconfirmed}${measured}`;
     }
     case 'verification-failed': {
       const failing = (candidate.verification?.checks ?? [])
@@ -246,8 +278,20 @@ export function describeSeverity(candidate: SeverityInput): string {
         ? `Verified safe · ${base}, and your own checks pass`
         : `Safe for your code · ${base}${deepNote}`;
     }
-    case 'unchecked':
+    case 'unchecked': {
+      // Two different facts share this severity. One is "nothing was reachable
+      // to check against". The other is "something local was found, but it is
+      // not confirmed enough to act on" — a low-confidence API match, or a
+      // runtime declaration under an unresolved compatibility result. The
+      // second must not read as the first, and neither may read as safe.
+      const reviewOnly =
+        (candidate.actionableImpactCount ?? 0) === 0 && candidate.impactCount > 0;
+      if (reviewOnly) {
+        const n = candidate.impactCount;
+        return `Review required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`;
+      }
       return 'Not verified · Drift found nothing it could check this version against';
+    }
     case 'clean': {
       // "Safe for your code" and "you should take this" are different things,
       // and an upgrade that closes a known advisory deserves the stronger word.

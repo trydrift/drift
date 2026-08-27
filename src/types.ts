@@ -329,6 +329,8 @@ export type RuntimeCompatibilityReason =
   | 'dynamic'
   /** No authoritative declaration for this runtime exists in this scope. */
   | 'no-declaration'
+  /** Localization did not run or failed before this requirement could be checked. */
+  | 'not-analyzed'
   /** A declaration or the upstream range itself could not be parsed. */
   | 'unparseable';
 
@@ -511,6 +513,32 @@ export interface ImpactSite {
    * recording validator honest without re-deriving the verdict from prose.
    */
   runtimeVerdict?: 'incompatible' | 'partial' | 'unknown';
+}
+
+/** Canonical downstream meaning of one localized breaking change. */
+export type BreakingChangeDispositionState = 'actionable' | 'review-only' | 'unaffected' | 'unknown';
+
+export interface BreakingChangeDisposition {
+  changeId: string;
+  state: BreakingChangeDispositionState;
+  reason:
+    | 'high-confidence-impact'
+    | 'low-confidence-impact'
+    | 'runtime-incompatible'
+    | 'runtime-partial'
+    | 'runtime-unknown'
+    | 'runtime-compatible'
+    | 'not-localized'
+    | 'no-local-impact';
+  /** All explanatory locations, including review-only runtime declarations. */
+  sites: ImpactSite[];
+  /** The strict subset that may produce edits, commits, or fix controls. */
+  actionableSites: ImpactSite[];
+  runtimeAnalysis?: {
+    runtime: RuntimeName;
+    state: RuntimeCompatibilityState;
+    reason: RuntimeCompatibilityReason;
+  };
 }
 
 export type PlanEdgeReason =
@@ -703,6 +731,13 @@ export interface RemediationPlan {
    */
   upstreamBreakingCount?: number;
   impactSites: ImpactSite[];
+  /**
+   * Single authority for actionability, review state, and local non-impact.
+   * Always produced by `buildPlan`; optional only so hand-built plan fixtures
+   * from before this field existed still typecheck. Consumers fall back to the
+   * conservative per-site derivation when it is absent.
+   */
+  dispositions?: BreakingChangeDisposition[];
   commits: CommitUnit[];
   /** Real dependency graph over commit units. */
   planEdges: PlanEdge[];

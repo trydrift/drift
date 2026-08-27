@@ -40,12 +40,16 @@ export interface EvidenceRef {
   locator: string | null;
 }
 
-export interface RuntimeRequirement {
-  kind: "runtime-requirement";
+interface RuntimeRequirementBase {
   runtime: "node" | "python" | "go" | "ruby" | "java" | "rust";
   requirement: string;
   sourceText: string;
+  rangeParseStatus?: "parsed" | "unknown";
 }
+
+export type RuntimeRequirement =
+  | (RuntimeRequirementBase & { kind: "minimum-runtime" })
+  | (RuntimeRequirementBase & { kind: "unsupported-runtime-range"; derivedMinimum?: string });
 
 /** The single customer-facing number — see `deriveOverallConfidence` in core. */
 export interface OverallConfidence {
@@ -107,6 +111,19 @@ export interface Candidate {
   }[];
   severity?: "affected" | "verification-failed" | "upstream-only" | "unchecked" | "clean" | "error" | "pending";
   independentActionableFindingCount?: number;
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  runtimeDeclarationSiteCount?: number;
+  /** Complete runtime-finding identity set; unlike `breaking`, never sliced. */
+  runtimeChanges?: { id: string; runtime: RuntimeRequirement["runtime"] }[];
+  dispositions?: {
+    changeId: string;
+    state: "actionable" | "review-only" | "unaffected" | "unknown";
+    reason: string;
+    siteCount: number;
+    actionableSiteCount: number;
+    runtimeState: "compatible" | "incompatible" | "partial" | "unknown" | null;
+  }[];
   breakingCount: number;
   impactCount: number;
   impactFiles: number;

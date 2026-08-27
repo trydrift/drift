@@ -160,6 +160,15 @@ export interface UpgradeCandidate {
   evidenceCount: number;
   breakingCount: number;
   impactCount: number;
+  /**
+   * Sites whose canonical disposition permits a remediation edit. Always set
+   * by the scan pipeline; optional only so hand-built candidate fixtures
+   * typecheck. `severityOf` falls back to `impactCount` when absent.
+   */
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  /** Runtime declarations shown for review, whether or not actionable. */
+  runtimeDeclarationSiteCount?: number;
   /** Distinct repository files with at least one impact site. */
   impactFiles: number;
   /**
@@ -2260,6 +2269,7 @@ async function analyzeUpgrade(args: {
       evidence,
       breakingChanges,
       impactSites,
+      runtimeAnalyses,
       ...(rationale ? { rationale: [rationale] } : {}),
     });
 
@@ -2269,6 +2279,11 @@ async function analyzeUpgrade(args: {
       evidenceCount: evidence.length,
       breakingCount: breakingChanges.length,
       impactCount: impactSites.length,
+      actionableImpactCount: (plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0),
+      actionableImpactFiles: new Set((plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file))).size,
+      runtimeDeclarationSiteCount: (plan.dispositions ?? [])
+        .filter((disposition) => disposition.runtimeAnalysis !== undefined)
+        .reduce((count, disposition) => count + disposition.sites.length, 0),
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
       impactConfidence: strongestImpactConfidence(impactSites),
       risk: plan.risk,
@@ -2312,6 +2327,9 @@ async function analyzeUpgrade(args: {
       evidenceCount: 0,
       breakingCount: 0,
       impactCount: 0,
+      actionableImpactCount: 0,
+      actionableImpactFiles: 0,
+      runtimeDeclarationSiteCount: 0,
       impactFiles: 0,
       impactConfidence: 'none',
       risk: 'unknown',
@@ -2398,6 +2416,9 @@ function pendingCandidate(args: {
     evidenceCount: 0,
     breakingCount: 0,
     impactCount: 0,
+    actionableImpactCount: 0,
+    actionableImpactFiles: 0,
+    runtimeDeclarationSiteCount: 0,
     impactFiles: 0,
     impactConfidence: 'none',
     risk: 'unknown',

@@ -431,6 +431,12 @@ export async function finalizeRationale(
         license,
         summary,
         assessment,
+        runtimeAnalyses: runtimeAnalyses.map(({ changeId, runtime, state, reason }) => ({
+          changeId,
+          runtime,
+          state,
+          reason,
+        })),
         gaps,
         // Whether Drift actually obtained evidence bearing on *compatibility*
         // (a computed surface diff, or compatibility prose fetched and read) —

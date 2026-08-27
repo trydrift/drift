@@ -273,7 +273,22 @@ function runtimeUnresolved(plan: RemediationPlan): boolean {
 }
 
 function renderPlan(plan: RemediationPlan, state: DriftState, focus?: FocusTarget): string {
-  const files = new Set(plan.impactSites.map((s) => s.file)).size;
+  const dispositions = plan.dispositions ?? [];
+  const actionableSites = dispositions.length
+    ? dispositions.flatMap((disposition) => disposition.actionableSites)
+    : plan.impactSites.filter((site) => site.runtimeVerdict !== 'partial' && site.runtimeVerdict !== 'unknown');
+  // Sites Drift found but will not auto-edit: low-confidence API matches, and
+  // runtime declarations under an unresolved compatibility result. Real local
+  // evidence — enough to block any "safe / not used here" verdict — but never
+  // a reason to generate a commit or show the fix control.
+  const reviewOnlySites = dispositions.length
+    ? dispositions
+        .filter((disposition) => disposition.state === 'review-only' || disposition.state === 'unknown')
+        .flatMap((disposition) => disposition.sites)
+    : plan.impactSites.filter((site) => !actionableSites.includes(site));
+  const files = new Set(actionableSites.map((s) => s.file)).size;
+  const reviewFiles = new Set(reviewOnlySites.map((s) => s.file)).size;
+  const runtimeDeclarationSites = plan.impactSites.filter((site) => site.runtimeVerdict !== undefined).length;
   const status = state.status;
   const pendingUpgrade = isPendingUpgradePlan(plan, state);
 
@@ -321,25 +336,28 @@ ${
   // Drift could not resolve against this repository has no file to point at
   // and therefore reaches here with zero impact sites, exactly as a genuinely
   // unaffected upgrade does -- the two must not read the same.
-  runtimeUnresolved(plan)
-    ? `<p class="verdict-hit">Drift could not establish this repository's runtime compatibility with these changes. Check the declared runtime before upgrading.</p>`
-    : plan.impactSites.length === 0
-    ? `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
-    : pendingUpgrade
-      ? `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here would use an API that changes in the selected upgrade.</p>`
-      : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API that changed.</p>`
+  actionableSites.length > 0
+    ? `${pendingUpgrade
+      ? `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here would use an API or runtime that needs an edit in the selected upgrade.</p>`
+      : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API or runtime that needs an edit.</p>`}${runtimeUnresolved(plan) ? `<p class="verdict-hit">Runtime compatibility also remains unresolved and requires review.</p>` : ''}`
+    : runtimeUnresolved(plan)
+      ? `<p class="verdict-hit">Drift could not establish this repository's runtime compatibility with these changes. Check the declared runtime before upgrading.</p>`
+    : reviewOnlySites.length > 0
+    ? `<p class="verdict-hit">${reviewFiles} file${reviewFiles === 1 ? '' : 's'} here contain changes Drift flagged for review but will not edit automatically. Check them before upgrading.</p>`
+    : `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
 }
 
 <div class="stats">
-  ${stat(String(files), 'file' + (files === 1 ? '' : 's') + ' affected here', plan.impactSites.length ? '' : 'risk-none')}
-  ${stat(String(plan.impactSites.length), 'code site' + (plan.impactSites.length === 1 ? '' : 's'))}
+  ${stat(String(files), 'file' + (files === 1 ? '' : 's') + ' affected here', actionableSites.length || reviewOnlySites.length ? '' : 'risk-none')}
+  ${stat(String(actionableSites.length), 'actionable site' + (actionableSites.length === 1 ? '' : 's'))}
+  ${stat(String(runtimeDeclarationSites), 'runtime declaration' + (runtimeDeclarationSites === 1 ? '' : 's'))}
   ${stat(String(plan.commits.length), 'planned commit' + (plan.commits.length === 1 ? '' : 's'))}
   ${stat(String(plan.breakingChanges.length), 'upstream change' + (plan.breakingChanges.length === 1 ? '' : 's'))}
   ${stat(plan.risk, 'repo risk', riskClass(plan.risk))}
 </div>
 
 <div class="actions">
-  <button class="primary" data-command="drift.fixAll">Fix with my AI agent</button>
+  ${plan.commits.length > 0 ? '<button class="primary" data-command="drift.fixAll">Fix with my AI agent</button>' : ''}
   <button data-command="drift.selectAgent">Change agent</button>
   <button data-command="drift.disableEditorSignals">Hide editor flags</button>
   <button data-command="drift.analyze">Re-analyse</button>
@@ -548,7 +566,8 @@ function renderChangeCard(
   const display = confidenceDisplay(change);
   const runtimeState =
     change.kind === 'runtime-requirement'
-      ? plan.rationale?.find((entry) => entry.dependency === change.dependency)?.assessment.runtimeCompatibility
+      ? plan.dispositions?.find((entry) => entry.changeId === change.id)?.runtimeAnalysis?.state ??
+        plan.rationale?.flatMap((entry) => entry.runtimeAnalyses ?? []).find((analysis) => analysis.changeId === change.id)?.state
       : undefined;
 
   const siteList = sites.length

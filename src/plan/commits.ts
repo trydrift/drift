@@ -1,5 +1,6 @@
 import type {
   BreakingChange,
+  BreakingChangeDisposition,
   BreakingChangeKind,
   CommitUnit,
   DependencyChange,
@@ -76,6 +77,7 @@ function commitType(kind: BreakingChangeKind): string {
 export interface PlanCommitsInput {
   breakingChanges: readonly BreakingChange[];
   impactSites: readonly ImpactSite[];
+  dispositions?: readonly BreakingChangeDisposition[];
   config: DriftConfig;
   changes?: readonly DependencyChange[];
   /** Deterministic fixes already computed for individual findings, by `BreakingChange.id`. */
@@ -96,6 +98,7 @@ export interface PlanCommitGraph {
 export function planCommitGraph({
   breakingChanges,
   impactSites,
+  dispositions,
   config,
   changes = [],
   codemods,
@@ -107,7 +110,13 @@ export function planCommitGraph({
   // A breaking change with no impact site needs no commit. Reporting it is
   // still valuable — it tells the reviewer Drift looked and found nothing —
   // but asking an agent to "fix" untouched code invites gratuitous edits.
-  const actionable = breakingChanges.filter((c) => (sitesByChange.get(c.id)?.length ?? 0) > 0);
+  const dispositionById = new Map(dispositions?.map((disposition) => [disposition.changeId, disposition]));
+  const actionable = breakingChanges.filter((change) => {
+    const disposition = dispositionById.get(change.id);
+    if (disposition) return disposition.state === 'actionable' && disposition.actionableSites.length > 0;
+    // Compatibility fallback for callers constructing API-only plans directly.
+    return (sitesByChange.get(change.id) ?? []).some((site) => site.confidence === 'high' && site.runtimeVerdict === undefined);
+  });
   if (actionable.length === 0) return { commits: [], edges: [], cohorts: detectUpgradeCohorts(changes), blockers: [] };
 
   const groups =

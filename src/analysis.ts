@@ -17,7 +17,7 @@ import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
 import { localizeWithRuntime } from './localize/index.js';
-import type { RuntimeRequirementAnalysis } from './rationale/compatibility.js';
+import { completeRuntimeAnalyses, type RuntimeRequirementAnalysis } from './rationale/compatibility.js';
 import { resolveModuleMaps } from './localize/modules.js';
 import { attemptCodemod, type CodemodResult } from './codemod/index.js';
 import { resolveFixPlans } from './fixplan/resolve.js';
@@ -578,10 +578,14 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       : 'No checkout was available, so this repository was not searched.',
   });
 
+  // A runtime finding without an analysis is itself an unresolved result.
+  // Close coverage even when no checkout existed or localization failed.
+  const completeAnalyses = completeRuntimeAnalyses(breakingChanges, runtimeAnalyses);
+
   /* Stage 7 — rationale */
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
-    { changes: actionable, evidence, breakingChanges, impactSites, runtimeAnalyses },
+    { changes: actionable, evidence, breakingChanges, impactSites, runtimeAnalyses: completeAnalyses },
     {
       config,
       logger,
@@ -606,6 +610,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     evidence,
     breakingChanges,
     impactSites,
+    runtimeAnalyses: completeAnalyses,
     rationale,
     skipped,
     localizationRan,
