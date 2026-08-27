@@ -93,16 +93,24 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
   });
 
-  test('a non-root member still sees a repo-global CI workflow declaration', () => {
+  test('a non-root member sees an unattributed CI job as evidence, but not as a resolved, authoritative pin (#123)', () => {
+    // `test:` names no member at all. In this real, three-member monorepo
+    // that ownership cannot be established from the file alone — see #123 —
+    // so it must not become a `resolved` declaration `findNodeDeclarations`
+    // (and therefore `checkNodeCompatibility`) could treat as a definite
+    // per-member verdict. It is still real evidence, so it stays visible in
+    // `discoverRuntimeDeclarations`'s `unresolved` half.
     const files = [
       {
         path: '.github/workflows/ci.yml',
         content: ['jobs:', '  test:', '    steps:', "      - uses: actions/setup-node@v5", '        with:', "          node-version: '22'"].join('\n'),
       },
     ];
-    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
-    assert.equal(declarations.length, 1);
-    assert.equal(declarations[0].file, '.github/workflows/ci.yml');
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
+    const discovery = discoverRuntimeDeclarations(files, 'node', 'packages/api', allMembers);
+    assert.deepEqual(discovery.resolved, []);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
   });
 
   test('a non-root member still sees a root-level declaration', () => {
@@ -132,16 +140,20 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     ]);
   });
 
-  test('a repo-global CI workflow still applies even when a member has its own .nvmrc', () => {
-    // Unlike a version-pin file, CI is not shadowed: a root workflow may
-    // build/test every member, and a member's own runtime pin says nothing
-    // about what CI actually runs with.
+  test('an unattributed CI workflow does not out-vote a member’s own .nvmrc, but is still surfaced (#123)', () => {
+    // Unlike a version-pin file, CI is not shadowed by a member's own file —
+    // but per #123, a CI declaration whose job names no member at all is not
+    // proof it governs this specific one either, in a repository with
+    // siblings it could instead belong to. `packages/api/.nvmrc` still
+    // resolves normally; the CI line is real evidence but stays unresolved.
     const files = [
       { path: 'packages/api/.nvmrc', content: '20' },
-      { path: '.github/workflows/ci.yml', content: "          node-version: '18'" },
+      { path: '.github/workflows/ci.yml', content: 'jobs:\n  build:\n    steps:\n      - uses: actions/setup-node@v4\n        with:\n' + "          node-version: '18'" },
     ];
-    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
-    assert.deepEqual(new Set(declarations.map((d) => d.file)), new Set(['packages/api/.nvmrc', '.github/workflows/ci.yml']));
+    const discovery = discoverRuntimeDeclarations(files, 'node', 'packages/api', allMembers);
+    assert.deepEqual(discovery.resolved, [{ file: 'packages/api/.nvmrc', line: 1, requirement: '20' }]);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
   });
 
   test('the root workspace (member === "") does not inherit a sibling’s .nvmrc', () => {
@@ -161,11 +173,13 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     ]);
   });
 
-  test('the root workspace still sees a repo-global CI workflow declaration', () => {
+  test('the root workspace sees an unattributed CI workflow as evidence, not a resolved pin, in a real monorepo (#123)', () => {
     const files = [
       { path: '.github/workflows/ci.yml', content: "          node-version: '22'" },
     ];
-    assert.equal(findNodeDeclarations(files, '', allMembers).length, 1);
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), []);
+    const discovery = discoverRuntimeDeclarations(files, 'node', '', allMembers);
+    assert.equal(discovery.unresolved.length, 1);
   });
 
   test('a root package.json engines field does not leak into a sibling member when the root is itself a member', () => {
@@ -256,7 +270,15 @@ describe('#123: CI runtime declarations are attributed to the job that owns a wo
     assert.ok(!versions.includes('22'), 'the api job must not contaminate the web workspace');
   });
 
-  test('a job with no workspace selector stays repository-wide for every member', () => {
+  test('a job with no workspace selector is unattributed, not repository-wide, once there is a sibling it might instead belong to', () => {
+    // This was the actual #123 false positive: an unscoped root job used to
+    // become authoritative for every member unconditionally, so a build/lint
+    // job on a version one member's dependency upgrade would need could make
+    // an unrelated member look incompatible. Ownership is unestablished
+    // here, not repository-wide — the declaration is real evidence (kept
+    // `unresolved`) but never a `resolved`, votable pin for a member it may
+    // not govern. Single-package repositories are unaffected — see the
+    // 'a job with no workspace selector at all...' test below.
     const global = [
       'jobs:',
       '  lint:',
@@ -266,8 +288,26 @@ describe('#123: CI runtime declarations are attributed to the job that owns a wo
       '        with:',
       '          node-version: 20',
     ].join('\n');
-    const decls = findNodeDeclarations([{ path: '.github/workflows/lint.yml', content: global }], 'packages/api', allMembers);
-    assert.deepEqual(decls.map((d) => d.requirement), ['20']);
+    const lintFile = [{ path: '.github/workflows/lint.yml', content: global }];
+    assert.deepEqual(findNodeDeclarations(lintFile, 'packages/api', allMembers), []);
+    const discovery = discoverRuntimeDeclarations(lintFile, 'node', 'packages/api', allMembers);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].rawText, '20');
+  });
+
+  test('a job with no workspace selector at all is repository-wide when there is no sibling it could instead belong to', () => {
+    const global = [
+      'jobs:',
+      '  lint:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: actions/setup-node@v4',
+      '        with:',
+      '          node-version: 20',
+    ].join('\n');
+    const lintFile = [{ path: '.github/workflows/lint.yml', content: global }];
+    // Single-package repository: no workspace context at all.
+    assert.deepEqual(findNodeDeclarations(lintFile).map((d) => d.requirement), ['20']);
   });
 });
 
@@ -541,7 +581,19 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
       ['ruby', 'Dockerfile', 'FROM ruby:3.3-slim', '3.3'],
       ['go', 'Dockerfile', 'FROM golang:1.24-alpine', '1.24'],
       ['go', '.github/workflows/ci.yml', 'go-version: "1.24"', '1.24'],
-      ['java', 'pom.xml', '<java.version>21</java.version>', '21'],
+      // #137: a bare <java.version> is convention-level evidence, not an
+      // authoritative pin — see the dedicated "#137" describe block for that
+      // distinction. Toolchain-provisioning it here keeps this test's own
+      // purpose (declaration discovery works across every manifest surface)
+      // unaffected by that change.
+      [
+        'java',
+        'pom.xml',
+        '<project><properties><java.version>21</java.version></properties><build><plugins>' +
+          '<plugin><artifactId>maven-toolchains-plugin</artifactId><configuration><toolchains><jdk><version>${java.version}</version></jdk></toolchains></configuration></plugin>' +
+          '</plugins></build></project>',
+        '21',
+      ],
       ['java', 'build.gradle.kts', 'languageVersion = JavaLanguageVersion.of(21)', '21'],
       ['java', '.github/workflows/ci.yml', 'java-version: "21"', '21'],
       ['rust', 'rust-toolchain.toml', '[toolchain]\nchannel = "1.84"', '1.84'],
@@ -625,16 +677,20 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
     }
   });
 
-  test('shared discovery preserves workspace ownership and repository-global CI', () => {
+  test('shared discovery preserves workspace ownership; an unattributed CI declaration is evidence, not a resolved sibling-crossing pin (#123)', () => {
     const files = [
       { path: 'packages/api/.ruby-version', content: '3.3' },
       { path: 'packages/web/.ruby-version', content: '2.7' },
       { path: '.github/workflows/ci.yml', content: 'ruby-version: "3.2"' },
     ];
+    const members = ['', 'packages/api', 'packages/web'];
     assert.deepEqual(
-      findRuntimeDeclarations(files, 'ruby', 'packages/api', ['', 'packages/api', 'packages/web']).map((declaration) => declaration.file),
-      ['packages/api/.ruby-version', '.github/workflows/ci.yml'],
+      findRuntimeDeclarations(files, 'ruby', 'packages/api', members).map((declaration) => declaration.file),
+      ['packages/api/.ruby-version'],
     );
+    const discovery = discoverRuntimeDeclarations(files, 'ruby', 'packages/api', members);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
   });
 
   test('root package manifests do not leak into sibling workspaces for any runtime', () => {

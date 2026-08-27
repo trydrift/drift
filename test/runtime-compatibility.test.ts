@@ -296,13 +296,21 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
     assert.equal(found.unresolved[0]?.source, 'manifest');
   });
 
-  test('Maven property indirection resolves an authoritative java.version in-file', () => {
-    const resolved = discoverRuntimeDeclarations(
+  test('Maven property indirection reads the property value, but a bare java.version is surfaced unresolved, not resolved (#137)', () => {
+    // `resolveMavenProperty` still substitutes `${java.version}` correctly —
+    // that machinery is unchanged. What #137 changes is what happens to the
+    // *result*: without a toolchain plugin tying it to the actual build JDK,
+    // `<java.version>` is convention-level evidence, not an authoritative
+    // pin, so it is recorded unresolved rather than resolved. See the
+    // "#137: Java runtime authority vs compiler bytecode target" suite for
+    // the toolchain-provisioned case, where it does resolve.
+    const found = discoverRuntimeDeclarations(
       files({ 'pom.xml': '<project><properties><java.version>17</java.version></properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${java.version}</release></configuration></plugin></plugins></build></project>' }),
       'java',
     );
-    assert.deepEqual(resolved.unresolved, []);
-    assert.deepEqual(resolved.resolved.map((d) => d.requirement), ['17']);
+    assert.deepEqual(found.resolved, []);
+    assert.equal(found.unresolved.length, 1);
+    assert.equal(found.unresolved[0]?.rawText, '17');
   });
 
   test('#137: an unresolved compiler release/source/target is never an authoritative unresolved runtime', () => {
@@ -317,10 +325,17 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
     assert.deepEqual(inherited.resolved, []);
     assert.deepEqual(inherited.unresolved, []);
 
-    // An authoritative <java.version> that resolves is unaffected by an
-    // unresolved compiler-target property alongside it.
+    // A toolchain-provisioned <java.version> (authoritative — see #137) that
+    // resolves is unaffected by an unresolved compiler-target property
+    // alongside it.
     const withAuthoritative = discoverRuntimeDeclarations(
-      files({ 'pom.xml': '<project><properties><java.version>17</java.version></properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${unset.prop}</release></configuration></plugin></plugins></build></project>' }),
+      files({
+        'pom.xml':
+          '<project><properties><java.version>17</java.version></properties><build><plugins>' +
+          '<plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${unset.prop}</release></configuration></plugin>' +
+          '<plugin><artifactId>maven-toolchains-plugin</artifactId><configuration><toolchains><jdk><version>${java.version}</version></jdk></toolchains></configuration></plugin>' +
+          '</plugins></build></project>',
+      }),
       'java',
     );
     assert.deepEqual(withAuthoritative.unresolved, []);
@@ -353,14 +368,174 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
     assert.deepEqual(found.unresolved, []);
   });
 
-  test('workspace precedence still shadows a root version file but keeps repository-wide CI', () => {
+  test('workspace precedence still shadows a root version file', () => {
     const repo = files({
       '.nvmrc': '18\n',
       'packages/api/.nvmrc': '22\n',
-      '.github/workflows/ci.yml': '        node-version: 20\n',
     });
     const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', ['packages/api', 'packages/web']);
-    assert.deepEqual(found.resolved.map((d) => d.file).sort(), ['.github/workflows/ci.yml', 'packages/api/.nvmrc']);
+    assert.deepEqual(found.resolved, [{ file: 'packages/api/.nvmrc', line: 1, requirement: '22' }]);
+  });
+});
+
+/**
+ * #123: a root CI runtime pin is not automatically authoritative for every
+ * workspace member. `ciJobLinesForMember` attributes each CI job to the
+ * member(s) it demonstrably targets — `working-directory`, `paths`,
+ * `paths-ignore` (same line or an indented multiline list), or a `run`
+ * command — and a job that names no member at all is repository-wide
+ * (unambiguous) only in a single-package repository. In a real monorepo, an
+ * unattributed job's declaration is recorded *unresolved*: real evidence,
+ * but never enough by itself to decide `compatible`/`incompatible` for a
+ * member it may not even govern.
+ */
+describe('#123: CI runtime declarations are attributed to the job that owns a member', () => {
+  const monorepo = ['packages/api', 'packages/web'];
+
+  const ciWithScopedJobs = (extra = '') => `
+jobs:
+  web:
+    defaults:
+      run:
+        working-directory: packages/web
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+  api:
+    defaults:
+      run:
+        working-directory: packages/api
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+${extra}`;
+
+  test('working-directory: a job scoped to the target member participates', () => {
+    const repo = files({ '.github/workflows/ci.yml': ciWithScopedJobs() });
+    const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
+    assert.deepEqual(found.resolved, [{ file: '.github/workflows/ci.yml', line: 18, requirement: '22' }]);
+  });
+
+  test('sibling member exclusion: a job scoped to a different member never contributes a site', () => {
+    const repo = files({ '.github/workflows/ci.yml': ciWithScopedJobs() });
+    const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
+    assert.ok(!found.resolved.some((d) => d.requirement === '18'));
+    assert.ok(!found.unresolved.some((d) => d.rawText === '18'));
+  });
+
+  test('target-member inclusion: the concrete #123 regression — API Node 22 participates, web Node 18 never taints it', () => {
+    const repo = files({
+      'packages/api/.nvmrc': '22\n',
+      'packages/web/.nvmrc': '18\n',
+      '.github/workflows/ci.yml': ciWithScopedJobs(),
+    });
+    const apiAnalysis = analyzeRuntimeRequirement(runtimeChange('node', '>=20'), repo, 'packages/api', monorepo);
+    assert.equal(apiAnalysis?.state, 'compatible');
+    assert.ok(apiAnalysis?.declarations.every((d) => d.requirement !== '18'));
+  });
+
+  test('multiline paths: a member path on its own indented list line under `paths:` still scopes the job', () => {
+    const repo = files({
+      '.github/workflows/ci.yml': `
+jobs:
+  api:
+    if: something
+    paths:
+      - packages/api/**
+      - shared/**
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+`,
+    });
+    const api = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
+    assert.deepEqual(api.resolved, [{ file: '.github/workflows/ci.yml', line: 11, requirement: '22' }]);
+    const web = discoverRuntimeDeclarations(repo, 'node', 'packages/web', monorepo);
+    assert.equal(web.resolved.length, 0);
+    assert.equal(web.unresolved.length, 0);
+  });
+
+  test('paths-ignore: naming a member excludes that job for that member, not the reverse', () => {
+    const repo = files({
+      '.github/workflows/ci.yml': `
+jobs:
+  docs:
+    paths-ignore:
+      - 'packages/api/**'
+      - 'docs/**'
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+`,
+    });
+    const api = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
+    assert.equal(api.resolved.length, 0);
+    assert.equal(api.unresolved.length, 0);
+  });
+
+  test('unattributed root job: an unscoped job in a monorepo is review/unknown for a member, never a false incompatible edit', () => {
+    const repo = files({
+      'packages/api/.nvmrc': '22\n',
+      'packages/web/.nvmrc': '18\n',
+      '.github/workflows/ci.yml': ciWithScopedJobs(`  lint:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+`),
+    });
+    const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
+    assert.ok(!found.resolved.some((d) => d.requirement === '16'), 'the unattributed job must never resolve directly');
+    assert.ok(found.unresolved.some((d) => d.rawText === '16'), 'it must still be recorded as evidence Drift could not attribute');
+
+    const analysis = analyzeRuntimeRequirement(runtimeChange('node', '>=20'), repo, 'packages/api', monorepo);
+    assert.equal(analysis?.state, 'unknown');
+    assert.equal(analysis?.reason, 'dynamic');
+  });
+
+  test('normal repository/root package behavior: a single-package repo keeps unscoped CI authoritative', () => {
+    const repo = files({
+      '.github/workflows/ci.yml': `
+jobs:
+  build:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+`,
+    });
+    assert.deepEqual(discoverRuntimeDeclarations(repo, 'node').resolved, [
+      { file: '.github/workflows/ci.yml', line: 7, requirement: '20' },
+    ]);
+    // A caller that names a member but reports no siblings is the same case:
+    // there is no other member the declaration could instead belong to.
+    assert.deepEqual(discoverRuntimeDeclarations(repo, 'node', 'packages/api', ['packages/api']).resolved, [
+      { file: '.github/workflows/ci.yml', line: 7, requirement: '20' },
+    ]);
+  });
+
+  test('GitLab-style top-level jobs (no `jobs:` key): unattributed in a monorepo, still authoritative for a single package', () => {
+    // GitLab CI defines jobs as arbitrary top-level keys rather than nesting
+    // them under `jobs:`, so this shallow parser cannot find job boundaries
+    // at all here — the same "ownership not established" case as a
+    // recognized-but-unscoped job, and it must fail the same conservative way.
+    const gitlabCi = files({
+      '.gitlab-ci.yml': `
+build-api:
+  image: node:16
+  script: echo hi
+`,
+    });
+    assert.deepEqual(discoverRuntimeDeclarations(gitlabCi, 'node').resolved, [
+      { file: '.gitlab-ci.yml', line: 3, requirement: '16' },
+    ]);
+    const monorepoFound = discoverRuntimeDeclarations(gitlabCi, 'node', 'packages/api', monorepo);
+    assert.equal(monorepoFound.resolved.length, 0);
+    assert.ok(monorepoFound.unresolved.some((d) => d.rawText === 'node:16'));
   });
 });
 
@@ -518,28 +693,83 @@ describe('#110: registry runtime metadata becomes a canonical runtime requiremen
 });
 
 describe('#137: Java runtime authority vs compiler bytecode target', () => {
-  const pom = (properties: string, compilerTarget: string) =>
-    `<project><properties>${properties}</properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${compilerTarget}</release></configuration></plugin></plugins></build></project>`;
+  const pom = (properties: string, compilerTarget: string, extraPlugins = '') =>
+    `<project><properties>${properties}</properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${compilerTarget}</release></configuration></plugin>${extraPlugins}</plugins></build></project>`;
 
-  test('Case 1: authoritative JDK 17 + unresolved compiler target + upstream Java >=11 is compatible', () => {
+  const toolchainsPlugin =
+    '<plugin><artifactId>maven-toolchains-plugin</artifactId><configuration><toolchains><jdk><version>${java.version}</version></jdk></toolchains></configuration></plugin>';
+
+  test('Case 1: <release>8</release> + an authoritative CI/toolchain JDK 17 + upstream Java >=11 is compatible (release is never suggested for edit)', () => {
     const analysis = analyzeRuntimeRequirement(
       runtimeChange('java', '>=11'),
-      files({ 'pom.xml': pom('<java.version>17</java.version>', '${unset.prop}') }),
+      files({
+        'pom.xml': pom('<foo>1</foo>', '8'),
+        '.github/workflows/ci.yml': 'jobs:\n  build:\n    steps:\n      - uses: actions/setup-java@v4\n        with:\n          java-version: 17\n',
+      }),
     );
     assert.equal(analysis?.state, 'compatible');
-    assert.equal(analysis?.reason, 'satisfies');
+    assert.ok(!analysis?.declarations.some((d) => d.requirement === '8'), 'the compiler release target must never participate as a runtime declaration');
   });
 
-  test('Case 2: authoritative JDK 8 + upstream Java >=11 is incompatible', () => {
+  test('Case 2: Gradle sourceCompatibility/targetCompatibility=8 + an authoritative CI JDK 17 + upstream Java >=11 is compatible', () => {
     const analysis = analyzeRuntimeRequirement(
       runtimeChange('java', '>=11'),
-      files({ 'pom.xml': pom('<java.version>8</java.version>', '${unset.prop}') }),
+      files({
+        'build.gradle': 'sourceCompatibility = 8\ntargetCompatibility = 8\n',
+        '.github/workflows/ci.yml': 'jobs:\n  build:\n    steps:\n      - uses: actions/setup-java@v4\n        with:\n          java-version: 17\n',
+      }),
+    );
+    assert.equal(analysis?.state, 'compatible');
+    assert.ok(!analysis?.declarations.some((d) => d.requirement === '8'), 'sourceCompatibility/targetCompatibility must never participate as a runtime declaration');
+  });
+
+  test('Case 3: an authoritative actual JDK 8 + upstream Java >=11 is incompatible/actionable', () => {
+    const analysis = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ '.github/workflows/ci.yml': 'jobs:\n  build:\n    steps:\n      - uses: actions/setup-java@v4\n        with:\n          java-version: 8\n' }),
     );
     assert.equal(analysis?.state, 'incompatible');
     assert.equal(analysis?.reason, 'violates');
+    assert.equal(analysis?.sites.length, 1);
   });
 
-  test('Case 3: a compiler target alone does not establish definite runtime compatibility', () => {
+  test('Case 4: a bare <java.version> with no toolchain evidence is never a definite runtime edit, but is surfaced conservatively', () => {
+    const compatibleShaped = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ 'pom.xml': pom('<java.version>17</java.version>', '${unset.prop}') }),
+    );
+    assert.equal(compatibleShaped?.state, 'unknown');
+    assert.equal(compatibleShaped?.reason, 'dynamic');
+    assert.equal(compatibleShaped?.unresolved.length, 1);
+    assert.equal(compatibleShaped?.unresolved[0]?.rawText, '17');
+
+    const incompatibleShaped = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ 'pom.xml': pom('<java.version>8</java.version>', '${unset.prop}') }),
+    );
+    // Never promoted to a false `incompatible` either — the whole point is
+    // that Drift does not know, in either direction, without more evidence.
+    assert.equal(incompatibleShaped?.state, 'unknown');
+    assert.notEqual(incompatibleShaped?.state, 'incompatible');
+  });
+
+  test('Case 5: <java.version> provisioned by an explicit Maven Toolchains plugin block participates as authoritative evidence', () => {
+    const compatible = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ 'pom.xml': pom('<java.version>17</java.version>', '${unset.prop}', toolchainsPlugin) }),
+    );
+    assert.equal(compatible?.state, 'compatible');
+    assert.equal(compatible?.reason, 'satisfies');
+
+    const incompatible = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ 'pom.xml': pom('<java.version>8</java.version>', '${unset.prop}', toolchainsPlugin) }),
+    );
+    assert.equal(incompatible?.state, 'incompatible');
+    assert.equal(incompatible?.reason, 'violates');
+  });
+
+  test('a compiler target alone (no java.version property at all) does not establish definite runtime compatibility', () => {
     const analysis = analyzeRuntimeRequirement(
       runtimeChange('java', '>=11'),
       files({ 'pom.xml': pom('<foo>1</foo>', '17') }),

@@ -136,7 +136,7 @@ export function discoverRuntimeDeclarations(
       if (found_) record(found, runtime, path, found_.line, found_.requirement, 'manifest', found_.requirement);
     }
 
-    if (isCiPath(path)) ciDeclarations(path, content, runtime, found, member);
+    if (isCiPath(path)) ciDeclarations(path, content, runtime, found, member, allMembers);
   }
 
   found.resolved = dedupeDeclarations(found.resolved);
@@ -596,11 +596,39 @@ function mavenJavaDeclarations(path: string, content: string, found: RuntimeDecl
   // where a single unresolved entry forces the whole runtime verdict to
   // `unknown`, and compiler-target uncertainty must never override an
   // authoritative `<java.version>`/toolchain declaration that does resolve.
+  //
+  // `<java.version>` itself is not automatically that authoritative
+  // declaration either — see #137. It is an extremely common Maven
+  // convention, but the property alone does not say whether it names the
+  // actual build/deploy JDK or is merely the value fed to the compiler's
+  // `source`/`target`/`release`. Only a Maven Toolchains plugin block that
+  // provisions the build JDK from this same property is a structural signal
+  // strong enough to call it authoritative; absent that, it is real evidence
+  // — worth surfacing — but never enough by itself to decide
+  // `compatible`/`incompatible` for this project's execution runtime.
+  const authoritative = mavenJavaVersionIsToolchainProvisioned(content);
   for (const { line, raw } of positions) {
     if (/^\s*\$\{[^}]+\}\s*$/.test(raw) && resolveMavenProperty(content, raw)) continue;
     const resolved = resolveMavenProperty(content, raw);
-    record(found, 'java', path, line, raw, 'manifest', resolved ? javaVersion(resolved) : null);
+    const requirement = resolved ? javaVersion(resolved) : null;
+    record(found, 'java', path, line, raw, 'manifest', authoritative ? requirement : null);
   }
+}
+
+/**
+ * Is `<java.version>` tied to the JDK Maven actually provisions to build
+ * with, rather than merely a value the compiler plugin happens to read?
+ *
+ * The Maven Toolchains plugin (`maven-toolchains-plugin`) is the mechanism
+ * Maven itself provides for pinning the *build* JDK — as opposed to
+ * `maven.compiler.source`/`target`/`release`, which only constrain emitted
+ * bytecode and say nothing about which JDK produced it. A `<jdk><version>`
+ * inside that plugin's configuration that resolves to this same property is
+ * a real, structural declaration of build-JDK intent, not a guess.
+ */
+function mavenJavaVersionIsToolchainProvisioned(content: string): boolean {
+  if (!/<artifactId>\s*maven-toolchains?-plugin\s*<\/artifactId>/i.test(content)) return false;
+  return /<jdk>[\s\S]*?<version>\s*\$\{java\.version\}\s*<\/version>[\s\S]*?<\/jdk>/i.test(content);
 }
 
 /** One hop of `${property}` substitution against this pom's own `<properties>`. */
@@ -715,17 +743,28 @@ function ciDeclarations(
   runtime: RuntimeName,
   found: RuntimeDeclarationDiscovery,
   member?: string,
+  allMembers?: readonly string[],
 ): void {
   const lines = content.split('\n');
   const structural = yamlStructuralLineMask(lines);
-  const allowed = ciJobLinesForMember(lines, member);
+  const { allowed, ambiguous } = ciJobLinesForMember(lines, member, allMembers);
+  // A CI declaration whose owning job could not be attributed to this
+  // specific member is real evidence of *something*, but not evidence this
+  // member's compatibility may be decided from — see `ciJobLinesForMember`.
+  // Recording it as unresolved (never as a resolved, votable declaration)
+  // keeps `stateOf` from folding an unattributed root pin into a definite
+  // `incompatible`/`compatible` verdict for a member it may not even govern.
+  const recordCi = (line: number, rawText: string, source: RuntimeDeclarationSource, requirement: string | null) => {
+    record(found, runtime, path, line, rawText, source, ambiguous[line - 1] ? null : requirement);
+  };
+
   for (const [i, line] of lines.entries()) {
     if (!structural[i]) continue;
     if (!allowed[i]) continue;
     const field = yamlKeyValue(line, CI_RUNTIME_FIELD_NAMES[runtime]);
     if (field) {
       const raw = field.raw;
-      record(found, runtime, path, i + 1, raw, 'ci', isDynamicValue(raw) ? null : numericRuntimeTag(raw));
+      recordCi(i + 1, raw, 'ci', isDynamicValue(raw) ? null : numericRuntimeTag(raw));
     }
 
     // GitHub Actions job containers are application runtimes; service
@@ -733,7 +772,7 @@ function ciDeclarations(
     // every YAML `image:` key as the job runtime.
     if (/^\.github\/workflows\//i.test(path)) {
       const scalar = /^\s*container\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
-      if (scalar) recordImage(found, runtime, path, i + 1, scalar, 'ci');
+      if (scalar) recordCiImage(found, runtime, path, i + 1, scalar, 'ci', ambiguous);
       if (/^\s*container\s*:\s*$/i.test(line)) {
         const baseIndent = /^\s*/.exec(line)![0].length;
         for (let j = i + 1; j < lines.length; j++) {
@@ -742,7 +781,7 @@ function ciDeclarations(
           const indent = /^\s*/.exec(next)![0].length;
           if (indent <= baseIndent) break;
           const image = /^\s*image\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
-          if (image) recordImage(found, runtime, path, j + 1, image, 'ci');
+          if (image) recordCiImage(found, runtime, path, j + 1, image, 'ci', ambiguous);
         }
       }
       continue;
@@ -760,7 +799,7 @@ function ciDeclarations(
     // unreadable tag can mean anything about that runtime.
     const image = /^\s*(?:-\s*)?image\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
     if (image) {
-      recordImage(found, runtime, path, i + 1, image, 'ci');
+      recordCiImage(found, runtime, path, i + 1, image, 'ci', ambiguous);
       continue;
     }
 
@@ -780,10 +819,34 @@ function ciDeclarations(
         if (indent <= baseIndent) break;
         if (!structural[j]) continue;
         const nameValue = /^\s*name\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
-        if (nameValue) recordImage(found, runtime, path, j + 1, nameValue, 'ci');
+        if (nameValue) recordCiImage(found, runtime, path, j + 1, nameValue, 'ci', ambiguous);
       }
     }
   }
+}
+
+/**
+ * `recordImage`, but routed through the same ambiguous-ownership guard as
+ * every other CI declaration: an image whose job could not be attributed to
+ * this member is recorded unresolved, never as a resolved declaration that
+ * could swing `stateOf` to a definite verdict for a member it may not govern.
+ */
+function recordCiImage(
+  found: RuntimeDeclarationDiscovery,
+  runtime: RuntimeName,
+  path: string,
+  line: number,
+  image: string,
+  source: RuntimeDeclarationSource,
+  ambiguous: readonly boolean[],
+): void {
+  if (!ambiguous[line - 1]) {
+    recordImage(found, runtime, path, line, image, source);
+    return;
+  }
+  const identity = identifyRuntimeImage(image);
+  if (!identity || identity.runtime !== runtime) return;
+  record(found, runtime, path, line, image, source, null);
 }
 
 /**
@@ -798,22 +861,60 @@ function ciDeclarations(
  * The parse is intentionally shallow — it does not build a YAML tree. It finds
  * the `jobs:` key at whatever indentation the file uses, takes the indentation
  * of the first mapping key beneath it as the job level, and slices each job
- * block by that indentation. A job that names *this* member (in
- * `working-directory`, path filters, or a `run` step) is in scope; a job that
- * carries a workspace selector naming a *different* member is out of scope; a
- * job with no workspace selector at all is repository-wide and stays in scope
- * for every member. When the structure cannot be recognized the whole workflow
- * is left in scope, matching the behaviour before scoping existed.
+ * block by that indentation. Three outcomes per job, not two:
+ *
+ * - the job names *this* member (in `working-directory`, path filters — same
+ *   line or an indented multiline list beneath `paths:`/`paths-ignore:` — or a
+ *   `run` step): `allowed`, not `ambiguous`. Its declarations are resolved
+ *   normally and may decide compatibility for this member.
+ * - the job carries a workspace selector naming a *different* member: not
+ *   `allowed` at all. Its declarations play no part in this member's analysis.
+ * - the job carries no workspace selector whatsoever: repository-wide *by
+ *   construction* when there is only one workspace member (or none), so it
+ *   stays `allowed` and authoritative, matching the tool's original,
+ *   single-package behaviour. In a repository with more than one member,
+ *   though, an unattributed root job is not proof it governs this particular
+ *   member — its declarations are `allowed` (they still count as CI evidence
+ *   worth surfacing) but `ambiguous`, so the caller records them unresolved
+ *   rather than letting them decide `compatible`/`incompatible` on this
+ *   member's behalf. See #123.
+ *
+ * When the job structure cannot be recognized at all (GitLab's top-level job
+ * keys, a malformed file), the same ownership rule applies as an unscoped
+ * job: repository-wide and unambiguous for a single-package repository,
+ * `allowed`-but-`ambiguous` for every member in a real monorepo.
  */
-function ciJobLinesForMember(lines: readonly string[], member?: string): boolean[] {
+function ciJobLinesForMember(
+  lines: readonly string[],
+  member?: string,
+  allMembers?: readonly string[],
+): { allowed: boolean[]; ambiguous: boolean[] } {
   const allowed = Array.from({ length: lines.length }, () => true);
-  if (member === undefined) return allowed;
+  const ambiguous = Array.from({ length: lines.length }, () => false);
+  if (member === undefined) return { allowed, ambiguous };
+
+  // A single-package repository (or a caller that has not gathered workspace
+  // context) has no sibling member a root job's declaration could be
+  // misattributed to — an unscoped job is repository-wide because there is
+  // nothing else it could mean, exactly as before job-level ownership existed.
+  const isMonorepo = (allMembers?.length ?? 0) > 1;
+  // Structure Drift could not resolve into per-job blocks — GitLab CI defines
+  // jobs as arbitrary top-level keys rather than nesting them under `jobs:`,
+  // which this shallow parser does not attempt to distinguish from reserved
+  // top-level keys (`stages`, `variables`, `include`, ...). Ownership is
+  // exactly as unestablished here as it is for a recognized-but-unscoped
+  // job, so the same rule applies: repository-wide when there is only one
+  // member, ambiguous rather than silently authoritative when there is not.
+  const markUnresolvedStructure = (): { allowed: boolean[]; ambiguous: boolean[] } => {
+    if (isMonorepo) ambiguous.fill(true);
+    return { allowed, ambiguous };
+  };
 
   const indentOf = (line: string) => /^[ \t]*/.exec(line)![0].length;
   const isBlank = (line: string) => !line.trim() || /^\s*#/.test(line);
 
   const jobsLine = lines.findIndex((line) => /^[ \t]*jobs:\s*(#.*)?$/.test(line));
-  if (jobsLine === -1) return allowed;
+  if (jobsLine === -1) return markUnresolvedStructure();
   const jobsIndent = indentOf(lines[jobsLine]!);
 
   let jobIndent: number | null = null;
@@ -830,7 +931,7 @@ function ciJobLinesForMember(lines: readonly string[], member?: string): boolean
     if (jobIndent === null) jobIndent = indent;
     if (indent === jobIndent && /^[ \t]*[A-Za-z0-9_.-]+:\s*(#.*)?$/.test(line)) jobStarts.push(i);
   }
-  if (jobStarts.length === 0) return allowed;
+  if (jobStarts.length === 0) return markUnresolvedStructure();
 
   const jobs = jobStarts.map((start, k) => ({
     start,
@@ -839,23 +940,84 @@ function ciJobLinesForMember(lines: readonly string[], member?: string): boolean
 
   const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // What makes a job workspace-specific at all: a working directory or a path
-  // filter. Without one, the job builds/tests the whole repository.
-  const selectorPattern = /(?:working-directory|paths|paths-ignore)\s*:/i;
-  const memberPattern = normalized
-    ? new RegExp(`(?:working-directory|paths|paths-ignore|run)\\s*:[^\\n]*${escaped}(?:[/\\s"']|$)`, 'i')
+  const memberEntryPattern = normalized ? new RegExp(escaped, 'i') : null;
+
+  // `paths:`/`working-directory:`/`run:` are *inclusion* selectors: naming a
+  // member there means the job targets it. `paths-ignore:` is the opposite —
+  // naming a member there means the job explicitly skips it — and folding it
+  // into the same "mentions the member => scoped to it" test (as the
+  // original implementation did) had the polarity backwards: a job that
+  // excludes `packages/docs/**` was being read as *scoped to* `docs`.
+  const inclusionSelectorPattern = /(?:working-directory\s*:|paths(?!-ignore)\s*:)/i;
+  const exclusionSelectorPattern = /paths-ignore\s*:/i;
+  const sameLineInclusionPattern = normalized
+    ? new RegExp(`(?:working-directory|paths(?!-ignore)|run)\\s*:[^\\n]*${escaped}(?:[/\\s"']|$)`, 'i')
     : null;
+  const sameLineExclusionPattern = normalized
+    ? new RegExp(`paths-ignore\\s*:[^\\n]*${escaped}(?:[/\\s"']|$)`, 'i')
+    : null;
+  // Both `paths:` and `paths-ignore:` conventionally introduce a multiline
+  // YAML list (`paths:\n  - packages/api/**\n  - shared/**`), and the member
+  // path is just as often on one of those indented item lines as on the
+  // key's own line. The same-line patterns above alone would read that
+  // entire, perfectly ordinary job as unscoped.
+  const inclusionListKeyPattern = /^([ \t]*)(?:-\s*)?paths(?!-ignore)\s*:\s*(#.*)?$/i;
+  const exclusionListKeyPattern = /^([ \t]*)(?:-\s*)?paths-ignore\s*:\s*(#.*)?$/i;
+
+  const blockNamesMember = (text: string, listKeyPattern: RegExp): boolean => {
+    if (!memberEntryPattern) return false;
+    const blockLines = text.split('\n');
+    for (let i = 0; i < blockLines.length; i++) {
+      const key = listKeyPattern.exec(blockLines[i]!);
+      if (!key) continue;
+      const baseIndent = key[1]!.length;
+      for (let j = i + 1; j < blockLines.length; j++) {
+        const next = blockLines[j]!;
+        if (!next.trim()) continue;
+        const indent = indentOf(next);
+        if (indent <= baseIndent) break;
+        if (memberEntryPattern.test(next)) return true;
+      }
+    }
+    return false;
+  };
+
+  const jobIncludesMember = (text: string): boolean =>
+    (sameLineInclusionPattern?.test(text) ?? false) || blockNamesMember(text, inclusionListKeyPattern);
+  const jobExcludesMember = (text: string): boolean =>
+    (sameLineExclusionPattern?.test(text) ?? false) || blockNamesMember(text, exclusionListKeyPattern);
 
   allowed.fill(false);
   for (const job of jobs) {
     const text = lines.slice(job.start, job.end).join('\n');
-    const scoped = selectorPattern.test(text);
-    const inScope = !scoped || (memberPattern !== null && memberPattern.test(text));
-    if (inScope) {
-      for (let i = job.start; i < job.end; i++) allowed[i] = true;
+
+    // An exclusion naming this member is affirmative evidence the job skips
+    // it, regardless of any inclusion selector also present.
+    if (exclusionSelectorPattern.test(text) && jobExcludesMember(text)) continue;
+
+    if (inclusionSelectorPattern.test(text)) {
+      if (jobIncludesMember(text)) {
+        for (let i = job.start; i < job.end; i++) allowed[i] = true;
+      }
+      // Scoped to a sibling (or a selector that does not name any member
+      // Drift recognizes): stays excluded entirely, not merely ambiguous —
+      // Drift has affirmative evidence this job is not this member's.
+      continue;
+    }
+
+    // No inclusion selector, and not excluded by name either: either the job
+    // carries no path/directory scoping at all, or it only carries a
+    // `paths-ignore:` that does not mention this member — "runs on
+    // everything except these paths" is not the same as "targets this
+    // member specifically". Either way ownership is not established:
+    // repository-wide evidence when there is nothing else it could mean,
+    // ambiguous ownership when there is a sibling it could instead belong to.
+    for (let i = job.start; i < job.end; i++) {
+      allowed[i] = true;
+      if (isMonorepo) ambiguous[i] = true;
     }
   }
-  return allowed;
+  return { allowed, ambiguous };
 }
 
 function lineValue(content: string, pattern: RegExp): { line: number; requirement: string } | null {
@@ -1013,7 +1175,19 @@ function scopedTo<T extends { path: string; content: string }>(
 
     // No member directory claims this file at all — genuinely repository-
     // global by construction (or the root is not itself a registered member).
-    if (owner === null) return isCiPath(f.path) ? ciAppliesToMember(f.content, member) : true;
+    //
+    // A CI workflow is always kept in the scanned set here, whatever member is
+    // being analyzed: `ciDeclarations`/`ciJobLinesForMember` (see #123) do the
+    // real attribution at job granularity — which job a declaration lives in,
+    // whether that job names this member via a (possibly multiline)
+    // `working-directory`/`paths`/`paths-ignore` selector — and fail
+    // conservatively (recording an unattributed declaration unresolved rather
+    // than dropping it) when ownership cannot be established. A whole-file
+    // gate ahead of that can only be coarser and would either drop a
+    // genuinely member-owned declaration whose selector spans multiple lines,
+    // or admit a sibling's declaration a same-line-only check happened not to
+    // rule out — both wrong in ways the job-level pass already gets right.
+    if (owner === null) return true;
     if (owner === '') {
       // The root workspace's own files. A CI workflow, `.nvmrc`, or Dockerfile
       // at the root conventionally governs the whole build regardless of
@@ -1021,22 +1195,10 @@ function scopedTo<T extends { path: string; content: string }>(
       // manifest is that package's own declared runtime, and must not leak
       // into a sibling member's compatibility check just because the root
       // happens to also be a workspace member.
-      if (isCiPath(f.path) && !ciAppliesToMember(f.content, member)) return false;
       return !MANIFEST_BASENAMES.has(base) && !base.endsWith('.gemspec');
     }
     return false;
   });
-}
-
-/** Root CI is member-specific only when its YAML names that member. */
-function ciAppliesToMember(content: string, member: string | undefined): boolean {
-  if (!member) return true;
-  const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
-  // A workflow with no member selector is repository-wide by construction.
-  // Once it names a working directory or path, only that named member owns
-  // the runtime evidence.
-  if (!/(?:working-directory|paths?):/i.test(content)) return true;
-  return new RegExp(`(?:working-directory|paths?|run):[^\\n]*${normalized.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`, 'i').test(content);
 }
 
 function engineFromPackageJson(content: string): { raw: string; requirement: string | null } | null {
