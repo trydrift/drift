@@ -6,7 +6,7 @@ import type {
   StructuredFinding,
 } from '../types.js';
 import { specCodeFor } from '../evidence/spec/index.js';
-import { normalizeRuntimeOperator } from './runtime-grammar.js';
+import { normalizeRuntimeOperator, RUNTIME_RANGE_GRAMMARS } from './runtime-grammar.js';
 
 /**
  * Deterministic mapping from computed findings and changelog prose to
@@ -222,7 +222,11 @@ const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted
 const RUNTIME_NAME = String.raw`(node(?:\.js)?|python|go|ruby|java|rust)\b`;
 // An optional `v` covers "Node v20" / "Node.js v18"; the parser strips it back
 // off before the range is normalized so the captured value stays canonical.
-const RUNTIME_RANGE = String.raw`([<>=^~]*\s*v?\d+(?:\.\d+){0,3}(?:(?:\s*,\s*|\s+)\s*[<>=^~]*\s*v?\d+(?:\.\d+){0,3})*)`;
+// `||` is admitted as a term separator alongside comma/whitespace so a
+// disjunction like `^18.14.0 || ^20.0.0 || >=24.0.0` is captured whole rather
+// than truncated at its first branch; whether `||` is *meaningful* for the
+// named runtime is decided later, per ecosystem, in `parseRuntimeRequirement`.
+const RUNTIME_RANGE = String.raw`([<>=^~]*\s*v?\d+(?:\.\d+){0,3}(?:(?:\s*,\s*|\s*\|\|\s*|\s+)\s*[<>=^~]*\s*v?\d+(?:\.\d+){0,3})*)`;
 // The gap between "version" and the number: "is", a colon, or nothing at all.
 const RUNTIME_VERSION_SEP = String.raw`(?:versions?\s*)?(?:is\s+|:\s*)?`;
 
@@ -495,6 +499,18 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   if (!rawRuntime || !rawRequirement) return null;
   if (!['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(rawRuntime)) return null;
 
+  // A `||`-joined disjunction ("^18.14.0 || ^20.0.0 || >=24.0.0"): each branch
+  // is an independent range and a repository version satisfying *any* branch
+  // satisfies the requirement. The old parser's list separator was
+  // comma/whitespace only, so it stopped at the first branch and the rest was
+  // reported as absent. The full requirement is preserved here regardless of
+  // runtime; only ecosystems whose grammar defines `||` (semver — Node) go on
+  // to evaluate it, and for the rest it is carried through `unknown` rather
+  // than guessed, exactly as a caret against Python is.
+  if (rawRequirement.includes('||')) {
+    return parseRuntimeDisjunction(rawRuntime, rawRequirement, match[0]!.trim(), ruleId);
+  }
+
   // The prose grammar allows a leading `v` ("Node v20"); it carries no meaning
   // beyond the number it prefixes, so it is dropped before normalization.
   // The optional operator carries its own trailing whitespace (`>= 20`); every
@@ -564,6 +580,64 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
     sourceText,
     ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
   };
+}
+
+/**
+ * Normalize a `||`-joined runtime range, branch by branch.
+ *
+ * Each branch is validated and canonicalized exactly as a standalone
+ * requirement would be — same term grammar, same leading-operator
+ * normalization, same Java `1.x` folding — then the branches are rejoined with
+ * ` || ` so the complete disjunction flows through the pipeline intact.
+ *
+ * The result is `parsed` only when the named runtime's grammar actually
+ * defines `||` *and* every branch's operator is one that grammar accepts.
+ * Otherwise the requirement is real and legible but not something Drift can
+ * evaluate for that ecosystem, so it is carried through with
+ * `rangeParseStatus: 'unknown'` — never evaluated as if the operator meant
+ * something it does not.
+ */
+function parseRuntimeDisjunction(
+  runtime: RuntimeName,
+  rawRequirement: string,
+  sourceText: string,
+  ruleId: string,
+): RuntimeRequirement | null {
+  const branches = rawRequirement
+    .split(/\s*\|\|\s*/)
+    .map((branch) => branch.trim())
+    .filter(Boolean);
+  if (branches.length < 2) return null;
+
+  let status: 'parsed' | 'unknown' = RUNTIME_RANGE_GRAMMARS[runtime].supportsDisjunction ? 'parsed' : 'unknown';
+  const normalized: string[] = [];
+
+  for (const branch of branches) {
+    const term = /^(?:([<>=^~]+)\s*)?v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)(?:[<>=^~]+\s*)?v?\d+(?:\.\d+){0,3})*$/i.exec(branch);
+    if (!term) return null;
+    const branchOperator = normalizeRuntimeOperator(runtime, term[1] ?? '');
+    if (branchOperator.status === 'unknown') status = 'unknown';
+    normalized.push(
+      branch
+        .replace(/v?(\d+(?:\.\d+){0,3})/gi, (_m, value: string) =>
+          runtime === 'java' ? value.replace(/^1\.(\d+)(?=$|\.|\s|,)/, '$1') : value,
+        )
+        .replace(/^\s*[<>=^~]*\s*/, branchOperator.operator || '>='),
+    );
+  }
+
+  const shared = {
+    runtime,
+    requirement: normalized.join(' || '),
+    sourceText,
+    ...(status === 'unknown' ? { rangeParseStatus: 'unknown' as const } : {}),
+  };
+  // No `derivedMinimum` for a dropped disjunction: the complement of a union
+  // of ranges is not a single floor, the same reason `^16`'s complement is not
+  // stated as `>=17` in the single-branch dropped-support path above.
+  return ruleId.startsWith('prose-dropped-runtime')
+    ? { kind: 'unsupported-runtime-range', ...shared }
+    : { kind: 'minimum-runtime', ...shared };
 }
 
 
