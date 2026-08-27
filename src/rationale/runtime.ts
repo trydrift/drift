@@ -583,18 +583,13 @@ function goModDeclarations(path: string, content: string, found: RuntimeDeclarat
  */
 function mavenJavaDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   const positions: { line: number; raw: string }[] = [];
-  const pattern = /<(?:maven\.compiler\.(?:release|source|target)|java\.version)>\s*([^<]+?)\s*<\//g;
+  // Compiler source/target/release settings describe bytecode compatibility,
+  // not the JVM that runs the application. Only an explicit java.version
+  // property is eligible as a runtime declaration here.
+  const pattern = /<java\.version>\s*([^<]+?)\s*<\//g;
   for (const match of content.matchAll(pattern)) {
     positions.push({ line: content.slice(0, match.index).split('\n').length, raw: match[1]! });
   }
-  const compilerBlocks = content.match(/<plugin>[\s\S]*?<artifactId>maven-compiler-plugin<\/artifactId>[\s\S]*?<\/plugin>/g) ?? [];
-  for (const block of compilerBlocks) {
-    const blockStart = content.indexOf(block);
-    for (const match of block.matchAll(/<(?:release|source|target)>\s*([^<]+?)\s*<\//g)) {
-      positions.push({ line: content.slice(0, blockStart + match.index).split('\n').length, raw: match[1]! });
-    }
-  }
-
   for (const { line, raw } of positions) {
     if (/^\s*\$\{[^}]+\}\s*$/.test(raw) && resolveMavenProperty(content, raw)) continue;
     const resolved = resolveMavenProperty(content, raw);
@@ -614,7 +609,8 @@ function resolveMavenProperty(content: string, raw: string): string | null {
 /**
  * Gradle's Java toolchain, in both the modern
  * `JavaLanguageVersion.of(21)` form and the older
- * `sourceCompatibility`/`targetCompatibility` assignments.
+ * Java toolchain declarations. `sourceCompatibility` and
+ * `targetCompatibility` describe emitted bytecode, not the runtime JVM.
  *
  * The argument is captured whatever shape it has, so
  * `JavaLanguageVersion.of(javaVersion)` — a project property resolved at
@@ -624,7 +620,6 @@ function resolveMavenProperty(content: string, raw: string): string | null {
 function gradleJavaDeclarations(path: string, content: string, found: RuntimeDeclarationDiscovery): void {
   const patterns = [
     /JavaLanguageVersion\.of\(\s*([^)]+?)\s*\)/,
-    /(?:sourceCompatibility|targetCompatibility)\s*=\s*(?:JavaVersion\.VERSION_)?['"]?([^\s'")]+)/,
   ];
   for (const [i, line] of content.split('\n').entries()) {
     for (const pattern of patterns) {
