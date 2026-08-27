@@ -1598,8 +1598,11 @@ function receiversConstructedFrom(content: string, owners: ReadonlySet<string>):
   for (const owner of owners) {
     const escaped = escapeRegExp(owner);
     const patterns = [
-      new RegExp(`\\b(?:const|let|var|final|auto)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:new\\s+)?${escaped}\\s*[({]`, 'g'),
+      new RegExp(`\\b(?:const|let|var|val|final|auto|let(?:\\s+mut)?)\\s+([A-Za-z_$][\\w$]*)\\s*(?::\\s*[^=]+)?=\\s*(?:new\\s+)?${escaped}(?:::new)?\\s*[({]`, 'g'),
+      new RegExp(`\\b(?:new\\s+)?${escaped}\\s*\\(.*?\\)\\s*as\\s+([A-Za-z_$][\\w$]*)`, 'g'),
       new RegExp(`^\\s*([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}\\s*\\(`, 'gm'),
+      new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*=\\s*new\\s+${escaped}\\s*\\(`, 'g'),
+      new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}::new\\s*\\(`, 'g'),
       new RegExp(`\\b${escaped}(?:\\s*<[^;=(){}]+>)?\\s+([A-Za-z_$][\\w$]*)\\s*(?:[({;=])`, 'g'),
     ];
     for (const pattern of patterns) {
