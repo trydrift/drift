@@ -49,10 +49,23 @@ const POSITIVE: PositiveCase[] = [
   { text: 'Rust MSRV is now 1.80', kind: 'minimum-runtime', runtime: 'rust', requirement: '>=1.80' },
   { text: 'This release now requires Go 1.21', kind: 'minimum-runtime', runtime: 'go', requirement: '>=1.21' },
 
+  // A `||` disjunction (semver's OR operator) is kept whole, branch for
+  // branch, not truncated at the first alternative — this is Jest 30's own
+  // `engines.node`, the exact text that misclassified GitLab's `.nvmrc`.
+  {
+    text: 'Requires Node.js ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0',
+    kind: 'minimum-runtime',
+    runtime: 'node',
+    requirement: '^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0',
+  },
+
   // Grammar the ecosystem does not define is carried through intact and flagged
   // `unknown`; npm semver semantics are never silently applied to Ruby/Python.
   { text: 'Requires Ruby ~>3.0', kind: 'minimum-runtime', runtime: 'ruby', requirement: '~>3.0', rangeParseStatus: 'unknown' },
   { text: 'Dropped support for Python ^3.10', kind: 'unsupported-runtime-range', runtime: 'python', requirement: '^3.10', rangeParseStatus: 'unknown' },
+  // `||` has no meaning in RubyGems' grammar: the full requirement is still
+  // preserved, but its state stays `unknown` rather than being guessed.
+  { text: 'Requires Ruby 3.1 || 3.2', kind: 'minimum-runtime', runtime: 'ruby', requirement: '>=3.1 || >=3.2', rangeParseStatus: 'unknown' },
 ];
 
 describe('runtime prose: positive syntax families produce faithful structured requirements', () => {
