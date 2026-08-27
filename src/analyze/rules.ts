@@ -217,6 +217,68 @@ function verbForms(...stems: readonly string[]): string {
 /** Every mood "remove" is written in across a changelog or a commit subject. */
 const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted');
 
+// A word boundary after the alternation keeps `go` out of "google" and `java`
+// out of "javascript" — a runtime name only counts when it stands on its own.
+const RUNTIME_NAME = String.raw`(node(?:\.js)?|python|go|ruby|java|rust)\b`;
+// An optional `v` covers "Node v20" / "Node.js v18"; the parser strips it back
+// off before the range is normalized so the captured value stays canonical.
+const RUNTIME_RANGE = String.raw`([<>=^~]*\s*v?\d+(?:\.\d+){0,3})`;
+// The gap between "version" and the number: "is", a colon, or nothing at all.
+const RUNTIME_VERSION_SEP = String.raw`(?:versions?\s*)?(?:is\s+|:\s*)?`;
+
+/** Equivalent release-note syntax families, all with runtime/range in groups 1/2. */
+const RUNTIME_PROSE_RULES: ProseRule[] = [
+  {
+    id: 'prose-dropped-runtime-prefix',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(?:(?:dropped|drops?|removed)\s+support\s+for|no\s+longer\s+supports?)\s+${RUNTIME_NAME}\s*${RUNTIME_VERSION_SEP}${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-dropped-runtime-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b${RUNTIME_NAME}\s*(?:versions?\s*)?${RUNTIME_RANGE}\s+(?:is|are|was|were)\s+no\s+longer\s+supported`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-dropped-runtime-support-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\bsupport\s+for\s+${RUNTIME_NAME}\s*(?:versions?\s*)?${RUNTIME_RANGE}\s+(?:was|were|is|has\s+been)\s+removed`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-min-runtime-leading',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(?:requires?|required|now\s+requires?|minimum(?:\s+supported)?)\s+${RUNTIME_NAME}\s*${RUNTIME_VERSION_SEP}(?:raised\s+to\s*)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b${RUNTIME_NAME}\s+v?${RUNTIME_RANGE}\s+is\s+now\s+required`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version is ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-supported-version',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\bminimum\s+supported\s+${RUNTIME_NAME}\s+version\s+is\s+(?:now\s+)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version is ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-msrv',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(rust)\b\s+MSRV\s+is\s+(?:now\s+)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum Rust version is ${m[2]?.trim()}`,
+  },
+];
+
 /**
  * Prose rules.
  *
@@ -226,14 +288,7 @@ const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted
  * ordinary English words as symbols and sending an agent chasing them.
  */
 const PROSE_RULES: ProseRule[] = [
-  {
-    id: 'prose-dropped-runtime',
-    kind: 'runtime-requirement',
-    pattern:
-      /\b(?:(?:dropped|drops?|removed)\s+support\s+for|no\s+longer\s+supports?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?([<>=^~]*\s*\d+(?:\.\d+){0,3})/i,
-    symbolGroup: 1,
-    summarize: (m) => `${m[1]} support below ${m[2]?.trim()} was removed`,
-  },
+  ...RUNTIME_PROSE_RULES.filter((rule) => rule.id.startsWith('prose-dropped-runtime')),
   {
     id: 'prose-removed',
     kind: 'removed-export',
@@ -325,16 +380,7 @@ const PROSE_RULES: ProseRule[] = [
     replacementGroup: 2,
     summarize: (m) => `\`${m[1]}\` moved to \`${m[2]}\``,
   },
-  {
-    // `required` as well as `requires`: real release notes say
-    // "**Required Node.js >=14.16**", not "now requires Node.js".
-    id: 'prose-min-runtime',
-    kind: 'runtime-requirement',
-    pattern:
-      /\b(?:requires?|required|now requires?|minimum(?: supported)?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?(?:raised\s+to\s*)?([<>=^~]*\s*\d+(?:\.\d+){0,3})/i,
-    symbolGroup: 1,
-    summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
-  },
+  ...RUNTIME_PROSE_RULES.filter((rule) => rule.id.startsWith('prose-min-runtime')),
   {
     /**
      * ESM-only migration.
@@ -449,7 +495,9 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   if (!rawRuntime || !rawRequirement) return null;
   if (!['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(rawRuntime)) return null;
 
-  const version = /^([<>=^~]*)\s*(\d+(?:\.\d+){0,3})$/.exec(rawRequirement);
+  // The prose grammar allows a leading `v` ("Node v20"); it carries no meaning
+  // beyond the number it prefixes, so it is dropped before normalization.
+  const version = /^([<>=^~]*)\s*v?(\d+(?:\.\d+){0,3})$/i.exec(rawRequirement);
   if (!version) return null;
   const statedOperator = version[1] ?? '';
   const normalizedVersion = version[2]!;
@@ -458,7 +506,7 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   const normalizedOperator = normalizeRuntimeOperator(rawRuntime, statedOperator);
   const parseStatus = normalizedOperator.status;
 
-  if (ruleId === 'prose-dropped-runtime') {
+  if (ruleId.startsWith('prose-dropped-runtime')) {
     // Dropped-support prose names the range upstream *stopped* supporting. It
     // is never itself the new required range — inverting an arbitrary operator
     // into "the required range" gets the meaning backwards for anything but
