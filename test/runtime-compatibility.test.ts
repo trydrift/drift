@@ -593,6 +593,40 @@ describe('runtime assessment: partial and unknown are review, never safe or migr
   });
 });
 
+describe('#133: reasons are rendered from the completed runtime-analysis set', () => {
+  const changeA = { ...(runtimeChange('node', '>=18') as Record<string, unknown>), id: 'rt-a' };
+  const changeB = { ...(runtimeChange('python', '>=3.10') as Record<string, unknown>), id: 'rt-b' };
+
+  test('a missing second analysis makes the aggregate unknown and is explained to the developer', () => {
+    const result = assessUpgrade({
+      ...baseAssessment,
+      breakingChanges: [changeA, changeB] as never,
+      impactSites: [] as never,
+      // Only the first requirement was analyzed; the second never completed.
+      runtimeAnalyses: [
+        {
+          changeId: 'rt-a',
+          runtime: 'node',
+          requirement: '>=18',
+          state: 'compatible',
+          reason: 'satisfies',
+          declarations: [],
+          unresolved: [],
+          sites: [],
+          statement: 'Upstream requires Node >=18; this repository satisfies it.',
+        },
+      ] as never,
+    });
+
+    assert.equal(result.runtimeCompatibility, 'unknown');
+    assert.equal(result.recommendation, 'upgrade-after-review');
+    assert.ok(
+      result.reasons.some((reason) => /could not complete runtime compatibility analysis/i.test(reason)),
+      result.reasons.join(' | '),
+    );
+  });
+});
+
 describe('runtime severity: unresolved compatibility can never render as safe', () => {
   test('runtime unknown with zero sites is unchecked, not upstream-only', () => {
     const candidate = { ...baseCandidate, runtimeCompatibility: 'unknown' as const };

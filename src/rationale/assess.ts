@@ -157,11 +157,14 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   }
   // The runtime sentence comes from the analysis, not the sites: it is the
   // only place that can say "Drift could not find a declaration at all",
-  // which by construction has no site to describe.
-  for (const analysis of input.runtimeAnalyses ?? []) {
+  // which by construction has no site to describe. Rendered from the
+  // *completed* set so a runtime requirement whose analysis never ran is
+  // explained to the developer ("could not complete runtime compatibility
+  // analysis") rather than silently dropped.
+  for (const analysis of completeAnalyses) {
     reasons.push(analysis.statement);
   }
-  if (runtimeSites.length > 0 && !(input.runtimeAnalyses?.length ?? 0)) {
+  if (runtimeSites.length > 0 && completeAnalyses.length === 0) {
     // A caller that supplied runtime sites without the analyses behind them
     // (an older embedder, a hand-built input) still gets an accurate summary
     // rather than silence.
