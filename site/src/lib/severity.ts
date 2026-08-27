@@ -162,11 +162,15 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // zeroing the whole candidate because its runtime is unresolved would erase
   // independent API impact. Only the runtime declaration sites are held back
   // for review; the API sites still count.
-  const actionableImpactCount =
-    candidate.actionableImpactCount ??
-    (runtimeUnresolved
-      ? Math.max(0, candidate.impactCount - (candidate.runtimeDeclarationSiteCount ?? 0))
-      : candidate.impactCount);
+  const actionableImpactCount = candidate.actionableImpactCount ?? (
+    runtimeUnresolved
+      ? (candidate.runtimeDeclarationSiteCount === undefined
+        ? 0
+        : Math.max(0, candidate.impactCount - candidate.runtimeDeclarationSiteCount))
+      : candidate.impactConfidence !== undefined && candidate.impactConfidence !== 'high'
+        ? 0
+        : candidate.impactCount
+  );
   if (actionableImpactCount > 0) return 'affected';
   // Static analysis found nothing to point at, but the project's own toolchain
   // — running for real, not predicting — disagrees. That is a stronger signal

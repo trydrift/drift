@@ -92,8 +92,14 @@ export function validateRuntimeCompatibilityState(candidate, recordingName) {
   }
 
   if (state === 'unknown' || state === 'partial') {
-    if (candidate.recommendation === 'safe-to-upgrade') {
-      throw new Error(`${where} is "safe-to-upgrade" with runtime compatibility ${state}`);
+    const allowed = new Set(['upgrade-after-review', 'do-not-upgrade-yet']);
+    if (candidate.recommendation === 'manual-migration-required') {
+      const dispositions = candidate.dispositions ?? [];
+      const independentlyActionable = dispositions.filter((d) => d.state === 'actionable' && d.actionableSiteCount > 0 && !runtimeIds.includes(d.changeId)).length;
+      if (independentlyActionable > 0) allowed.add('manual-migration-required');
+    }
+    if (!allowed.has(candidate.recommendation)) {
+      throw new Error(`${where} records recommendation ${candidate.recommendation} with runtime compatibility ${state}`);
     }
     if (candidate.severity === 'upstream-only' || candidate.severity === 'clean') {
       throw new Error(`${where} recorded severity ${candidate.severity} with runtime compatibility ${state}`);

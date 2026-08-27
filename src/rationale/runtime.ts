@@ -241,9 +241,9 @@ export function checkRuntimeCompatibility(
   if (runtime === 'node') return checkNodeCompatibility(declarations, requirement);
   if (runtime === 'python') return checkPythonCompatibility(declarations, requirement);
   const out: RuntimeCompatibility[] = [];
-  const requiredRange = normalizeSemverRange(requirement);
+  const requiredRange = normalizeSemverRange(runtime === 'java' ? javaVersion(requirement) ?? requirement : requirement);
   for (const declaration of declarations) {
-    const declaredRange = normalizeSemverRange(declaration.requirement);
+    const declaredRange = normalizeSemverRange(runtime === 'java' ? javaVersion(declaration.requirement) ?? declaration.requirement : declaration.requirement);
     if (!declaredRange || !requiredRange) {
       out.push({ ...declaration, verdict: 'unknown' });
       continue;
@@ -279,10 +279,10 @@ export function checkUnsupportedRuntimeRange(
 ): RuntimeCompatibility[] {
   if (runtime === 'python') return checkUnsupportedPythonRange(declarations, unsupportedRequirement);
 
-  const unsupportedRange = normalizeSemverRange(unsupportedRequirement);
+  const unsupportedRange = normalizeSemverRange(runtime === 'java' ? javaVersion(unsupportedRequirement) ?? unsupportedRequirement : unsupportedRequirement);
   const out: RuntimeCompatibility[] = [];
   for (const declaration of declarations) {
-    const declaredRange = normalizeSemverRange(declaration.requirement);
+    const declaredRange = normalizeSemverRange(runtime === 'java' ? javaVersion(declaration.requirement) ?? declaration.requirement : declaration.requirement);
     if (!declaredRange || !unsupportedRange) {
       out.push({ ...declaration, verdict: 'unknown' });
       continue;
@@ -399,9 +399,13 @@ function toolVersionDeclarations(
     // declaration whose value could not be read, while `gitleaks 8.24.3` is
     // not a runtime declaration at all.
     if (!match || !TOOL_VERSION_KEYS[runtime].includes(match[1]!.toLowerCase())) continue;
-    const raw = match[2]!;
-    const requirement = isDynamicValue(raw) ? null : runtime === 'java' ? numericRuntimeTag(raw) : raw;
-    record(found, runtime, path, i + 1, raw, 'tool-versions', requirement);
+    const values = line.slice(match.index! + match[0].length - match[2]!.length).split('#', 1)[0]!.split(/\s+/).filter(Boolean);
+    for (const raw of values) {
+      const requirement = isDynamicValue(raw) || /^(?:system|path:|ref:)/i.test(raw)
+        ? null
+        : runtime === 'java' ? javaVersion(raw) : raw;
+      record(found, runtime, path, i + 1, raw, 'tool-versions', requirement);
+    }
   }
 }
 
@@ -579,6 +583,7 @@ function mavenJavaDeclarations(path: string, content: string, found: RuntimeDecl
   }
 
   for (const { line, raw } of positions) {
+    if (/^\s*\$\{[^}]+\}\s*$/.test(raw) && resolveMavenProperty(content, raw)) continue;
     const resolved = resolveMavenProperty(content, raw);
     record(found, 'java', path, line, raw, 'manifest', resolved ? javaVersion(resolved) : null);
   }

@@ -497,14 +497,18 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
 
   // The prose grammar allows a leading `v` ("Node v20"); it carries no meaning
   // beyond the number it prefixes, so it is dropped before normalization.
-  const version = /^([<>=^~]*)\s*v?(\d+(?:\.\d+){0,3})$/i.exec(rawRequirement);
+  const version = /^([<>=^~]*)\s*v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)([<>=^~]*)\s*v?\d+(?:\.\d+){0,3})*$/i.exec(rawRequirement);
   if (!version) return null;
   const statedOperator = version[1] ?? '';
   const normalizedVersion = version[2]!;
+  const normalizedRequirement = rawRequirement.replace(/v?(\d+(?:\.\d+){0,3})/gi, (_m, value: string) =>
+    rawRuntime === 'java' ? value.replace(/^1\.(\d+)(?=$|\.|\s|,)/, '$1') : value,
+  );
   const sourceText = match[0]!.trim();
 
   const normalizedOperator = normalizeRuntimeOperator(rawRuntime, statedOperator);
   const parseStatus = normalizedOperator.status;
+  const canonicalRequirement = normalizedRequirement.replace(/^\s*[<>=^~]*\s*/, normalizedOperator.operator || '>=');
 
   if (ruleId.startsWith('prose-dropped-runtime')) {
     // Dropped-support prose names the range upstream *stopped* supporting. It
@@ -528,7 +532,9 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
       return {
         kind: 'unsupported-runtime-range',
         runtime: rawRuntime,
-        requirement: parts.length < 3 ? `${normalizedVersion}.x` : normalizedVersion,
+        requirement: rawRequirement.includes(',') || /\s+[<>=^~]/.test(rawRequirement)
+          ? canonicalRequirement
+          : parts.length < 3 ? `${normalizedVersion}.x` : normalizedVersion,
         sourceText,
         ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
       };
@@ -536,7 +542,7 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
     return {
       kind: 'unsupported-runtime-range',
       runtime: rawRuntime,
-      requirement: `${normalizedOperator.operator}${normalizedVersion}`,
+      requirement: canonicalRequirement,
       // Only `<` and `<=` have an exact complement, so only they carry a
       // replacement floor. `>=20`'s complement is "everything below 20",
       // which is not a floor and not what upstream said.
@@ -550,7 +556,7 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
   return {
     kind: 'minimum-runtime',
     runtime: rawRuntime,
-    requirement: `${normalizedOperator.operator || '>='}${normalizedVersion}`,
+    requirement: canonicalRequirement,
     sourceText,
     ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
   };

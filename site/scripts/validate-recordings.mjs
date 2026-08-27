@@ -77,7 +77,8 @@ export function validateAuditInvariants(recording, name, freshnessRequired, expe
   // contract, and `--allow-stale` exists precisely so it can be retained
   // without being judged by invariants that did not exist when it was made.
   // ---------------------------------------------------------------------------
-  if (!freshnessRequired) return;
+  const currentByFingerprint = recording.engine === expectedEngine;
+  if (!freshnessRequired && !currentByFingerprint) return;
 
   if (recording.engine !== expectedEngine) {
     throw new Error(`stale engine fingerprint (expected ${expectedEngine}, got ${recording.engine ?? 'none'})`);

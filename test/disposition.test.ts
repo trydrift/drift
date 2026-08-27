@@ -185,7 +185,7 @@ describe('isActionableImpact', () => {
 
   test('a runtime site is actionable only with a matching incompatible analysis', () => {
     const change = runtimeChange();
-    assert.equal(isActionableImpact(change, site('bc_rt', 'high'), rt('bc_rt', 'incompatible', 'violates')), true);
+    assert.equal(isActionableImpact(change, site('bc_rt', 'high', { runtimeVerdict: 'incompatible' }), rt('bc_rt', 'incompatible', 'violates')), true);
     assert.equal(isActionableImpact(change, site('bc_rt', 'high'), rt('bc_rt', 'partial', 'overlaps')), false);
     assert.equal(isActionableImpact(change, site('bc_rt', 'high'), rt('other', 'incompatible', 'violates')), false);
     assert.equal(isActionableImpact(change, site('bc_rt', 'high')), false);
