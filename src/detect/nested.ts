@@ -69,7 +69,7 @@ export async function discoverNestedProjects(
     if (dir !== '' && !excluded.has(dir)) {
       hasOwnGit = entries.includes('.git');
       const manifest = entries.find((entry) => ALL_MANIFESTS.has(entry));
-      if (manifest && !isFixtureOwned(dir)) {
+      if (manifest && (hasOwnGit || !isFixtureOwned(dir))) {
         found.push({
           dir,
           ecosystem: MANIFEST_ECOSYSTEM.get(manifest)!,
@@ -104,10 +104,6 @@ export async function discoverNestedProjects(
  */
 function isFixtureOwned(dir: string): boolean {
   const segments = dir.split('/').filter(Boolean).map((segment) => segment.toLowerCase());
-  if (segments.some((segment) => segment === 'fixture' || segment === 'fixtures' || segment === 'testdata')) {
-    return true;
-  }
-
   return segments.some((segment, index) => {
     if (segment !== 'test' && segment !== 'tests') return false;
     const next = segments[index + 1];
