@@ -211,6 +211,66 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   });
 });
 
+describe('#123: CI runtime declarations are attributed to the job that owns a workspace', () => {
+  const allMembers = ['', 'packages/api', 'packages/web'];
+  // Normal top-level GitHub Actions indentation: `jobs:` at column 0, job keys
+  // at two spaces, each job scoped to its package via
+  // defaults.run.working-directory.
+  const workflow = [
+    'name: CI',
+    'on: [push]',
+    'jobs:',
+    '  api:',
+    '    runs-on: ubuntu-latest',
+    '    defaults:',
+    '      run:',
+    '        working-directory: packages/api',
+    '    steps:',
+    '      - uses: actions/setup-node@v4',
+    '        with:',
+    '          node-version: 22',
+    '',
+    '  web:',
+    '    runs-on: ubuntu-latest',
+    '    defaults:',
+    '      run:',
+    '        working-directory: packages/web',
+    '    steps:',
+    '      - uses: actions/setup-node@v4',
+    '        with:',
+    '          node-version: 18',
+  ].join('\n');
+  const files = [{ path: '.github/workflows/ci.yml', content: workflow }];
+
+  test('packages/api sees Node 22 and not Node 18', () => {
+    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
+    const versions = declarations.map((d) => d.requirement);
+    assert.deepEqual(versions, ['22']);
+    assert.ok(!versions.includes('18'), 'the web job must not contaminate the api workspace');
+  });
+
+  test('packages/web sees Node 18 and not Node 22', () => {
+    const declarations = findNodeDeclarations(files, 'packages/web', allMembers);
+    const versions = declarations.map((d) => d.requirement);
+    assert.deepEqual(versions, ['18']);
+    assert.ok(!versions.includes('22'), 'the api job must not contaminate the web workspace');
+  });
+
+  test('a job with no workspace selector stays repository-wide for every member', () => {
+    const global = [
+      'jobs:',
+      '  lint:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: actions/setup-node@v4',
+      '        with:',
+      '          node-version: 20',
+    ].join('\n');
+    const decls = findNodeDeclarations([{ path: '.github/workflows/lint.yml', content: global }], 'packages/api', allMembers);
+    assert.deepEqual(decls.map((d) => d.requirement), ['20']);
+  });
+});
+
 describe("finding this repository's own Python declarations", () => {
   test('reads requires-python out of pyproject.toml’s [project] table', () => {
     const files = [

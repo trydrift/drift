@@ -590,18 +590,12 @@ function mavenJavaDeclarations(path: string, content: string, found: RuntimeDecl
   for (const match of content.matchAll(pattern)) {
     positions.push({ line: content.slice(0, match.index).split('\n').length, raw: match[1]! });
   }
-  // A compiler setting that points outside this file is still useful
-  // provenance, but it is not an authoritative JVM pin. Preserve the missing
-  // indirection as review evidence without creating an edit target.
-  const compilerBlocks = content.match(/<plugin>[\s\S]*?<artifactId>maven-compiler-plugin<\/artifactId>[\s\S]*?<\/plugin>/g) ?? [];
-  for (const block of compilerBlocks) {
-    const blockStart = content.indexOf(block);
-    for (const match of block.matchAll(/<(?:release|source|target)>\s*(\$\{[^}]+\})\s*<\//g)) {
-      if (!resolveMavenProperty(content, match[1]!)) {
-        found.unresolved.push({ runtime: 'java', file: path, line: content.slice(0, blockStart + match.index).split('\n').length, rawText: match[1]!, source: 'build-config' });
-      }
-    }
-  }
+  // Compiler `release`/`source`/`target` — even an unresolved `${property}` one
+  // — describes emitted bytecode, not the JVM that runs the application. It is
+  // deliberately NOT added to `found.unresolved`: that set feeds `stateOf`,
+  // where a single unresolved entry forces the whole runtime verdict to
+  // `unknown`, and compiler-target uncertainty must never override an
+  // authoritative `<java.version>`/toolchain declaration that does resolve.
   for (const { line, raw } of positions) {
     if (/^\s*\$\{[^}]+\}\s*$/.test(raw) && resolveMavenProperty(content, raw)) continue;
     const resolved = resolveMavenProperty(content, raw);
@@ -792,26 +786,72 @@ function ciDeclarations(
   }
 }
 
-/** Keep runtime declarations inside the job that owns a workspace member. */
+/**
+ * Keep runtime declarations inside the job that owns a workspace member.
+ *
+ * GitHub Actions workflows put each job under `jobs:` as its own mapping, and a
+ * monorepo commonly scopes a job to one package with
+ * `defaults.run.working-directory:` (or path filters). A `node-version:` inside
+ * the `web` job says nothing about the `api` workspace, so a member's
+ * compatibility check must not read a sibling job's runtime pin.
+ *
+ * The parse is intentionally shallow — it does not build a YAML tree. It finds
+ * the `jobs:` key at whatever indentation the file uses, takes the indentation
+ * of the first mapping key beneath it as the job level, and slices each job
+ * block by that indentation. A job that names *this* member (in
+ * `working-directory`, path filters, or a `run` step) is in scope; a job that
+ * carries a workspace selector naming a *different* member is out of scope; a
+ * job with no workspace selector at all is repository-wide and stays in scope
+ * for every member. When the structure cannot be recognized the whole workflow
+ * is left in scope, matching the behaviour before scoping existed.
+ */
 function ciJobLinesForMember(lines: readonly string[], member?: string): boolean[] {
   const allowed = Array.from({ length: lines.length }, () => true);
-  if (!member || !lines.some((line) => /^\s{2}jobs:\s*$/.test(line))) return allowed;
-  const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
-  const jobs: { start: number; end: number; text: string }[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    if (!/^\s{4}[A-Za-z0-9_-]+:\s*$/.test(lines[i]!)) continue;
-    const start = i;
-    let end = lines.length;
-    for (let j = i + 1; j < lines.length; j++) {
-      if (/^\s{4}[A-Za-z0-9_-]+:\s*$/.test(lines[j]!)) { end = j; break; }
-      if (/^\s{2}\S/.test(lines[j]!)) { end = j; break; }
+  if (member === undefined) return allowed;
+
+  const indentOf = (line: string) => /^[ \t]*/.exec(line)![0].length;
+  const isBlank = (line: string) => !line.trim() || /^\s*#/.test(line);
+
+  const jobsLine = lines.findIndex((line) => /^[ \t]*jobs:\s*(#.*)?$/.test(line));
+  if (jobsLine === -1) return allowed;
+  const jobsIndent = indentOf(lines[jobsLine]!);
+
+  let jobIndent: number | null = null;
+  const jobStarts: number[] = [];
+  let blockEnd = lines.length;
+  for (let i = jobsLine + 1; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (isBlank(line)) continue;
+    const indent = indentOf(line);
+    if (indent <= jobsIndent) {
+      blockEnd = i;
+      break;
     }
-    jobs.push({ start, end, text: lines.slice(start, end).join('\n') });
+    if (jobIndent === null) jobIndent = indent;
+    if (indent === jobIndent && /^[ \t]*[A-Za-z0-9_.-]+:\s*(#.*)?$/.test(line)) jobStarts.push(i);
   }
-  if (jobs.length === 0) return allowed;
+  if (jobStarts.length === 0) return allowed;
+
+  const jobs = jobStarts.map((start, k) => ({
+    start,
+    end: k + 1 < jobStarts.length ? jobStarts[k + 1]! : blockEnd,
+  }));
+
+  const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // What makes a job workspace-specific at all: a working directory or a path
+  // filter. Without one, the job builds/tests the whole repository.
+  const selectorPattern = /(?:working-directory|paths|paths-ignore)\s*:/i;
+  const memberPattern = normalized
+    ? new RegExp(`(?:working-directory|paths|paths-ignore|run)\\s*:[^\\n]*${escaped}(?:[/\\s"']|$)`, 'i')
+    : null;
+
   allowed.fill(false);
   for (const job of jobs) {
-    if (new RegExp(`(?:working-directory|paths?|run):[^\\n]*${normalized.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}`, 'i').test(job.text)) {
+    const text = lines.slice(job.start, job.end).join('\n');
+    const scoped = selectorPattern.test(text);
+    const inScope = !scoped || (memberPattern !== null && memberPattern.test(text));
+    if (inScope) {
       for (let i = job.start; i < job.end; i++) allowed[i] = true;
     }
   }
