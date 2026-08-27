@@ -4,24 +4,21 @@
  * only when a tag is given — that the tag matches them too. Runs in two modes:
  *
  *   node scripts/check-release-version.mjs
- *     Cross-manifest consistency only. What `release:check` and CI run on
- *     every PR: root package.json, root package-lock.json, extension
- *     package.json, and extension package-lock.json must all report the same
- *     version.
+ *     Cross-manifest consistency only. Root and extension package.json plus
+ *     both the top-level and packages[""] version fields in each lockfile must
+ *     all report the same exact semantic version.
  *
  *   node scripts/check-release-version.mjs --tag v0.1.0
  *     The same check, plus: the tag (with its leading "v" stripped) must
  *     equal that version too. This is what release.yml runs, passing the
- *     pushed tag explicitly rather than reading GITHUB_REF_NAME itself, so
- *     this script has no hidden dependency on being run inside GitHub Actions
- *     and is exercised the same way in its own tests.
+ *     pushed tag explicitly rather than reading GITHUB_REF_NAME itself.
  *
  * Never normalizes or edits a version — a mismatch is reported and the
  * process exits non-zero. Fixing it is `scripts/set-version.mjs`.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import semver from 'semver';
 import { isExactSemVer } from './semver-utils.mjs';
 
@@ -31,12 +28,22 @@ const repoRoot = fileURLToPath(new URL('..', import.meta.url));
  * Pure comparison, exported for tests: no filesystem, no process.exit.
  * `tag` is optional; when omitted only cross-manifest consistency is checked.
  */
-export function findVersionMismatches({ rootPkg, rootLock, extPkg, extLock, tag }) {
+export function findVersionMismatches({
+  rootPkg,
+  rootLock,
+  rootLockPackage,
+  extPkg,
+  extLock,
+  extLockPackage,
+  tag,
+}) {
   const readings = [
     ['package.json', rootPkg],
-    ['package-lock.json (root package)', rootLock],
+    ['package-lock.json (top level)', rootLock],
+    ['package-lock.json (root package)', rootLockPackage],
     ['extension/package.json', extPkg],
-    ['extension/package-lock.json (root package)', extLock],
+    ['extension/package-lock.json (top level)', extLock],
+    ['extension/package-lock.json (root package)', extLockPackage],
   ];
 
   const problems = [];
@@ -85,13 +92,23 @@ export function findVersionMismatches({ rootPkg, rootLock, extPkg, extLock, tag 
 }
 
 function readVersions(root) {
-  const rootPkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
-  const rootLock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8')).packages[''].version;
-  const extPkg = JSON.parse(readFileSync(join(root, 'extension', 'package.json'), 'utf8')).version;
-  const extLock = JSON.parse(
+  const rootPackageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  const rootPackageLock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
+  const extensionPackageJson = JSON.parse(
+    readFileSync(join(root, 'extension', 'package.json'), 'utf8'),
+  );
+  const extensionPackageLock = JSON.parse(
     readFileSync(join(root, 'extension', 'package-lock.json'), 'utf8'),
-  ).packages[''].version;
-  return { rootPkg, rootLock, extPkg, extLock };
+  );
+
+  return {
+    rootPkg: rootPackageJson.version,
+    rootLock: rootPackageLock.version,
+    rootLockPackage: rootPackageLock.packages?.['']?.version,
+    extPkg: extensionPackageJson.version,
+    extLock: extensionPackageLock.version,
+    extLockPackage: extensionPackageLock.packages?.['']?.version,
+  };
 }
 
 function parseTag(argv) {
@@ -102,8 +119,13 @@ function parseTag(argv) {
   return argv[index + 1] ?? '';
 }
 
+function isDirectExecution() {
+  if (!process.argv[1]) return false;
+  return resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+}
+
 // Only runs the CLI when this file is executed directly, not when imported by tests.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isDirectExecution()) {
   const tag = parseTag(process.argv.slice(2));
   const versions = readVersions(repoRoot);
   const problems = findVersionMismatches({ ...versions, tag });
