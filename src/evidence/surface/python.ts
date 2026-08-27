@@ -842,7 +842,7 @@ def declared_project_name(path):
     if os.path.isfile(setup_py):
         try:
             text = open(setup_py, encoding='utf-8', errors='replace').read()
-            name = re.search(r'(?m)\b(?:setuptools\.)?setup\s*\([^)]*\bname\s*=\s*[\x22\x27]([^\x22\x27]+)', text, re.S)
+            name = re.search(r"(?m)\\b(?:setuptools\\.)?setup\\s*\\([^)]*\\bname\\s*=\\s*[\\\"']([^\\\"']+)", text, re.S)
             if name: return name.group(1)
         except OSError:
             pass
