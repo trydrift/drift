@@ -167,7 +167,7 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
       ? (candidate.runtimeDeclarationSiteCount === undefined
         ? 0
         : Math.max(0, candidate.impactCount - candidate.runtimeDeclarationSiteCount))
-      : candidate.impactConfidence === 'low'
+      : candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
         ? 0
         : candidate.impactCount
   );
