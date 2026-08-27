@@ -101,7 +101,13 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   const apiFiles = new Set(apiSites.map((site) => site.file)).size;
   const runtimeSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind === 'runtime-requirement');
   const runtimeState = worstRuntimeState(input.runtimeAnalyses);
-  const runtimeUnresolved = runtimeCompatibilityIsUnresolved(runtimeState);
+  const runtimeChanges = input.breakingChanges.filter((change) => change.kind === 'runtime-requirement');
+  const runtimeIds = new Set(runtimeChanges.map((change) => change.id));
+  const analysisCounts = new Map<string, number>();
+  for (const analysis of input.runtimeAnalyses ?? []) if (runtimeIds.has(analysis.changeId)) analysisCounts.set(analysis.changeId, (analysisCounts.get(analysis.changeId) ?? 0) + 1);
+  const analyzedIds = new Set([...analysisCounts].filter(([, count]) => count === 1).map(([id]) => id));
+  const runtimeUnresolved = runtimeChanges.some((change) => !analyzedIds.has(change.id)) || runtimeCompatibilityIsUnresolved(runtimeState);
+  const effectiveRuntimeState = runtimeUnresolved && !runtimeState ? 'unknown' : runtimeState;
   const dispositions = deriveBreakingChangeDispositions(
     input.breakingChanges,
     impactSites,
@@ -216,7 +222,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     reasons,
     confidence: confidence.level,
     confidenceBasis: confidence.basis,
-    ...(runtimeState ? { runtimeCompatibility: runtimeState } : {}),
+    ...(effectiveRuntimeState ? { runtimeCompatibility: effectiveRuntimeState } : {}),
   };
 }
 
