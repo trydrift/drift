@@ -196,6 +196,58 @@ describe('the public surface of a C library', () => {
     const after = parseHeaderSurface([{ path: 'b.h', content: 'int go(void);' }]);
     assert.deepEqual(diffSurfaces(before, after), []);
   });
+
+  test('a compiler builtin return type is a real type, not a declaration annotation', () => {
+    // The prefix stripper once carried a catch-all `__\w+` rule that ate
+    // `__int128` and `__m128` along with `__declspec`, so a public function
+    // whose return type merely started with `__` vanished from the surface.
+    assert.deepEqual(
+      parseHeader('__int128 public_api(void);').map((e) => e.name),
+      ['public_api'],
+    );
+    const [vec] = parseHeader('__m128 transform(__m128 value);');
+    assert.equal(vec?.name, 'transform');
+    assert.match(vec?.signature ?? '', /__m128/, 'the builtin vector type is kept in the signature');
+
+    // And it still diffs: dropping such a function is a removal, not a no-op.
+    const before = parseHeaderSurface([{ path: 'simd.h', content: '__int128 public_api(void);\n__m128 transform(__m128 value);' }]);
+    const after = parseHeaderSurface([{ path: 'simd.h', content: '__m128 transform(__m128 value);' }]);
+    const changes = diffSurfaces(before, after);
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0]?.symbol, 'public_api');
+  });
+
+  test('declaration annotations and calling conventions are still stripped to the real function', () => {
+    const cases: Array<[string, string]> = [
+      ['__declspec(dllexport) int foo(void);', 'foo'],
+      ['__attribute__((visibility("default"))) int bar(void);', 'bar'],
+      ['__attribute__((format(printf, 1, 2))) int logline(const char *fmt);', 'logline'],
+      ['__cdecl int baz(void);', 'baz'],
+      ['MYLIB_API int exported(void);', 'exported'],
+      ['MYLIB_EXPORT int shipped(void);', 'shipped'],
+      ['__declspec(dllexport) __cdecl int combined(int a);', 'combined'],
+    ];
+    for (const [decl, name] of cases) {
+      assert.deepEqual(parseHeader(decl).map((e) => e.name), [name], decl);
+    }
+  });
+
+  test('an adversarial pile of annotation prefixes stays bounded', () => {
+    // The CodeQL concern behind the rewrite was catastrophic backtracking on a
+    // long run of overlapping `__name` / `name_API` alternatives. The balanced
+    // paren scan is linear, so even a pathological prefix resolves instantly.
+    const nested = `__attribute__((${'('.repeat(2000)}${')'.repeat(2000)})) int survivor(void);`;
+    const repeated = `${'__declspec(dllexport) '.repeat(4000)}int stillHere(void);`;
+    const unbalanced = `__attribute__((${'('.repeat(5000)} int broken(void);`;
+
+    for (const header of [nested, repeated, unbalanced]) {
+      const start = process.hrtime.bigint();
+      parseHeader(header);
+      const ms = Number(process.hrtime.bigint() - start) / 1e6;
+      assert.ok(ms < 1000, `parsing took ${ms.toFixed(1)}ms`);
+    }
+    assert.deepEqual(parseHeader(`${'__declspec(dllexport) '.repeat(4000)}int stillHere(void);`).map((e) => e.name), ['stillHere']);
+  });
 });
 
 function toApi(entries: ReturnType<typeof parseHeader>) {

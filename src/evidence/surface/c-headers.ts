@@ -672,12 +672,27 @@ function parseDeclaration(statement: string, namespacePath: readonly string[] = 
  * backtrack exponentially on adversarial headers.
  */
 function stripDeclarationPrefixes(text: string): string {
-  const prefix = /^(?:extern|static|inline|constexpr|virtual|explicit|friend|EXTERN_C|__declspec\([^)]*\)|__\w+|[A-Za-z_]\w*_(?:API|EXPORT))\s+/;
   let rest = text;
   while (true) {
-    const match = prefix.exec(rest);
-    if (!match) return rest;
-    rest = rest.slice(match[0].length);
+    const word = /^(?:extern|static|inline|constexpr|virtual|explicit|friend|EXTERN_C|__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall|__forceinline|__inline__|__restrict__|__host__|__device__|[A-Za-z_]\w*_(?:API|EXPORT))\s+/.exec(rest);
+    if (word) {
+      rest = rest.slice(word[0].length);
+      continue;
+    }
+    const annotation = /^(?:__declspec|__attribute__)\s*/.exec(rest);
+    if (!annotation) return rest;
+    let cursor = annotation[0].length;
+    if (rest[cursor] !== '(') return rest;
+    let depth = 0;
+    for (; cursor < rest.length; cursor += 1) {
+      if (rest[cursor] === '(') depth += 1;
+      else if (rest[cursor] === ')' && --depth === 0) {
+        cursor += 1;
+        break;
+      }
+    }
+    if (depth !== 0 || !/^\s+/.test(rest.slice(cursor))) return rest;
+    rest = rest.slice(cursor).trimStart();
   }
 }
 
