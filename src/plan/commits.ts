@@ -106,6 +106,9 @@ export function planCommitGraph({
   fixPlans,
 }: PlanCommitsInput): PlanCommitGraph {
   const sitesByChange = groupSites(impactSites);
+  const actionableSitesByChange = new Map(
+    (dispositions ?? []).map((disposition) => [disposition.changeId, disposition.actionableSites] as const),
+  );
 
   // A breaking change with no impact site needs no commit. Reporting it is
   // still valuable — it tells the reviewer Drift looked and found nothing —
@@ -134,7 +137,7 @@ export function planCommitGraph({
   }
 
   const commits = sorted.map((group, index) =>
-    toCommitUnit(group, index + 1, sitesByChange, sorted.length, codemods, recipes, fixPlans),
+    toCommitUnit(group, index + 1, actionableSitesByChange, sorted.length, codemods, recipes, fixPlans),
   );
   const edges = deriveEdges(commits, breakingChanges, impactSites, cohortByDependency);
   const layered = assignExecutionLayers(commits, edges);
