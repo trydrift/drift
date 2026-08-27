@@ -20,6 +20,12 @@ test('release validation and publishing have separate least-privilege jobs', () 
   assert.doesNotMatch(source, /if:\s*always\(\)/);
 });
 
+test('release commit must already be contained in main before validation or publishing', () => {
+  const validateRuns = workflow.jobs.validate.steps.map((step) => step.run ?? '').join('\n');
+  assert.match(validateRuns, /git fetch --no-tags origin \+refs\/heads\/main:refs\/remotes\/origin\/main/);
+  assert.match(validateRuns, /git merge-base --is-ancestor "\$\{GITHUB_SHA\}\^\{commit\}" origin\/main/);
+});
+
 test('validation uploads the exact artifacts that publishing downloads', () => {
   const upload = workflow.jobs.validate.steps.find((step) =>
     step.uses?.startsWith('actions/upload-artifact@'),
