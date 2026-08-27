@@ -1735,9 +1735,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       // The distinction that matters, stated first.
       if (files === 0) {
+        const dispositions = plan.dispositions ?? [];
+        const hasReview = dispositions.some((d) => d.state === 'review-only');
+        const hasUnknown = dispositions.some((d) => d.state === 'unknown');
+        const localized = this.lastAnalysisContext?.localizationRan !== false;
+        const allUnaffected = localized && dispositions.length > 0 && dispositions.every((d) => d.state === 'unaffected');
+        const message = allUnaffected
+          ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none touch this repository** — static analysis only, not deeply verified.`
+          : hasUnknown
+            ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, but local impact was **not established** — review the report before treating this as safe.`
+            : hasReview
+              ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them; some evidence requires **review**, and no actionable files were established.`
+              : `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, but no actionable files were established.`;
         this.session.say(
           [
-            `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none of them touch this repository** — static analysis only, not deeply verified.`,
+            message,
             '',
             'Open the report if you want to see the reasoning and the sources.',
           ].join('\n'),
