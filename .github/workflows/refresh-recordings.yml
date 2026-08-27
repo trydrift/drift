@@ -48,6 +48,7 @@ on:
       - 'src/disposition.ts'
       - 'src/pipeline.ts'
       - 'src/types.ts'
+      - 'src/util/**'
       - 'package-lock.json'
       - 'site/package-lock.json'
       - 'site/scripts/capture.mjs'
