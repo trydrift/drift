@@ -175,7 +175,7 @@ export class DriftState {
     this.setContext('drift.hasFindings', status.kind === 'findings' || status.kind === 'fixing');
     // Only true when something in *this* repository is affected; it gates the
     // "fix" affordances, which are meaningless without a local impact site.
-    this.setContext('drift.hasImpact', 'plan' in status ? Boolean(status.plan?.impactSites.length) : false);
+    this.setContext('drift.hasImpact', 'plan' in status ? Boolean(status.plan?.commits.length) : false);
     this.setContext('drift.reviewing', status.kind === 'reviewing');
     this.setContext('drift.hasDependencyScan', this._candidates.length > 0);
   }
@@ -225,7 +225,8 @@ export function describeStatus(status: DriftStatus): string {
       if (runtimeUnresolved) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, runtime compatibility unverified`;
       // An upstream breaking change that this repository never calls is not
       // something to put a number in front of a developer about.
-      if (files === 0) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, none used here`;
+      if (files === 0 && (status.plan.dispositions ?? []).every((d) => d.state === 'unaffected')) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, none used here`;
+      if (files === 0) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, local impact was not established`;
       return `Drift: ${files} file${files === 1 ? '' : 's'} affected`;
     }
     case 'fixing':

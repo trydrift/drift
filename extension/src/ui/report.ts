@@ -283,8 +283,7 @@ function renderPlan(plan: RemediationPlan, state: DriftState, focus?: FocusTarge
   // a reason to generate a commit or show the fix control.
   const reviewOnlySites = dispositions.length
     ? dispositions
-        .filter((disposition) => disposition.state === 'review-only' || disposition.state === 'unknown')
-        .flatMap((disposition) => disposition.sites)
+        .flatMap((disposition) => disposition.sites.filter((site) => !disposition.actionableSites.includes(site)))
     : plan.impactSites.filter((site) => !actionableSites.includes(site));
   const files = new Set(actionableSites.map((s) => s.file)).size;
   const reviewFiles = new Set(reviewOnlySites.map((s) => s.file)).size;

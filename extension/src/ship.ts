@@ -117,7 +117,7 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
   const lines = candidates.map((candidate) => `- ${describeUpgrade(candidate)}`);
 
   const breaking = candidates.reduce((total, c) => total + c.breakingCount, 0);
-  const impacted = candidates.reduce((total, c) => total + c.impactCount, 0);
+  const impacted = candidates.reduce((total, c) => total + (c.actionableImpactCount ?? 0), 0);
   // A measured build failure with nothing statically localized is a stronger,
   // different fact than "no breaking changes" or "nothing uses the affected
   // APIs" — see `severityOf`'s own `verification-failed` tier, reused here
@@ -160,7 +160,7 @@ function describeUpgrade(candidate: UpgradeCandidate): string {
       ? 'no breaking changes found'
       : runtimeUnresolved
         ? `${count(candidate.breakingCount, 'breaking change')} upstream, and runtime compatibility could not be established here`
-        : candidate.impactCount === 0
+        : candidate.actionableImpactCount === 0 && candidate.impactCount === 0
           ? `${count(candidate.breakingCount, 'breaking change')} upstream, none used here`
           : `${count(candidate.breakingCount, 'breaking change')} upstream, ${count(candidate.impactCount, 'site')} affected here`;
 
@@ -183,7 +183,7 @@ export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string
   // silently drop it while claiming to name everything worth reviewing.
   const needsReview = candidates.filter((c) => {
     const severity = severityOf(c);
-    return severity === 'affected' || severity === 'verification-failed';
+    return severity === 'affected' || severity === 'verification-failed' || severity === 'unchecked';
   });
 
   const rows = candidates.map((candidate) => {
@@ -209,7 +209,7 @@ export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string
       ...needsReview.map((candidate) =>
         severityOf(candidate) === 'verification-failed'
           ? `- **${candidate.name}** — installed and the project's own checks failed. Static analysis found no specific location to point at; see the verification output for what broke.`
-          : `- **${candidate.name}** — ${count(candidate.impactCount, 'place')} across ${count(candidate.impactFiles, 'file')} use an API this version changed.`,
+          : `- **${candidate.name}** — ${candidate.actionableImpactCount ? `${count(candidate.actionableImpactCount, 'actionable place')} require edits.` : 'Local evidence is incomplete or requires review; no automatic edit is authorized.'}`,
       ),
       '',
     );

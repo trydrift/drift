@@ -3233,8 +3233,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           entry.assessment.runtimeCompatibility === 'unknown' ||
           entry.assessment.runtimeCompatibility === 'partial',
       );
+      const hasReview = (plan.dispositions ?? []).some((d) => d.state === 'review-only' || d.state === 'unknown');
       this.session.say(
-        runtimeUnresolved
+        runtimeUnresolved || hasReview
           ? 'There is nothing for an agent to edit, but this upgrade carries a runtime requirement Drift could not check against this repository. Confirm the runtime version you build and deploy on before upgrading.'
           : 'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
       );

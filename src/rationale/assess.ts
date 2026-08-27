@@ -112,6 +112,10 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     dispositions.filter((disposition) => disposition.state === 'actionable').map((disposition) => disposition.changeId),
   );
   const actionableChanges = input.breakingChanges.filter((change) => actionableIds.has(change.id));
+  const actionableSiteIds = new Set(
+    dispositions.flatMap((disposition) => disposition.actionableSites.map((site) => `${site.breakingChangeId}:${site.file}:${site.line}`)),
+  );
+  const apiReviewSites = apiSites.filter((site) => !actionableSiteIds.has(`${site.breakingChangeId}:${site.file}:${site.line}`));
   const actionableDecisions = actionableChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
   const actionableMechanical = actionableChanges.length - actionableDecisions.length;
 
@@ -138,10 +142,14 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     }
   }
 
-  if (apiSites.length > 0) {
+  const apiActionableSites = apiSites.filter((site) => actionableSiteIds.has(`${site.breakingChangeId}:${site.file}:${site.line}`));
+  if (apiActionableSites.length > 0) {
     reasons.push(
-      `${apiSites.length} ${plural(apiSites.length, 'place', 'places')} in ${apiFiles} ${plural(apiFiles, 'file', 'files')} ${plural(apiSites.length, 'uses', 'use')} an API this upgrade changes.`,
+      `${apiActionableSites.length} ${plural(apiActionableSites.length, 'place', 'places')} in ${new Set(apiActionableSites.map((site) => site.file)).size} ${plural(new Set(apiActionableSites.map((site) => site.file)).size, 'file', 'files')} use${apiActionableSites.length === 1 ? 's' : ''} an API this upgrade changes.`,
     );
+  }
+  if (apiReviewSites.length > 0) {
+    reasons.push(`${apiReviewSites.length} local API match${apiReviewSites.length === 1 ? '' : 'es'} require review; Drift did not establish a safe edit.`);
   }
   // The runtime sentence comes from the analysis, not the sites: it is the
   // only place that can say "Drift could not find a declaration at all",

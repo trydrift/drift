@@ -212,7 +212,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
         // public header. Its declarations cannot be named or linked by a
         // consumer and therefore are not public surface.
         privateAt = depth;
-      } else if (name && PRIVATE_NAMESPACE.test(name) && privateAt === null) {
+      } else if (name && name.split('::').some((segment) => PRIVATE_NAMESPACE.test(segment)) && privateAt === null) {
         privateAt = depth;
       } else if (name) {
         // Inline namespaces are deliberately transparent to consumer lookup:
@@ -220,6 +220,15 @@ export function parseHeader(content: string): SurfaceEntry[] {
         // `fmt::print`. Keep a scope entry for brace bookkeeping, but do not
         // put the ABI/version namespace into the public identity.
         namespaceScopes.push({ path: isInline ? [] : name.split('::').filter(Boolean), depth, inline: isInline });
+      }
+      // Generated headers frequently put a declaration on the namespace
+      // opener. The namespace syntax is not the whole line; preserve the
+      // remainder for the ordinary declaration parser.
+      const open = trimmed.indexOf('{');
+      const remainder = open >= 0 ? trimmed.slice(open + 1).replace(/}\s*;?\s*$/, '').trim() : '';
+      if (remainder && privateAt === null && !macroPrivate) {
+        const declaration = parseDeclaration(remainder, namespaceScopes.flatMap((scope) => scope.path));
+        if (declaration) entries.push(declaration);
       }
       advance(i, i);
       continue;
@@ -481,6 +490,7 @@ function canonicalOperator(line: string): string | null {
   const operatorAt = line.search(/\boperator\b/);
   if (operatorAt < 0) return null;
 
+
   const declaration = line.slice(operatorAt + 'operator'.length).trimStart();
   const parsedName = operatorName(declaration);
   if (!parsedName) return null;
@@ -585,6 +595,9 @@ function operatorQualifiers(raw: string): string {
       qualifiers.push('noexcept');
     }
   }
+
+  const requires = /\brequires\s+(.+?)(?=\s*(?:;|\{|$))/.exec(suffix)?.[1];
+  if (requires) qualifiers.push(`requires ${collapse(requires)}`);
 
   return qualifiers.length > 0 ? ` ${qualifiers.join(' ')}` : '';
 }
