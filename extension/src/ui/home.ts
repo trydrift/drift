@@ -1738,7 +1738,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         const dispositions = plan.dispositions ?? [];
         const hasReview = dispositions.some((d) => d.state === 'review-only');
         const hasUnknown = dispositions.some((d) => d.state === 'unknown');
-        const localized = this.lastAnalysisContext?.localizationRan !== false;
+        const localized = plan.localizationRan !== false;
         const allUnaffected = localized && dispositions.length > 0 && dispositions.every((d) => d.state === 'unaffected');
         const message = allUnaffected
           ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none touch this repository** — static analysis only, not deeply verified.`
