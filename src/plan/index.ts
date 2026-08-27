@@ -145,6 +145,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     upstreamBreakingCount: breakingChanges.length,
     impactSites: [...impactSites],
     dispositions,
+    localizationRan: input.localizationRan ?? true,
     commits,
     planEdges: graph.edges,
     upgradeCohorts: graph.cohorts,

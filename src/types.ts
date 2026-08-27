@@ -738,6 +738,16 @@ export interface RemediationPlan {
    * conservative per-site derivation when it is absent.
    */
   dispositions?: BreakingChangeDisposition[];
+  /**
+   * Whether localization actually searched this repository.
+   *
+   * `false` when no checkout was available (the webhook runner), which is what
+   * turns "no impact sites" from a finding into a stated gap. Optional only so
+   * hand-built plan fixtures from before this field existed still typecheck;
+   * `buildPlan` always sets it. Consumers treat an absent value as `true`, the
+   * same default `buildPlan` applies to its input.
+   */
+  localizationRan?: boolean;
   commits: CommitUnit[];
   /** Real dependency graph over commit units. */
   planEdges: PlanEdge[];
