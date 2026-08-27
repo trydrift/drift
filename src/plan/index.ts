@@ -401,10 +401,11 @@ export function assessRisk(
   dispositions?: readonly BreakingChangeDisposition[],
 ): RiskLevel {
   const runtimeUnresolved = runtimeStates.some((state) => state === 'unknown' || state === 'partial');
+  const localReview = dispositions?.some((d) => d.state === 'review-only' || d.state === 'unknown') ?? false;
   const actionableSites = dispositions
     ? dispositions.flatMap((disposition) => disposition.actionableSites)
     : impactSites;
-  if (breakingChanges.length === 0 || actionableSites.length === 0) return runtimeUnresolved ? 'low' : 'none';
+  if (breakingChanges.length === 0 || actionableSites.length === 0) return runtimeUnresolved || localReview ? 'low' : 'none';
 
   let risk: RiskLevel = 'low';
   const raise = (level: RiskLevel) => {
@@ -415,7 +416,10 @@ export function assessRisk(
   if (fileCount > 5 || actionableSites.length > 20) raise('medium');
   if (fileCount > 20 || actionableSites.length > 75) raise('high');
 
-  for (const change of breakingChanges) {
+  const relevantChangeIds = new Set(
+    (dispositions ?? []).filter((d) => d.state !== 'unaffected').map((d) => d.changeId),
+  );
+  for (const change of breakingChanges.filter((change) => relevantChangeIds.size === 0 || relevantChangeIds.has(change.id))) {
     // Behaviour changes are the dangerous class: the code still compiles, so
     // neither the type checker nor an agent's smoke test will catch a wrong fix.
     if (change.kind === 'behaviour-change' || change.kind === 'default-change') raise('high');
