@@ -711,6 +711,26 @@ function ciDeclarations(
       record(found, runtime, path, i + 1, raw, 'ci', isDynamicValue(raw) ? null : numericRuntimeTag(raw));
     }
 
+    // GitHub Actions job containers are application runtimes; service
+    // containers are not. Keep this provider-specific instead of treating
+    // every YAML `image:` key as the job runtime.
+    if (/^\.github\/workflows\//i.test(path)) {
+      const scalar = /^\s*container\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
+      if (scalar) recordImage(found, runtime, path, i + 1, scalar, 'ci');
+      if (/^\s*container\s*:\s*$/i.test(line)) {
+        const baseIndent = /^\s*/.exec(line)![0].length;
+        for (let j = i + 1; j < lines.length; j++) {
+          const next = lines[j]!;
+          if (!next.trim()) continue;
+          const indent = /^\s*/.exec(next)![0].length;
+          if (indent <= baseIndent) break;
+          const image = /^\s*image\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
+          if (image) recordImage(found, runtime, path, j + 1, image, 'ci');
+        }
+      }
+      continue;
+    }
+
     // GitLab CI and CircleCI put authoritative runtimes in container images
     // rather than setup-action fields. Feed those image values through the
     // same recognizer Dockerfiles use so image semantics have one source of
@@ -876,7 +896,7 @@ const HIERARCHICAL_VERSION_FILES = new Set([
   'rust-toolchain.toml',
 ]);
 
-function scopedTo<T extends { path: string }>(
+function scopedTo<T extends { path: string; content: string }>(
   files: readonly T[],
   member: string | undefined,
   allMembers: readonly string[] | undefined,
@@ -912,10 +932,18 @@ function scopedTo<T extends { path: string }>(
       // manifest is that package's own declared runtime, and must not leak
       // into a sibling member's compatibility check just because the root
       // happens to also be a workspace member.
+      if (isCiPath(f.path) && !ciAppliesToMember(f.content, member)) return false;
       return !MANIFEST_BASENAMES.has(base) && !base.endsWith('.gemspec');
     }
     return false;
   });
+}
+
+/** Root CI is member-specific only when its YAML names that member. */
+function ciAppliesToMember(content: string, member: string | undefined): boolean {
+  if (!member) return true;
+  const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  return new RegExp(`(?:working-directory|paths?|run):[^\\n]*${normalized.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`, 'i').test(content);
 }
 
 function engineFromPackageJson(content: string): { raw: string; requirement: string | null } | null {
