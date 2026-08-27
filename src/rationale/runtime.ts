@@ -136,7 +136,7 @@ export function discoverRuntimeDeclarations(
       if (found_) record(found, runtime, path, found_.line, found_.requirement, 'manifest', found_.requirement);
     }
 
-    if (isCiPath(path)) ciDeclarations(path, content, runtime, found);
+    if (isCiPath(path)) ciDeclarations(path, content, runtime, found, member);
   }
 
   found.resolved = dedupeDeclarations(found.resolved);
@@ -720,11 +720,14 @@ function ciDeclarations(
   content: string,
   runtime: RuntimeName,
   found: RuntimeDeclarationDiscovery,
+  member?: string,
 ): void {
   const lines = content.split('\n');
   const structural = yamlStructuralLineMask(lines);
+  const allowed = ciJobLinesForMember(lines, member);
   for (const [i, line] of lines.entries()) {
     if (!structural[i]) continue;
+    if (!allowed[i]) continue;
     const field = yamlKeyValue(line, CI_RUNTIME_FIELD_NAMES[runtime]);
     if (field) {
       const raw = field.raw;
@@ -787,6 +790,32 @@ function ciDeclarations(
       }
     }
   }
+}
+
+/** Keep runtime declarations inside the job that owns a workspace member. */
+function ciJobLinesForMember(lines: readonly string[], member?: string): boolean[] {
+  const allowed = Array.from({ length: lines.length }, () => true);
+  if (!member || !lines.some((line) => /^\s{2}jobs:\s*$/.test(line))) return allowed;
+  const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  const jobs: { start: number; end: number; text: string }[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^\s{4}[A-Za-z0-9_-]+:\s*$/.test(lines[i]!)) continue;
+    const start = i;
+    let end = lines.length;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (/^\s{4}[A-Za-z0-9_-]+:\s*$/.test(lines[j]!)) { end = j; break; }
+      if (/^\s{2}\S/.test(lines[j]!)) { end = j; break; }
+    }
+    jobs.push({ start, end, text: lines.slice(start, end).join('\n') });
+  }
+  if (jobs.length === 0) return allowed;
+  allowed.fill(false);
+  for (const job of jobs) {
+    if (new RegExp(`(?:working-directory|paths?|run):[^\\n]*${normalized.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}`, 'i').test(job.text)) {
+      for (let i = job.start; i < job.end; i++) allowed[i] = true;
+    }
+  }
+  return allowed;
 }
 
 function lineValue(content: string, pattern: RegExp): { line: number; requirement: string } | null {
