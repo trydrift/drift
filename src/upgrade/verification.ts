@@ -48,6 +48,33 @@ export function applyVerification(
   verified.breakingCount = verified.plan.upstreamBreakingCount ?? verified.plan.breakingChanges.length;
   verified.impactCount = verified.plan.impactSites.length;
   verified.impactFiles = new Set(verified.plan.impactSites.map((site) => site.file)).size;
+  const dispositions = verified.plan.dispositions ?? [];
+  verified.actionableImpactCount = dispositions.reduce((n, d) => n + d.actionableSites.length, 0);
+  verified.actionableImpactFiles = new Set(
+    dispositions.flatMap((d) => d.actionableSites.map((site) => site.file)),
+  ).size;
+  verified.runtimeDeclarationSiteCount = dispositions
+    .filter((d) => d.runtimeAnalysis !== undefined)
+    .reduce((n, d) => n + d.sites.length, 0);
+  if (verified.rationale) {
+    const rationale = verified.rationale;
+    const runtimeUnresolved = rationale.assessment.runtimeCompatibility === 'unknown' || rationale.assessment.runtimeCompatibility === 'partial';
+    const hasActionable = verified.actionableImpactCount > 0;
+    const recommendation = !hasActionable && rationale.assessment.recommendation === 'manual-migration-required'
+      ? (runtimeUnresolved ? 'upgrade-after-review' : 'safe-to-upgrade')
+      : rationale.assessment.recommendation;
+    const reasons = hasActionable
+      ? rationale.assessment.reasons
+      : rationale.assessment.reasons.filter((reason) => !/locally affected|place(?:s)? in .* file(?:s)? .* uses an API/i.test(reason));
+    verified.rationale = {
+      ...rationale,
+      assessment: { ...rationale.assessment, recommendation, reasons },
+    };
+  }
+  if (verified.actionableImpactCount === 0) {
+    const hasReview = dispositions.some((d) => d.state === 'review-only' || d.state === 'unknown');
+    verified.risk = hasReview || (verified.rationale && (verified.rationale.assessment.runtimeCompatibility === 'unknown' || verified.rationale.assessment.runtimeCompatibility === 'partial')) ? 'low' : 'none';
+  }
   // Whether the "affected" verdict above rests on evidence a batch pass could
   // not give it. A compile-capable pass that ran scoped to a batch is not
   // licensed to prune a compiler-provable finding (see `applyVerificationToPlan`),

@@ -126,6 +126,7 @@ function prunePlan(
 ): RemediationPlan {
   const breakingChanges = plan.breakingChanges.filter((change) => !cleared.has(change.id));
   const impactSites = plan.impactSites.filter((site) => !cleared.has(site.breakingChangeId));
+  const dispositions = plan.dispositions?.filter((disposition) => !cleared.has(disposition.changeId));
 
   const commits = plan.commits
     .map((commit) => ({
@@ -140,6 +141,7 @@ function prunePlan(
     ...plan,
     breakingChanges,
     impactSites,
+    ...(dispositions ? { dispositions } : {}),
     verification,
     planEdges: plan.planEdges.filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
     commits: commits.map((commit) => ({
