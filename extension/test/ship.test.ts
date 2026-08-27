@@ -195,7 +195,7 @@ describe('the pull request body', () => {
       candidate({ breakingCount: 3, impactCount: 5, impactFiles: 2, actionableImpactCount: 5, actionableImpactFiles: 2 }),
     ]);
     assert.match(affected, /### Needs review/);
-    assert.match(affected, /5 places across 2 files/);
+    assert.match(affected, /5 actionable places require edits/);
 
     assert.doesNotMatch(pullRequestBody([candidate()]), /### Needs review/);
   });
