@@ -938,7 +938,15 @@ function ciJobLinesForMember(
     end: k + 1 < jobStarts.length ? jobStarts[k + 1]! : blockEnd,
   }));
 
-  const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  // Trim leading/trailing separators without `/^\/+|\/+$/` — `member` is
+  // uncontrolled and a long internal run of slashes makes that pattern
+  // quadratic (CodeQL js/polynomial-redos).
+  const slashed = member.replace(/\\/g, '/');
+  let lo = 0;
+  let hi = slashed.length;
+  while (lo < hi && slashed[lo] === '/') lo++;
+  while (hi > lo && slashed[hi - 1] === '/') hi--;
+  const normalized = slashed.slice(lo, hi);
   const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const memberEntryPattern = normalized ? new RegExp(escaped, 'i') : null;
 

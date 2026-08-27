@@ -497,7 +497,11 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
 
   // The prose grammar allows a leading `v` ("Node v20"); it carries no meaning
   // beyond the number it prefixes, so it is dropped before normalization.
-  const version = /^([<>=^~]*)\s*v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)([<>=^~]*)\s*v?\d+(?:\.\d+){0,3})*$/i.exec(rawRequirement);
+  // The optional operator carries its own trailing whitespace (`>= 20`); every
+  // other position is whitespace-free. Keeping a bare `\s*` next to the `\s+`
+  // separator let a run of tabs be split between the two quantifiers in
+  // quadratically many ways on a non-matching string (CodeQL js/polynomial-redos).
+  const version = /^(?:([<>=^~]+)\s*)?v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)(?:[<>=^~]+\s*)?v?\d+(?:\.\d+){0,3})*$/i.exec(rawRequirement);
   if (!version) return null;
   const statedOperator = version[1] ?? '';
   const normalizedVersion = version[2]!;
