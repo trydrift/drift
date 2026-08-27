@@ -5,6 +5,17 @@ export interface RuntimeRangeGrammar {
   runtime: RuntimeName;
   acceptedOperators: readonly string[];
   parserKind: 'semver' | 'pep440' | 'rubygems' | 'cargo' | 'simple';
+  /**
+   * Whether this ecosystem's range grammar has an OR operator — alternative
+   * ranges joined by `||`, either of which satisfies the requirement. This is
+   * a semver (npm/Node) construct; Cargo commas are AND, PEP 440 has no
+   * disjunction, and RubyGems states multiple requirements as separate
+   * strings, not a `||`-joined one. A `||` written against any runtime whose
+   * grammar does not define it is unsupported syntax, carried through intact
+   * and left `unknown` rather than guessed — the same rule the caret already
+   * follows for Python.
+   */
+  supportsDisjunction: boolean;
   normalizeOperator(operator: string): string | null;
 }
 
@@ -29,36 +40,42 @@ export const RUNTIME_RANGE_GRAMMARS: Readonly<Record<RuntimeName, RuntimeRangeGr
     runtime: 'node',
     acceptedOperators: [...COMPARISON_OPERATORS, '^', '~'],
     parserKind: 'semver',
+    supportsDisjunction: true,
     normalizeOperator: (operator) => equalityAs(operator, '='),
   },
   python: {
     runtime: 'python',
     acceptedOperators: [...COMPARISON_OPERATORS, '~='],
     parserKind: 'pep440',
+    supportsDisjunction: false,
     normalizeOperator: (operator) => equalityAs(operator, '=='),
   },
   ruby: {
     runtime: 'ruby',
     acceptedOperators: COMPARISON_OPERATORS,
     parserKind: 'rubygems',
+    supportsDisjunction: false,
     normalizeOperator: (operator) => equalityAs(operator, '='),
   },
   go: {
     runtime: 'go',
     acceptedOperators: COMPARISON_OPERATORS,
     parserKind: 'simple',
+    supportsDisjunction: false,
     normalizeOperator: (operator) => equalityAs(operator, '='),
   },
   java: {
     runtime: 'java',
     acceptedOperators: COMPARISON_OPERATORS,
     parserKind: 'simple',
+    supportsDisjunction: false,
     normalizeOperator: (operator) => equalityAs(operator, '='),
   },
   rust: {
     runtime: 'rust',
     acceptedOperators: [...COMPARISON_OPERATORS, '^', '~'],
     parserKind: 'cargo',
+    supportsDisjunction: false,
     normalizeOperator: (operator) => equalityAs(operator, '='),
   },
 };

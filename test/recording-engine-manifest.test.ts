@@ -116,6 +116,62 @@ describe('recording freshness: what --allow-stale legitimately keeps alive', () 
   });
 });
 
+describe('recording validator: `||` runtime disjunctions', () => {
+  // A stale engine fingerprint keeps these on Layer A (baseline artifact
+  // validity) only — the layer that owns both the requirement-shape check and
+  // the "compatible pin reported as an impact" tripwire — without needing the
+  // full current-engine analysis fields.
+  const layerA = (runtime: Record<string, unknown>, sites: unknown[] = []) => {
+    const recording = clone();
+    recording.engine = 'an-older-fingerprint';
+    recording.candidates = [recording.candidates[0]];
+    recording.candidates[0].breaking = [{ id: 'rt', kind: 'runtime-requirement', runtime, sites }];
+    return recording;
+  };
+
+  test('a disjunction of valid branches is accepted as a structured requirement', () => {
+    const recording = layerA({
+      kind: 'minimum-runtime',
+      runtime: 'node',
+      requirement: '^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0',
+    });
+    assert.doesNotThrow(() => validateAuditInvariants(recording, 'scrapy.json', false, CURRENT));
+  });
+
+  test('a disjunction with one malformed branch is still rejected', () => {
+    const recording = layerA({
+      kind: 'minimum-runtime',
+      runtime: 'node',
+      requirement: '^18.14.0 || not-a-version',
+    });
+    assert.throws(
+      () => validateAuditInvariants(recording, 'scrapy.json', false, CURRENT),
+      /malformed runtime requirement/,
+    );
+  });
+
+  test('the tripwire still fires when a pin satisfying one branch is reported as an impact', () => {
+    // The exact class of bug this check caught for GitLab: `.nvmrc = 22.12.0`
+    // satisfies the `^22.0.0` branch, so an impact site on it is wrong.
+    const recording = layerA(
+      { kind: 'minimum-runtime', runtime: 'node', requirement: '^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0' },
+      [{ file: '.nvmrc', line: 1, excerpt: '22.12.0', matchedSymbol: 'node', confidence: 'high', runtimeVerdict: 'incompatible' }],
+    );
+    assert.throws(
+      () => validateAuditInvariants(recording, 'scrapy.json', false, CURRENT),
+      /compatible node declaration was reported as an impact/,
+    );
+  });
+
+  test('a pin outside every branch is a legitimate impact site and does not trip the wire', () => {
+    const recording = layerA(
+      { kind: 'minimum-runtime', runtime: 'node', requirement: '^22.13.0 || ^24.0.0 || >=26.0.0' },
+      [{ file: '.nvmrc', line: 1, excerpt: '22.12.0', matchedSymbol: 'node', confidence: 'high', runtimeVerdict: 'incompatible' }],
+    );
+    assert.doesNotThrow(() => validateAuditInvariants(recording, 'scrapy.json', false, CURRENT));
+  });
+});
+
 /**
  * #138: the recording engine fingerprint's analyzer-environment identity must
  * treat two Python patch releases as equivalent, two different minor

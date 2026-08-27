@@ -650,6 +650,79 @@ describe('runtime compatibility: all four states', () => {
   });
 });
 
+describe('runtime prose: `||` disjunctions survive parsing and evaluate per branch', () => {
+  // Jest 30's own `engines.node`, verbatim: four alternative ranges, any one
+  // of which is a supported Node line. The old list grammar's separator was
+  // comma/whitespace only, so it captured `^18.14.0` and reported the other
+  // three branches as absent — and GitLab's `.nvmrc = 22.12.0`, comfortably
+  // inside `^22.0.0`, was then recorded `incompatible`.
+  const JEST_ENGINES = '^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0';
+
+  test('the complete disjunction is preserved, not truncated at the first branch', () => {
+    const runtime = matchProse(`requires Node.js ${JEST_ENGINES}`).find((m) => m.kind === 'runtime-requirement')?.runtime;
+    assert.ok(runtime, 'produced no structured runtime requirement');
+    assert.equal(runtime!.kind, 'minimum-runtime');
+    assert.equal(runtime!.runtime, 'node');
+    assert.equal(runtime!.requirement, JEST_ENGINES, 'every `||` branch is kept');
+    assert.equal(runtime!.rangeParseStatus, undefined, 'semver defines `||`, so this is parsed');
+  });
+
+  test('the same requirement synthesized from registry `engines` metadata parses whole', () => {
+    // The path GitLab actually hit: evidence synthesizes "jest@30 requires
+    // Node.js <engines>." and it is parsed by the identical prose rule.
+    const runtime = matchProse(`jest@30 requires Node.js ${JEST_ENGINES}.`).find(
+      (m) => m.kind === 'runtime-requirement',
+    )?.runtime;
+    assert.equal(runtime?.requirement, JEST_ENGINES);
+  });
+
+  test('22.12.0 against the Jest disjunction is compatible, through the `^22.0.0` branch', () => {
+    const analysis = analyzeRuntimeRequirement(runtimeChange('node', JEST_ENGINES), files({ '.nvmrc': '22.12.0\n' }));
+    assert.equal(analysis?.state, 'compatible');
+    assert.equal(analysis?.reason, 'satisfies');
+    assert.deepEqual(analysis?.sites, [], 'a compatible declaration is not an impact site');
+  });
+
+  test('a Node version outside every branch is still incompatible', () => {
+    // 19.x falls between `^18.14.0` (<19.0.0), `^20.0.0`, `^22.0.0` and
+    // `>=24.0.0` — genuinely unsupported, and the disjunction must say so.
+    const analysis = analyzeRuntimeRequirement(runtimeChange('node', JEST_ENGINES), files({ '.nvmrc': '19.0.0\n' }));
+    assert.equal(analysis?.state, 'incompatible');
+    assert.equal(analysis?.reason, 'violates');
+    assert.equal(analysis?.sites[0]?.runtimeVerdict, 'incompatible');
+  });
+
+  test('a range that straddles one branch boundary is partial, not compatible', () => {
+    const analysis = analyzeRuntimeRequirement(
+      runtimeChange('node', JEST_ENGINES),
+      files({ 'package.json': '{"engines":{"node":">=23.0.0"}}' }),
+    );
+    assert.equal(analysis?.state, 'partial', '`>=23` covers 23.x (unsupported) and 24+ (via `>=24.0.0`)');
+  });
+
+  test('a `||` against a runtime whose grammar has no disjunction is carried whole but left unknown', () => {
+    // RubyGems has no `||`; PEP 440 has no `||`. The requirement text is
+    // preserved in full — never truncated — but its compatibility state is
+    // honestly `unknown`, exactly as a caret against Python is, rather than
+    // guessed from a branch Drift cannot evaluate.
+    for (const [runtime, text, expected] of [
+      ['ruby', 'Requires Ruby 3.1 || 3.2', '>=3.1 || >=3.2'],
+      ['python', 'Requires Python 3.9 || 3.10', '>=3.9 || >=3.10'],
+    ] as const) {
+      const parsed = matchProse(text).find((m) => m.kind === 'runtime-requirement')?.runtime;
+      assert.equal(parsed?.requirement, expected, `${runtime}: full disjunction preserved`);
+      assert.equal(parsed?.rangeParseStatus, 'unknown', `${runtime}: not evaluated as if \`||\` were defined`);
+    }
+  });
+
+  test('grammar table marks disjunction support per ecosystem, semver only', () => {
+    assert.equal(RUNTIME_RANGE_GRAMMARS.node.supportsDisjunction, true);
+    for (const runtime of ['python', 'ruby', 'go', 'java', 'rust'] as const) {
+      assert.equal(RUNTIME_RANGE_GRAMMARS[runtime].supportsDisjunction, false, runtime);
+    }
+  });
+});
+
 describe('#110: registry runtime metadata becomes a canonical runtime requirement', () => {
   test('raisedRuntimeFloor only fires on an introduced or genuinely raised floor', () => {
     assert.deepEqual(raisedRuntimeFloor(null, { name: 'Node.js', requirement: '>=20' }), {
