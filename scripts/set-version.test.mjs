@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { isValidVersion, updateLockfileText, updateManifestText } from './set-version.mjs';
+
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 test('accepts stable and legitimate prerelease versions', () => {
   assert.equal(isValidVersion('0.1.1'), true);
@@ -61,12 +68,41 @@ test('updates both lockfile version fields without changing unrelated fields', (
   assert.equal(updatedExtension.version, '0.1.1-beta.0');
   assert.equal(updatedExtension.packages[''].version, '0.1.1-beta.0');
   assert.equal(updatedExtension.packages[''].publisher, 'drift');
-  assert.equal(
-    updatedRootSource.replaceAll('0.1.1-beta.0', '0.1.0'),
-    rootSource,
-  );
-  assert.equal(
-    updatedExtensionSource.replaceAll('0.1.1-beta.0', '0.1.0'),
-    extensionSource,
-  );
+  assert.equal(updatedRootSource.replaceAll('0.1.1-beta.0', '0.1.0'), rootSource);
+  assert.equal(updatedExtensionSource.replaceAll('0.1.1-beta.0', '0.1.0'), extensionSource);
+});
+
+test('CLI executes when invoked from a path containing spaces', () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'drift setter test '));
+  try {
+    mkdirSync(join(tempRoot, 'scripts'), { recursive: true });
+    mkdirSync(join(tempRoot, 'extension'), { recursive: true });
+    for (const path of [
+      'scripts/set-version.mjs',
+      'scripts/semver-utils.mjs',
+      'package.json',
+      'package-lock.json',
+      'extension/package.json',
+      'extension/package-lock.json',
+    ]) {
+      cpSync(join(repoRoot, path), join(tempRoot, path));
+    }
+
+    execFileSync(process.execPath, [join(tempRoot, 'scripts/set-version.mjs'), '0.1.1'], {
+      encoding: 'utf8',
+    });
+
+    assert.equal(JSON.parse(readFileSync(join(tempRoot, 'package.json'), 'utf8')).version, '0.1.1');
+    assert.equal(JSON.parse(readFileSync(join(tempRoot, 'package-lock.json'), 'utf8')).version, '0.1.1');
+    assert.equal(
+      JSON.parse(readFileSync(join(tempRoot, 'extension', 'package.json'), 'utf8')).version,
+      '0.1.1',
+    );
+    assert.equal(
+      JSON.parse(readFileSync(join(tempRoot, 'extension', 'package-lock.json'), 'utf8')).version,
+      '0.1.1',
+    );
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
