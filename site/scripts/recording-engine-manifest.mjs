@@ -42,4 +42,3 @@ export const RECORDING_ENGINE_PATHS = [
   'site/scripts/recording-engine-manifest.mjs',
   'site/src/lib/recordings.ts',
 ];
-

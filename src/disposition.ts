@@ -87,4 +87,3 @@ export function deriveBreakingChangeDispositions(
       : { changeId: change.id, state: 'unknown', reason: 'not-localized', sites: [], actionableSites: [] };
   });
 }
-
