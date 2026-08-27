@@ -293,7 +293,7 @@ export function describeSeverity(candidate: SeverityInput): string {
       if (reviewOnly) {
         const n = candidate.impactCount;
         return candidate.impactConfidence === 'low'
-          ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`
+          ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — Review required; check before upgrading`
           : `Review required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`;
       }
       return 'Not verified · Drift found nothing it could check this version against';
