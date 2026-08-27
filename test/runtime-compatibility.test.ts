@@ -295,20 +295,35 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
     assert.equal(found.unresolved[0]?.source, 'manifest');
   });
 
-  test('Maven property indirection resolves in-file, and is unresolved only when the property is absent', () => {
+  test('Maven property indirection resolves an authoritative java.version in-file', () => {
     const resolved = discoverRuntimeDeclarations(
       files({ 'pom.xml': '<project><properties><java.version>17</java.version></properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${java.version}</release></configuration></plugin></plugins></build></project>' }),
       'java',
     );
     assert.deepEqual(resolved.unresolved, []);
     assert.deepEqual(resolved.resolved.map((d) => d.requirement), ['17']);
+  });
 
+  test('#137: an unresolved compiler release/source/target is never an authoritative unresolved runtime', () => {
+    // `<release>${java.version}</release>` with no `java.version` property here
+    // describes emitted bytecode, not the JVM. It must not enter
+    // `unresolved` — that set forces `stateOf` to `unknown` and would let
+    // compiler-target uncertainty override an authoritative runtime pin.
     const inherited = discoverRuntimeDeclarations(
       files({ 'pom.xml': '<project><properties><foo>1</foo></properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${java.version}</release></configuration></plugin></plugins></build></project>' }),
       'java',
     );
     assert.deepEqual(inherited.resolved, []);
-    assert.equal(inherited.unresolved.length, 1);
+    assert.deepEqual(inherited.unresolved, []);
+
+    // An authoritative <java.version> that resolves is unaffected by an
+    // unresolved compiler-target property alongside it.
+    const withAuthoritative = discoverRuntimeDeclarations(
+      files({ 'pom.xml': '<project><properties><java.version>17</java.version></properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${unset.prop}</release></configuration></plugin></plugins></build></project>' }),
+      'java',
+    );
+    assert.deepEqual(withAuthoritative.unresolved, []);
+    assert.deepEqual(withAuthoritative.resolved.map((d) => d.requirement), ['17']);
   });
 
   test('a dynamic Gradle toolchain version is an unresolved Java declaration', () => {
@@ -456,6 +471,38 @@ describe('runtime compatibility: all four states', () => {
       assert.equal(worstRuntimeState(states.map((state) => ({ state })) as never), expected, states.join(' + '));
     }
     assert.equal(worstRuntimeState([]), undefined, 'no requirement is not the same fact as a satisfied one');
+  });
+});
+
+describe('#137: Java runtime authority vs compiler bytecode target', () => {
+  const pom = (properties: string, compilerTarget: string) =>
+    `<project><properties>${properties}</properties><build><plugins><plugin><artifactId>maven-compiler-plugin</artifactId><configuration><release>${compilerTarget}</release></configuration></plugin></plugins></build></project>`;
+
+  test('Case 1: authoritative JDK 17 + unresolved compiler target + upstream Java >=11 is compatible', () => {
+    const analysis = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ 'pom.xml': pom('<java.version>17</java.version>', '${unset.prop}') }),
+    );
+    assert.equal(analysis?.state, 'compatible');
+    assert.equal(analysis?.reason, 'satisfies');
+  });
+
+  test('Case 2: authoritative JDK 8 + upstream Java >=11 is incompatible', () => {
+    const analysis = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ 'pom.xml': pom('<java.version>8</java.version>', '${unset.prop}') }),
+    );
+    assert.equal(analysis?.state, 'incompatible');
+    assert.equal(analysis?.reason, 'violates');
+  });
+
+  test('Case 3: a compiler target alone does not establish definite runtime compatibility', () => {
+    const analysis = analyzeRuntimeRequirement(
+      runtimeChange('java', '>=11'),
+      files({ 'pom.xml': pom('<foo>1</foo>', '17') }),
+    );
+    assert.equal(analysis?.state, 'unknown');
+    assert.notEqual(analysis?.state, 'compatible');
   });
 });
 
