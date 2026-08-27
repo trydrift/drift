@@ -175,7 +175,7 @@ export class DriftState {
     this.setContext('drift.hasFindings', status.kind === 'findings' || status.kind === 'fixing');
     // Only true when something in *this* repository is affected; it gates the
     // "fix" affordances, which are meaningless without a local impact site.
-    this.setContext('drift.hasImpact', 'plan' in status ? Boolean(status.plan?.commits.length) : false);
+    this.setContext('drift.hasImpact', 'plan' in status ? Boolean(status.plan?.commits?.length) : false);
     this.setContext('drift.reviewing', status.kind === 'reviewing');
     this.setContext('drift.hasDependencyScan', this._candidates.length > 0);
   }

@@ -147,7 +147,7 @@ describe('writing the commit', () => {
     assert.match(clean, /no breaking changes upstream/);
 
     const risky = upgradeCommitMessage([
-      candidate({ breakingCount: 4, impactCount: 2, impactFiles: 1 }),
+      candidate({ breakingCount: 4, impactCount: 2, impactFiles: 1, actionableImpactCount: 2, actionableImpactFiles: 1 }),
     ]).body;
     assert.match(risky, /4 breaking changes upstream/);
     assert.match(risky, /2 places in this repository/);
@@ -192,7 +192,7 @@ describe('the pull request body', () => {
 
   test('names what needs review, and stays quiet when nothing does', () => {
     const affected = pullRequestBody([
-      candidate({ breakingCount: 3, impactCount: 5, impactFiles: 2 }),
+      candidate({ breakingCount: 3, impactCount: 5, impactFiles: 2, actionableImpactCount: 5, actionableImpactFiles: 2 }),
     ]);
     assert.match(affected, /### Needs review/);
     assert.match(affected, /5 places across 2 files/);
