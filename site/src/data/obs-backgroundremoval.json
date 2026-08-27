@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-08-27T21:37:35.572Z",
+  "capturedAt": "2026-08-27T21:44:06.581Z",
   "commit": "9384c55c0165b82661b17120a4259f0e198fd0c2",
-  "engine": "08309a6023b9e17e",
-  "durationMs": 3895,
+  "engine": "c58a6d34e19a00b8",
+  "durationMs": 1498,
   "packagesChecked": 4,
   "manifests": [
     "vcpkg.json",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 1120,
+      "at": 237,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 1132,
+      "at": 248,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 1133,
+      "at": 250,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 1134,
+      "at": 250,
       "phase": "Reading manifest",
       "detail": "pages/package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1141,
+      "at": 256,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -88,7 +88,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1141,
+      "at": 256,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -125,7 +125,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1141,
+      "at": 256,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -162,7 +162,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1141,
+      "at": 256,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -199,7 +199,7 @@
     },
     {
       "type": "progress",
-      "at": 1141,
+      "at": 256,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -207,7 +207,7 @@
     },
     {
       "type": "progress",
-      "at": 1142,
+      "at": 257,
       "phase": "Checking registries",
       "detail": "4 direct dependencies",
       "done": 0,
@@ -215,7 +215,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1142,
+      "at": 257,
       "candidate": {
         "id": "pages/package.json#@octokit/rest@22.0.1",
         "name": "@octokit/rest",
@@ -252,7 +252,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1142,
+      "at": 257,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -289,7 +289,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1142,
+      "at": 257,
       "candidate": {
         "id": "pages/package.json#pretty-bytes@7.1.1",
         "name": "pretty-bytes",
@@ -326,7 +326,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1142,
+      "at": 257,
       "candidate": {
         "id": "pages/package.json#typescript@7.0.2",
         "name": "typescript",
@@ -363,12 +363,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1377,
+      "at": 280,
       "id": "pages/package.json#pretty-bytes@7.1.1"
     },
     {
       "type": "progress",
-      "at": 1377,
+      "at": 280,
       "phase": "Up to date",
       "detail": "pretty-bytes@7.1.1",
       "done": 1,
@@ -376,12 +376,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1388,
+      "at": 291,
       "id": "pages/package.json#@octokit/rest@22.0.1"
     },
     {
       "type": "progress",
-      "at": 1388,
+      "at": 291,
       "phase": "Up to date",
       "detail": "@octokit/rest@22.0.1",
       "done": 2,
@@ -389,7 +389,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1672,
+      "at": 497,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -426,7 +426,7 @@
     },
     {
       "type": "progress",
-      "at": 1672,
+      "at": 497,
       "phase": "Outdated",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 3,
@@ -434,12 +434,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1906,
+      "at": 915,
       "id": "pages/package.json#typescript@7.0.2"
     },
     {
       "type": "progress",
-      "at": 1906,
+      "at": 915,
       "phase": "Up to date",
       "detail": "typescript@7.0.2",
       "done": 4,
@@ -447,7 +447,7 @@
     },
     {
       "type": "progress",
-      "at": 1907,
+      "at": 917,
       "phase": "Reading release notes and changelog",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -455,7 +455,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1907,
+      "at": 917,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -492,7 +492,7 @@
     },
     {
       "type": "progress",
-      "at": 1907,
+      "at": 917,
       "phase": "Checking package metadata",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -500,7 +500,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1907,
+      "at": 917,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -537,7 +537,7 @@
     },
     {
       "type": "progress",
-      "at": 1921,
+      "at": 936,
       "phase": "Indexing your code",
       "detail": "72 files indexed · 4 direct dependencies to check",
       "done": 0,
@@ -545,7 +545,7 @@
     },
     {
       "type": "progress",
-      "at": 2488,
+      "at": 1395,
       "phase": "Checking repository status",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -553,7 +553,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2488,
+      "at": 1395,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -590,7 +590,7 @@
     },
     {
       "type": "progress",
-      "at": 2505,
+      "at": 1397,
       "phase": "Checking security advisories",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -598,7 +598,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2505,
+      "at": 1397,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -635,7 +635,7 @@
     },
     {
       "type": "progress",
-      "at": 3871,
+      "at": 1397,
       "phase": "Checking license",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -643,7 +643,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3871,
+      "at": 1397,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -680,7 +680,7 @@
     },
     {
       "type": "progress",
-      "at": 3871,
+      "at": 1477,
       "phase": "Reading release notes and changelog",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -688,7 +688,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3871,
+      "at": 1477,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -725,7 +725,7 @@
     },
     {
       "type": "progress",
-      "at": 3871,
+      "at": 1477,
       "phase": "Comparing the public API surface",
       "detail": "astro 6.4.8 → 7.2.8 · 6 evidence sources",
       "done": 0,
@@ -733,7 +733,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3871,
+      "at": 1477,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -770,7 +770,7 @@
     },
     {
       "type": "progress",
-      "at": 3872,
+      "at": 1478,
       "phase": "Searching your code for 43 breaking changes",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -778,7 +778,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3872,
+      "at": 1478,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -815,7 +815,7 @@
     },
     {
       "type": "progress",
-      "at": 3879,
+      "at": 1483,
       "phase": "Weighing what this upgrade is worth",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -823,7 +823,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3879,
+      "at": 1483,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -860,7 +860,7 @@
     },
     {
       "type": "progress",
-      "at": 3889,
+      "at": 1492,
       "phase": "Checking maintenance signals",
       "detail": "astro 6.4.8 → 7.2.8",
       "done": 0,
@@ -868,7 +868,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3889,
+      "at": 1492,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -905,7 +905,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3895,
+      "at": 1497,
       "candidate": {
         "id": "pages/package.json#astro@6.4.8",
         "name": "astro",
@@ -1388,7 +1388,7 @@
     },
     {
       "type": "progress",
-      "at": 3895,
+      "at": 1498,
       "phase": "Checked",
       "detail": "astro 6.4.8 → 7.2.8 · safe for your code · 43 upstream changes, none used here — not deeply verified",
       "done": 1,
