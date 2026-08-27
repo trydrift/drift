@@ -55,6 +55,7 @@ on:
       - 'site/scripts/runtime-recording-validation.mjs'
       - 'site/scripts/validate-recordings.mjs'
       - 'site/scripts/recording-engine-manifest.mjs'
+      - 'site/scripts/analyzer-environment.mjs'
       - 'site/src/lib/recordings.ts'
       - 'site/scripts/engine-fingerprint.mjs'
       - '.github/workflows/refresh-recordings.yml'
@@ -99,6 +100,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
 
       - run: npm ci
 
@@ -176,6 +181,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
 
       - run: npm ci
       - run: npm run build

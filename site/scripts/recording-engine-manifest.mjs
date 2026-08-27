@@ -32,6 +32,10 @@ export const RECORDING_ENGINE_PATHS = [
   'src/disposition.ts',
   'src/pipeline.ts',
   'src/types.ts',
+  // Shared I/O, archive and process helpers are imported by capture-critical
+  // evidence providers; keeping this boundary broad prevents a utility fix
+  // from leaving recordings stamped with the old engine.
+  'src/util',
   'package-lock.json',
   'site/package-lock.json',
   'site/scripts/capture.mjs',
@@ -40,5 +44,6 @@ export const RECORDING_ENGINE_PATHS = [
   'site/scripts/validate-recordings.mjs',
   'site/scripts/engine-fingerprint.mjs',
   'site/scripts/recording-engine-manifest.mjs',
+  'site/scripts/analyzer-environment.mjs',
   'site/src/lib/recordings.ts',
 ];
