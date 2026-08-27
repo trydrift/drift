@@ -103,7 +103,15 @@ const RUNTIME_CONFIG_BASENAMES = new Set([
   '.python-version',
   '.tool-versions',
   'dockerfile',
+  'containerfile',
   'go.mod',
+  'gemfile',
+  'pom.xml',
+  'build.gradle',
+  'build.gradle.kts',
+  'cargo.toml',
+  'rust-toolchain',
+  'rust-toolchain.toml',
   'pyproject.toml',
   'setup.py',
   'setup.cfg',
@@ -115,6 +123,8 @@ export function isRuntimeConfigPath(path: string): boolean {
   const base = (path.split('/').pop() ?? '').toLowerCase();
   if (RUNTIME_CONFIG_BASENAMES.has(base)) return true;
   if (base.startsWith('dockerfile')) return true;
+  if (base.startsWith('containerfile')) return true;
+  if (base.endsWith('.gemspec')) return true;
   // CI workflow definitions, where the runtime version is usually pinned.
   return /^\.github\/workflows\/.+\.ya?ml$/.test(path) || /^\.(gitlab-ci|circleci)/.test(path);
 }

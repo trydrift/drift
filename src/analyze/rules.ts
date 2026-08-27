@@ -1,5 +1,12 @@
-import type { BreakingChangeKind, ModuleIncompatibleUsage, StructuredFinding } from '../types.js';
+import type {
+  BreakingChangeKind,
+  ModuleIncompatibleUsage,
+  RuntimeName,
+  RuntimeRequirement,
+  StructuredFinding,
+} from '../types.js';
 import { specCodeFor } from '../evidence/spec/index.js';
+import { normalizeRuntimeOperator } from './runtime-grammar.js';
 
 /**
  * Deterministic mapping from computed findings and changelog prose to
@@ -210,6 +217,68 @@ function verbForms(...stems: readonly string[]): string {
 /** Every mood "remove" is written in across a changelog or a commit subject. */
 const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted');
 
+// A word boundary after the alternation keeps `go` out of "google" and `java`
+// out of "javascript" — a runtime name only counts when it stands on its own.
+const RUNTIME_NAME = String.raw`(node(?:\.js)?|python|go|ruby|java|rust)\b`;
+// An optional `v` covers "Node v20" / "Node.js v18"; the parser strips it back
+// off before the range is normalized so the captured value stays canonical.
+const RUNTIME_RANGE = String.raw`([<>=^~]*\s*v?\d+(?:\.\d+){0,3}(?:(?:\s*,\s*|\s+)\s*[<>=^~]*\s*v?\d+(?:\.\d+){0,3})*)`;
+// The gap between "version" and the number: "is", a colon, or nothing at all.
+const RUNTIME_VERSION_SEP = String.raw`(?:versions?\s*)?(?:is\s+|:\s*)?`;
+
+/** Equivalent release-note syntax families, all with runtime/range in groups 1/2. */
+const RUNTIME_PROSE_RULES: ProseRule[] = [
+  {
+    id: 'prose-dropped-runtime-prefix',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(?:(?:dropped|drops?|removed)\s+support\s+for|no\s+longer\s+supports?)\s+${RUNTIME_NAME}\s*${RUNTIME_VERSION_SEP}${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-dropped-runtime-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b${RUNTIME_NAME}\s*(?:versions?\s*)?${RUNTIME_RANGE}\s+(?:is|are|was|were)\s+no\s+longer\s+supported`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-dropped-runtime-support-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\bsupport\s+for\s+${RUNTIME_NAME}\s*(?:versions?\s*)?${RUNTIME_RANGE}\s+(?:was|were|is|has\s+been)\s+removed`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-min-runtime-leading',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(?:requires?|required|now\s+requires?|minimum(?:\s+supported)?)\s+${RUNTIME_NAME}\s*${RUNTIME_VERSION_SEP}(?:raised\s+to\s*)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b${RUNTIME_NAME}\s+v?${RUNTIME_RANGE}\s+is\s+now\s+required`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version is ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-supported-version',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\bminimum\s+supported\s+${RUNTIME_NAME}\s+version\s+is\s+(?:now\s+)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version is ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-msrv',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(rust)\b\s+MSRV\s+is\s+(?:now\s+)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum Rust version is ${m[2]?.trim()}`,
+  },
+];
+
 /**
  * Prose rules.
  *
@@ -219,6 +288,7 @@ const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted
  * ordinary English words as symbols and sending an agent chasing them.
  */
 const PROSE_RULES: ProseRule[] = [
+  ...RUNTIME_PROSE_RULES.filter((rule) => rule.id.startsWith('prose-dropped-runtime')),
   {
     id: 'prose-removed',
     kind: 'removed-export',
@@ -310,16 +380,7 @@ const PROSE_RULES: ProseRule[] = [
     replacementGroup: 2,
     summarize: (m) => `\`${m[1]}\` moved to \`${m[2]}\``,
   },
-  {
-    // `required` as well as `requires`: real release notes say
-    // "**Required Node.js >=14.16**", not "now requires Node.js".
-    id: 'prose-min-runtime',
-    kind: 'runtime-requirement',
-    pattern:
-      /\b(?:requires?|required|now requires?|minimum(?: supported)?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?([>=^~]*\s*[\d.]+)/i,
-    symbolGroup: 1,
-    summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
-  },
+  ...RUNTIME_PROSE_RULES.filter((rule) => rule.id.startsWith('prose-min-runtime')),
   {
     /**
      * ESM-only migration.
@@ -345,13 +406,6 @@ const PROSE_RULES: ProseRule[] = [
     symbolGroup: 0,
     summarize: () => 'CommonJS support was dropped',
     moduleSystem: { from: 'dual', to: 'esm', incompatibleUsage: ['require'] },
-  },
-  {
-    id: 'prose-dropped-support',
-    kind: 'runtime-requirement',
-    pattern: /\b(?:dropped|drops|removed)\s+support\s+for\s+(.{3,60}?)(?:[.;]|$)/i,
-    symbolGroup: 1,
-    summarize: (m) => `Dropped support for ${m[1]?.trim()}`,
   },
   {
     /**
@@ -380,6 +434,7 @@ export interface ProseMatch {
   summary: string;
   symbols: string[];
   replacementSymbols: string[];
+  runtime?: RuntimeRequirement;
   moduleSystem?: {
     from?: 'commonjs' | 'esm' | 'dual';
     to?: 'commonjs' | 'esm' | 'dual';
@@ -403,13 +458,21 @@ export function matchProse(passage: string): ProseMatch[] {
     const symbol = rule.symbolGroup === 0 ? null : match[rule.symbolGroup];
     if (rule.symbolGroup !== 0 && !symbol) continue;
 
+    const runtime = rule.kind === 'runtime-requirement' ? parseRuntimeRequirement(match, rule.id) : undefined;
+    if (rule.kind === 'runtime-requirement' && !runtime) continue;
+
     const replacement = rule.replacementGroup ? match[rule.replacementGroup] : undefined;
 
     out.push({
       ruleId: rule.id,
       kind: rule.kind,
-      summary: rule.summarize(match),
+      summary: runtime
+        ? runtime.kind === 'minimum-runtime'
+          ? `Minimum ${runtime.runtime} version is now ${runtime.requirement}`
+          : `${runtime.runtime} ${runtime.requirement} is no longer supported`
+        : rule.summarize(match),
       symbols: symbol ? [symbol] : [],
+      ...(runtime ? { runtime } : {}),
       replacementSymbols: replacement ? [replacement] : [],
       ...(rule.moduleSystem
         ? {
@@ -425,6 +488,84 @@ export function matchProse(passage: string): ProseMatch[] {
 
   return out;
 }
+
+function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): RuntimeRequirement | null {
+  const rawRuntime = match[1]?.toLowerCase().replace(/\.js$/, '') as RuntimeName | undefined;
+  const rawRequirement = match[2]?.trim();
+  if (!rawRuntime || !rawRequirement) return null;
+  if (!['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(rawRuntime)) return null;
+
+  // The prose grammar allows a leading `v` ("Node v20"); it carries no meaning
+  // beyond the number it prefixes, so it is dropped before normalization.
+  // The optional operator carries its own trailing whitespace (`>= 20`); every
+  // other position is whitespace-free. Keeping a bare `\s*` next to the `\s+`
+  // separator let a run of tabs be split between the two quantifiers in
+  // quadratically many ways on a non-matching string (CodeQL js/polynomial-redos).
+  const version = /^(?:([<>=^~]+)\s*)?v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)(?:[<>=^~]+\s*)?v?\d+(?:\.\d+){0,3})*$/i.exec(rawRequirement);
+  if (!version) return null;
+  const statedOperator = version[1] ?? '';
+  const normalizedVersion = version[2]!;
+  const normalizedRequirement = rawRequirement.replace(/v?(\d+(?:\.\d+){0,3})/gi, (_m, value: string) =>
+    rawRuntime === 'java' ? value.replace(/^1\.(\d+)(?=$|\.|\s|,)/, '$1') : value,
+  );
+  const sourceText = match[0]!.trim();
+
+  const normalizedOperator = normalizeRuntimeOperator(rawRuntime, statedOperator);
+  const parseStatus = normalizedOperator.status;
+  const canonicalRequirement = normalizedRequirement.replace(/^\s*[<>=^~]*\s*/, normalizedOperator.operator || '>=');
+
+  if (ruleId.startsWith('prose-dropped-runtime')) {
+    // Dropped-support prose names the range upstream *stopped* supporting. It
+    // is never itself the new required range — inverting an arbitrary operator
+    // into "the required range" gets the meaning backwards for anything but
+    // `<`/`<=`, whose complement is unambiguous. `^16`'s complement is not
+    // ">=17": upstream may still support 17 only partially, or not at all
+    // outside a later line. So every dropped-support form is represented as
+    // what it actually is — an unsupported range — and a `derivedMinimum` is
+    // attached only for the two operators where the complement is exact.
+    //
+    // Every operator form the grammar accepts is preserved, `>=`/`>`/`=`
+    // included. "Dropped support for Node >=20" is a strange thing for a
+    // maintainer to write, but it is not unparseable — it states an
+    // unsupported line exactly as clearly as `<20` does, and returning `null`
+    // for it threw away a real, checkable fact because Drift could not derive
+    // a *floor* from it. No floor is derived; the range is simply kept as
+    // stated, which is all `unsupported-runtime-range` ever claimed to be.
+    if (statedOperator === '') {
+      const parts = normalizedVersion.split('.');
+      return {
+        kind: 'unsupported-runtime-range',
+        runtime: rawRuntime,
+        requirement: rawRequirement.includes(',') || /\s+[<>=^~]/.test(rawRequirement)
+          ? canonicalRequirement
+          : parts.length < 3 ? `${normalizedVersion}.x` : normalizedVersion,
+        sourceText,
+        ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
+      };
+    }
+    return {
+      kind: 'unsupported-runtime-range',
+      runtime: rawRuntime,
+      requirement: canonicalRequirement,
+      // Only `<` and `<=` have an exact complement, so only they carry a
+      // replacement floor. `>=20`'s complement is "everything below 20",
+      // which is not a floor and not what upstream said.
+      ...(statedOperator === '<' ? { derivedMinimum: `>=${normalizedVersion}` } : {}),
+      ...(statedOperator === '<=' ? { derivedMinimum: `>${normalizedVersion}` } : {}),
+      sourceText,
+      ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
+    };
+  }
+
+  return {
+    kind: 'minimum-runtime',
+    runtime: rawRuntime,
+    requirement: canonicalRequirement,
+    sourceText,
+    ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
+  };
+}
+
 
 /** Remediation text for a prose-derived change. */
 export function remediationForProse(match: ProseMatch, dependency: string): string {
@@ -445,6 +586,11 @@ export function remediationForProse(match: ProseMatch, dependency: string): stri
     case 'behaviour-change':
       return `Behaviour changed: ${match.summary}. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.`;
     case 'runtime-requirement':
+      if (match.runtime?.kind === 'unsupported-runtime-range') {
+        return match.runtime.derivedMinimum
+          ? `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported. That unambiguously means a floor of ${match.runtime.derivedMinimum}; update the runtime version declared in CI workflows, engine fields, and container images accordingly.`
+          : `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported, but the release note does not establish a replacement minimum. Review the project's declared runtime against authoritative upstream compatibility guidance rather than inventing one.`;
+      }
       return `${match.summary}. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.`;
     case 'module-system-change':
       return `\`${dependency}\` no longer exposes a CommonJS-compatible entry point. Update each localized \`require('${dependency}')\` site to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import('${dependency}')\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;

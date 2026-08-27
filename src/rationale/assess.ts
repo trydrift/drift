@@ -1,4 +1,10 @@
 import type { BreakingChange, Evidence, ImpactSite } from '../types.js';
+import {
+  runtimeCompatibilityIsUnresolved,
+  completeRuntimeAnalyses,
+  worstRuntimeState,
+  type RuntimeRequirementAnalysis,
+} from './compatibility.js';
 import type {
   EvidenceConfidence,
   LicenseFinding,
@@ -8,6 +14,7 @@ import type {
   UpgradeAssessment,
 } from './types.js';
 import { worstSeverity } from './types.js';
+import { deriveBreakingChangeDispositions } from '../disposition.js';
 
 /**
  * The one thing Drift is willing to conclude, and why.
@@ -49,6 +56,19 @@ export interface AssessmentInput {
    * own cache.
    */
   proseRead?: number;
+  /**
+   * What Drift established about this repository's runtime for each upstream
+   * runtime requirement — see `compatibility.ts`.
+   *
+   * Carried explicitly rather than inferred from `impactSites`, because the
+   * two states that matter most produce no sites at all: a workspace with no
+   * authoritative declaration, and an upstream range whose grammar Drift
+   * could not evaluate. Both are `unknown`, and both used to arrive here as
+   * an empty array indistinguishable from "checked, and fine".
+   */
+  runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
+  /** Whether repository localization actually completed. */
+  localizationRan?: boolean;
 }
 
 /**
@@ -72,8 +92,36 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   const affected = impactSites.length;
   const files = new Set(impactSites.map((site) => site.file)).size;
-  const decisions = input.breakingChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
-  const mechanical = input.breakingChanges.length - decisions.length;
+  // A runtime requirement is a package-wide compatibility condition, not a
+  // symbol a caller invokes — ".nvmrc" and ".tool-versions" are not API call
+  // sites, and reasoning that says a repository "uses an API" for a runtime
+  // floor mismatch is simply false. Split by kind up front so every sentence
+  // below can name the right kind of fact.
+  const changeById = new Map(input.breakingChanges.map((c) => [c.id, c]));
+  const apiSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind !== 'runtime-requirement');
+  const apiFiles = new Set(apiSites.map((site) => site.file)).size;
+  const runtimeSites = impactSites.filter((site) => changeById.get(site.breakingChangeId)?.kind === 'runtime-requirement');
+  const runtimeChanges = input.breakingChanges.filter((change) => change.kind === 'runtime-requirement' && change.runtime?.runtime);
+  const completeAnalyses = completeRuntimeAnalyses(input.breakingChanges, input.runtimeAnalyses ?? []);
+  const runtimeState = worstRuntimeState(completeAnalyses);
+  const runtimeUnresolved = runtimeChanges.length > 0 && runtimeCompatibilityIsUnresolved(runtimeState ?? 'unknown');
+  const effectiveRuntimeState = runtimeChanges.length > 0 ? (runtimeState ?? 'unknown') : undefined;
+  const dispositions = deriveBreakingChangeDispositions(
+    input.breakingChanges,
+    impactSites,
+    completeAnalyses,
+    input.localizationRan ?? true,
+  );
+  const actionableIds = new Set(
+    dispositions.filter((disposition) => disposition.state === 'actionable').map((disposition) => disposition.changeId),
+  );
+  const actionableChanges = input.breakingChanges.filter((change) => actionableIds.has(change.id));
+  const actionableSiteIds = new Set(
+    dispositions.flatMap((disposition) => disposition.actionableSites.map((site) => `${site.breakingChangeId}:${site.file}:${site.line}`)),
+  );
+  const apiReviewSites = apiSites.filter((site) => !actionableSiteIds.has(`${site.breakingChangeId}:${site.file}:${site.line}`));
+  const actionableDecisions = actionableChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
+  const actionableMechanical = actionableChanges.length - actionableDecisions.length;
 
   /* Facts first, in the order a reader needs them. */
 
@@ -98,21 +146,50 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     }
   }
 
-  if (affected > 0) {
+  const apiActionableSites = apiSites.filter((site) => actionableSiteIds.has(`${site.breakingChangeId}:${site.file}:${site.line}`));
+  if (apiActionableSites.length > 0) {
     reasons.push(
-      `${affected} ${plural(affected, 'place', 'places')} in ${files} ${plural(files, 'file', 'files')} ${plural(affected, 'uses', 'use')} an API this upgrade changes.`,
+      `${apiActionableSites.length} ${plural(apiActionableSites.length, 'place', 'places')} in ${new Set(apiActionableSites.map((site) => site.file)).size} ${plural(new Set(apiActionableSites.map((site) => site.file)).size, 'file', 'files')} use${apiActionableSites.length === 1 ? 's' : ''} an API this upgrade changes.`,
     );
-    if (mechanical > 0) {
-      reasons.push(`${mechanical} of the changes can be applied mechanically.`);
+  }
+  if (apiReviewSites.length > 0) {
+    reasons.push(`${apiReviewSites.length} local API match${apiReviewSites.length === 1 ? '' : 'es'} require review; Drift did not establish a safe edit.`);
+  }
+  // The runtime sentence comes from the analysis, not the sites: it is the
+  // only place that can say "Drift could not find a declaration at all",
+  // which by construction has no site to describe. Rendered from the
+  // *completed* set so a runtime requirement whose analysis never ran is
+  // explained to the developer ("could not complete runtime compatibility
+  // analysis") rather than silently dropped.
+  for (const analysis of completeAnalyses) {
+    reasons.push(analysis.statement);
+  }
+  if (runtimeSites.length > 0 && completeAnalyses.length === 0) {
+    // A caller that supplied runtime sites without the analyses behind them
+    // (an older embedder, a hand-built input) still gets an accurate summary
+    // rather than silence.
+    reasons.push(...describeRuntimeImpact(runtimeSites));
+  }
+  if (affected > 0) {
+    if (actionableMechanical > 0) {
+      reasons.push(`${actionableMechanical} of the locally affected changes can be applied mechanically.`);
     }
-    if (decisions.length > 0) {
+    if (actionableDecisions.length > 0) {
       reasons.push(
-        `${decisions.length} ${plural(decisions.length, 'change requires', 'changes require')} a developer decision rather than a substitution.`,
+        `${actionableDecisions.length} locally affected ${plural(actionableDecisions.length, 'change requires', 'changes require')} a developer decision rather than a substitution.`,
       );
     }
-  } else if (input.breakingChanges.length > 0) {
+  } else if (
+    input.breakingChanges.some((change) => change.kind !== 'runtime-requirement') &&
+    !runtimeUnresolved
+  ) {
+    // "None of which this repository uses" is a positive claim about this
+    // repository, and it may only be made when compatibility was actually
+    // established. With a runtime requirement left `unknown` or `partial`,
+    // the true sentence is the analysis statement pushed above — Drift did
+    // not find a local use *and* did not establish there isn't one.
     reasons.push(
-      `${input.breakingChanges.length} upstream breaking ${plural(input.breakingChanges.length, 'change', 'changes')}, none of which this repository uses.`,
+      `${input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length} upstream API breaking ${plural(input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length, 'change', 'changes')}, none of which this repository uses.`,
     );
   }
 
@@ -129,7 +206,12 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   /* Then the conclusion those facts support. */
 
-  const recommendation = decide(input, { affected, decisions: decisions.length });
+  const recommendation = decide(input, {
+    affected,
+    decisions: actionableDecisions.length,
+    actionable: actionableChanges.length > 0,
+    runtimeUnresolved,
+  });
   const confidence = judgeConfidence(input);
 
   if (input.gaps.length > 0) {
@@ -141,12 +223,29 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     reasons,
     confidence: confidence.level,
     confidenceBasis: confidence.basis,
+    ...(effectiveRuntimeState ? { runtimeCompatibility: effectiveRuntimeState } : {}),
   };
 }
 
+/**
+ * Does this site, by itself, establish that the repository must change?
+ *
+ * For an API site the question is whether the match was semantically
+ * resolved, which is what `confidence` measures. For a runtime site it is a
+ * *different* question with a different answer, and conflating the two is
+ * what turned a partial range overlap into "Migration required": Drift can be
+ * completely certain it found `engines.node` (high confidence) and still have
+ * established only that the declared range *includes* versions upstream
+ * rejects, not that this project actually runs on one (partial).
+ *
+ * So confidence gates identity, `runtimeVerdict` gates meaning, and only
+ * `incompatible` — the repository definitely uses a rejected runtime — is
+ * actionable. `partial` and `unknown` are review, never a migration headline
+ * and never a reason to call anything safe.
+ */
 function decide(
   input: AssessmentInput,
-  counts: { affected: number; decisions: number },
+  counts: { affected: number; decisions: number; actionable: boolean; runtimeUnresolved: boolean },
 ): Recommendation {
   const { security, maintenance, license } = input;
 
@@ -162,51 +261,70 @@ function decide(
   if (maintenance.facts.some((fact) => fact.polarity === 'blocks')) return 'do-not-upgrade-yet';
 
   if (counts.affected > 0) {
+    // Lexical or owner-ambiguous matches are useful leads, but they do not
+    // establish that this repository needs a migration. Only a semantically
+    // resolved (high-confidence) site can support that headline — and, for a
+    // runtime requirement, only one whose verdict is `incompatible`. A
+    // partial overlap has an independent path to `manual-migration-required`
+    // exactly when some *other* finding is genuinely actionable, which is
+    // what `counts.decisions` measures after `isActionableSite`.
+    if (!counts.actionable) return 'upgrade-after-review';
     return counts.decisions > 0 ? 'manual-migration-required' : 'upgrade-after-review';
   }
 
-  // No evidence is not the same as no findings, and must never read as one.
-  // Checked last among the negative outcomes so that a genuine finding — which
-  // proves something *was* readable — always wins over the absence of others.
-  if (input.gaps.length > 0 && input.breakingChanges.length === 0 && !answeredSomething(input)) {
-    return 'insufficient-evidence';
+  // Zero sites, and a runtime question Drift did not answer. Every branch
+  // below this point ends in `safe-to-upgrade`, `upgrade-recommended`, or
+  // `insufficient-evidence` — none of which may be said over an unresolved
+  // compatibility condition that applies to the whole package.
+  if (counts.runtimeUnresolved) return 'upgrade-after-review';
+
+  const securityFavors = security.checked && security.resolved.length > 0;
+  const maintenanceFavors = maintenance.facts.some((fact) => fact.polarity === 'favors');
+
+  // "No breaking changes were found" only supports a compatibility claim when
+  // something actually looked at compatibility. A clean OSV check, a fine
+  // license, and a version that merely exists all answer *other* questions —
+  // none of them is an account of whether this code still works. Without a
+  // computed surface diff or compatibility prose that was actually fetched
+  // and read, Drift has not characterized compatibility at all, and "no
+  // breaking changes" here means "none were looked for", not "none exist".
+  if (input.breakingChanges.length === 0 && !hasCompatibilityEvidence(input)) {
+    // A resolved vulnerability (or other favorable maintenance fact) is still
+    // a real reason to move — but say so without implying compatibility was
+    // verified, which `upgrade-recommended`'s wording does and `safe-to-upgrade`
+    // does not.
+    return securityFavors || maintenanceFavors ? 'upgrade-recommended' : 'insufficient-evidence';
   }
 
-  if (
-    (security.checked && security.resolved.length > 0) ||
-    maintenance.facts.some((fact) => fact.polarity === 'favors')
-  ) {
-    return 'upgrade-recommended';
-  }
+  if (securityFavors || maintenanceFavors) return 'upgrade-recommended';
 
   return 'safe-to-upgrade';
 }
 
 /**
- * Did any source actually answer for this dependency?
+ * Did Drift obtain evidence that actually bears on *compatibility* — as
+ * opposed to evidence that merely answers some other question about the
+ * upgrade (a clean security advisory lookup, a fine license, proof the target
+ * version exists)?
  *
- * A surface diff that ran and found nothing is an answer. So is OSV replying
- * "no advisories". Both are the difference between "Drift checked and this is
- * clean" and "Drift could not check", and conflating them is the specific lie
- * this codebase already had to be corrected for once.
+ * This is the one gate that may unlock `safe-to-upgrade` or let "no breaking
+ * changes found" stand as a finding rather than a blank. A successful OSV
+ * check answers "does this introduce a known vulnerability", not "does this
+ * repository's code still work" — the two are independent facts, and treating
+ * the first as proof of the second is exactly what let Drift call a major
+ * version bump with no reachable changelog, no TypeScript declarations, and no
+ * resolvable source repository "Safe to upgrade".
  *
- * So are release notes that were fetched and read. That was missing, and the
- * omission produced its own smaller version of the same lie in the other
- * direction: a library whose four release notes Drift had downloaded, parsed,
- * and summarised as announcing nothing breaking was still reported as *not
- * verified*, next to a library where every source had failed. The two are not
- * the same fact. Prose is weaker than a computed diff — it reports what the
- * maintainer chose to write down — and it stays weaker: `judgeConfidence` caps
- * a prose-only assessment at `medium`, and the gap sentence saying so is
- * printed either way.
+ * A computed API surface diff is direct evidence: an observation of the
+ * shipped artefact itself. Release notes, changelogs and migration guides
+ * that were actually fetched and read are weaker but still real: they report
+ * what the maintainer chose to write down, and a document read end to end
+ * with no breaking passage in it is an answer, not a blank — see
+ * `judgeConfidence`, which caps a prose-only basis at `medium` rather than
+ * treating it as equivalent to a diff.
  */
-function answeredSomething(input: AssessmentInput): boolean {
-  return (
-    input.surfaceCompared ||
-    input.security.checked ||
-    (input.proseRead ?? 0) > 0 ||
-    proseEvidence(input).length > 0
-  );
+export function hasCompatibilityEvidence(input: AssessmentInput): boolean {
+  return input.surfaceCompared || (input.proseRead ?? 0) > 0 || proseEvidence(input).length > 0;
 }
 
 /** Release notes, changelogs and migration guides read for this dependency. */
@@ -262,6 +380,39 @@ function joinList(items: readonly string[]): string {
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/**
+ * Rationale for runtime-requirement impact sites, kept apart from the
+ * API-usage sentence above because "N places use an API" is simply false for
+ * a `.nvmrc` or a CI `node-version:` line — the repository's declared runtime
+ * either satisfies a floor or it does not, and no call site is involved.
+ */
+function describeRuntimeImpact(sites: readonly ImpactSite[]): string[] {
+  const out: string[] = [];
+  const incompatible = sites.filter((site) => site.runtimeVerdict !== 'partial' && site.runtimeVerdict !== 'unknown');
+  const partial = sites.filter((site) => site.runtimeVerdict === 'partial');
+  const unknown = sites.filter((site) => site.runtimeVerdict === 'unknown');
+
+  if (incompatible.length > 0) {
+    const n = incompatible.length;
+    out.push(
+      `${n} runtime ${plural(n, 'declaration', 'declarations')} in this repository ${plural(n, 'does not satisfy', 'do not satisfy')} this upgrade's runtime requirement.`,
+    );
+  }
+  if (partial.length > 0) {
+    const n = partial.length;
+    out.push(
+      `${n} runtime ${plural(n, 'declaration allows', 'declarations allow')} versions this upgrade's runtime requirement rejects.`,
+    );
+  }
+  if (unknown.length > 0) {
+    const n = unknown.length;
+    out.push(
+      `${n} runtime ${plural(n, 'declaration is', 'declarations are')} dynamically defined; Drift could not determine whether ${plural(n, 'it satisfies', 'they satisfy')} this upgrade's runtime requirement.`,
+    );
+  }
+  return out;
 }
 
 function plural(count: number, one: string, many: string): string {

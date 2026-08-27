@@ -45,10 +45,18 @@ on:
       - 'src/verification/**'
       - 'src/analysis.ts'
       - 'src/config/schema.ts'
+      - 'src/disposition.ts'
       - 'src/pipeline.ts'
       - 'src/types.ts'
+      - 'src/util/**'
+      - 'package-lock.json'
+      - 'site/package-lock.json'
       - 'site/scripts/capture.mjs'
       - 'site/scripts/recording-validation.mjs'
+      - 'site/scripts/runtime-recording-validation.mjs'
+      - 'site/scripts/validate-recordings.mjs'
+      - 'site/scripts/recording-engine-manifest.mjs'
+      - 'site/scripts/analyzer-environment.mjs'
       - 'site/src/lib/recordings.ts'
       - 'site/scripts/engine-fingerprint.mjs'
       - '.github/workflows/refresh-recordings.yml'
@@ -93,6 +101,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
 
       - run: npm ci
 
@@ -171,6 +183,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
+
       - run: npm ci
       - run: npm run build
 
@@ -215,6 +231,12 @@ jobs:
           }
           console.log(`${index.length} recording(s), ${index.reduce((sum, e) => sum + e.packagesChecked, 0)} packages checked.`);
           NODE
+
+      - name: Validate recording corpus
+        # Failed targets intentionally retain stale artifacts. Validate every
+        # artifact structurally, but require the current fingerprint only for
+        # files this run actually changed.
+        run: node site/scripts/validate-recordings.mjs --allow-stale --fresh-from-git
 
       - name: Open a pull request
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8

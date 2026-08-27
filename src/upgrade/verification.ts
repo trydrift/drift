@@ -48,6 +48,30 @@ export function applyVerification(
   verified.breakingCount = verified.plan.upstreamBreakingCount ?? verified.plan.breakingChanges.length;
   verified.impactCount = verified.plan.impactSites.length;
   verified.impactFiles = new Set(verified.plan.impactSites.map((site) => site.file)).size;
+  const dispositions = verified.plan.dispositions;
+  if (dispositions) {
+    verified.actionableImpactCount = dispositions.reduce((n, d) => n + d.actionableSites.length, 0);
+    verified.actionableImpactFiles = new Set(
+      dispositions.flatMap((d) => d.actionableSites.map((site) => site.file)),
+    ).size;
+    verified.runtimeDeclarationSiteCount = dispositions
+      .filter((d) => d.runtimeAnalysis !== undefined)
+      .reduce((n, d) => n + d.sites.length, 0);
+  }
+  // `applyVerificationToPlan` re-derives the plan's dispositions, per-dependency
+  // rationale assessment (recommendation, reasons, runtime compatibility) and
+  // aggregate risk from the pruned structural plan whenever a pass actually
+  // cleared a prediction. Read those through rather than hand-patching the
+  // flattened copies here — the old shortcut ("keep the whole pre-verification
+  // reason list whenever any actionable finding survives") left reasons
+  // describing predictions the compiler had already disproved.
+  if (verified.rationale) {
+    verified.rationale =
+      verified.plan.rationale?.find((entry) => entry.dependency === verified.rationale!.dependency) ??
+      verified.plan.rationale?.[0] ??
+      verified.rationale;
+  }
+  verified.risk = verified.plan.risk;
   // Whether the "affected" verdict above rests on evidence a batch pass could
   // not give it. A compile-capable pass that ran scoped to a batch is not
   // licensed to prune a compiler-provable finding (see `applyVerificationToPlan`),
@@ -75,7 +99,8 @@ export function applyVerification(
   // disproved sixty-five of them.
   verified.summary = summarize(
     verified.breakingCount,
-    verified.impactCount,
+    verified.plan!.breakingChanges,
+    verified.plan!.impactSites,
     verified.name,
     verified.rationale,
   );

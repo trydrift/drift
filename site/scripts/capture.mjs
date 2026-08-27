@@ -88,6 +88,7 @@ const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js
 const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
 const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
 const { deriveOverallConfidence } = await import(join(repoRoot, 'dist/confidence/calibrate.js'));
+const { severityOf } = await import(join(repoRoot, 'dist/upgrade/severity.js'));
 const RECORDING_SCHEMA_VERSION = 2;
 import { isSchemaStale, validateRecording } from './recording-validation.mjs';
 
@@ -524,6 +525,46 @@ function slimCandidate(candidate) {
     risk: candidate.risk,
     summary: candidate.summary,
     recommendation: candidate.recommendation ?? null,
+    // Structured signal for the recording validator's "safe-to-upgrade
+    // implies real evidence" invariant -- whether a computed surface diff or
+    // actually-read compatibility prose backs this candidate's assessment, as
+    // opposed to a clean security check or a version lookup alone. `null`
+    // when no rationale was computed at all (e.g. an error candidate).
+    hasCompatibilityEvidence: candidate.rationale?.hasCompatibilityEvidence ?? null,
+    // What Drift established about this repository's runtime, as a state
+    // rather than as a count of sites -- `unknown` and `partial` both
+    // routinely come with zero sites, and the validator's job is to prove
+    // neither can render as safe. `null` when the upgrade announced no
+    // runtime requirement at all, which is deliberately NOT `compatible`.
+    runtimeCompatibility: candidate.runtimeCompatibility ?? null,
+    // The per-requirement breakdown behind the state above, so the validator
+    // can check each runtime requirement's own answer rather than only the
+    // worst one.
+    runtimeAnalyses: candidate.runtimeAnalyses ?? [],
+    // The application's actual verdict. The validator consumes this instead
+    // of reconstructing a second severity algorithm from counts.
+    severity: severityOf(candidate),
+    independentActionableFindingCount: (candidate.plan?.dispositions ?? [])
+      .filter((disposition) => disposition.state === 'actionable')
+      .filter((disposition) =>
+        (candidate.plan?.breakingChanges ?? []).some(
+          (change) => change.id === disposition.changeId && change.kind !== 'runtime-requirement',
+        ),
+      ).length,
+    actionableImpactCount: candidate.actionableImpactCount ?? 0,
+    actionableImpactFiles: candidate.actionableImpactFiles ?? 0,
+    runtimeDeclarationSiteCount: candidate.runtimeDeclarationSiteCount ?? 0,
+    runtimeChanges: (candidate.plan?.breakingChanges ?? [])
+      .filter((change) => change.kind === 'runtime-requirement' && change.runtime)
+      .map((change) => ({ id: change.id, runtime: change.runtime.runtime })),
+    dispositions: (candidate.plan?.dispositions ?? []).map((disposition) => ({
+      changeId: disposition.changeId,
+      state: disposition.state,
+      reason: disposition.reason,
+      siteCount: disposition.sites.length,
+      actionableSiteCount: disposition.actionableSites.length,
+      runtimeState: disposition.runtimeAnalysis?.state ?? null,
+    })),
     breakingCount: candidate.breakingCount,
     impactCount: candidate.impactCount,
     impactFiles: candidate.impactFiles,
@@ -553,6 +594,7 @@ function slimCandidate(candidate) {
         summary: change.summary,
         remediation: change.remediation,
         confidence: change.confidence,
+        runtime: change.runtime ?? null,
         // The single customer-facing number, computed from the same
         // assessment the extension and the Markdown report read. `null` for
         // the rare finding with no assessment at all, so the page can fall
@@ -601,6 +643,7 @@ function slimSite(site) {
     excerpt: site.excerpt.slice(0, 160),
     matchedSymbol: site.matchedSymbol,
     confidence: site.confidence,
+    ...(site.runtimeVerdict ? { runtimeVerdict: site.runtimeVerdict } : {}),
   };
 }
 

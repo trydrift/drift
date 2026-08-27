@@ -1715,7 +1715,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       }
 
-      const files = new Set(plan.impactSites.map((site) => site.file)).size;
+      const files = new Set(
+        (plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file)),
+      ).size;
       step.done(`${plan.changes.length} dependency change${plan.changes.length === 1 ? '' : 's'} analysed`);
 
       // The packages that moved are what a developer looks this conversation
@@ -1733,9 +1735,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       // The distinction that matters, stated first.
       if (files === 0) {
+        const dispositions = plan.dispositions ?? [];
+        const hasReview = dispositions.some((d) => d.state === 'review-only');
+        const hasUnknown = dispositions.some((d) => d.state === 'unknown');
+        const localized = plan.localizationRan !== false;
+        const allUnaffected = localized && dispositions.length > 0 && dispositions.every((d) => d.state === 'unaffected');
+        const message = allUnaffected
+          ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none touch this repository** — static analysis only, not deeply verified.`
+          : hasUnknown
+            ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, but local impact was **not established** — review the report before treating this as safe.`
+            : hasReview
+              ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them; some evidence requires **review**, and no actionable files were established.`
+              : `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, but no actionable files were established.`;
         this.session.say(
           [
-            `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none of them touch this repository** — static analysis only, not deeply verified.`,
+            message,
             '',
             'Open the report if you want to see the reasoning and the sources.',
           ].join('\n'),
@@ -3225,8 +3239,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     if (plan.commits.length === 0 || plan.impactSites.length === 0) {
+      // "Upgrading is all that is needed" is a compatibility claim, and a
+      // runtime requirement Drift could not resolve produces exactly this
+      // shape -- no commits, no sites -- without having established it.
+      const runtimeUnresolved = (plan.rationale ?? []).some(
+        (entry) =>
+          entry.assessment.runtimeCompatibility === 'unknown' ||
+          entry.assessment.runtimeCompatibility === 'partial',
+      );
+      const hasReview = (plan.dispositions ?? []).some((d) => d.state === 'review-only' || d.state === 'unknown');
       this.session.say(
-        'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
+        runtimeUnresolved || hasReview
+          ? 'There is nothing for an agent to edit, but this upgrade carries a runtime requirement Drift could not check against this repository. Confirm the runtime version you build and deploy on before upgrading.'
+          : 'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
       );
       return;
     }
@@ -3341,7 +3366,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // watching this can tell what is about to happen while there is still time
     // to stop it, and afterwards can see which sites the agent actually changed
     // — neither of which is legible in a stream of agent chatter.
-    const files = new Set(plan.impactSites.map((site) => site.file)).size;
+    const files = new Set(
+      (plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file)),
+    ).size;
     const commitMode = this.session.commitMode;
     const landing = upgraded
       ? `on \`${branch.name}\`, alongside the upgrade itself`
@@ -3359,7 +3386,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         ? 'Each concern is committed as soon as it is finished.'
         : 'Nothing is committed until you keep it.';
     const tasks = this.session.tasks(
-      `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
+      `${this.agentLabel()} is fixing ${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0)} site${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0) === 1 ? '' : 's'}`,
       `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${evidence}`,
       buildTaskGroups(plan),
     );

@@ -117,12 +117,15 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
   const lines = candidates.map((candidate) => `- ${describeUpgrade(candidate)}`);
 
   const breaking = candidates.reduce((total, c) => total + c.breakingCount, 0);
-  const impacted = candidates.reduce((total, c) => total + c.impactCount, 0);
+  const impacted = candidates.reduce((total, c) => total + (c.actionableImpactCount ?? 0), 0);
   // A measured build failure with nothing statically localized is a stronger,
   // different fact than "no breaking changes" or "nothing uses the affected
   // APIs" — see `severityOf`'s own `verification-failed` tier, reused here
   // rather than reconstructing the same distinction badly.
   const verificationFailed = candidates.some((c) => severityOf(c) === 'verification-failed');
+  const runtimeUnresolved = candidates.some(
+    (c) => c.runtimeCompatibility === 'unknown' || c.runtimeCompatibility === 'partial',
+  );
 
   const body = [
     ...lines,
@@ -131,11 +134,13 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
       ? "Drift installed this upgrade and the project's own checks failed, even though static analysis found no specific location to point at. Review the failure before shipping this."
       : breaking === 0
         ? 'Drift found no breaking changes upstream for these versions.'
-        : `Drift found ${count(breaking, 'breaking change')} upstream and ${
-            impacted === 0
-              ? 'no code in this repository that uses the affected APIs'
-              : `${count(impacted, 'place')} in this repository that use the affected APIs`
-          }.`,
+        : runtimeUnresolved && impacted === 0
+          ? `Drift found ${count(breaking, 'breaking change')} upstream, but could not establish runtime compatibility for this repository.`
+          : `Drift found ${count(breaking, 'breaking change')} upstream and ${
+              impacted === 0
+                ? 'no code in this repository that uses the affected APIs'
+                : `${count(impacted, 'place')} in this repository that use the affected APIs`
+            }${runtimeUnresolved ? '; runtime compatibility still requires review' : ''}.`,
   ].join('\n');
 
   return { subject, body };
@@ -144,12 +149,20 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
 /** One package, its versions, and what the evidence said about it. */
 function describeUpgrade(candidate: UpgradeCandidate): string {
   const where = candidate.workspace ? ` in ${candidate.workspaceName ?? candidate.workspace}` : '';
+  // "None used here" is a positive claim about this repository, so it may not
+  // be made over an unresolved package-wide runtime condition -- which
+  // produces `impactCount === 0` exactly as a genuinely unaffected package
+  // does.
+  const runtimeUnresolved =
+    candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial';
   const verdict =
-    candidate.breakingCount === 0
+    candidate.breakingCount === 0 && !runtimeUnresolved
       ? 'no breaking changes found'
-      : candidate.impactCount === 0
-        ? `${count(candidate.breakingCount, 'breaking change')} upstream, none used here`
-        : `${count(candidate.breakingCount, 'breaking change')} upstream, ${count(candidate.impactCount, 'site')} affected here`;
+      : runtimeUnresolved
+        ? `${count(candidate.breakingCount, 'breaking change')} upstream, and runtime compatibility could not be established here`
+        : candidate.actionableImpactCount === 0 && candidate.impactCount === 0
+          ? `${count(candidate.breakingCount, 'breaking change')} upstream, none used here`
+          : `${count(candidate.breakingCount, 'breaking change')} upstream, ${count(candidate.impactCount, 'site')} affected here`;
 
   return `${candidate.name} ${candidate.current} → ${targetVersion(candidate)}${where} (${verdict})`;
 }
@@ -170,7 +183,7 @@ export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string
   // silently drop it while claiming to name everything worth reviewing.
   const needsReview = candidates.filter((c) => {
     const severity = severityOf(c);
-    return severity === 'affected' || severity === 'verification-failed';
+    return severity === 'affected' || severity === 'verification-failed' || severity === 'unchecked';
   });
 
   const rows = candidates.map((candidate) => {
@@ -196,7 +209,7 @@ export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string
       ...needsReview.map((candidate) =>
         severityOf(candidate) === 'verification-failed'
           ? `- **${candidate.name}** — installed and the project's own checks failed. Static analysis found no specific location to point at; see the verification output for what broke.`
-          : `- **${candidate.name}** — ${count(candidate.impactCount, 'place')} across ${count(candidate.impactFiles, 'file')} use an API this version changed.`,
+          : `- **${candidate.name}** — ${candidate.actionableImpactCount ? `${count(candidate.actionableImpactCount, 'actionable place')} require edits.` : 'Local evidence is incomplete or requires review; no automatic edit is authorized.'}`,
       ),
       '',
     );

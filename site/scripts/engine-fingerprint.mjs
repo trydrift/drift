@@ -20,11 +20,71 @@
  * recording, and re-capturing seventeen real projects over an hour because
  * somebody renamed a variable in `src/cli.ts` is how a freshness check gets
  * turned off. Only scan-output code and the recording contract are counted.
+ *
+ * Source and lockfiles are not the whole engine, either (#138). A few
+ * evidence surfaces hand the analysed package to an external interpreter or
+ * toolchain and let it do the parsing, so a materially different installed
+ * version of that tool is a materially different analyzer even when not one
+ * byte of Drift's own source moved. `analyzerEnvironmentIdentity()` below
+ * folds each such tool's *semantically normalized* version — see
+ * `analyzer-environment.mjs` for the full reproducibility contract — into
+ * this same fingerprint, so two equivalent environments agree and two
+ * materially different ones do not.
  */
 
 import { createHash } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
+import { RECORDING_ENGINE_PATHS } from './recording-engine-manifest.mjs';
+import { RECORDING_ANALYZER_ENVIRONMENT } from './analyzer-environment.mjs';
+
+const execFileAsync = promisify(execFile);
+
+/**
+ * The analyzer environment's contribution to the fingerprint: one
+ * `tool=majorMinor` entry per manifest tool, normalized identically wherever
+ * this runs — see the reproducibility contract documented in
+ * `analyzer-environment.mjs`.
+ *
+ * A tool that cannot be run at all, or whose version output this cannot
+ * parse, throws rather than folding into a shared placeholder identity: a
+ * recording captured without a required analyzer available is not evidence
+ * of what Drift actually does, and every environment missing the same tool
+ * must not silently collide on one fingerprint.
+ *
+ * `manifest` and `runVersionCommand` are parameters (defaulting to the real
+ * contract and a real subprocess call) so tests can exercise the
+ * equivalent/materially-different/missing-tool behavior against a fake
+ * environment without needing to control which interpreters are actually
+ * installed on the machine running the test.
+ */
+export async function analyzerEnvironmentIdentity(
+  manifest = RECORDING_ANALYZER_ENVIRONMENT,
+  runVersionCommand = (executable, args) => execFileAsync(executable, args, { timeout: 5000 }),
+) {
+  const entries = [];
+  for (const [tool, contract] of Object.entries(manifest)) {
+    let rawOutput;
+    try {
+      const { stdout, stderr } = await runVersionCommand(contract.executable, contract.versionArgs);
+      rawOutput = `${stdout}${stderr}`;
+    } catch (error) {
+      throw new Error(
+        `Recording capture/validation requires \`${contract.executable}\` (the ${tool} analyzer contract in analyzer-environment.mjs) and it could not be run: ${error.message}`,
+      );
+    }
+    const normalized = contract.normalize(rawOutput);
+    if (!normalized) {
+      throw new Error(
+        `Could not read a ${tool} version out of \`${contract.executable} ${contract.versionArgs.join(' ')}\` output: ${JSON.stringify(rawOutput.trim())}`,
+      );
+    }
+    entries.push(`${tool}=${normalized}`);
+  }
+  return entries.sort();
+}
 
 /**
  * The engine, as far as a recording is concerned.
@@ -34,31 +94,9 @@ import { join, relative, sep } from 'node:path';
  * `cli/`, `runners/`, `github/`, `dispatch/` and the extension remain absent:
  * they decide how a result is presented or delivered, never what is recorded.
  */
-const ENGINE_PATHS = [
-  'src/analyze',
-  'src/confidence',
-  'src/detect',
-  'src/evidence',
-  'src/index',
-  'src/localize',
-  'src/plan',
-  'src/rationale',
-  'src/repo',
-  'src/upgrade',
-  'src/verification',
-  'src/analysis.ts',
-  'src/config/schema.ts',
-  'src/pipeline.ts',
-  'src/types.ts',
-  'site/scripts/capture.mjs',
-  'site/scripts/recording-validation.mjs',
-  'site/scripts/engine-fingerprint.mjs',
-  'site/src/lib/recordings.ts',
-];
-
 /** Source files whose contents can change a recording or its lifecycle contract. */
 function counts(path) {
-  return (path.endsWith('.ts') && !path.endsWith('.d.ts')) || path.endsWith('.mjs');
+  return (path.endsWith('.ts') && !path.endsWith('.d.ts')) || path.endsWith('.mjs') || path.endsWith('package-lock.json');
 }
 
 async function filesUnder(root, relPath) {
@@ -86,9 +124,14 @@ async function filesUnder(root, relPath) {
  * module is a change rather than a coincidence.
  */
 export async function engineFingerprint(repoRoot) {
-  const paths = (await Promise.all(ENGINE_PATHS.map((path) => filesUnder(repoRoot, path)))).flat().sort();
+  const paths = (await Promise.all(RECORDING_ENGINE_PATHS.map((path) => filesUnder(repoRoot, path)))).flat().sort();
 
   const hash = createHash('sha256');
+  for (const identity of await analyzerEnvironmentIdentity()) {
+    hash.update('environment\0');
+    hash.update(identity);
+    hash.update('\n');
+  }
   for (const path of paths) {
     const content = await readFile(join(repoRoot, path), 'utf8');
     hash.update(path);

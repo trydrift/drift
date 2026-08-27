@@ -515,13 +515,13 @@ function PackageRow({
             >
               Upgrade to {candidate.selected}
             </button>
-            {candidate.impactCount > 0 && (
+            {(candidate.actionableImpactCount ?? 0) > 0 && (
               <button
                 onClick={onAct}
                 className="rounded-md bg-brand px-2.5 py-1.5 text-[11px] font-medium text-brand-foreground transition-colors hover:bg-brand-200"
               >
-                Fix {candidate.impactCount} site{candidate.impactCount === 1 ? "" : "s"} in{" "}
-                {candidate.impactFiles} file{candidate.impactFiles === 1 ? "" : "s"}
+                Fix {candidate.actionableImpactCount} site{candidate.actionableImpactCount === 1 ? "" : "s"} in{" "}
+                {candidate.actionableImpactFiles ?? 0} file{candidate.actionableImpactFiles === 1 ? "" : "s"}
               </button>
             )}
             {candidate.safeLatest && candidate.safeLatest !== candidate.selected && (

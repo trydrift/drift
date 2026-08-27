@@ -89,7 +89,14 @@ const config = DriftConfigSchema.parse({
 });
 
 function runtimeFactOf(candidate: { rationale?: { maintenance: { facts: { statement: string }[] } } }) {
-  return candidate.rationale?.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
+  return candidate.rationale?.maintenance.facts.find((f) => /Node\.js/.test(f.statement));
+}
+
+/** The canonical runtime-compatibility state for a scanned candidate. */
+function runtimeStateOf(candidate: {
+  plan?: { rationale?: { runtimeAnalyses?: { state: string }[] }[] };
+}): string | undefined {
+  return (candidate.plan?.rationale ?? []).flatMap((r) => r.runtimeAnalyses ?? [])[0]?.state;
 }
 
 describe('scanUpgrades({ dirs }) preserves true workspace ownership', () => {
@@ -110,17 +117,20 @@ describe('scanUpgrades({ dirs }) preserves true workspace ownership', () => {
     assert.deepEqual([...members].sort(), ['packages/api', 'packages/web']);
 
     for (const candidate of result.candidates) {
-      const fact = runtimeFactOf(candidate);
-      assert.ok(fact, `${candidate.workspace} should have a runtime fact`);
       // The bug: worker's incompatible .nvmrc (excluded from `dirs`) leaking
-      // in as a false-global declaration would make this say "does not
-      // satisfy it: packages/worker/.nvmrc" instead.
-      assert.match(
-        fact!.statement,
-        /already satisfies it/,
+      // in as a false-global declaration would make the canonical runtime
+      // analysis 'incompatible' instead of 'compatible'.
+      assert.equal(
+        runtimeStateOf(candidate),
+        'compatible',
         `${candidate.workspace}'s own .nvmrc (24.0.0) should be judged compatible on its own, not against worker's`,
       );
-      assert.doesNotMatch(fact!.statement, /worker/);
+
+      // Maintenance states the upstream fact as plain context, and never a
+      // per-member verdict that could name worker.
+      const fact = runtimeFactOf(candidate);
+      assert.ok(fact, `${candidate.workspace} should have a runtime fact`);
+      assert.doesNotMatch(fact!.statement, /worker|does not satisfy|already satisfies it/);
       assert.equal(fact!.polarity, 'context');
 
       // worker stays known as its own member in the persisted ownership
