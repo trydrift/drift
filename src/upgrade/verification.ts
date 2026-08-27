@@ -65,9 +65,12 @@ export function applyVerification(
     const recommendation = !hasActionable && rationale.assessment.recommendation === 'manual-migration-required'
       ? (runtimeUnresolved ? 'upgrade-after-review' : 'safe-to-upgrade')
       : rationale.assessment.recommendation;
-    const reasons = hasActionable
-      ? rationale.assessment.reasons
-      : rationale.assessment.reasons.filter((reason) => !/locally affected|place(?:s)? in .* file(?:s)? .* uses an API/i.test(reason));
+    // Reasons are derived from the pre-verification assessment.  Once all
+    // actionable dispositions have been pruned, none of those local reasons
+    // is still authoritative; never recover state by parsing rendered prose.
+    // Surviving actionable dispositions retain the original structured
+    // assessment (and therefore its reasons).
+    const reasons = hasActionable ? rationale.assessment.reasons : [];
     verified.rationale = {
       ...rationale,
       assessment: { ...rationale.assessment, recommendation, reasons },
