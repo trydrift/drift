@@ -110,16 +110,23 @@ function validateRuntime(change) {
   if (!runtime || !['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(runtime.runtime)) {
     throw new Error('runtime requirement is not structured with a known runtime');
   }
-  const valid = runtime.kind === 'minimum-runtime'
-    ? /^(?:[<>=~^]*\s*)?\d+(?:\.\d+){0,3}$/.test(runtime.requirement ?? '')
-    : runtime.kind === 'unsupported-runtime-range'
-      // Either a bare dropped line normalized to its `.x` line (`16.x`), or
-      // the exact operator form upstream stated (`^16`, `~16`, `<18`,
-      // `<=16`) -- see `parseRuntimeRequirement` in analyze/rules.ts, which
-      // deliberately keeps these distinct rather than inventing a floor for
-      // every operator.
-      ? /^(?:\d+(?:\.\d+){0,2}(?:\.x)?|[<>=~^]+\d+(?:\.\d+){0,3})$/i.test(runtime.requirement ?? '')
-      : false;
+  const branchValid = (spec) =>
+    runtime.kind === 'minimum-runtime'
+      ? /^(?:[<>=~^]*\s*)?\d+(?:\.\d+){0,3}$/.test(spec)
+      : runtime.kind === 'unsupported-runtime-range'
+        // Either a bare dropped line normalized to its `.x` line (`16.x`), or
+        // the exact operator form upstream stated (`^16`, `~16`, `<18`,
+        // `<=16`) -- see `parseRuntimeRequirement` in analyze/rules.ts, which
+        // deliberately keeps these distinct rather than inventing a floor for
+        // every operator.
+        ? /^(?:\d+(?:\.\d+){0,2}(?:\.x)?|[<>=~^]+\d+(?:\.\d+){0,3})$/i.test(spec)
+        : false;
+  // A `||` disjunction ("^18.14.0 || ^20.0.0 || >=24.0.0") is valid exactly
+  // when every branch is -- semver's OR operator, preserved by
+  // `parseRuntimeDisjunction` in analyze/rules.ts. Splitting here leaves the
+  // per-branch grammar as strict as it was for a lone range.
+  const branches = String(runtime.requirement ?? '').split('||').map((spec) => spec.trim());
+  const valid = branches.every(branchValid);
   if (!valid) {
     throw new Error(`malformed runtime requirement: ${runtime.requirement ?? 'missing'}`);
   }
@@ -190,7 +197,13 @@ function validateRuntimeSites(change) {
     return;
   }
   const runtime = change.runtime.runtime;
-  const requirement = parseRequirement(change.runtime.requirement);
+  // One requirement, or a `||` disjunction of them. A concrete pin is a
+  // compatible declaration when it satisfies *any* branch; the tripwire below
+  // fires only when the engine attached an impact site to such a pin anyway.
+  const requirementBranches = String(change.runtime.requirement ?? '')
+    .split('||')
+    .map((spec) => parseRequirement(spec.trim()));
+  const requirementParsed = requirementBranches.every(Boolean);
   for (const site of change.sites ?? []) {
     const file = site.file.toLowerCase();
     const base = file.split('/').pop();
@@ -229,7 +242,7 @@ function validateRuntimeSites(change) {
     const exactPin = !/[<>=~^*x|]/i.test(excerpt)
       ? excerpt.match(/\b\d+(?:\.\d+){0,3}\b/)?.[0]
       : undefined;
-    if (exactPin && requirement && satisfies(exactPin, requirement)) {
+    if (exactPin && requirementParsed && requirementBranches.some((branch) => satisfies(exactPin, branch))) {
       throw new Error(`compatible ${runtime} declaration was reported as an impact at ${site.file}`);
     }
   }
