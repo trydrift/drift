@@ -951,6 +951,10 @@ function scopedTo<T extends { path: string; content: string }>(
 function ciAppliesToMember(content: string, member: string | undefined): boolean {
   if (!member) return true;
   const normalized = member.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  // A workflow with no member selector is repository-wide by construction.
+  // Once it names a working directory or path, only that named member owns
+  // the runtime evidence.
+  if (!/(?:working-directory|paths?):/i.test(content)) return true;
   return new RegExp(`(?:working-directory|paths?|run):[^\\n]*${normalized.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`, 'i').test(content);
 }
 

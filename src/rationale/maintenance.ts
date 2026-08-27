@@ -64,6 +64,8 @@ export interface MaintenanceInput {
    * satisfies the floor while maintenance tells the reader to go check it).
    */
   analyzedRuntimeRequirements?: readonly { runtime: string; requirement: string }[];
+  /** Legacy name-only input; retained conservatively for direct callers. */
+  analyzedRuntimes?: readonly string[];
 }
 
 /** `VersionInfo.runtime.name` is a display label; the analysis speaks in RuntimeName. */
@@ -138,7 +140,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     targetVersion,
     input.repoRuntime ?? [],
     input.pythonRuntime ?? [],
-    input.analyzedRuntimeRequirements ?? [],
+    input.analyzedRuntimeRequirements ?? (input.analyzedRuntimes ?? []).map((runtime) => ({ runtime, requirement: '' })),
   );
   if (runtimeChange) facts.push(runtimeChange);
 
@@ -189,7 +191,7 @@ function describeRuntimeChange(
   // analysis, and a second opinion here is only ever noise or a contradiction.
   const canonicalName = RUNTIME_DISPLAY_TO_NAME[after.name];
   if (canonicalName && analyzedRuntimeRequirements.some((analysis) =>
-    analysis.runtime === canonicalName && equivalentRuntimeRequirement(analysis.requirement, after.requirement))) {
+    analysis.runtime === canonicalName && (!analysis.requirement || equivalentRuntimeRequirement(analysis.requirement, after.requirement)))) {
     return { statement, concerning: false, polarity: 'context' };
   }
 
