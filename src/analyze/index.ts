@@ -97,8 +97,22 @@ function analyzeDependency(
       out.push(...fromComputedEvidence(record));
       continue;
     }
-    if (record.source === 'semver-heuristic' || record.source === 'registry-metadata') {
+    if (record.source === 'semver-heuristic') {
       continue; // Context, not a specific breaking change.
+    }
+    if (record.source === 'registry-metadata') {
+      // Registry metadata is context — with one exception. A raised or
+      // introduced runtime floor (npm `engines`, `requires-python`, the `go`
+      // directive, Cargo `rust-version`) is a canonical runtime requirement,
+      // and must produce the same `runtime-requirement` breaking change a
+      // changelog sentence would so it flows through the one
+      // `RuntimeRequirementAnalysis` pipeline rather than a second checker.
+      out.push(
+        ...fromProseEvidence(record, dependency, workspace).filter(
+          (finding) => finding.kind === 'runtime-requirement',
+        ),
+      );
+      continue;
     }
     out.push(...fromProseEvidence(record, dependency, workspace));
   }

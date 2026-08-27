@@ -706,7 +706,7 @@ describe('checking this repository against a raised Python requirement', () => {
   });
 });
 
-describe('the runtime-requirement maintenance fact', () => {
+describe('the runtime-requirement maintenance fact (#110: states the upstream fact only)', () => {
   const base = {
     name: 'pkg',
     ecosystem: 'npm',
@@ -725,121 +725,71 @@ describe('the runtime-requirement maintenance fact', () => {
     withdrawn: null,
   });
 
-  test('a repository that already clears the new floor is told so, not asked to check', () => {
+  // Maintenance no longer runs its own Node/Python compatibility check. It
+  // states the upstream fact as plain context; the repository verdict —
+  // satisfied, violated, partial, unknown, and whether it blocks — belongs to
+  // the canonical RuntimeRequirementAnalysis that every runtime metadata bump
+  // now flows through.
+
+  test('a changed floor is stated as context, never a repository verdict', () => {
     const result = assessMaintenance({
       ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=24.0.0' }],
+      currentVersion: version('>=14'),
+      targetVersion: version('>=18'),
     });
     const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
+    assert.ok(fact);
+    assert.equal(fact.statement, 'The required Node.js version changed from >=14 to >=18.');
+    assert.equal(fact.polarity, 'context');
     assert.equal(fact.concerning, false);
-    assert.match(fact.statement, /already satisfies it \(package\.json\)/);
+    assert.doesNotMatch(fact.statement, /satisfies it|does not satisfy|Check this against/);
   });
 
-  test('a repository that falls short is told which file, and it is concerning', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.18.0' }],
-    });
-    const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.match(fact.statement, /does not satisfy it: \.nvmrc/);
-  });
-
-  test('with nothing gathered, it falls back to asking the reader to check', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-    });
-    const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
-  });
-
-  test('an installed version with no runtime requirement is still checked when the target introduces one (Node incompatible)', () => {
-    // Regression: describeRuntimeChange() used to return immediately when
-    // `before` was undefined, before ever calling checkNodeCompatibility --
-    // so a newly-introduced floor was never verified against this
-    // repository's own declaration, even when Drift had gathered one.
+  test('an introduced floor is stated as "The target version requires ..."', () => {
     const result = assessMaintenance({
       ...base,
       currentVersion: { ...version('unused', 'Node.js'), runtime: null },
       targetVersion: version('>=22', 'Node.js'),
+    });
+    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
+    assert.ok(fact);
+    assert.equal(fact.statement, 'The target version requires Node.js >=22.');
+    assert.equal(fact.polarity, 'context');
+    assert.equal(fact.concerning, false);
+  });
+
+  test('the repository declaration is never consulted, whatever it says', () => {
+    const shortfall = assessMaintenance({
+      ...base,
+      currentVersion: version('>=14'),
+      targetVersion: version('>=22'),
       repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.0.0' }],
     });
-    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.equal(fact.polarity, 'blocks');
-    assert.match(fact.statement, /does not satisfy it: \.nvmrc/);
+    const clears = assessMaintenance({
+      ...base,
+      currentVersion: version('>=14'),
+      targetVersion: version('>=22'),
+      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '24.0.0' }],
+    });
+    for (const result of [shortfall, clears]) {
+      const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
+      assert.ok(fact);
+      assert.equal(fact.polarity, 'context');
+      assert.equal(fact.concerning, false);
+      assert.doesNotMatch(fact.statement, /\.nvmrc|satisfies|does not satisfy|Check this/);
+    }
   });
 
-  test('an installed version with no runtime requirement, target introduces a floor this repository already meets (Node compatible)', () => {
+  test('an unchanged floor produces no fact', () => {
     const result = assessMaintenance({
       ...base,
-      currentVersion: { ...version('unused', 'Node.js'), runtime: null },
-      targetVersion: version('>=22', 'Node.js'),
-      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '22.6.0' }],
+      currentVersion: version('>=18'),
+      targetVersion: version('>=18'),
     });
-    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
-    assert.equal(fact.concerning, false);
-    assert.equal(fact.polarity, 'context');
-    assert.match(fact.statement, /already satisfies it \(\.nvmrc\)/);
+    assert.equal(result.facts.some((f) => /Node\.js/.test(f.statement)), false);
   });
 
-  test('an installed version with no runtime requirement is checked when the target introduces one (Python incompatible)', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: { ...version('unused', 'Python'), runtime: null },
-      targetVersion: version('>=3.11', 'Python'),
-      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.9' }],
-    });
-    const fact = result.facts.find((f) => /requires Python/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.equal(fact.polarity, 'blocks');
-    assert.match(fact.statement, /does not satisfy it: \.python-version/);
-  });
-
-  test('an installed version with no runtime requirement, target introduces a Python floor this repository already meets', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: { ...version('unused', 'Python'), runtime: null },
-      targetVersion: version('>=3.11', 'Python'),
-      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.11' }],
-    });
-    const fact = result.facts.find((f) => /requires Python/.test(f.statement));
-    assert.equal(fact.concerning, false);
-    assert.equal(fact.polarity, 'context');
-  });
-
-  test('runtime facts verified as incompatible or partial carry polarity blocks; verified-compatible and unverified do not', () => {
-    const incompatible = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.18.0' }],
-    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(incompatible.polarity, 'blocks');
-
-    const partial = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=22.6.0' }],
-    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(partial.polarity, 'blocks');
-
-    const unverified = assessMaintenance({
-      ...base,
-      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
-      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
-    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
-    assert.equal(unverified.polarity, 'context');
-  });
-
-  test("a non-Node runtime bump is never checked against this repository's Node declarations", () => {
+  test('a non-Node runtime bump is stated the same plain way', () => {
     const result = assessMaintenance({
       ...base,
       currentVersion: version('>=1.20', 'Go'),
@@ -847,22 +797,12 @@ describe('the runtime-requirement maintenance fact', () => {
       repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=22.13.0' }],
     });
     const fact = result.facts.find((f) => /Go version changed/.test(f.statement));
-    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
+    assert.ok(fact);
+    assert.equal(fact.statement, 'The required Go version changed from >=1.20 to >=1.23.');
+    assert.equal(fact.polarity, 'context');
   });
 
-  test('a raised Python floor is verified automatically, the same way Node is', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('>=3.8', 'Python'),
-      targetVersion: version('>=3.9', 'Python'),
-      pythonRuntime: [{ file: 'pyproject.toml', line: 3, requirement: '>=3.11' }],
-    });
-    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
-    assert.equal(fact.concerning, false);
-    assert.match(fact.statement, /already satisfies it \(pyproject\.toml\)/);
-  });
-
-  test('a Python floor this repository falls short of is concerning, and names the file', () => {
+  test('a Python bump is stated as context, not checked against declarations', () => {
     const result = assessMaintenance({
       ...base,
       currentVersion: version('>=3.6', 'Python'),
@@ -870,58 +810,9 @@ describe('the runtime-requirement maintenance fact', () => {
       pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.6' }],
     });
     const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
-    assert.equal(fact.concerning, true);
-    assert.match(fact.statement, /does not satisfy it: \.python-version/);
-  });
-
-  test('a Python bump is never checked against this repository’s Node declarations', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: version('>=3.8', 'Python'),
-      targetVersion: version('>=3.9', 'Python'),
-      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=3.9' }],
-    });
-    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
-    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
-  });
-
-  // When the canonical RuntimeRequirementAnalysis already ruled on the runtime,
-  // maintenance states the upstream fact and defers the repository verdict.
-  // The report has one runtime-compatibility authority, so there is no
-  // "already satisfies it" / "does not satisfy it" / "check this" from here
-  // that could agree or disagree with the canonical statement.
-  for (const [label, requirement, declared] of [
-    ['compatible', '>=20', '22.0.0'],
-    ['incompatible', '>=22', '18.0.0'],
-    ['unknown', '>=22', 'lts/hydrogen'],
-  ]) {
-    test(`a canonically ${label} runtime leaves maintenance stating only the upstream fact`, () => {
-      const result = assessMaintenance({
-        ...base,
-        currentVersion: { ...version('>=14'), runtime: null },
-        targetVersion: version(requirement),
-        repoRuntime: [{ file: '.nvmrc', line: 1, requirement: declared }],
-        analyzedRuntimes: ['node'],
-      });
-      const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
-      assert.ok(fact, 'the upstream fact is still stated');
-      assert.equal(fact.statement, `The target version requires Node.js ${requirement}.`);
-      assert.doesNotMatch(fact.statement, /satisfies it|does not satisfy|Check this against/);
-      assert.equal(fact.concerning, false);
-      assert.equal(fact.polarity, 'context');
-    });
-  }
-
-  test('a runtime the canonical analysis did not cover still gets the maintenance check', () => {
-    const result = assessMaintenance({
-      ...base,
-      currentVersion: { ...version('>=3.8', 'Python'), runtime: { name: 'Python', requirement: '>=3.8' } },
-      targetVersion: version('>=3.11', 'Python'),
-      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.9' }],
-      analyzedRuntimes: ['node'],
-    });
-    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
-    assert.match(fact.statement, /does not satisfy it: \.python-version/);
-    assert.equal(fact.polarity, 'blocks');
+    assert.ok(fact);
+    assert.equal(fact.polarity, 'context');
+    assert.equal(fact.concerning, false);
+    assert.doesNotMatch(fact.statement, /\.python-version|satisfies|does not satisfy|Check this/);
   });
 });

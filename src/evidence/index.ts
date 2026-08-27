@@ -12,7 +12,7 @@ import {
   parseChangelogSections,
   sectionsBetween,
 } from './changelog.js';
-import { fetchRegistryInfo } from './registry.js';
+import { fetchRegistryInfo, fetchVersionInfo } from './registry.js';
 import { fetchReleaseNotes } from './releases.js';
 import {
   computeSpecDiff,
@@ -195,7 +195,12 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
 
   if (!change.from || !change.to) return tag(out);
 
+  const currentVersionPending = fetchVersionInfo(change.name, change.ecosystem, change.from).catch(() => null);
   const registry = await fetchRegistryInfo(change.name, change.ecosystem, change.to);
+  const [currentVersion, targetVersion] = await Promise.all([
+    currentVersionPending,
+    fetchVersionInfo(change.name, change.ecosystem, change.to).catch(() => null),
+  ]);
 
   if (registry?.deprecated) {
     out.push({
@@ -205,6 +210,26 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
       url: registry.homepage ?? undefined,
       title: `${change.name}@${change.to} is deprecated`,
       content: registry.deprecated,
+      weight: WEIGHTS['registry-metadata'],
+    });
+  }
+
+  // A raised or newly-introduced runtime floor declared in the target's own
+  // registry metadata (npm `engines`, PyPI `requires-python`, the `go`
+  // directive, Cargo `rust-version`) is a canonical runtime requirement — the
+  // same kind of fact a changelog sentence produces. Emitted here as evidence
+  // so `analyze` turns it into a `runtime-requirement` breaking change that
+  // flows through the one `RuntimeRequirementAnalysis` pipeline. Maintenance
+  // must not run a second compatibility check of its own against it.
+  const runtimeFloor = raisedRuntimeFloor(currentVersion?.runtime ?? null, targetVersion?.runtime ?? null);
+  if (runtimeFloor) {
+    out.push({
+      id: stableId('ev', change.name, 'runtime-metadata', change.to, runtimeFloor.runtime, runtimeFloor.requirement),
+      source: 'registry-metadata',
+      dependency: change.name,
+      url: registry?.homepage ?? undefined,
+      title: `${change.name}@${change.to} requires ${runtimeFloor.runtime} ${runtimeFloor.requirement}`,
+      content: `${change.name}@${change.to} requires ${runtimeFloor.runtime} ${runtimeFloor.requirement}.`,
       weight: WEIGHTS['registry-metadata'],
     });
   }
@@ -349,6 +374,61 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
 /** Gather evidence tied only to the published dependency upgrade. */
 export async function gatherDependencyEvidence(change: DependencyChange, ctx: EvidenceContext): Promise<Evidence[]> {
   return gatherForChange(change, ctx);
+}
+
+/**
+ * `VersionInfo.runtime.name` as each registry reports it, mapped to the display
+ * form the runtime prose grammar (`analyze/rules.ts`) accepts, so a synthesized
+ * sentence is parsed by exactly the same rule a changelog line is.
+ */
+const RUNTIME_METADATA_NAMES: Readonly<Record<string, string>> = {
+  node: 'Node.js',
+  'node.js': 'Node.js',
+  nodejs: 'Node.js',
+  python: 'Python',
+  go: 'Go',
+  ruby: 'Ruby',
+  java: 'Java',
+  rust: 'Rust',
+};
+
+/**
+ * The runtime floor a target version *introduces* or *raises* over the
+ * installed one, as a `{ runtime, requirement }` pair, or `null` when there is
+ * no such change to state.
+ *
+ * Whether *this repository* actually satisfies the floor is deliberately not
+ * decided here: that verdict has one owner, `RuntimeRequirementAnalysis`, and
+ * this function only surfaces the upstream fact for it to answer.
+ */
+export function raisedRuntimeFloor(
+  current: { name: string; requirement: string } | null,
+  target: { name: string; requirement: string } | null,
+): { runtime: string; requirement: string } | null {
+  if (!target?.requirement) return null;
+  const runtime = RUNTIME_METADATA_NAMES[target.name.toLowerCase()];
+  if (!runtime) return null;
+  const requirement = target.requirement.trim();
+  if (!requirement) return null;
+
+  const sameRuntime = current && RUNTIME_METADATA_NAMES[current.name.toLowerCase()] === runtime;
+  if (!sameRuntime) return { runtime, requirement };
+
+  // Same runtime on both sides: only a genuinely raised floor is news. An
+  // unchanged or lowered minimum is not a breaking condition.
+  const floor = (spec: string) => {
+    const digits = /(\d+(?:\.\d+)*)/.exec(spec)?.[1];
+    return digits ? digits.split('.').map((n) => Number(n)) : null;
+  };
+  const [before, after] = [floor(current!.requirement), floor(requirement)];
+  if (!before || !after) return null;
+  for (let i = 0; i < Math.max(before.length, after.length); i++) {
+    const a = after[i] ?? 0;
+    const b = before[i] ?? 0;
+    if (a > b) return { runtime, requirement };
+    if (a < b) return null;
+  }
+  return null;
 }
 
 /**

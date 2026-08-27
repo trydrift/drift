@@ -11,6 +11,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { matchProse, normalizeRuntimeOperator, RUNTIME_RANGE_GRAMMARS } from '../dist/analyze/index.js';
+import { raisedRuntimeFloor } from '../dist/evidence/index.js';
 import {
   checkRuntimeCompatibility,
   checkUnsupportedRuntimeRange,
@@ -471,6 +472,48 @@ describe('runtime compatibility: all four states', () => {
       assert.equal(worstRuntimeState(states.map((state) => ({ state })) as never), expected, states.join(' + '));
     }
     assert.equal(worstRuntimeState([]), undefined, 'no requirement is not the same fact as a satisfied one');
+  });
+});
+
+describe('#110: registry runtime metadata becomes a canonical runtime requirement', () => {
+  test('raisedRuntimeFloor only fires on an introduced or genuinely raised floor', () => {
+    assert.deepEqual(raisedRuntimeFloor(null, { name: 'Node.js', requirement: '>=20' }), {
+      runtime: 'Node.js',
+      requirement: '>=20',
+    });
+    assert.deepEqual(
+      raisedRuntimeFloor({ name: 'Node.js', requirement: '>=16' }, { name: 'Node.js', requirement: '>=20' }),
+      { runtime: 'Node.js', requirement: '>=20' },
+    );
+    assert.equal(
+      raisedRuntimeFloor({ name: 'Node.js', requirement: '>=20' }, { name: 'Node.js', requirement: '>=20' }),
+      null,
+      'unchanged floor is not news',
+    );
+    assert.equal(
+      raisedRuntimeFloor({ name: 'Node.js', requirement: '>=20' }, { name: 'Node.js', requirement: '>=16' }),
+      null,
+      'a lowered floor is not a breaking condition',
+    );
+  });
+
+  test('target-metadata-only floors parse into a runtime-requirement for every supported family', () => {
+    for (const [display, canonical, requirement] of [
+      ['Node.js', 'node', '>=20'],
+      ['Python', 'python', '>=3.11'],
+      ['Ruby', 'ruby', '>=3.2'],
+      ['Go', 'go', '>=1.23'],
+      ['Java', 'java', '>=17'],
+      ['Rust', 'rust', '>=1.75'],
+    ] as const) {
+      const floor = raisedRuntimeFloor(null, { name: display, requirement });
+      assert.ok(floor, `${display} floor recognized`);
+      const [match] = matchProse(`pkg@2.0.0 requires ${floor!.runtime} ${floor!.requirement}.`);
+      assert.ok(match, `${display} sentence parses`);
+      assert.equal(match.kind, 'runtime-requirement');
+      assert.equal(match.runtime?.runtime, canonical);
+      assert.equal(match.runtime?.requirement, requirement);
+    }
   });
 });
 
