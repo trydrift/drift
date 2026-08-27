@@ -14,7 +14,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { isExactSemVer } from './semver-utils.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -24,7 +24,7 @@ export function isValidVersion(version) {
 }
 
 function replaceVersionProperty(source, currentVersion, nextVersion, fromIndex = 0) {
-  const property = /("version"\s*:\s*)"([^"]*)"/g;
+  const property = /(\"version\"\s*:\s*)\"([^\"]*)\"/g;
   property.lastIndex = fromIndex;
 
   for (let match = property.exec(source); match; match = property.exec(source)) {
@@ -38,7 +38,7 @@ function replaceVersionProperty(source, currentVersion, nextVersion, fromIndex =
     };
   }
 
-  throw new Error(`Could not find version property "${currentVersion}" to update.`);
+  throw new Error(`Could not find version property \"${currentVersion}\" to update.`);
 }
 
 export function updateManifestText(source, version) {
@@ -49,7 +49,7 @@ export function updateManifestText(source, version) {
 export function updateLockfileText(source, version) {
   const lockfile = JSON.parse(source);
   if (typeof lockfile.packages?.['']?.version !== 'string') {
-    throw new Error('Lockfile is missing packages[""].version.');
+    throw new Error('Lockfile is missing packages[\"\"].version.');
   }
 
   const root = replaceVersionProperty(source, lockfile.version, version);
@@ -66,7 +66,12 @@ function updateJsonFile(path, update, version) {
   writeFileSync(path, update(source, version));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+function isDirectExecution() {
+  if (!process.argv[1]) return false;
+  return resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+}
+
+if (isDirectExecution()) {
   const version = process.argv[2];
   if (!version) {
     console.error('Usage: node scripts/set-version.mjs <version>');
@@ -74,7 +79,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   }
   if (!isValidVersion(version)) {
-    console.error(`"${version}" is not a valid semantic version (expected e.g. 0.1.1 or 0.1.1-beta.0).`);
+    console.error(`\"${version}\" is not a valid semantic version (expected e.g. 0.1.1 or 0.1.1-beta.0).`);
     process.exit(1);
   }
 
