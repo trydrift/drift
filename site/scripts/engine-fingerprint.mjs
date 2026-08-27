@@ -23,9 +23,29 @@
  */
 
 import { createHash } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { RECORDING_ENGINE_PATHS } from './recording-engine-manifest.mjs';
+import { RECORDING_ANALYZER_ENVIRONMENT } from './analyzer-environment.mjs';
+
+const execFileAsync = promisify(execFile);
+
+async function analyzerEnvironmentIdentity() {
+  const entries = [];
+  for (const [tool, declared] of Object.entries(RECORDING_ANALYZER_ENVIRONMENT)) {
+    const executable = tool === 'python' ? 'python3' : tool;
+    try {
+      const { stdout, stderr } = await execFileAsync(executable, ['--version'], { timeout: 5000 });
+      const actual = `${stdout}${stderr}`.trim();
+      entries.push(`${tool}=${declared};actual=${actual}`);
+    } catch (error) {
+      entries.push(`${tool}=${declared};actual=unavailable`);
+    }
+  }
+  return entries.sort();
+}
 
 /**
  * The engine, as far as a recording is concerned.
@@ -68,6 +88,11 @@ export async function engineFingerprint(repoRoot) {
   const paths = (await Promise.all(RECORDING_ENGINE_PATHS.map((path) => filesUnder(repoRoot, path)))).flat().sort();
 
   const hash = createHash('sha256');
+  for (const identity of await analyzerEnvironmentIdentity()) {
+    hash.update('environment\0');
+    hash.update(identity);
+    hash.update('\n');
+  }
   for (const path of paths) {
     const content = await readFile(join(repoRoot, path), 'utf8');
     hash.update(path);
