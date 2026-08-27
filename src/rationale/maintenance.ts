@@ -232,4 +232,3 @@ export function describeAge(iso: string, now: Date): string {
   if (months < 24) return `about ${months} months ago`;
   return `about ${Math.round(days / 365.25)} years ago`;
 }
-
