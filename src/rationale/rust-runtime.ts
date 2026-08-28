@@ -77,8 +77,16 @@ function normalizeExact(spec: string): string | null {
 /* Dated-nightly resolution                                            */
 /* ------------------------------------------------------------------ */
 
-/** Per-process memo. `null` marks a lookup that failed this run (stays retryable). */
-const nightlyMemo = new Map<string, string | null>();
+/**
+ * Per-process memo of *successful* resolutions only.
+ *
+ * A transient failure (a 5xx from the manifest host, a dropped connection) is
+ * deliberately never recorded here: memoizing `null` made one bad moment mark a
+ * dated nightly unresolvable for the rest of the process, which contradicts the
+ * retryable-failure contract. The immutable manifest means a success can be
+ * kept forever; a failure earns a fresh attempt next time.
+ */
+const nightlyMemo = new Map<string, string>();
 
 const MANIFEST_URL = (date: string): string =>
   `https://static.rust-lang.org/dist/${date}/channel-rust-nightly.toml`;
@@ -91,7 +99,8 @@ const diskKey = (date: string): string => `rust-nightly-version:v1:${date}`;
  * network failure, which the caller keeps as `unknown` rather than guessing.
  */
 export async function resolveDatedNightly(date: string): Promise<string | null> {
-  if (nightlyMemo.has(date)) return nightlyMemo.get(date) ?? null;
+  const memoized = nightlyMemo.get(date);
+  if (memoized) return memoized;
 
   const cached = await readComputed<{ version: string }>(diskKey(date));
   if (cached?.version) {
@@ -107,8 +116,12 @@ export async function resolveDatedNightly(date: string): Promise<string | null> 
   }
   const version = toml ? rustcVersionFromManifest(toml) : null;
 
-  nightlyMemo.set(date, version);
-  if (version) await writeComputed(diskKey(date), { version });
+  // Only a real resolution is remembered. A `null` here is a transient failure
+  // — not a fact about the date — and must not block a later retry.
+  if (version) {
+    nightlyMemo.set(date, version);
+    await writeComputed(diskKey(date), { version });
+  }
   return version;
 }
 

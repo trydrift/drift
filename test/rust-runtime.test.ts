@@ -93,6 +93,30 @@ describe('resolveDatedNightly', () => {
     globalThis.fetch = (async () => new Response('nope', { status: 503 })) as typeof fetch;
     assert.equal(await resolveDatedNightly('2020-01-01'), null);
   });
+
+  test('a transient failure is not memoized — a later attempt still resolves', async () => {
+    let firstLookupDone = false;
+    globalThis.fetch = (async () => {
+      // Every attempt of the first resolveDatedNightly call fails; every attempt
+      // after it succeeds. (`resolveDatedNightly` passes `retries: 1`.)
+      return firstLookupDone
+        ? new Response(MANIFEST('1.88.0-nightly (z 2026-03-03)'), { status: 200 })
+        : new Response('', { status: 503 });
+    }) as typeof fetch;
+
+    assert.equal(await resolveDatedNightly('2026-03-03'), null, 'the first lookup fails');
+    firstLookupDone = true;
+
+    // A later resolution attempt (the HTTP layer's own transient-null memory
+    // entry is out of scope here; this asserts the nightly memo itself does not
+    // pin the failure).
+    clearHttpCache();
+    assert.equal(
+      await resolveDatedNightly('2026-03-03'),
+      '1.88.0',
+      'the retry hits the network again and returns the real rustc version, not a stuck null',
+    );
+  });
 });
 
 describe('rust runtime compatibility', () => {
