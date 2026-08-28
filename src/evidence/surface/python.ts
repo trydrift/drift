@@ -702,6 +702,7 @@ const PY_KINDS: Record<string, SurfaceKind> = {
   function: 'function',
   class: 'class',
   variable: 'variable',
+  unknown: 'unknown',
 };
 
 interface PythonSymbol {
@@ -709,6 +710,13 @@ interface PythonSymbol {
   kind: string;
   signature: string;
   members?: string[];
+  /**
+   * The helper proved this name is public (explicitly imported and listed in
+   * `__all__`) but could not resolve its declaration from the parsed package —
+   * the target is re-exported from a third party, or built in a way a static
+   * read cannot follow. Existence is known; `kind`/`signature` are not.
+   */
+  shapeUnknown?: boolean;
 }
 
 /** Read the JSON the helper script emits into the shared surface shape. */
@@ -724,6 +732,22 @@ export function parsePythonSurface(json: string): SurfaceApi | null {
   const api: SurfaceApi = new Map();
   for (const symbol of parsed) {
     if (!symbol?.name) continue;
+    // A re-export whose target shape could not be resolved: existence is real,
+    // the rest is a placeholder. `diffSurfaces` keys off `shapeUnknown`, never
+    // off `kind`, for these — the `'unknown'` kind is only carried so a finding
+    // that does surface (the symbol going missing entirely) does not claim a
+    // fabricated one.
+    if (symbol.shapeUnknown) {
+      api.set(symbol.name, {
+        name: symbol.name,
+        kind: 'unknown',
+        signature: symbol.name,
+        members: [],
+        requiredMembers: [],
+        shapeUnknown: true,
+      });
+      continue;
+    }
     api.set(symbol.name, {
       name: symbol.name,
       kind: PY_KINDS[symbol.kind] ?? 'variable',
@@ -951,8 +975,9 @@ def package_roots(root):
         roots = [(os.path.dirname(root), {os.path.basename(root)}, set())]
     return roots
 
+package_root_info = package_roots(root)
 sources = {}
-for import_root, package_names, module_names in package_roots(root):
+for import_root, package_names, module_names in package_root_info:
     for base, dirs, files in os.walk(import_root):
         rel = os.path.relpath(base, import_root).replace(os.sep, '/')
         top = '' if rel == '.' else rel.split('/')[0]
@@ -970,7 +995,42 @@ for import_root, package_names, module_names in package_roots(root):
             if key in sources and name.endswith('.py'): continue
             sources[key] = (path, import_root)
 
-symbols = {}
+# Public-surface extraction is two passes, not one. A package commonly moves
+# an implementation into a private module and keeps exporting it from the
+# original public one (\`from ._impl import Foo\` + \`__all__ = ["Foo"]\`). A
+# single-file pass loses \`Foo\` from the new surface and reports a false
+# removal. So every module is indexed first (locals, \`__all__\`, and import
+# bindings), then re-exports are resolved against that whole-package index --
+# \`from ._impl import Foo\` cannot be followed until \`_impl\` has also been read.
+# Nothing is imported or executed; this stays an AST-only read.
+
+def is_package_init(path):
+    return os.path.basename(path) in ('__init__.py', '__init__.pyi')
+
+def resolve_relative(module, is_pkg, level, target):
+    # Python's own rule: inside a non-package module 'pkg.sub.mod' a single
+    # leading dot means 'pkg.sub'; inside a package '__init__' it means the
+    # package itself. Each further dot strips one more trailing component.
+    if level == 0:
+        return target or None
+    parts = module.split('.') if module else []
+    base = parts[:] if is_pkg else parts[:-1]
+    strip = level - 1
+    if strip > len(base):
+        return None
+    if strip:
+        base = base[:len(base) - strip]
+    if target:
+        base = base + target.split('.')
+    return '.'.join(base) if base else None
+
+def local_symbol(node):
+    if isinstance(node, ast.ClassDef):
+        return {'decl': node.name, 'kind': 'class', 'signature': signature(node), 'members': sorted(members(node))}
+    return {'decl': node.name, 'kind': 'function', 'signature': signature(node), 'members': []}
+
+# ---- Stage 1: index every module's declarations and import bindings ----
+index = {}
 for path, import_root in sorted(sources.values()):
     try:
         with open(path, 'r', encoding='utf-8', errors='replace') as handle:
@@ -978,30 +1038,155 @@ for path, import_root in sorted(sources.values()):
     except Exception:
         continue
 
-    exported = declared_all(tree)
     module = module_name(import_root, path)
-    prefix = '' if module in ('', '__init__', '__main__') else module + '.'
+    is_pkg = is_package_init(path)
+    entry = index.get(module)
+    if entry is None:
+        entry = {'all': None, 'has_all': False, 'locals': {}, 'imports': {}, 'stars': []}
+        index[module] = entry
+
+    declared = declared_all(tree)
+    if declared is not None:
+        entry['all'] = declared
+        entry['has_all'] = True
 
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            name = node.name
-            kind = 'class' if isinstance(node, ast.ClassDef) else 'function'
-            body = members(node) if isinstance(node, ast.ClassDef) else []
+            entry['locals'].setdefault(node.name, local_symbol(node))
         elif isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
-            name, kind, body = node.targets[0].id, 'variable', []
+            entry['locals'].setdefault(node.targets[0].id, {'decl': node.targets[0].id, 'kind': 'variable', 'signature': None, 'members': []})
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-            name, kind, body = node.target.id, 'variable', []
-        else:
-            continue
+            entry['locals'].setdefault(node.target.id, {'decl': node.target.id, 'kind': 'variable', 'signature': None, 'members': []})
+        elif isinstance(node, ast.ImportFrom):
+            target_mod = resolve_relative(module, is_pkg, node.level, node.module)
+            for alias in node.names:
+                if alias.name == '*':
+                    if target_mod:
+                        entry['stars'].append(target_mod)
+                    continue
+                entry['imports'][alias.asname or alias.name] = (target_mod, alias.name)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                # 'import a.b as c' binds 'c' to the module a.b; a plain
+                # 'import a.b' binds the top-level name 'a'. Only the aliased
+                # form can be a name a later '__all__' re-exports, and only as
+                # a module -- no symbol shape -- recorded here as (module, None).
+                if alias.asname:
+                    entry['imports'][alias.asname] = (alias.name, None)
 
-        if exported is not None:
-            if name not in exported: continue
-        elif not public(name):
-            continue
+# ---- Stage 2: resolve public re-exports against the whole-package index ----
+# Follow an import binding to the declaration it ultimately names, across
+# re-export chains, with cycle detection. The outcome is not a single None:
+# the four cases below mean genuinely different things for the public surface.
+#   ('resolved', <local-symbol dict>) -- a concrete declaration was reached.
+#   ('external', None) -- the chain leaves the parsed package (an unparsed or
+#       third-party module, or a bound module object with no symbol shape).
+#       Existence is only known when the public module imported the name
+#       explicitly; shape is not.
+#   ('missing', None) -- the chain stayed inside parsed modules and the symbol
+#       does not exist in any of them. The re-export is broken; the public
+#       name must be omitted so a prior real export can become 'export-removed'.
+#   ('cycle', None) -- cycle detection stopped the walk before any concrete
+#       declaration. A cycle proves nothing exists; treated like 'missing'.
+def resolve(module, name, seen):
+    if not module:
+        return ('external', None)
+    if (module, name) in seen:
+        return ('cycle', None)
+    seen = seen | {(module, name)}
+    entry = index.get(module)
+    if entry is None:
+        # A target module absent from the index is only 'external' when its
+        # top-level name is genuinely foreign. A name this distribution owns
+        # (see owned_tops) that is missing from the parsed sources is a module
+        # the new archive dropped -- 'missing', so a broken internal re-export
+        # yields export-removed rather than being masked as shapeUnknown.
+        return ('missing', None) if module.split('.')[0] in owned_tops else ('external', None)
+    local = entry['locals'].get(name)
+    if local is not None:
+        return ('resolved', local)
+    if name in entry['imports']:
+        tmod, tname = entry['imports'][name]
+        if tname is None:
+            return ('external', None)
+        return resolve(tmod, tname, seen)
+    outcome = ('missing', None)
+    for star_mod in entry['stars']:
+        status, shape = resolve(star_mod, name, seen)
+        if status == 'resolved':
+            return (status, shape)
+        if status == 'external':
+            outcome = ('external', None)
+        elif status == 'cycle' and outcome[0] == 'missing':
+            outcome = ('cycle', None)
+    return outcome
 
+# The top-level import names this distribution owns: every package/module root
+# package_roots() discovered, plus the first component of every parsed module.
+# resolve() uses this to tell a dropped internal module ('missing') from a
+# third-party dependency ('external') when a re-export target is not in the
+# index -- derived from the sources already parsed, not a second package guess.
+owned_tops = set()
+for _ir, _package_names, _module_names in package_root_info:
+    owned_tops |= set(_package_names) | set(_module_names)
+for _module in index:
+    if _module and _module not in ('__init__', '__main__'):
+        owned_tops.add(_module.split('.')[0])
+
+symbols = {}
+for module, entry in index.items():
+    prefix = '' if module in ('', '__init__', '__main__') else module + '.'
+    exported = entry['all'] if entry['has_all'] else None
+    names = list(exported) if exported is not None else [n for n in entry['locals'] if public(n)]
+
+    for name in names:
+        if not isinstance(name, str):
+            continue
         key = prefix + name
-        if key not in symbols:
-            symbols[key] = {'name': key, 'kind': kind, 'signature': signature(node) if kind != 'variable' else name, 'members': sorted(body)}
+        if key in symbols:
+            continue
+
+        shape = entry['locals'].get(name)
+        if shape is None and exported is not None:
+            # A name '__all__' promises that this module does not itself define.
+            status = 'missing'
+            if name in entry['imports']:
+                tmod, tname = entry['imports'][name]
+                status, shape = resolve(tmod, tname, set()) if tname is not None else ('external', None)
+            if status not in ('resolved', 'external'):
+                for star_mod in entry['stars']:
+                    star_status, star_shape = resolve(star_mod, name, set())
+                    if star_status == 'resolved':
+                        status, shape = star_status, star_shape
+                        break
+                    if star_status == 'external':
+                        status = 'external'
+            if status == 'external' and name in entry['imports']:
+                # Proven public -- explicitly imported and in '__all__' -- but
+                # the target declaration is outside the parsed package. Existence
+                # is known, shape is not: never a removal.
+                symbols[key] = {'name': key, 'kind': 'unknown', 'signature': key, 'members': [], 'shapeUnknown': True}
+                continue
+            elif status != 'resolved':
+                # 'missing': the referenced module was parsed but has no such
+                # symbol -- the public re-export is broken, so omit it and let a
+                # prior real export correctly become 'export-removed'.
+                # 'cycle': a circular chain that never reached a declaration
+                # proves nothing exists.
+                # 'external' via a star import only (no explicit binding), or a
+                # bare name with no binding at all: not enough evidence the
+                # public name exists, so say nothing about it.
+                continue
+
+        if shape is None:
+            continue
+
+        sig = shape['signature']
+        if sig is None:
+            sig = name
+        elif shape.get('decl') and shape['decl'] != name:
+            sig = re.sub(r'\\b' + re.escape(shape['decl']) + r'\\b', name, sig, count=1)
+        symbols[key] = {'name': key, 'kind': shape['kind'], 'signature': sig, 'members': list(shape['members'])}
 
 json.dump(sorted(symbols.values(), key=lambda s: s['name']), sys.stdout)
 `;
