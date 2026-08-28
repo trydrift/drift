@@ -92,6 +92,22 @@ describe('githubRepoFromSpec', () => {
       null,
     );
   });
+  test('null for a look-alike host, never a substring match', () => {
+    assert.equal(
+      githubRepoFromSpec({ ...base, source: { git: 'https://evilgithub.com/owner/repo' } }),
+      null,
+    );
+    assert.equal(
+      githubRepoFromSpec({ ...base, source: { git: 'https://github.com.evil.com/owner/repo.git' } }),
+      null,
+    );
+  });
+  test('an scp-style GitHub source still resolves', () => {
+    assert.equal(
+      githubRepoFromSpec({ ...base, source: { git: 'git@github.com:layoutBox/FlexLayout.git' } }),
+      'layoutBox/FlexLayout',
+    );
+  });
 });
 
 describe('fetchRegistryInfo for cocoapods', () => {

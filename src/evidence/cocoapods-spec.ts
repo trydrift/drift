@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { githubRepoSlug } from '../util/github-url.js';
 import { fetchJson } from '../util/http.js';
 
 /**
@@ -120,16 +121,5 @@ function str(value: unknown): string | null {
  * Drift can actually reach.
  */
 export function githubRepoFromSpec(spec: CocoaPodsSpec): string | null {
-  return githubSlug(spec.source?.git) ?? githubSlug(spec.homepage);
-}
-
-/** `owner/repo` from a github.com URL, or `null`. Kept local to avoid an import cycle. */
-function githubSlug(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const match = /github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/#?].*)?$/.exec(url.trim());
-  if (!match) return null;
-  const owner = match[1]!;
-  const repo = match[2]!;
-  if (!owner || !repo || owner === 'sponsors') return null;
-  return `${owner}/${repo}`;
+  return githubRepoSlug(spec.source?.git) ?? githubRepoSlug(spec.homepage);
 }
