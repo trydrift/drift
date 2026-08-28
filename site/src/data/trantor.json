@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-08-28T18:24:16.225Z",
+  "capturedAt": "2026-08-28T19:51:42.174Z",
   "commit": "3163f6ad964bb91a0ac877912a3ecf31de50a401",
-  "engine": "26d8d3d5cea2c99e",
-  "durationMs": 3037,
+  "engine": "32731f9e1faa1b13",
+  "durationMs": 3260,
   "packagesChecked": 3,
   "manifests": [
     "conanfile.txt"
@@ -18,7 +18,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 400,
+      "at": 741,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
@@ -26,7 +26,7 @@
     },
     {
       "type": "progress",
-      "at": 409,
+      "at": 749,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
@@ -34,7 +34,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 410,
+      "at": 751,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -71,7 +71,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 410,
+      "at": 751,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -108,7 +108,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 410,
+      "at": 751,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -145,7 +145,7 @@
     },
     {
       "type": "progress",
-      "at": 410,
+      "at": 751,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -153,7 +153,7 @@
     },
     {
       "type": "progress",
-      "at": 410,
+      "at": 751,
       "phase": "Checking registries",
       "detail": "3 direct dependencies",
       "done": 0,
@@ -161,7 +161,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 410,
+      "at": 751,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -198,7 +198,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 410,
+      "at": 752,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -235,7 +235,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 410,
+      "at": 752,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -272,7 +272,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 754,
+      "at": 788,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -309,7 +309,7 @@
     },
     {
       "type": "progress",
-      "at": 754,
+      "at": 788,
       "phase": "Outdated",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 1,
@@ -317,7 +317,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 754,
+      "at": 789,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -354,7 +354,7 @@
     },
     {
       "type": "progress",
-      "at": 754,
+      "at": 789,
       "phase": "Outdated",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 2,
@@ -362,7 +362,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 755,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -399,7 +399,7 @@
     },
     {
       "type": "progress",
-      "at": 755,
+      "at": 790,
       "phase": "Outdated",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 3,
@@ -407,7 +407,7 @@
     },
     {
       "type": "progress",
-      "at": 755,
+      "at": 790,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -415,7 +415,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 755,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -452,7 +452,7 @@
     },
     {
       "type": "progress",
-      "at": 755,
+      "at": 790,
       "phase": "Checking package metadata",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -460,7 +460,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 755,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -497,7 +497,7 @@
     },
     {
       "type": "progress",
-      "at": 755,
+      "at": 790,
       "phase": "Reading release notes and changelog",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -505,7 +505,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 755,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -542,7 +542,7 @@
     },
     {
       "type": "progress",
-      "at": 755,
+      "at": 790,
       "phase": "Checking package metadata",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -550,7 +550,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 755,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -587,7 +587,7 @@
     },
     {
       "type": "progress",
-      "at": 755,
+      "at": 790,
       "phase": "Reading release notes and changelog",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -595,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 755,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -632,7 +632,7 @@
     },
     {
       "type": "progress",
-      "at": 755,
+      "at": 790,
       "phase": "Checking package metadata",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -640,7 +640,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 755,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -677,7 +677,7 @@
     },
     {
       "type": "progress",
-      "at": 756,
+      "at": 790,
       "phase": "Checking repository status",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -685,7 +685,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 756,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -722,7 +722,7 @@
     },
     {
       "type": "progress",
-      "at": 756,
+      "at": 790,
       "phase": "Checking repository status",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -730,7 +730,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 756,
+      "at": 790,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -767,7 +767,7 @@
     },
     {
       "type": "progress",
-      "at": 756,
+      "at": 791,
       "phase": "Checking repository status",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -775,7 +775,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 756,
+      "at": 791,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -812,7 +812,7 @@
     },
     {
       "type": "progress",
-      "at": 756,
+      "at": 792,
       "phase": "Checking security advisories",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -820,7 +820,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 756,
+      "at": 792,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -857,7 +857,7 @@
     },
     {
       "type": "progress",
-      "at": 757,
+      "at": 794,
       "phase": "Checking license",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
@@ -865,7 +865,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 757,
+      "at": 794,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -902,7 +902,97 @@
     },
     {
       "type": "progress",
-      "at": 779,
+      "at": 982,
+      "phase": "Checking security advisories",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 982,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 982,
+      "phase": "Checking license",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 982,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.12.0",
+        "selected": "1.12.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 982,
       "phase": "Checking security advisories",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -910,7 +1000,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 779,
+      "at": 982,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -947,7 +1037,7 @@
     },
     {
       "type": "progress",
-      "at": 779,
+      "at": 982,
       "phase": "Checking license",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -955,7 +1045,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 779,
+      "at": 982,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -992,97 +1082,7 @@
     },
     {
       "type": "progress",
-      "at": 779,
-      "phase": "Checking security advisories",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 779,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 779,
-      "phase": "Checking license",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 779,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.12.0",
-        "selected": "1.12.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1994,
+      "at": 2002,
       "phase": "Comparing the public API surface",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1090,7 +1090,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1994,
+      "at": 2002,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1127,187 +1127,7 @@
     },
     {
       "type": "progress",
-      "at": 1998,
-      "phase": "Comparing the public API surface",
-      "detail": "gtest 1.10.0 → 1.18.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1998,
-      "candidate": {
-        "id": "conanfile.txt#gtest@1.10.0",
-        "name": "gtest",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2041,
-      "phase": "Reading release notes and changelog",
-      "detail": "gtest 1.10.0 → 1.18.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2041,
-      "candidate": {
-        "id": "conanfile.txt#gtest@1.10.0",
-        "name": "gtest",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2041,
-      "phase": "Comparing the public API surface",
-      "detail": "gtest 1.10.0 → 1.18.0 · 6 evidence sources",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2041,
-      "candidate": {
-        "id": "conanfile.txt#gtest@1.10.0",
-        "name": "gtest",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2053,
-      "phase": "Searching your code for 214 breaking changes",
-      "detail": "gtest 1.10.0 → 1.18.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2053,
-      "candidate": {
-        "id": "conanfile.txt#gtest@1.10.0",
-        "name": "gtest",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Searching your code for 214 breaking changes",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2055,
+      "at": 2052,
       "phase": "Reading release notes and changelog",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1315,7 +1135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2055,
+      "at": 2052,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1352,7 +1172,7 @@
     },
     {
       "type": "progress",
-      "at": 2055,
+      "at": 2052,
       "phase": "Comparing the public API surface",
       "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
       "done": 0,
@@ -1360,7 +1180,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2055,
+      "at": 2052,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1397,7 +1217,7 @@
     },
     {
       "type": "progress",
-      "at": 2109,
+      "at": 2054,
       "phase": "Searching your code for 189 breaking changes",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1405,7 +1225,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2109,
+      "at": 2054,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1442,7 +1262,187 @@
     },
     {
       "type": "progress",
-      "at": 2192,
+      "at": 2222,
+      "phase": "Comparing the public API surface",
+      "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2222,
+      "candidate": {
+        "id": "conanfile.txt#gtest@1.10.0",
+        "name": "gtest",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2223,
+      "phase": "Reading release notes and changelog",
+      "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2223,
+      "candidate": {
+        "id": "conanfile.txt#gtest@1.10.0",
+        "name": "gtest",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2223,
+      "phase": "Comparing the public API surface",
+      "detail": "gtest 1.10.0 → 1.18.0 · 6 evidence sources",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2223,
+      "candidate": {
+        "id": "conanfile.txt#gtest@1.10.0",
+        "name": "gtest",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2227,
+      "phase": "Searching your code for 214 breaking changes",
+      "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2227,
+      "candidate": {
+        "id": "conanfile.txt#gtest@1.10.0",
+        "name": "gtest",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Searching your code for 214 breaking changes",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2510,
       "phase": "Reading release notes and changelog",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1450,7 +1450,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2192,
+      "at": 2510,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1487,7 +1487,7 @@
     },
     {
       "type": "progress",
-      "at": 2192,
+      "at": 2510,
       "phase": "Comparing the public API surface",
       "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
       "done": 0,
@@ -1495,7 +1495,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2192,
+      "at": 2510,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1532,7 +1532,7 @@
     },
     {
       "type": "progress",
-      "at": 2193,
+      "at": 2511,
       "phase": "Searching your code for 6 breaking changes",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1540,7 +1540,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2193,
+      "at": 2511,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1577,7 +1577,7 @@
     },
     {
       "type": "progress",
-      "at": 2379,
+      "at": 2540,
       "phase": "Indexing your code",
       "detail": "132 files indexed · 3 direct dependencies to check",
       "done": 0,
@@ -1585,52 +1585,7 @@
     },
     {
       "type": "progress",
-      "at": 2627,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "gtest 1.10.0 → 1.18.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2627,
-      "candidate": {
-        "id": "conanfile.txt#gtest@1.10.0",
-        "name": "gtest",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2958,
+      "at": 2928,
       "phase": "Weighing what this upgrade is worth",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1638,7 +1593,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2958,
+      "at": 2928,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1675,7 +1630,52 @@
     },
     {
       "type": "progress",
-      "at": 3006,
+      "at": 3174,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3174,
+      "candidate": {
+        "id": "conanfile.txt#gtest@1.10.0",
+        "name": "gtest",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3226,
       "phase": "Weighing what this upgrade is worth",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1683,7 +1683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3006,
+      "at": 3226,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1720,52 +1720,7 @@
     },
     {
       "type": "progress",
-      "at": 3030,
-      "phase": "Checking maintenance signals",
-      "detail": "gtest 1.10.0 → 1.18.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3030,
-      "candidate": {
-        "id": "conanfile.txt#gtest@1.10.0",
-        "name": "gtest",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3032,
+      "at": 3251,
       "phase": "Checking maintenance signals",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
@@ -1773,7 +1728,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3032,
+      "at": 3251,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -1810,7 +1765,52 @@
     },
     {
       "type": "progress",
-      "at": 3033,
+      "at": 3252,
+      "phase": "Checking maintenance signals",
+      "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3252,
+      "candidate": {
+        "id": "conanfile.txt#gtest@1.10.0",
+        "name": "gtest",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3254,
       "phase": "Checking maintenance signals",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
@@ -1818,7 +1818,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3033,
+      "at": 3254,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -1855,7 +1855,1666 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3036,
+      "at": 3259,
+      "candidate": {
+        "id": "conanfile.txt#spdlog@1.12.0",
+        "name": "spdlog",
+        "ecosystem": "conan",
+        "manifestPath": "conanfile.txt",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "1.12.0",
+        "latest": "1.17.0",
+        "selected": "1.17.0",
+        "safeLatest": null,
+        "status": "ready",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. 189 upstream API breaking changes, none of which this repository uses.",
+        "recommendation": "safe-to-upgrade",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "upstream-only",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "runtimeChanges": [],
+        "dispositions": [
+          {
+            "changeId": "bc_86859fb2b9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_95a94f1c17",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_08628a6d9e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a1789074b3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6c2afcc89f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0a33987dd3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_eb1ae055fc",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b5a5b90cac",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b6de98eee5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e31cb9ee65",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a3652028a8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_17edbbd191",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5e4b7c1884",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ab983495c5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_06c33431c1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_04eaabbc6e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c56d9656dc",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9c0ac49c16",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c7d362ae34",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d10f96a52f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d602fd6eae",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4dd1a88834",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_93217ff382",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d5d9b7a584",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0369b90d3c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5aa860cacf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_83238b931b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7af367455b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_365f846277",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c5931ec43a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_55d81c994c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_67a53dd5d6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9468728df3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a83b8870a5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_bfff8fbac2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a4f464733a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6da7d10eb9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a86cf23f1d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4085f32459",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ba7132b75c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ed09e3790e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e28ca1a344",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_622b038997",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c256f8d630",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3c74f3ae50",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_97cb43bcdf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fecc116e5a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8ee336610e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ce9b0b181c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_72fe5c8d2d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2af4a715f9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f7a503dfdf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7b2cc41bd0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_17f07c873b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_272aae9e79",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_834a2f2310",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ce65d77483",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fa529051c9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cb6500aee5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_038977a127",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ab1ddf2eb1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1eafef5ec2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_98fab5a561",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_534f2fb3c8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c24b72b06d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_573ea74dbe",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_98059617c9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4c4a46196f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1cf2bf43eb",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_297c414962",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f4b4f66589",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_63e7ced113",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d641473245",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_93e69420ff",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9dd413dd42",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_62a093a665",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e4ace1cf66",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ce1ea8d7ea",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ae0576374d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_60583bbca9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_de825f3fce",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_53d0930f6d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a91b5085fc",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e06e02ace8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d315aa0f02",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8ca887ae85",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ef8f6da292",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8f326003be",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_44c713c5d7",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_da43ffc8b1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_316d1391bd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_416776dc51",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c389b0ca24",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a305f311f0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e2149bd853",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2668e9052b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_63bd075c9e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_15433786e0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ba300bf693",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_02ad549601",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cca92b71c1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_57babd1109",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b6a592a938",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c220603c3d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_57bdc43cd2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_13130e60f3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_56500eda94",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c9636c6a46",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_29a1fe06ad",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5aba175f4e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d404023b69",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f01bf81976",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8e2c00b35d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_16c212efec",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_65a374acd1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6f6bfb9c81",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e465f58a9a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ca51c74628",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6c7362040d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f83e0e7c39",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_58b4152d28",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_bc3dfc4e62",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_abab8645c1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_02ec0c8b7b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7cbf328c6c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_000cc4c9ac",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c2d2913c97",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_930130e0fa",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f3bac4946f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_55c6b872d2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0269119930",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f0f8484dc9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a229da9659",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_93fddca5cf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e16ba91cc5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a7f06f8410",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8cfe27b197",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2ad77c7c85",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_00b72ec850",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_681963403c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5eae14360d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7e05326b6d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_aaa17697f1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_242b266ed9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_82ecd136d0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_93e7539eb6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_dde6ef9125",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_52db598830",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_112b4d6fd6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_227cc2f60a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_dd1b5d63a3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f271747bd2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fa225f86bd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_69a4a28d49",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c5f66d0cff",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_75f84d8042",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_68ac9244d2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6417d61941",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cd39de61d2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6ba4093f5a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_feb81e3ff1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_aa5f1375ae",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c75d56ffd8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f5c388eb1b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_450584517d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5e7f1e732f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_31890ecf28",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b723b601da",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_98ab7a9061",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6133830f59",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b6e49afae5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c8f88fc990",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c0d7537ca6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_864a4e0d73",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fe09b3750a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c9b407a92d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8cc45ff8f5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5a812e630c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8942cdfecf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_310ea61e0c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ad3c69ab8e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_880dca2ad4",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5600d8a55c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_31a7128a43",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b59dd22069",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e8034e4da8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_267d99296d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_18f2e83040",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a6f899c034",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          }
+        ],
+        "breakingCount": 189,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 2,
+        "gaps": [
+          "OSV has no advisory coverage for conan packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+        ],
+        "breaking": [
+          {
+            "kind": "signature-change",
+            "summary": "The signature of `spdlog.cfg.load_env_levels` changed.",
+            "remediation": "The signature of `spdlog.cfg.load_env_levels` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "spdlog.cfg.load_env_levels",
+              "load_env_levels",
+              "cfg.load_env_levels"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "189 API surface change(s) in spdlog",
+                "url": null,
+                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+              }
+            ],
+            "sites": []
+          },
+          {
+            "kind": "signature-change",
+            "summary": "The signature of `SPDLOG_CONSTEXPR_FUNC` changed.",
+            "remediation": "The signature of `SPDLOG_CONSTEXPR_FUNC` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "SPDLOG_CONSTEXPR_FUNC"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "189 API surface change(s) in spdlog",
+                "url": null,
+                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+              }
+            ],
+            "sites": []
+          },
+          {
+            "kind": "removed-export",
+            "summary": "`data` is no longer exported (was a function).",
+            "remediation": "Every use of `data` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `data` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "data"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "189 API surface change(s) in spdlog",
+                "url": null,
+                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+              }
+            ],
+            "sites": []
+          },
+          {
+            "kind": "removed-export",
+            "summary": "`FMT_USE_TZSET` is no longer exported (was a variable).",
+            "remediation": "Every use of `FMT_USE_TZSET` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `FMT_USE_TZSET` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "FMT_USE_TZSET"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "189 API surface change(s) in spdlog",
+                "url": null,
+                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+              }
+            ],
+            "sites": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3260,
+      "phase": "Checked",
+      "detail": "spdlog 1.12.0 → 1.17.0 · safe for your code · 189 upstream changes, none used here — not deeply verified",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3260,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -3722,1674 +5381,15 @@
     },
     {
       "type": "progress",
-      "at": 3037,
+      "at": 3260,
       "phase": "Checked",
       "detail": "gtest 1.10.0 → 1.18.0 · may affect your code · 2 local sites drift flagged but could not confirm — review required; check before upgrading",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3037,
-      "candidate": {
-        "id": "conanfile.txt#spdlog@1.12.0",
-        "name": "spdlog",
-        "ecosystem": "conan",
-        "manifestPath": "conanfile.txt",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "1.12.0",
-        "latest": "1.17.0",
-        "selected": "1.17.0",
-        "safeLatest": null,
-        "status": "ready",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. 189 upstream API breaking changes, none of which this repository uses.",
-        "recommendation": "safe-to-upgrade",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "upstream-only",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "runtimeChanges": [],
-        "dispositions": [
-          {
-            "changeId": "bc_86859fb2b9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_95a94f1c17",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_08628a6d9e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a1789074b3",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6c2afcc89f",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_0a33987dd3",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_eb1ae055fc",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b5a5b90cac",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b6de98eee5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e31cb9ee65",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a3652028a8",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_17edbbd191",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5e4b7c1884",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ab983495c5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_06c33431c1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_04eaabbc6e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c56d9656dc",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9c0ac49c16",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c7d362ae34",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d10f96a52f",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d602fd6eae",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4dd1a88834",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_93217ff382",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d5d9b7a584",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_0369b90d3c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5aa860cacf",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_83238b931b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_7af367455b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_365f846277",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c5931ec43a",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_55d81c994c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_67a53dd5d6",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9468728df3",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a83b8870a5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_bfff8fbac2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a4f464733a",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6da7d10eb9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a86cf23f1d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4085f32459",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ba7132b75c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ed09e3790e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e28ca1a344",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_622b038997",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c256f8d630",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_3c74f3ae50",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_97cb43bcdf",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fecc116e5a",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8ee336610e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ce9b0b181c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_72fe5c8d2d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_2af4a715f9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f7a503dfdf",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_7b2cc41bd0",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_17f07c873b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_272aae9e79",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_834a2f2310",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ce65d77483",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fa529051c9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_cb6500aee5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_038977a127",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ab1ddf2eb1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1eafef5ec2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_98fab5a561",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_534f2fb3c8",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c24b72b06d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_573ea74dbe",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_98059617c9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4c4a46196f",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1cf2bf43eb",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_297c414962",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f4b4f66589",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_63e7ced113",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d641473245",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_93e69420ff",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9dd413dd42",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_62a093a665",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e4ace1cf66",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ce1ea8d7ea",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ae0576374d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_60583bbca9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_de825f3fce",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_53d0930f6d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a91b5085fc",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e06e02ace8",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d315aa0f02",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8ca887ae85",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ef8f6da292",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8f326003be",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_44c713c5d7",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_da43ffc8b1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_316d1391bd",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_416776dc51",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c389b0ca24",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a305f311f0",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e2149bd853",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_2668e9052b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_63bd075c9e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_15433786e0",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ba300bf693",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_02ad549601",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_cca92b71c1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_57babd1109",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b6a592a938",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c220603c3d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_57bdc43cd2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_13130e60f3",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_56500eda94",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c9636c6a46",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_29a1fe06ad",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5aba175f4e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d404023b69",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f01bf81976",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8e2c00b35d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_16c212efec",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_65a374acd1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6f6bfb9c81",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e465f58a9a",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ca51c74628",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6c7362040d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f83e0e7c39",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_58b4152d28",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_bc3dfc4e62",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_abab8645c1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_02ec0c8b7b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_7cbf328c6c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_000cc4c9ac",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c2d2913c97",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_930130e0fa",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f3bac4946f",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_55c6b872d2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_0269119930",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f0f8484dc9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a229da9659",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_93fddca5cf",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e16ba91cc5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a7f06f8410",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8cfe27b197",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_2ad77c7c85",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_00b72ec850",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_681963403c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5eae14360d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_7e05326b6d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_aaa17697f1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_242b266ed9",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_82ecd136d0",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_93e7539eb6",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_dde6ef9125",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_52db598830",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_112b4d6fd6",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_227cc2f60a",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_dd1b5d63a3",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f271747bd2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fa225f86bd",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_69a4a28d49",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c5f66d0cff",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_75f84d8042",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_68ac9244d2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6417d61941",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_cd39de61d2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6ba4093f5a",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_feb81e3ff1",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_aa5f1375ae",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c75d56ffd8",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f5c388eb1b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_450584517d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5e7f1e732f",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_31890ecf28",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b723b601da",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_98ab7a9061",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6133830f59",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b6e49afae5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c8f88fc990",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c0d7537ca6",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_864a4e0d73",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fe09b3750a",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c9b407a92d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8cc45ff8f5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5a812e630c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8942cdfecf",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_310ea61e0c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ad3c69ab8e",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_880dca2ad4",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5600d8a55c",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_31a7128a43",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b59dd22069",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e8034e4da8",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_267d99296d",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_18f2e83040",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a6f899c034",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          }
-        ],
-        "breakingCount": 189,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 2,
-        "gaps": [
-          "OSV has no advisory coverage for conan packages, so this upgrade's effect on known vulnerabilities could not be looked up."
-        ],
-        "breaking": [
-          {
-            "kind": "signature-change",
-            "summary": "The signature of `spdlog.cfg.load_env_levels` changed.",
-            "remediation": "The signature of `spdlog.cfg.load_env_levels` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "spdlog.cfg.load_env_levels",
-              "load_env_levels",
-              "cfg.load_env_levels"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "189 API surface change(s) in spdlog",
-                "url": null,
-                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "signature-change",
-            "summary": "The signature of `SPDLOG_CONSTEXPR_FUNC` changed.",
-            "remediation": "The signature of `SPDLOG_CONSTEXPR_FUNC` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "SPDLOG_CONSTEXPR_FUNC"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "189 API surface change(s) in spdlog",
-                "url": null,
-                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "removed-export",
-            "summary": "`data` is no longer exported (was a function).",
-            "remediation": "Every use of `data` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `data` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "data"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "189 API surface change(s) in spdlog",
-                "url": null,
-                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "removed-export",
-            "summary": "`FMT_USE_TZSET` is no longer exported (was a variable).",
-            "remediation": "Every use of `FMT_USE_TZSET` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `FMT_USE_TZSET` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "FMT_USE_TZSET"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "189 API surface change(s) in spdlog",
-                "url": null,
-                "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
-              }
-            ],
-            "sites": []
-          }
-        ]
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3037,
-      "phase": "Checked",
-      "detail": "spdlog 1.12.0 → 1.17.0 · safe for your code · 189 upstream changes, none used here — not deeply verified",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3037,
+      "at": 3260,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1",
         "name": "openssl",
@@ -5618,7 +5618,7 @@
     },
     {
       "type": "progress",
-      "at": 3037,
+      "at": 3260,
       "phase": "Checked",
       "detail": "openssl 1.1.1 → 4.0.1 · may affect your code · 5 local sites drift flagged but could not confirm — review required; check before upgrading",
       "done": 3,
