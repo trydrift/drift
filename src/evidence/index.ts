@@ -746,7 +746,10 @@ async function diffTypeSurfaces(
     // wrong fix; a reader who is told the entry point moved reaches for the
     // right one.
     const moved = entryPointMoved(packageName, before, after);
-    const changes = diffSurfaces(before.api, after.api);
+    const changes = diffSurfaces(before.api, after.api, {
+      beforeComplete: !before.incomplete,
+      afterComplete: !after.incomplete,
+    });
 
     const definitelyTyped =
       before.entryPath.startsWith('@types:') && after.entryPath.startsWith('@types:');

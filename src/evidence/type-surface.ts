@@ -150,6 +150,37 @@ export interface TypeSurface {
   ownSymbols: number;
   /** Other entry points the package publishes, from its `exports` map. */
   subpaths: string[];
+  /**
+   * A public re-export edge could not be fully expanded.
+   *
+   * Set when the bounded re-export traversal stopped at {@link MAX_REEXPORT_DEPTH},
+   * ran out of {@link MAX_TOTAL_FOLLOWED_PACKAGES} budget, or failed to fetch a
+   * package that this surface re-exports from. It means a symbol absent from
+   * this surface is not necessarily absent from the package's real API, so
+   * {@link diffSurfaces} must not turn a via-dependency miss into a confident
+   * `export-removed`. A cycle is *not* incompleteness — it terminates with the
+   * full set of symbols reachable without looping.
+   */
+  incomplete: boolean;
+}
+
+/**
+ * Context threaded through a bounded public re-export traversal.
+ *
+ * `vue` re-exports `@vue/runtime-dom`, which re-exports `@vue/runtime-core`,
+ * which re-exports `@vue/reactivity` — and `ref`/`computed`/`watch` are only
+ * declared in that last hop. Following one level saw them as removed. The
+ * traversal now recurses along *public re-export edges only* (`export * from`,
+ * `export { x } from`), carrying a shared package budget and a visited set so
+ * cycles terminate and the total work stays deterministically bounded.
+ */
+export interface ReexportTraversal {
+  /** How many re-export hops deep this fetch already is. 0 at the entry package. */
+  depth: number;
+  /** `name@version` nodes already on the current path — cycle guard. */
+  visited: ReadonlySet<string>;
+  /** Shared across the whole traversal: total packages still allowed to follow. */
+  budget: { remaining: number };
 }
 
 /**
@@ -186,8 +217,21 @@ const surfaces = new Map<string, Promise<TypeSurface | null>>();
 export function fetchTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean } = {},
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal } = {},
 ): Promise<TypeSurface | null> {
+  // A traversal-scoped fetch depends on the path that reached it (visited set,
+  // remaining budget), so it is not safe to share through the process-wide
+  // memo keyed only by `(package, version)`. Compute it directly; the HTTP and
+  // disk layers still absorb the repeated cost of the immutable pieces.
+  if (options.traversal) {
+    // Reached only after the parent already spent one unit of the shared
+    // {@link MAX_TOTAL_FOLLOWED_PACKAGES} budget on this package, so this
+    // counter is an exact tally of packages entered through a recursive public
+    // re-export follow — the quantity the global bound constrains. Test seam.
+    recursivePublicFollows += 1;
+    return measure('surface', packageName, () => computeTypeSurface(packageName, version, options));
+  }
+
   const key = `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}`;
   const cached = surfaces.get(key);
   if (cached) {
@@ -207,10 +251,25 @@ export function fetchTypeSurface(
   return pending;
 }
 
+/**
+ * Packages entered through a recursive public re-export follow since the last
+ * {@link clearTypeSurfaceCache}. Each increment is charged one unit of the
+ * shared {@link MAX_TOTAL_FOLLOWED_PACKAGES} budget, so a single top-level
+ * {@link fetchTypeSurface} must never leave this above that ceiling. Test seam
+ * for the global-bound regression test.
+ */
+let recursivePublicFollows = 0;
+
+/** Recursive public re-export follows since the last cache clear. Test seam. */
+export function recursivePublicFollowCount(): number {
+  return recursivePublicFollows;
+}
+
 /** Drop every memoized surface. Test seam, and the counterpart to `clearHttpCache`. */
 export function clearTypeSurfaceCache(): void {
   surfaces.clear();
   listings.clear();
+  recursivePublicFollows = 0;
 }
 
 /**
@@ -225,7 +284,7 @@ export function clearTypeSurfaceCache(): void {
  * cannot change, so the only way this cache can be wrong is an unbumped parser
  * change, not staleness.
  */
-const SURFACE_PARSER_VERSION = 1;
+const SURFACE_PARSER_VERSION = 2;
 
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
@@ -237,14 +296,14 @@ function diskCacheKey(packageName: string, version: string, followDependencies: 
 async function computeTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean },
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal },
 ): Promise<TypeSurface | null> {
   const followDependencies = options.followDependencies !== false;
   const key = diskCacheKey(packageName, version, followDependencies);
   const remembered = await readComputed<StoredSurface>(key);
   if (remembered) {
     count('surface.diskCache.hit');
-    return { ...remembered, api: new Map(remembered.api) };
+    return { ...remembered, incomplete: remembered.incomplete ?? false, api: new Map(remembered.api) };
   }
   count('surface.diskCache.miss');
 
@@ -276,12 +335,21 @@ async function computeTypeSurface(
   const ownSymbols = api.size;
   const dependencyMerge =
     !manifest || !followDependencies
-      ? { followed: [], attempted: false }
-      : await measure('surface-deps', packageName, () => mergeDependencySurfaces(manifest, sources, api));
+      ? { followed: [], attempted: false, incomplete: false }
+      : await measure('surface-deps', packageName, () =>
+          mergeDependencySurfaces(manifest, sources, api, `${packageName}@${version}`, options.traversal),
+        );
 
   const result: TypeSurface | null =
     api.size > 0
-      ? { api, entryPath, viaDependencies: dependencyMerge.followed, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
+      ? {
+          api,
+          entryPath,
+          viaDependencies: dependencyMerge.followed,
+          ownSymbols,
+          subpaths: subpathsOf(manifest?.exports),
+          incomplete: dependencyMerge.incomplete,
+        }
       : null;
 
   // Only remembered when nothing about the answer depends on live registry
@@ -302,7 +370,7 @@ async function computeTypeSurface(
   // resolution was never required at all — no dependencies declared, none
   // referenced, or `followDependencies: false` — is safe to remember
   // indefinitely.
-  if (result && !dependencyMerge.attempted) {
+  if (result && !dependencyMerge.attempted && !result.incomplete) {
     await writeComputed(key, { ...result, api: [...result.api] } satisfies StoredSurface);
   }
 
@@ -615,6 +683,22 @@ async function firstPublished(
 const MAX_FOLLOWED_DEPENDENCIES = 8;
 
 /**
+ * How many public re-export hops the traversal will follow from the entry
+ * package. `vue -> @vue/runtime-dom -> @vue/runtime-core -> @vue/reactivity` is
+ * three; four leaves headroom for one more wrapper layer without letting an
+ * adversarial graph walk forever.
+ */
+const MAX_REEXPORT_DEPTH = 4;
+
+/**
+ * Total packages any single entry-surface traversal may follow, across every
+ * hop and branch. A deterministic ceiling on the work one `fetchTypeSurface`
+ * can trigger; hitting it marks the surface {@link TypeSurface.incomplete}
+ * rather than silently dropping symbols.
+ */
+const MAX_TOTAL_FOLLOWED_PACKAGES = 24;
+
+/**
  * Fold the declarations of re-exported dependencies into this surface.
  *
  * Some packages declare almost nothing of their own. `@octokit/rest`'s entry
@@ -646,19 +730,38 @@ const MAX_FOLLOWED_DEPENDENCIES = 8;
 interface DependencyMergeResult {
   followed: string[];
   attempted: boolean;
+  /**
+   * A public re-export edge could not be fully expanded — depth or budget
+   * exhausted, or a re-exported package failed to fetch. Propagated to
+   * {@link TypeSurface.incomplete} so a via-dependency miss is not reported as
+   * a confident removal.
+   */
+  incomplete: boolean;
+}
+
+/** Does this reference bring symbols in through a public re-export statement? */
+function isPublicReexportEdge(reference: ExternalReference): boolean {
+  return reference.star || reference.reExported.size > 0;
 }
 
 async function mergeDependencySurfaces(
   manifest: Manifest | null,
   sources: readonly DeclarationSource[],
   api: SurfaceApi,
+  selfNode: string,
+  traversal: ReexportTraversal | undefined,
 ): Promise<DependencyMergeResult> {
   const declared = { ...manifest?.dependencies, ...manifest?.peerDependencies };
-  if (Object.keys(declared).length === 0) return { followed: [], attempted: false };
+  if (Object.keys(declared).length === 0) return { followed: [], attempted: false, incomplete: false };
+
+  const depth = traversal?.depth ?? 0;
+  const budget = traversal?.budget ?? { remaining: MAX_TOTAL_FOLLOWED_PACKAGES };
+  const visited = new Set<string>([...(traversal?.visited ?? []), selfNode]);
 
   const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
   const attempted = wanted.length > 0;
   const followed: string[] = [];
+  let incomplete = false;
 
   // Read a chunk at a time, and merge that chunk strictly in order.
   //
@@ -670,33 +773,70 @@ async function mergeDependencySurfaces(
   // earlier ones winning a name collision); only the waiting overlaps.
   for (let at = 0; at < wanted.length && followed.length < MAX_FOLLOWED_DEPENDENCIES; at += MAX_FOLLOWED_DEPENDENCIES) {
     const chunk = wanted.slice(at, at + MAX_FOLLOWED_DEPENDENCIES);
-    const fetched = await mapWithConcurrency(chunk, MAX_FOLLOWED_DEPENDENCIES, async ([specifier]) => {
+    const fetched = await mapWithConcurrency(chunk, MAX_FOLLOWED_DEPENDENCIES, async ([specifier, reference]) => {
       const resolved = await resolveDependencyVersion(specifier, declared[specifier]!);
       if (!resolved) return null;
-      // One level only. The dependency's own dependencies are its business; a
-      // second hop multiplies requests without changing what this package
-      // exposes, and a cycle would otherwise be reachable.
-      // A dependency Drift cannot reach costs its symbols, never the comparison:
-      // the rest of this package's surface is still worth diffing.
+      const childNode = `${specifier}@${resolved}`;
+
+      // Recurse only along genuine public re-export edges — `export * from` /
+      // `export { x } from`. An implementation import that merely appears in an
+      // exported signature contributes that one dependency's symbols but says
+      // nothing about *its* dependency graph, so it stays one level deep.
+      const reExportEdge = isPublicReexportEdge(reference);
+      const cycle = visited.has(childNode);
+      const canRecurse =
+        reExportEdge && !cycle && depth < MAX_REEXPORT_DEPTH && budget.remaining > 0;
+
+      if (canRecurse) budget.remaining -= 1;
+
+      // A re-export edge Drift refuses to expand — depth/budget exhausted — is
+      // a hole in this surface, not a fact about the package. `cycle` is not:
+      // it terminates with everything reachable without looping.
+      const truncated = reExportEdge && !cycle && !canRecurse;
+
       const surface = await fetchTypeSurface(specifier, resolved, {
-        followDependencies: false,
+        followDependencies: canRecurse,
+        ...(canRecurse
+          ? {
+              traversal: {
+                depth: depth + 1,
+                visited: new Set([...visited, childNode]),
+                budget,
+              },
+            }
+          : {}),
       }).catch(() => null);
-      return surface ? { resolved, surface } : null;
+
+      // A re-exported package Drift could not fetch at all is the same kind of
+      // hole: its symbols are missing for a reason that has nothing to do with
+      // whether the package still exports them.
+      const fetchHole = reExportEdge && !surface;
+
+      return { resolved, surface, truncated: truncated || Boolean(surface?.incomplete), fetchHole };
     });
 
     for (const [index, [specifier, reference]] of chunk.entries()) {
       if (followed.length >= MAX_FOLLOWED_DEPENDENCIES) break;
       const found = fetched[index];
       if (!found) continue;
-      const { resolved, surface } = found;
+      const { resolved, surface, truncated, fetchHole } = found;
+      if (truncated || fetchHole) incomplete = true;
+      if (!surface) continue;
 
       let merged = 0;
       for (const [exportedAs, declaredAs] of reference.names(surface.api)) {
         const entry = surface.api.get(declaredAs);
         if (!entry) continue;
-        // Keyed by origin so a wrapper and its dependency can both publish a
-        // symbol of the same name without one silently masking the other.
-        const key = reference.reExported.has(exportedAs) ? exportedAs : `${specifier}#${exportedAs}`;
+        // A name the parent genuinely re-exports — `export { x } from` or
+        // `export * from` — is one of the parent's *own* public exports and is
+        // keyed bare, so a leaf removal three hops down still lines up with the
+        // wrapper's symbol on the other side of the diff. An implementation
+        // import that merely surfaced in a signature is keyed by origin, so it
+        // cannot silently mask a same-named symbol the wrapper declares itself.
+        const key =
+          reference.star || reference.reExported.has(exportedAs)
+            ? exportedAs
+            : `${specifier}#${exportedAs}`;
         if (api.has(key)) continue;
         api.set(key, { ...renameEntry(entry, exportedAs), via: specifier });
         merged += 1;
@@ -706,7 +846,7 @@ async function mergeDependencySurfaces(
     }
   }
 
-  return { followed, attempted };
+  return { followed, attempted, incomplete };
 }
 
 /**
@@ -1874,7 +2014,11 @@ export function entryPointMoved(
   };
 }
 
-export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChange[] {
+export function diffSurfaces(
+  before: SurfaceApi,
+  after: SurfaceApi,
+  context: { beforeComplete?: boolean; afterComplete?: boolean } = {},
+): SurfaceChange[] {
   const changes: SurfaceChange[] = [];
 
   for (const [key, oldEntry] of before) {
@@ -1887,6 +2031,14 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
     const origin = oldEntry.via ? ` (declared in ${oldEntry.via})` : '';
 
     if (!newEntry) {
+      // The new surface stopped short of fully expanding its public re-export
+      // graph, and this symbol came in through a followed dependency. Its
+      // absence here is as likely to be Drift's truncated traversal as a real
+      // removal, so the comparison is left incomplete rather than asserting a
+      // removal it cannot stand behind. A symbol the package declares itself is
+      // still reported — traversal limits never hid those.
+      if (context.afterComplete === false && oldEntry.via) continue;
+
       changes.push({
         kind: 'export-removed',
         // A shape-unknown symbol going missing is still a real removal —
