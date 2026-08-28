@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
-| Run date | 2026-08-24T16:26:22.141Z |
+| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
+| Run date | 2026-08-27T21:56:03.376Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,10 +42,10 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 46/69 (66.7%) | 55.1–76.8% |
-| consumer localization rate | 46/69 (66.7%) | 55.1–76.8% |
+| affected-repository identification rate | 35/69 (50.7%) | 39.1–62.3% |
+| consumer localization rate | 40/69 (58.0%) | 46.4–69.6% |
 | dependency-update detection rate | 49/69 (71.0%) | 59.4–81.2% |
-| false-safe verdicts | 1/69 (1.4%) | 0.0–4.3% |
+| false-safe verdicts | 0/69 (0.0%) | 0.0–0.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,9 +57,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: migration-failure-easy | 30/44 (68.2%) | 30/44 (68.2%) | 32/44 (72.7%) |
+| label: migration-failure-easy | 21/44 (47.7%) | 24/44 (54.5%) | 32/44 (72.7%) |
 | label: migration-failure-hard | 2/2 (100.0%) | 2/2 (100.0%) | 2/2 (100.0%) |
-| label: migration-failure-medium | 14/23 (60.9%) | 14/23 (60.9%) | 15/23 (65.2%) |
+| label: migration-failure-medium | 12/23 (52.2%) | 14/23 (60.9%) | 15/23 (65.2%) |
 
 ## What is deliberately not reported
 
@@ -97,7 +97,7 @@ how generously the mapping was written.
 | `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
 | `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "17.0.20" 2026-07-21 | any Java case |
+| `java` | openjdk version "17.0.20.1" 2026-08-18 | any Java case |
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |

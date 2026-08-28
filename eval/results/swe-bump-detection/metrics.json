@@ -17,19 +17,19 @@
       "value": 1
     },
     "affected-repository identification rate": {
-      "numerator": 49,
+      "numerator": 42,
       "denominator": 61,
-      "value": 0.8032786885245902
+      "value": 0.6885245901639344
     },
     "consumer localization rate": {
-      "numerator": 39,
+      "numerator": 38,
       "denominator": 61,
-      "value": 0.639344262295082
+      "value": 0.6229508196721312
     },
     "false-safe verdicts": {
-      "numerator": 9,
+      "numerator": 6,
       "denominator": 61,
-      "value": 0.14754098360655737
+      "value": 0.09836065573770492
     }
   },
   "refusals": [
@@ -58,14 +58,14 @@
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 49,
+        "numerator": 42,
         "denominator": 61,
-        "value": 0.8032786885245902
+        "value": 0.6885245901639344
       },
       "consumer localization rate": {
-        "numerator": 39,
+        "numerator": 38,
         "denominator": 61,
-        "value": 0.639344262295082
+        "value": 0.6229508196721312
       }
     },
     "versionToIsRange: true": {
@@ -75,14 +75,14 @@
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 46,
+        "numerator": 39,
         "denominator": 58,
-        "value": 0.7931034482758621
+        "value": 0.6724137931034483
       },
       "consumer localization rate": {
-        "numerator": 36,
+        "numerator": 35,
         "denominator": 58,
-        "value": 0.6206896551724138
+        "value": 0.603448275862069
       }
     },
     "versionToIsRange: false": {
@@ -110,18 +110,18 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.6885245901639344,
-      "high": 0.9016393442622951,
+      "low": 0.5737704918032787,
+      "high": 0.8032786885245902,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.5245901639344263,
-      "high": 0.7704918032786885,
+      "low": 0.5081967213114754,
+      "high": 0.7377049180327869,
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.06557377049180328,
-      "high": 0.2459016393442623,
+      "low": 0.03278688524590164,
+      "high": 0.18032786885245902,
       "iterations": 2000
     }
   },

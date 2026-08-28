@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
-| Run date | 2026-08-24T16:56:25.088Z |
+| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
+| Run date | 2026-08-27T22:28:59.629Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -98,7 +98,7 @@ how generously the mapping was written.
 | `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
 | `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "21.0.12" 2026-07-21 LTS | any Java case |
+| `java` | openjdk version "21.0.12.1" 2026-08-18 LTS | any Java case |
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |

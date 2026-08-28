@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Citation | Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau |
 | Ecosystem | maven |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
-| Run date | 2026-08-24T16:17:51.028Z |
+| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
+| Run date | 2026-08-27T21:50:09.891Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -91,7 +91,7 @@ how generously the mapping was written.
 | `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
 | `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "21.0.12" 2026-07-21 LTS | any Java case |
+| `java` | openjdk version "21.0.12.1" 2026-08-18 LTS | any Java case |
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |

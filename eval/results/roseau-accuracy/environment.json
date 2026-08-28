@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-08-24T16:17:48.105Z",
+  "capturedAt": "2026-08-27T21:50:06.733Z",
   "platform": "linux",
   "arch": "x64",
   "node": "v22.23.2",
@@ -25,7 +25,7 @@
     {
       "tool": "java",
       "available": true,
-      "version": "openjdk version \"21.0.12\" 2026-07-21 LTS",
+      "version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS",
       "neededFor": "any Java case"
     },
     {
