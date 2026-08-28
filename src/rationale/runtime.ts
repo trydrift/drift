@@ -160,18 +160,43 @@ export function discoverRuntimeDeclarations(
     if (isCiPath(path)) ciDeclarations(path, content, runtime, found, member, allMembers);
   }
 
-  // Precedence, when evaluating one member of a real monorepo: a
-  // member-specific declaration (a CI job that targets this member, or a
-  // version file / manifest inside its directory) overrides a repository-wide
-  // one. Without a member-specific declaration, the repository-wide job still
-  // governs this member — that is the whole point of the `repository` scope.
+  // Every non-CI declaration is stamped with an explicit ownership scope from
+  // the same `memberOf` logic `scopedTo` uses — a version file or manifest
+  // inside the evaluated member's own directory is `member`-scoped; an
+  // inherited root version file or a genuinely repository-global file is
+  // `repository`-scoped. CI declarations already carry their own job-level
+  // scope. Nothing is left implicit: an absent scope must not read as
+  // member-specific.
   if (member !== undefined && (allMembers?.length ?? 0) > 1) {
-    const hasMemberSpecific = found.resolved.some(
-      (d) => d.scope !== 'repository' && d.scope !== 'ambiguous',
-    );
-    if (hasMemberSpecific) {
-      found.resolved = found.resolved.filter((d) => d.scope !== 'repository');
+    for (const decl of found.resolved) {
+      if (!decl.scope && !isCiPath(decl.file)) decl.scope = fileScope(decl.file, member, allMembers);
     }
+    for (const decl of found.unresolved) {
+      if (!decl.scope && !isCiPath(decl.file)) decl.scope = fileScope(decl.file, member, allMembers);
+    }
+  }
+
+  // Precedence, when evaluating one member of a real monorepo, applied to
+  // resolved and unresolved declarations alike:
+  //
+  //   1. explicit member-scoped declaration(s)  — beat everything below
+  //   2. otherwise repository-scoped declaration(s)
+  //   3. otherwise ambiguous / unresolved-ownership declarations → unknown
+  //
+  // An authoritative member-specific declaration must not be overridden by a
+  // repository-wide one, nor dragged to `unknown` by an unrelated ambiguous
+  // dynamic declaration; with no member-specific declaration a repository-wide
+  // one still governs the member.
+  if (member !== undefined && (allMembers?.length ?? 0) > 1) {
+    const tier = (s?: RuntimeDeclarationScope): 0 | 1 | 2 =>
+      s === 'member' ? 2 : s === 'ambiguous' ? 0 : 1;
+    const top = Math.max(
+      0,
+      ...found.resolved.map((d) => tier(d.scope)),
+      ...found.unresolved.map((d) => tier(d.scope)),
+    );
+    found.resolved = found.resolved.filter((d) => tier(d.scope) === top);
+    found.unresolved = found.unresolved.filter((d) => tier(d.scope) === top);
   }
 
   found.resolved = dedupeDeclarations(found.resolved);
@@ -211,7 +236,7 @@ function record(
   scope?: RuntimeDeclarationScope,
 ): void {
   if (requirement) found.resolved.push({ file, line, requirement, ...(scope ? { scope } : {}) });
-  else found.unresolved.push({ runtime, file, line, rawText, source });
+  else found.unresolved.push({ runtime, file, line, rawText, source, ...(scope ? { scope } : {}) });
 }
 
 /**
@@ -411,6 +436,14 @@ export interface UnresolvedRuntimeDeclaration {
   /** The unresolvable value exactly as written, for the report to quote. */
   rawText: string;
   source: RuntimeDeclarationSource;
+  /**
+   * Declaration ownership scope, same meaning as {@link RuntimeDeclarationScope}.
+   * Precedence is applied to unresolved declarations too: an unrelated
+   * repository/ambiguous dynamic declaration must not drag an otherwise
+   * authoritative member-specific result to `unknown`. Absent means
+   * repository-wide.
+   */
+  scope?: RuntimeDeclarationScope;
 }
 
 const TOOL_VERSION_KEYS: Record<RuntimeName, readonly string[]> = {
@@ -1508,6 +1541,25 @@ const HIERARCHICAL_VERSION_FILES = new Set([
   'rust-toolchain',
   'rust-toolchain.toml',
 ]);
+
+/**
+ * Ownership scope of a non-CI declaration file, from the same `memberOf`
+ * attribution `scopedTo` uses.
+ *
+ * `member` when the file is inside (owned by) the member being evaluated —
+ * `packages/api/.python-version`, `packages/api/pyproject.toml`. `repository`
+ * for everything else that survived `scopedTo`: an inherited root version
+ * file, a genuinely repository-global config, a file no member directory
+ * claims. Outside a real monorepo there is only one scope, `repository`.
+ */
+function fileScope(
+  path: string,
+  member: string | undefined,
+  allMembers: readonly string[] | undefined,
+): RuntimeDeclarationScope {
+  if (member === undefined || (allMembers?.length ?? 0) <= 1) return 'repository';
+  return memberOf(path, allMembers ?? []) === member ? 'member' : 'repository';
+}
 
 function scopedTo<T extends { path: string; content: string }>(
   files: readonly T[],

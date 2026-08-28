@@ -374,7 +374,9 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
       'packages/api/.nvmrc': '22\n',
     });
     const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', ['packages/api', 'packages/web']);
-    assert.deepEqual(found.resolved, [{ file: 'packages/api/.nvmrc', line: 1, requirement: '22' }]);
+    assert.deepEqual(found.resolved, [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '22', scope: 'member' },
+    ]);
   });
 });
 

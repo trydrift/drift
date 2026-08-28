@@ -84,7 +84,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('a non-root member sees its own declaration', () => {
     const files = [{ path: 'packages/api/.nvmrc', content: '20.19.0' }];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0' },
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0', scope: 'member' },
     ]);
   });
 
@@ -115,7 +115,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('a non-root member still sees a root-level declaration', () => {
     const files = [{ path: '.nvmrc', content: '22.6.0' }];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+      { file: '.nvmrc', line: 1, requirement: '22.6.0', scope: 'repository' },
     ]);
   });
 
@@ -125,7 +125,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
       { path: 'packages/api/.nvmrc', content: '20' },
     ];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: 'packages/api/.nvmrc', line: 1, requirement: '20' },
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20', scope: 'member' },
     ]);
   });
 
@@ -135,7 +135,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
       { path: 'packages/api/.tool-versions', content: 'nodejs 20' },
     ];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: 'packages/api/.tool-versions', line: 1, requirement: '20' },
+      { file: 'packages/api/.tool-versions', line: 1, requirement: '20', scope: 'member' },
     ]);
   });
 
@@ -148,7 +148,9 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
       { path: '.github/workflows/ci.yml', content: 'jobs:\n  build:\n    steps:\n      - uses: actions/setup-node@v4\n        with:\n' + "          node-version: '18'" },
     ];
     const discovery = discoverRuntimeDeclarations(files, 'node', 'packages/api', allMembers);
-    assert.deepEqual(discovery.resolved, [{ file: 'packages/api/.nvmrc', line: 1, requirement: '20' }]);
+    assert.deepEqual(discovery.resolved, [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20', scope: 'member' },
+    ]);
     assert.deepEqual(discovery.unresolved, []);
   });
 
@@ -165,7 +167,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('the root workspace still sees its own root-level declaration', () => {
     const files = [{ path: '.nvmrc', content: '22.6.0' }];
     assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
-      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+      { file: '.nvmrc', line: 1, requirement: '22.6.0', scope: 'member' },
     ]);
   });
 
@@ -192,7 +194,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('the root package still sees its own package.json engines field', () => {
     const files = [{ path: 'package.json', content: JSON.stringify({ engines: { node: '>=18' } }) }];
     assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
-      { file: 'package.json', line: 1, requirement: '>=18' },
+      { file: 'package.json', line: 1, requirement: '>=18', scope: 'member' },
     ]);
   });
 
@@ -206,7 +208,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('a root-level .nvmrc still applies globally even when the root is itself a member', () => {
     const files = [{ path: '.nvmrc', content: '18.18.0' }];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: '.nvmrc', line: 1, requirement: '18.18.0' },
+      { file: '.nvmrc', line: 1, requirement: '18.18.0', scope: 'repository' },
     ]);
   });
 
@@ -677,7 +679,7 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
     }
   });
 
-  test('shared discovery preserves workspace ownership; an unattributed CI declaration is evidence, not a resolved sibling-crossing pin (#123)', () => {
+  test('shared discovery preserves workspace ownership; a sibling’s pin never crosses over (#123)', () => {
     const files = [
       { path: 'packages/api/.ruby-version', content: '3.3' },
       { path: 'packages/web/.ruby-version', content: '2.7' },
@@ -688,7 +690,28 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
       findRuntimeDeclarations(files, 'ruby', 'packages/api', members).map((declaration) => declaration.file),
       ['packages/api/.ruby-version'],
     );
+    // #160 precedence: `packages/api` has its own member-scoped pin, so the
+    // unattributable (ambiguous) CI line is outranked and does not drag the
+    // member's authoritative result to `unknown`.
     const discovery = discoverRuntimeDeclarations(files, 'ruby', 'packages/api', members);
+    assert.deepEqual(
+      discovery.resolved.map((d) => d.file),
+      ['packages/api/.ruby-version'],
+    );
+    assert.deepEqual(discovery.unresolved, []);
+  });
+
+  test('with no member-specific pin, an ambiguous CI declaration still governs and stays unknown (#123)', () => {
+    const files = [
+      { path: 'packages/api/.ruby-version', content: '3.3' },
+      { path: 'packages/web/.ruby-version', content: '2.7' },
+      { path: '.github/workflows/ci.yml', content: 'ruby-version: "3.2"' },
+    ];
+    const members = ['', 'packages/api', 'packages/web'];
+    // The root workspace declares no Ruby version of its own; the only thing
+    // left is the unattributable CI line, which must remain unresolved.
+    const discovery = discoverRuntimeDeclarations(files, 'ruby', '', members);
+    assert.deepEqual(discovery.resolved, []);
     assert.equal(discovery.unresolved.length, 1);
     assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
   });
