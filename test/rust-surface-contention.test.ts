@@ -38,12 +38,27 @@ const PROBE = 'public-api --simplified';
 const surfaceLine = 'pub fn serde::from_str<T>(s: &str) -> T\n';
 
 interface ExecOptions {
-  /** `rustup run nightly rustc --version` output — the compiler identity. */
+  /** `rustup run nightly rustc --version` output — the moving `nightly` alias. */
   nightly?: string;
+  /** `cargo --version` output. A `-nightly` build changes which compiler counts. */
+  cargoVersion?: string;
+  /** `rustc --version` output — the active toolchain's own compiler. `null` = missing. */
+  activeRustc?: string | null;
   /** Whether `rustup` is on PATH at all. */
   rustup?: boolean;
   /** How long each probe occupies the pool. */
   probeDelayMs?: number;
+  /**
+   * Toolchain versions seen when a command runs with *no* `cwd` — i.e. from
+   * Drift's own process cwd (typically the repository root, where a
+   * `rust-toolchain.toml` or a rustup directory override can select a
+   * different compiler than the one the real probe builds with). Each defaults
+   * to the probe-context value, so a test only sets these to model a repo whose
+   * toolchain selection disagrees with the probe directory's.
+   */
+  repoCargoVersion?: string;
+  repoActiveRustc?: string | null;
+  repoNightly?: string;
 }
 
 /** An exec that answers every provisioning check and delegates the probe. */
@@ -55,16 +70,40 @@ function execWith(
   },
   opts: ExecOptions = {},
 ) {
-  const { nightly = 'rustc 1.90.0-nightly (abc 2025-01-01)', rustup = true, probeDelayMs = 15 } = opts;
+  const {
+    nightly = 'rustc 1.90.0-nightly (abc 2025-01-01)',
+    cargoVersion = 'cargo 1.90.0',
+    activeRustc = 'rustc 1.90.0 (7fe2c33e6 2025-01-01)',
+    rustup = true,
+    probeDelayMs = 15,
+  } = opts;
+  const repoCargoVersion = opts.repoCargoVersion ?? cargoVersion;
+  const repoActiveRustc = opts.repoActiveRustc === undefined ? activeRustc : opts.repoActiveRustc;
+  const repoNightly = opts.repoNightly ?? nightly;
   const probeCalls = new Map<string, number>();
   let running = 0;
   let peak = 0;
 
-  const exec = async (command: string, args: readonly string[]) => {
+  const exec = async (
+    command: string,
+    args: readonly string[],
+    options: { cwd?: string } = {},
+  ) => {
     const joined = args.join(' ');
-    if (command === 'cargo' && joined === '--version') return { code: 0, stdout: 'cargo 1.90.0', stderr: '' };
+    // A `cwd` means the command ran in the probe's toolchain-selection context
+    // (`request.workdir`); no `cwd` means it ran from Drift's process cwd.
+    const inProbeContext = Boolean(options.cwd);
+    const seenCargo = inProbeContext ? cargoVersion : repoCargoVersion;
+    const seenRustc = inProbeContext ? activeRustc : repoActiveRustc;
+    const seenNightly = inProbeContext ? nightly : repoNightly;
+    if (command === 'cargo' && joined === '--version') return { code: 0, stdout: seenCargo, stderr: '' };
     if (command === 'cargo' && joined === 'public-api --version') {
       return { code: 0, stdout: 'cargo-public-api 0.50.0', stderr: '' };
+    }
+    if (command === 'rustc' && joined === '--version') {
+      return seenRustc === null
+        ? { code: 1, stdout: '', stderr: 'rustc: command not found', failure: 'not-found' as const }
+        : { code: 0, stdout: seenRustc, stderr: '' };
     }
     if (command === 'rustup' && joined === '--version') {
       return rustup
@@ -73,7 +112,7 @@ function execWith(
     }
     if (command === 'rustup') {
       return rustup
-        ? { code: 0, stdout: nightly, stderr: '' }
+        ? { code: 0, stdout: seenNightly, stderr: '' }
         : { code: 1, stdout: '', stderr: '', failure: 'not-found' as const };
     }
 
@@ -272,6 +311,70 @@ describe('persistent rust surface cache', () => {
     }
   });
 
+  test('an active nightly cargo keys the cache on its own rustc, not the moving nightly alias', async () => {
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-rust-cache-'));
+    configureHttpDiskCache(cacheDir);
+    try {
+      // `cargo` is itself a nightly build, so `cargo public-api` stays on the
+      // active toolchain. The compiler identity is the pinned `rustc --version`;
+      // the `rustup run nightly` alias is a different, unused toolchain.
+      const activeNightly = { cargoVersion: 'cargo 1.90.0-nightly (deadbee 2025-01-01)' };
+      const a = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), {
+        ...activeNightly,
+        activeRustc: 'rustc 1.90.0-nightly (PINNEDA1 2025-01-01)',
+        nightly: 'rustc 1.99.0-nightly (MOVINGAA 2025-06-01)',
+      });
+      const first = await computeSurfaceDiff(change(), { logger, exec: a.exec });
+      assert.equal(first.available, true);
+      assert.equal(a.probeCount(), 2);
+
+      // The moving alias rolls; the active pinned rustc does not. The surface
+      // must replay from cache — the alias was never part of the key.
+      const b = execWith(() => ({ code: 101, stdout: '', stderr: 'error: could not compile' }), {
+        ...activeNightly,
+        activeRustc: 'rustc 1.90.0-nightly (PINNEDA1 2025-01-01)',
+        nightly: 'rustc 1.99.0-nightly (MOVINGBB 2025-07-01)',
+      });
+      const second = await computeSurfaceDiff(change(), { logger, exec: b.exec });
+      assert.equal(second.available, true, 'served from cache: the unused alias rolling is irrelevant');
+      assert.equal(b.probeCount(), 0, 'the cache key did not include `rustup run nightly`');
+    } finally {
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('an active nightly cargo whose pinned rustc changes invalidates the cache', async () => {
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-rust-cache-'));
+    configureHttpDiskCache(cacheDir);
+    try {
+      const activeNightly = {
+        cargoVersion: 'cargo 1.90.0-nightly (deadbee 2025-01-01)',
+        nightly: 'rustc 1.99.0-nightly (MOVINGXX 2025-06-01)',
+      };
+      const a = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), {
+        ...activeNightly,
+        activeRustc: 'rustc 1.90.0-nightly (PINNEDA1 2025-01-01)',
+      });
+      const first = await computeSurfaceDiff(change(), { logger, exec: a.exec });
+      assert.equal(first.available, true);
+      assert.equal(a.probeCount(), 2);
+
+      // Same moving alias, but the active toolchain was updated to a new pinned
+      // nightly — the real compiler behind the probe changed, so re-probe.
+      const b = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), {
+        ...activeNightly,
+        activeRustc: 'rustc 1.90.0-nightly (PINNEDB2 2025-02-01)',
+      });
+      const second = await computeSurfaceDiff(change(), { logger, exec: b.exec });
+      assert.equal(second.available, true);
+      assert.equal(b.probeCount(), 2, 'a changed active nightly rustc invalidated the cached surface');
+    } finally {
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
   test('a surface is not persisted when the compiler identity cannot be established', async () => {
     const cacheDir = await mkdtemp(join(tmpdir(), 'drift-rust-cache-'));
     configureHttpDiskCache(cacheDir);
@@ -290,6 +393,102 @@ describe('persistent rust surface cache', () => {
       const b = await computeSurfaceDiff(change(), { logger, exec: second.exec });
       assert.equal(b.available, true);
       assert.equal(second.probeCount(), 2, 'no identity-unknown surface was persisted or replayed');
+    } finally {
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('an active nightly cargo with no readable rustc runs the probe but persists nothing', async () => {
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-rust-cache-'));
+    configureHttpDiskCache(cacheDir);
+    try {
+      const opts = { cargoVersion: 'cargo 1.90.0-nightly (deadbee 2025-01-01)', activeRustc: null };
+      const first = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), opts);
+      const a = await computeSurfaceDiff(change(), { logger, exec: first.exec });
+      assert.equal(a.available, true, 'analysis still succeeds with an unprovable identity');
+      assert.equal(first.probeCount(), 2);
+
+      const second = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), opts);
+      const b = await computeSurfaceDiff(change(), { logger, exec: second.exec });
+      assert.equal(b.available, true);
+      assert.equal(second.probeCount(), 2, 'nothing durable was cached without a compiler identity');
+    } finally {
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('identity follows the probe cwd, not the repo cwd: repo nightly, probe stable', async () => {
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-rust-cache-'));
+    configureHttpDiskCache(cacheDir);
+    try {
+      // The repository the developer ran Drift in pins nightly via
+      // `rust-toolchain.toml`, so a version probe from *that* cwd sees a nightly
+      // `cargo` and a pinned rustc. But the throwaway probe crate lives under
+      // Drift's mkdtemp dir with no such file, so `cargo` there is stable and
+      // `cargo public-api` will shell out to the moving `nightly` alias. The
+      // cache key must reflect the probe context: the moving alias.
+      const repo = {
+        repoCargoVersion: 'cargo 1.90.0-nightly (REPOPIN1 2025-01-01)',
+        repoActiveRustc: 'rustc 1.90.0-nightly (REPOPIN1 2025-01-01)',
+      };
+      const a = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), {
+        ...repo,
+        cargoVersion: 'cargo 1.90.0',
+        nightly: 'rustc 1.99.0-nightly (MOVING_B 2025-06-01)',
+      });
+      const first = await computeSurfaceDiff(change(), { logger, exec: a.exec });
+      assert.equal(first.available, true);
+      assert.equal(a.probeCount(), 2);
+
+      // Only the moving alias rolls; the repo's pinned toolchain is unchanged.
+      // A key built from the repo cwd would hit; a correct key misses.
+      const b = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), {
+        ...repo,
+        cargoVersion: 'cargo 1.90.0',
+        nightly: 'rustc 1.99.0-nightly (MOVING_C 2025-07-01)',
+      });
+      const second = await computeSurfaceDiff(change(), { logger, exec: b.exec });
+      assert.equal(second.available, true);
+      assert.equal(b.probeCount(), 2, 'identity came from the probe cwd (stable -> moving alias), so the roll invalidated it');
+    } finally {
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('identity follows the probe cwd, not the repo cwd: repo stable, probe pinned nightly', async () => {
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-rust-cache-'));
+    configureHttpDiskCache(cacheDir);
+    try {
+      // The mirror case: Drift's process cwd resolves stable `cargo` (and would
+      // pick the moving `nightly` alias), but the probe directory is governed by
+      // a pinned nightly, so the real build uses that pinned `rustc`. The key
+      // must be the pinned rustc, and must not move when only the alias moves.
+      const probe = {
+        cargoVersion: 'cargo 1.90.0-nightly (PROBEPIN 2025-01-01)',
+        activeRustc: 'rustc 1.90.0-nightly (PROBEPIN 2025-01-01)',
+      };
+      const a = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), {
+        ...probe,
+        repoCargoVersion: 'cargo 1.90.0',
+        repoNightly: 'rustc 1.99.0-nightly (MOVING_X 2025-06-01)',
+      });
+      const first = await computeSurfaceDiff(change(), { logger, exec: a.exec });
+      assert.equal(first.available, true);
+      assert.equal(a.probeCount(), 2);
+
+      // Repo-cwd alias unchanged; the probe's pinned toolchain was updated.
+      const b = execWith(() => ({ code: 0, stdout: surfaceLine, stderr: '' }), {
+        cargoVersion: 'cargo 1.90.0-nightly (PROBEPN2 2025-02-01)',
+        activeRustc: 'rustc 1.90.0-nightly (PROBEPN2 2025-02-01)',
+        repoCargoVersion: 'cargo 1.90.0',
+        repoNightly: 'rustc 1.99.0-nightly (MOVING_X 2025-06-01)',
+      });
+      const second = await computeSurfaceDiff(change(), { logger, exec: b.exec });
+      assert.equal(second.available, true);
+      assert.equal(b.probeCount(), 2, 'the probe cwd pinned rustc changed, so the cached surface was invalidated');
     } finally {
       configureHttpDiskCache(null);
       await rm(cacheDir, { recursive: true, force: true });
