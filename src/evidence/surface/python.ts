@@ -6,7 +6,13 @@ import { isAvailable } from '../../util/exec.js';
 import { fetchArchive, fetchJson } from '../../util/http.js';
 import { readComputed, writeComputed } from '../../util/artifact-cache.js';
 import { fetchRegistryInfo } from '../registry.js';
-import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
+import {
+  diffSurfaces,
+  type CallableParam,
+  type SurfaceApi,
+  type SurfaceEntry,
+  type SurfaceKind,
+} from '../type-surface.js';
 import { matchesVersion } from './c.js';
 import { raceAgainstBudget, unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
@@ -710,6 +716,8 @@ interface PythonSymbol {
   kind: string;
   signature: string;
   members?: string[];
+  /** Structured parameter list for functions — see {@link SurfaceEntry.callable}. */
+  callable?: CallableParam[];
   /**
    * The helper proved this name is public (explicitly imported and listed in
    * `__all__`) but could not resolve its declaration from the parsed package —
@@ -754,6 +762,7 @@ export function parsePythonSurface(json: string): SurfaceApi | null {
       signature: symbol.signature ?? symbol.name,
       members: symbol.members ?? [],
       requiredMembers: [],
+      ...(Array.isArray(symbol.callable) ? { callable: { parameters: symbol.callable } } : {}),
     });
   }
   return api;
@@ -784,6 +793,33 @@ def signature(node):
         bases = [ast.unparse(b) if hasattr(ast, 'unparse') else '?' for b in node.bases]
         return 'class %s(%s)' % (node.name, ', '.join(bases))
     return node.name if hasattr(node, 'name') else ''
+
+def call_shape(node):
+    # A structured, deterministic parameter list — the display string above
+    # loses which parameters are optional, where the positional-only boundary
+    # is, and which keyword-only parameters are required. None for non-callables.
+    if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        return None
+    args = node.args
+    out = []
+    posonly = list(getattr(args, 'posonlyargs', []))
+    positional = posonly + list(args.args)
+    ndef = len(args.defaults)
+    for i, a in enumerate(positional):
+        out.append({
+            'name': a.arg,
+            'kind': 'positional-only' if i < len(posonly) else 'positional-or-keyword',
+            'required': i < len(positional) - ndef,
+        })
+    if args.vararg:
+        out.append({'name': args.vararg.arg, 'kind': 'var-positional', 'required': False})
+    kw_defaults = args.kw_defaults or []
+    for i, a in enumerate(args.kwonlyargs):
+        supplied = i < len(kw_defaults) and kw_defaults[i] is not None
+        out.append({'name': a.arg, 'kind': 'keyword-only', 'required': not supplied})
+    if args.kwarg:
+        out.append({'name': args.kwarg.arg, 'kind': 'var-keyword', 'required': False})
+    return out
 
 def members(node):
     out = []
@@ -1027,7 +1063,7 @@ def resolve_relative(module, is_pkg, level, target):
 def local_symbol(node):
     if isinstance(node, ast.ClassDef):
         return {'decl': node.name, 'kind': 'class', 'signature': signature(node), 'members': sorted(members(node))}
-    return {'decl': node.name, 'kind': 'function', 'signature': signature(node), 'members': []}
+    return {'decl': node.name, 'kind': 'function', 'signature': signature(node), 'members': [], 'callable': call_shape(node)}
 
 # ---- Stage 1: index every module's declarations and import bindings ----
 index = {}
@@ -1186,7 +1222,10 @@ for module, entry in index.items():
             sig = name
         elif shape.get('decl') and shape['decl'] != name:
             sig = re.sub(r'\\b' + re.escape(shape['decl']) + r'\\b', name, sig, count=1)
-        symbols[key] = {'name': key, 'kind': shape['kind'], 'signature': sig, 'members': list(shape['members'])}
+        emitted = {'name': key, 'kind': shape['kind'], 'signature': sig, 'members': list(shape['members'])}
+        if shape.get('callable') is not None:
+            emitted['callable'] = shape['callable']
+        symbols[key] = emitted
 
 json.dump(sorted(symbols.values(), key=lambda s: s['name']), sys.stdout)
 `;
