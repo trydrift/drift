@@ -810,14 +810,17 @@ describe('HTTP and exec aggregation', () => {
           clearHttpCache();
           await Promise.all([fetchText('https://example.com/coalesced'), fetchText('https://example.com/coalesced')]);
 
-          await fetchText('https://example.com/stale', { cacheTtlMs: 1 });
+          // cacheTtlMs: 0 makes the disk entry unconditionally stale on the next
+          // read (now - fetchedAt is never < 0), so the re-fetch path is
+          // deterministic instead of racing a 1ms TTL against sub-millisecond
+          // test execution on fast CI runners.
+          await fetchText('https://example.com/stale', { cacheTtlMs: 0 });
           clearHttpCache();
-          await new Promise((resolve) => setTimeout(resolve, 5));
-          await fetchText('https://example.com/stale', { cacheTtlMs: 1 });
+          await fetchText('https://example.com/stale', { cacheTtlMs: 0 });
 
           await fetchText('https://example.com/revalidate');
           clearHttpCache();
-          await fetchText('https://example.com/revalidate', { cacheTtlMs: 1 });
+          await fetchText('https://example.com/revalidate', { cacheTtlMs: 0 });
         });
         log.finish('ok');
         const contents = await readFile(log.path!, 'utf8');
