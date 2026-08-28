@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FEATURE_FORM_URL, FEATURES_API_URL, GITHUB_URL, readFeatureCache, normalizeFeatures, sortNew, sortShipped, sortTop, writeFeatureCache, type Feature } from "@/lib/github-features";
+import { FEATURE_FORM_URL, FEATURES_API_URL, GITHUB_URL, readFeatureCache, normalizeFeatures, resolveBoardState, sortNew, sortShipped, sortTop, writeFeatureCache, type Feature } from "@/lib/github-features";
 
 type View = "top" | "new" | "shipped";
 const tabs: { id: View; label: string }[] = [{ id: "top", label: "Top" }, { id: "new", label: "New" }, { id: "shipped", label: "Shipped" }];
@@ -11,10 +11,11 @@ export function FeatureBoard() {
   const [view, setView] = useState<View>("top");
   const [loading, setLoading] = useState(true);
   const [refreshError, setRefreshError] = useState(false);
+  const [hasCachedSnapshot, setHasCachedSnapshot] = useState(false);
   useEffect(() => {
     let active = true;
     const cached = readFeatureCache(localStorage.getItem("drift:feature-board"));
-    if (cached.kind !== "invalid") { setFeatures(cached.features); setLoading(false); }
+    if (cached.kind !== "invalid") { setFeatures(cached.features); setHasCachedSnapshot(true); setLoading(false); }
     const load = async () => {
       if (cached.kind === "fresh") return;
       try {
@@ -26,17 +27,18 @@ export function FeatureBoard() {
           if (!Array.isArray(batch)) throw new Error("Unexpected GitHub response");
           all.push(...batch); if (batch.length < 100) break;
         }
-        const normalized = normalizeFeatures(all); if (active) { setFeatures(normalized); setRefreshError(false); localStorage.setItem("drift:feature-board", writeFeatureCache(normalized)); }
+        const normalized = normalizeFeatures(all); if (active) { setFeatures(normalized); setHasCachedSnapshot(true); setRefreshError(false); localStorage.setItem("drift:feature-board", writeFeatureCache(normalized)); }
       } catch { if (active) setRefreshError(true); }
       finally { if (active) setLoading(false); }
     };
     void load(); return () => { active = false; };
   }, []);
+  const boardState = resolveBoardState(hasCachedSnapshot, refreshError);
   const listed = view === "top" ? sortTop(features) : view === "new" ? sortNew(features) : sortShipped(features);
   return <section aria-labelledby="board-heading" className="mt-10">
     <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 id="board-heading" className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Public board</h2><p className="mt-2 text-sm text-muted">Requests and votes live on GitHub.</p></div><div role="tablist" aria-label="Feature request views" className="flex rounded-lg border border-border bg-surface p-1">{tabs.map((tab) => <button key={tab.id} role="tab" aria-selected={view === tab.id} onClick={() => setView(tab.id)} className={`rounded-md px-3 py-1.5 text-xs font-medium ${view === tab.id ? "bg-surface-hover text-foreground" : "text-muted hover:text-foreground"}`}>{tab.label}</button>)}</div></div>
-    {refreshError && features.length > 0 && <p className="mt-4 text-xs text-faint">Could not refresh GitHub data. Showing cached data.</p>}
-    {loading ? <div className="mt-5 space-y-3" aria-label="Loading feature requests"><div className="h-28 animate-pulse rounded-xl border border-border bg-surface" /><div className="h-28 animate-pulse rounded-xl border border-border bg-surface" /></div> : refreshError && features.length === 0 ? <div className="mt-5 rounded-xl border border-dashed border-border bg-surface/60 p-8 text-center"><h3 className="font-serif text-xl text-landing">Feature data could not be loaded.</h3><p className="mt-2 text-sm text-muted"><a className="text-brand-text underline" href={`${GITHUB_URL}/issues?q=is%3Aissue+label%3Afeature-request`} target="_blank" rel="noreferrer">Browse feature requests on GitHub</a> or <a className="text-brand-text underline" href={FEATURE_FORM_URL} target="_blank" rel="noreferrer">create a feature request</a>.</p></div> : listed.length === 0 ? <div className="mt-5 rounded-xl border border-dashed border-border bg-surface/60 p-8 text-center"><h3 className="font-serif text-xl text-landing">{view === "shipped" ? "Nothing shipped yet." : "No feature requests yet."}</h3><p className="mt-2 text-sm text-muted">{view === "shipped" ? "Follow the board as ideas become part of Drift." : "Have something Drift should do? Start the board."}</p>{view === "shipped" ? <button type="button" onClick={() => setView("top")} className="mt-5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground">Browse requests</button> : <a href={FEATURE_FORM_URL} target="_blank" rel="noreferrer" className="mt-5 inline-block rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground">Request the first feature</a>}</div> : <div className="mt-5 space-y-3">{listed.map((feature, index) => <FeatureRow key={feature.number} feature={feature} rank={index + 1} />)}</div>}
+    {boardState === "stale" && <p className="mt-4 text-xs text-faint">Could not refresh GitHub data. Showing cached data.</p>}
+    {loading ? <div className="mt-5 space-y-3" aria-label="Loading feature requests"><div className="h-28 animate-pulse rounded-xl border border-border bg-surface" /><div className="h-28 animate-pulse rounded-xl border border-border bg-surface" /></div> : boardState === "error" ? <div className="mt-5 rounded-xl border border-dashed border-border bg-surface/60 p-8 text-center"><h3 className="font-serif text-xl text-landing">Feature data could not be loaded.</h3><p className="mt-2 text-sm text-muted"><a className="text-brand-text underline" href={`${GITHUB_URL}/issues?q=is%3Aissue+label%3Afeature-request`} target="_blank" rel="noreferrer">Browse feature requests on GitHub</a> or <a className="text-brand-text underline" href={FEATURE_FORM_URL} target="_blank" rel="noreferrer">create a feature request</a>.</p></div> : listed.length === 0 ? <div className="mt-5 rounded-xl border border-dashed border-border bg-surface/60 p-8 text-center"><h3 className="font-serif text-xl text-landing">{view === "shipped" ? "Nothing shipped yet." : "No feature requests yet."}</h3><p className="mt-2 text-sm text-muted">{view === "shipped" ? "Follow the board as ideas become part of Drift." : "Have something Drift should do? Start the board."}</p>{view === "shipped" ? <button type="button" onClick={() => setView("top")} className="mt-5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground">Browse requests</button> : <a href={FEATURE_FORM_URL} target="_blank" rel="noreferrer" className="mt-5 inline-block rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground">Request the first feature</a>}</div> : <div className="mt-5 space-y-3">{listed.map((feature, index) => <FeatureRow key={feature.number} feature={feature} rank={index + 1} />)}</div>}
   </section>;
 }
 

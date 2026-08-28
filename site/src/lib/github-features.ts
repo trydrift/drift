@@ -131,3 +131,18 @@ export function readFeatureCache(raw: string | null, now = Date.now()): FeatureC
 export function writeFeatureCache(features: Feature[], cachedAt = Date.now()): string {
   return JSON.stringify({ schema: CACHE_SCHEMA, cachedAt, features } satisfies FeatureCache);
 }
+
+/**
+ * What the board should render once the initial load has settled.
+ *
+ * The distinction that matters: whether a usable GitHub snapshot was ever
+ * obtained (`hasCachedSnapshot`) is independent of how many features it holds.
+ * A successful response with zero feature requests is a real snapshot, so a
+ * later failed refresh over it is "stale" — show the empty board with a
+ * refresh warning — not "error". Only the absence of any snapshot plus a
+ * failed fetch is the hard "could not be loaded" state.
+ */
+export function resolveBoardState(hasCachedSnapshot: boolean, refreshError: boolean): "error" | "stale" | "ok" {
+  if (!hasCachedSnapshot) return refreshError ? "error" : "ok";
+  return refreshError ? "stale" : "ok";
+}
