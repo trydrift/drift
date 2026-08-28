@@ -1,5 +1,5 @@
 import { instrumentSerif } from "@/lib/fonts";
-import { Code, GhBadge, GhCommit, GhIcon, GhPanel, type CodeLine } from "@/components/gh";
+import { Code, GhBadge, GhIcon, GhPanel, type CodeLine } from "@/components/gh";
 import { BYAM_LLM_REPAIR_STUDY } from "@/lib/external-citations";
 
 /**
@@ -20,9 +20,8 @@ import { BYAM_LLM_REPAIR_STUDY } from "@/lib/external-citations";
  *
  * One example runs through all five stages, and it is real: w3lib 2.1.1 →
  * 2.4.1 in Scrapy, taken from the recording on this same page
- * (`data/scrapy.json`). The release-note line, the four call sites, their
- * file paths and their line numbers are the recording's, unedited. Nothing
- * here is an illustration of what a finding might look like.
+ * (`data/scrapy.json`). The finding, release-note evidence, remediation, and four call sites —
+ * including their file paths and line numbers — come directly from the recording.
  *
  * Built from CSS and inline SVG rather than an image, so it stays legible at
  * any width, follows the theme, and can be read aloud.
@@ -146,7 +145,7 @@ const STAGES: Stage[] = [
       <GhPanel icon="search" name="symbol: canonicalize_url" meta="4 results · 3 files">
         <div className="divide-y divide-border">
           {SITES.map((site, index) => (
-            <div key={SITE_FILES[index]}>
+            <div key={`${SITE_FILES[index]}:${site.n}`}>
               <p className="flex items-center gap-1.5 bg-surface px-3 py-1.5 font-mono text-[11px] text-faint">
                 <GhIcon icon="file" className="size-3" />
                 {SITE_FILES[index]}
@@ -160,24 +159,17 @@ const STAGES: Stage[] = [
   },
   {
     n: 5,
-    title: "Plan, Then Fix",
-    lead: "One commit per concern, in dependency order.",
+    title: "Know What To Review",
+    lead: "The finding includes its remediation.",
     detail:
-      "Never one 'upgrade everything' commit — a reviewer has to read, approve, or revert one piece at a time, and git bisect has to stay meaningful. Each change is resolved by a deterministic codemod where one exists, then a validated fix plan — one rule, applied to every call site at once — then an AI agent for whatever is left. Never silently, and always in that order.",
+      "Drift keeps the recommended next step attached to the finding, so the evidence, affected code, and remediation stay together.",
     artefact: (
-      <GhPanel icon="commit" name="drift/upgrade-w3lib" meta="2 commits">
-        <div className="divide-y divide-border">
-          <GhCommit
-            tag="dependency"
-            message="deps: w3lib 2.1.1 → 2.4.1"
-            detail="The dependency move is isolated so it can be reviewed or reverted independently."
-          />
-          <GhCommit
-            tag="agent"
-            message="review(w3lib): verify canonicalize_url userinfo semantics"
-            detail="The upstream change is behavioral, not syntactic. Review the four directly bound canonicalize_url call sites and only change code where it actually relies on userinfo being lowercased. If no caller relies on that behavior, no source edit is needed."
-          />
-        </div>
+      <GhPanel icon="check" name="remediation" meta="from Drift">
+        <p className="px-3 py-3 text-[12.5px] leading-relaxed text-muted">
+          Behaviour changed: <code className="font-mono">canonicalize_url</code> no longer applies
+          lowercase to the userinfo URL component. Review call sites for assumptions that no longer
+          hold. Prefer making the assumption explicit over silently adapting to the new behaviour.
+        </p>
       </GhPanel>
     ),
   },
