@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -25,7 +25,14 @@ export type HelperArtifactError =
   /** The artifact could not be downloaded (network, 404, non-200). */
   | { kind: 'download-failed'; detail: string }
   /** The bytes downloaded did not match the pinned SHA-256 — refused before use. */
-  | { kind: 'checksum-failed'; detail: string };
+  | { kind: 'checksum-failed'; detail: string }
+  /**
+   * The verified bytes could not be published into the Drift cache — an
+   * `mkdir`/`writeFile`/`rename` failed (read-only or full disk, permissions).
+   * The helper is genuinely unavailable this run, but nothing is wrong with the
+   * toolchain itself; callers report an evidence gap, not a missing tool.
+   */
+  | { kind: 'cache-failed'; detail: string };
 
 export type HelperArtifactResult =
   | { ok: true; path: string }
@@ -127,9 +134,24 @@ async function acquire(spec: HelperArtifactSpec): Promise<HelperArtifactResult> 
   // Atomic publish: write a unique temp file, then rename it into place. A
   // concurrent process doing the same lands identical verified bytes, so
   // last-writer-wins is safe.
-  await mkdir(dir, { recursive: true });
+  //
+  // Every step here touches the filesystem and can fail for reasons that have
+  // nothing to do with the helper or the toolchain — a read-only cache dir, a
+  // full disk, a revoked permission. Those must become a structured
+  // `cache-failed` result, never a rejected promise that escapes evidence
+  // handling and aborts the scan. The temp file is cleaned up best-effort so a
+  // failed publish does not leak bytes into the cache dir.
   const tmp = join(dir, `.${spec.id}-${spec.version}.${process.pid}.${Date.now()}.tmp`);
-  await writeFile(tmp, downloaded.bytes);
-  await rename(tmp, dest);
-  return { ok: true, path: dest };
+  try {
+    await mkdir(dir, { recursive: true });
+    await writeFile(tmp, downloaded.bytes);
+    await rename(tmp, dest);
+    return { ok: true, path: dest };
+  } catch (err) {
+    await rm(tmp, { force: true }).catch(() => {});
+    return {
+      ok: false,
+      error: { kind: 'cache-failed', detail: `${dest}: ${(err as Error).message}` },
+    };
+  }
 }

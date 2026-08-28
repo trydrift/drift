@@ -72,13 +72,15 @@ export const javaSurface: SurfaceProvider = {
       sha256: JAPICMP_JAR_SHA256,
     });
     if (!helper.ok) {
-      return unavailable(
-        TOOL,
-        'toolchain-failed',
+      // Every branch here is an evidence gap in the helper Drift manages, not a
+      // statement about Java: `java -version` already succeeded above.
+      const detail =
         helper.error.kind === 'checksum-failed'
           ? `Drift's pinned japicmp helper failed its SHA-256 check and was not run (${helper.error.detail}).`
-          : `Drift could not download its pinned japicmp helper (${helper.error.detail}).`,
-      );
+          : helper.error.kind === 'cache-failed'
+            ? `Drift verified its pinned japicmp helper but could not cache it for use (${helper.error.detail}).`
+            : `Drift could not download its pinned japicmp helper (${helper.error.detail}).`;
+      return unavailable(TOOL, 'toolchain-failed', detail);
     }
     const japicmpJar = helper.path;
 

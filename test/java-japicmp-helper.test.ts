@@ -1,7 +1,7 @@
 import { test, describe, afterEach, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -78,6 +78,46 @@ describe('Drift-managed helper artifact', () => {
     if (!result.ok) assert.equal(result.error.kind, 'checksum-failed');
   });
 
+  test('a cache directory that cannot be created is cache-failed, not a throw', async () => {
+    globalThis.fetch = (async () => new Response(JAR_BYTES, { status: 200 })) as typeof fetch;
+    // Occupy the `helpers/` cache path with a file so `mkdir` cannot create it.
+    await writeFile(join(cacheDir, 'helpers'), 'in the way');
+
+    const result = await ensureHelperArtifact({
+      id: 'demo-helper',
+      version: '1.2.3',
+      url: 'https://repo1.maven.org/maven2/demo/helper.jar',
+      sha256: JAR_SHA,
+    });
+
+    assert.equal(result.ok, false, 'a filesystem cache failure does not reject the promise');
+    if (!result.ok) assert.equal(result.error.kind, 'cache-failed');
+  });
+
+  test('a publication rename failure is cache-failed and cleans up its temp file', async () => {
+    globalThis.fetch = (async () => new Response(JAR_BYTES, { status: 200 })) as typeof fetch;
+    // Occupy the destination path with a non-empty directory so `rename` fails
+    // after the temp file is already written.
+    const helpers = join(cacheDir, 'helpers');
+    await mkdir(join(helpers, 'demo-helper-7.7.7.jar', 'child'), { recursive: true });
+
+    const result = await ensureHelperArtifact({
+      id: 'demo-helper',
+      version: '7.7.7',
+      url: 'https://repo1.maven.org/maven2/demo/helper.jar',
+      sha256: JAR_SHA,
+    });
+
+    assert.equal(result.ok, false);
+    if (!result.ok) assert.equal(result.error.kind, 'cache-failed');
+    const { readdir } = await import('node:fs/promises');
+    const entries = await readdir(helpers);
+    assert.ok(
+      !entries.some((name) => name.endsWith('.tmp')),
+      'the temp file is cleaned up best-effort after a failed publish',
+    );
+  });
+
   test('a failed download is reported as download-failed', async () => {
     globalThis.fetch = (async () => new Response('nope', { status: 404 })) as typeof fetch;
 
@@ -145,6 +185,28 @@ describe('javaSurface error separation', () => {
     if (!outcome.available) {
       assert.equal(outcome.reason, 'toolchain-failed');
       assert.match(outcome.detail, /SHA-256 check/);
+    }
+  });
+
+  test('a helper acquisition failure never blames Java when Java is present', async () => {
+    globalThis.fetch = (async () => new Response('', { status: 503 })) as typeof fetch;
+
+    const workdir = await mkdtemp(join(tmpdir(), 'drift-java-dl-'));
+    const outcome = await javaSurface.compute({
+      ...baseRequest,
+      workdir,
+      exec: async (command, args) =>
+        command === 'java' && args[0] === '-version'
+          ? { code: 0, stdout: '', stderr: 'openjdk 21' }
+          : { code: 1, stdout: '', stderr: 'unexpected' },
+    });
+    await rm(workdir, { recursive: true, force: true });
+
+    assert.equal(outcome.available, false);
+    if (!outcome.available) {
+      assert.equal(outcome.reason, 'toolchain-failed');
+      assert.doesNotMatch(outcome.detail, /Java is not installed/);
+      assert.match(outcome.detail, /japicmp helper/);
     }
   });
 });
