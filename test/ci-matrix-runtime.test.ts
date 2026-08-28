@@ -263,6 +263,44 @@ describe('genuinely dynamic matrix and non-matrix expressions stay unresolved', 
     assert.ok(unresolved.length > 0);
   });
 
+  test('a dynamic include alongside a static dimension leaves the consumer unresolved', () => {
+    const content = [
+      'jobs:',
+      '  test:',
+      '    strategy:',
+      '      matrix:',
+      '        python-version: ["3.13", "3.14"]',
+      '        include: ${{ fromJSON(inputs.extra_matrix) }}',
+      '    steps:',
+      '      - uses: actions/setup-python@v5',
+      '        with:',
+      '          python-version: ${{ matrix.python-version }}',
+    ].join('\n');
+    const { resolved, unresolved } = discover(content, 'python');
+    assert.deepEqual(resolved, [], 'no authoritative runtime declarations');
+    assert.ok(unresolved.length > 0, 'consumer remains unresolved');
+    assert.equal(unresolved[0].rawText, '${{ matrix.python-version }}');
+  });
+
+  test('a dynamic exclude alongside a static dimension leaves the consumer unresolved', () => {
+    const content = [
+      'jobs:',
+      '  test:',
+      '    strategy:',
+      '      matrix:',
+      '        python-version: ["3.10", "3.14"]',
+      '        exclude: ${{ fromJSON(needs.prepare.outputs.exclude) }}',
+      '    steps:',
+      '      - uses: actions/setup-python@v5',
+      '        with:',
+      '          python-version: ${{ matrix.python-version }}',
+    ].join('\n');
+    const { resolved, unresolved } = discover(content, 'python');
+    assert.deepEqual(resolved, [], 'no authoritative runtime declarations');
+    assert.ok(unresolved.length > 0, 'consumer remains unresolved');
+    assert.equal(unresolved[0].rawText, '${{ matrix.python-version }}');
+  });
+
   test('an unevaluatable exclude entry leaves the consumer unresolved', () => {
     const content = [
       'jobs:',

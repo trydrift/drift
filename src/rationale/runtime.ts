@@ -1087,7 +1087,13 @@ function resolveJobMatrixKey(
   }
   const baseKeySet = new Set(baseKeys);
 
+  // `include` / `exclude` may only be skipped when they are genuinely absent.
+  // A present-but-dynamic form — `exclude: ${{ fromJSON(...) }}`, a mapping, a
+  // bare `include:` — changes the reachable configuration set in a way Drift
+  // cannot enumerate statically, so the consumer must stay unresolved rather
+  // than resolve against the visible static dimensions alone.
   const excludeNode = matrixNode.get('exclude', true);
+  if (matrixNode.has('exclude') && !isSeq(excludeNode)) return { ok: false };
   if (isSeq(excludeNode)) {
     for (const entry of excludeNode.items) {
       if (!isMap(entry)) return { ok: false };
@@ -1105,6 +1111,7 @@ function resolveJobMatrixKey(
   }
 
   const includeNode = matrixNode.get('include', true);
+  if (matrixNode.has('include') && !isSeq(includeNode)) return { ok: false };
   if (isSeq(includeNode)) {
     // Only the base Cartesian product is a merge target. An include entry that
     // becomes its own standalone combination is never one — otherwise a second
