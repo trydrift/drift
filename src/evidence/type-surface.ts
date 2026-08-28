@@ -24,7 +24,16 @@ export type SurfaceKind =
   | 'type'
   | 'variable'
   | 'enum'
-  | 'namespace';
+  | 'namespace'
+  /**
+   * A public symbol Drift can prove *exists* but whose declaration it could
+   * not statically resolve — a Python explicit re-export (`from x import Foo`
+   * listed in `__all__`) whose target lives in a package that was not parsed.
+   * Paired with {@link SurfaceEntry.shapeUnknown}; never produced by a source
+   * a parser could actually read, so `signature`/`members` carry no meaning
+   * and {@link diffSurfaces} skips every shape comparison for it.
+   */
+  | 'unknown';
 
 export interface SurfaceEntry {
   name: string;
@@ -37,6 +46,20 @@ export interface SurfaceEntry {
   memberSignatures?: Record<string, string>;
   /** Required member names, so optional -> required is detectable. */
   requiredMembers: string[];
+  /**
+   * The public symbol is known to exist, but its shape could not be resolved.
+   *
+   * Set only for a Python explicit re-export (`from pkg import Foo` with
+   * `Foo` in `__all__`) whose target declaration Drift could not find in the
+   * package it parsed — typically because the target is in a third-party
+   * package. Existence is proven; `kind`/`signature`/`members` are
+   * placeholders. {@link diffSurfaces} treats a shape-unknown entry as
+   * present (so no `export-removed`) but compares none of its shape (so no
+   * speculative `kind-changed`/`signature-changed`/`member-removed`). A
+   * shape-unknown symbol that later goes missing entirely is still a real
+   * `export-removed`, because existence genuinely disappeared.
+   */
+  shapeUnknown?: boolean;
   /**
    * The dependency this symbol is actually declared in.
    *
@@ -1866,13 +1889,26 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
     if (!newEntry) {
       changes.push({
         kind: 'export-removed',
+        // A shape-unknown symbol going missing is still a real removal —
+        // existence, the one thing that entry did assert, has disappeared —
+        // but its `kind` was never real, so it is not quoted as one.
         symbol: name,
-        detail: `\`${name}\` is no longer exported (was a ${oldEntry.kind})${origin}.`,
+        detail: oldEntry.shapeUnknown
+          ? `\`${name}\` is no longer exported${origin}.`
+          : `\`${name}\` is no longer exported (was a ${oldEntry.kind})${origin}.`,
         before: oldEntry.signature,
-        fromKind: oldEntry.kind,
+        ...(oldEntry.shapeUnknown ? {} : { fromKind: oldEntry.kind }),
       });
       continue;
     }
+
+    // One side is a public symbol Drift proved exists but could not resolve to
+    // a declaration (a Python explicit re-export into `__all__` whose target
+    // was not in the parsed package). `newEntry` is present, so there is no
+    // removal; and its `kind`/`signature`/`members` are placeholders, so every
+    // comparison below would be inventing a change out of a value that was
+    // never the package's. Existence matched — say nothing more.
+    if (oldEntry.shapeUnknown || newEntry.shapeUnknown) continue;
 
     if (oldEntry.kind !== newEntry.kind && !interchangeable(oldEntry.kind, newEntry.kind)) {
       changes.push({
