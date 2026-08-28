@@ -654,6 +654,13 @@ export {
   findRuntimeDeclarations,
   discoverRuntimeDeclarations,
 } from './runtime.js';
+export {
+  classifyRustToolchain,
+  resolveDatedNightly,
+  rustComparisonVersion,
+  warmRustDatedNightlies,
+  type RustToolchainSpec,
+} from './rust-runtime.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';
 export { assessUpgrade, RECOMMENDATION_LABEL } from './assess.js';
