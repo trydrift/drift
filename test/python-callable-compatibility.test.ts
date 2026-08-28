@@ -237,4 +237,123 @@ describe('the Python reader emits a structured callable shape', () => {
       'a new required keyword-only parameter is still reported',
     );
   });
+
+  /**
+   * The display signature the reader renders (`def f(a) defaults=0`) does not
+   * encode the `/` positional-only or bare `*` keyword-only boundaries, so
+   * these transitions have byte-identical `signature` strings on both sides.
+   * The structured `CallableShape` is what proves the break, and `diffSurfaces`
+   * must not require display inequality before trusting it.
+   */
+  const skipUnlessPython = async (t: { skip: (reason: string) => void }): Promise<boolean> => {
+    const python = await execCommand('python3', ['--version']).catch(() => null);
+    if (!python || python.code !== 0) {
+      t.skip('python3 not available');
+      return false;
+    }
+    return true;
+  };
+  const brokeSignature = (before: SurfaceApi, after: SurfaceApi): boolean =>
+    diffSurfaces(before, after).some((c) => c.kind === 'signature-changed' && c.symbol === 'w3libish.f');
+
+  test('required case 1: f(a) -> f(a, /) is breaking (keyword calling removed)', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a):\n    return a\n');
+    const after = await surfaceOf('def f(a, /):\n    return a\n');
+    assert.deepEqual(
+      before.get('w3libish.f')?.signature,
+      after.get('w3libish.f')?.signature,
+      'the display signatures are identical — only the structured shape differs',
+    );
+    assert.ok(brokeSignature(before, after), 'f(a=1) was valid before and is invalid after');
+  });
+
+  test('required case 2: f(a=1) -> f(*, a=1) is breaking (positional calling removed)', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a=1):\n    return a\n');
+    const after = await surfaceOf('def f(*, a=1):\n    return a\n');
+    assert.deepEqual(before.get('w3libish.f')?.signature, after.get('w3libish.f')?.signature);
+    assert.ok(brokeSignature(before, after), 'f(1) was valid before and is invalid after');
+  });
+
+  test('required case 3: f(*args, **kwargs) -> f(a=None, *args, **kwargs) is breaking', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(*args, **kwargs):\n    return args\n');
+    const after = await surfaceOf('def f(a=None, *args, **kwargs):\n    return args\n');
+    assert.ok(brokeSignature(before, after), 'f(1, a=2) bound cleanly before and now collides on `a`');
+  });
+
+  test('required case 4: f(a, **kwargs) -> f(b, **kwargs) is breaking (retained **kwargs does not preserve the named call)', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a, **kwargs):\n    return a\n');
+    const after = await surfaceOf('def f(b, **kwargs):\n    return b\n');
+    assert.ok(brokeSignature(before, after), 'f(a=1) satisfied the required parameter before but not after');
+  });
+
+  test('required case 5: the w3lib expansion stays safe (no regression of the false-positive fix)', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(url, encoding="utf8", path_encoding="utf8"):\n    return url\n');
+    const after = await surfaceOf(
+      'def f(url, encoding="utf8", path_encoding="utf8", quote_path=True):\n    return url\n',
+    );
+    assert.ok(!brokeSignature(before, after), 'an appended optional parameter is not a break');
+  });
+
+  test('required case 6: an added optional trailing positional-or-keyword parameter stays safe', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a, b=1):\n    return a\n');
+    const after = await surfaceOf('def f(a, b=1, c=2):\n    return a\n');
+    assert.ok(!brokeSignature(before, after));
+  });
+
+  test('required case 7: an added optional keyword-only parameter stays safe', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a, *, mode="x"):\n    return a\n');
+    const after = await surfaceOf('def f(a, *, mode="x", strict=False):\n    return a\n');
+    assert.ok(!brokeSignature(before, after));
+  });
+
+  test('required case 8: an added required parameter stays breaking', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a):\n    return a\n');
+    const after = await surfaceOf('def f(a, b):\n    return a\n');
+    assert.ok(brokeSignature(before, after));
+  });
+});
+
+describe('callable compatibility: variadic / boundary unit cases', () => {
+  const shp = (...parameters: CallableParam[]): CallableShape => ({ parameters });
+  test('f(*args, **kwargs) -> f(a=None, *args, **kwargs) is not backward compatible', () => {
+    assert.equal(
+      callableChangeIsBackwardCompatible(
+        shp(p('args', { kind: 'var-positional' }), p('kwargs', { kind: 'var-keyword' })),
+        shp(p('a', { opt: true }), p('args', { kind: 'var-positional' }), p('kwargs', { kind: 'var-keyword' })),
+      ),
+      false,
+    );
+  });
+  test('f(a, **kwargs) -> f(b, **kwargs) is not backward compatible', () => {
+    assert.equal(
+      callableChangeIsBackwardCompatible(
+        shp(p('a'), p('kwargs', { kind: 'var-keyword' })),
+        shp(p('b'), p('kwargs', { kind: 'var-keyword' })),
+      ),
+      false,
+    );
+  });
+  test('f(a) -> f(a, /) is not backward compatible', () => {
+    assert.equal(
+      callableChangeIsBackwardCompatible(shp(p('a')), shp(p('a', { kind: 'positional-only' }))),
+      false,
+    );
+  });
+  test('f(a=1) -> f(*, a=1) is not backward compatible', () => {
+    assert.equal(
+      callableChangeIsBackwardCompatible(
+        shp(p('a', { opt: true })),
+        shp(p('a', { kind: 'keyword-only', opt: true })),
+      ),
+      false,
+    );
+  });
 });

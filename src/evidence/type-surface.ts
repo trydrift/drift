@@ -2210,33 +2210,34 @@ export function diffSurfaces(
     const [oldSignature, newSignature] = comparableSignatures(oldEntry.signature, newEntry.signature);
 
     // When both sides carry a structured callable shape (the Python reader
-    // supplies one), caller compatibility is decided from that shape rather
-    // than by trying to parse a display string the TypeScript-oriented
-    // `onlyRelaxesCallers` was never meant to read. A backward-compatible
-    // expansion — an added optional or keyword-only parameter — is not a
-    // breaking change and must not be reported or localized.
-    const structuredCallableChange = oldEntry.callable && newEntry.callable;
-    const callerBreak = structuredCallableChange
-      ? !callableChangeIsBackwardCompatible(oldEntry.callable!, newEntry.callable!)
-      : !onlyRelaxesCallers(oldSignature, newSignature);
+    // supplies one), that shape is *authoritative* for caller compatibility.
+    // The display signature is a lossy rendering — it does not encode the `/`
+    // positional-only boundary or the bare `*` keyword-only boundary — so
+    // `def f(a)` → `def f(a, /)` and `def f(a=1)` → `def f(*, a=1)` are real
+    // breaks with byte-identical display text. Requiring display inequality
+    // here would suppress them, so the structured verdict is not gated on it.
+    // The display signature is still used only for `before`/`after` panels.
+    const structuredCallableChange = Boolean(oldEntry.callable && newEntry.callable);
 
-    if (
-      oldSignature !== newSignature &&
-      oldEntry.kind !== 'interface' &&
-      oldEntry.kind !== 'class' &&
-      // Renaming a type parameter changes the text of a declaration without
-      // changing a single thing about how it can be called. `zod` renamed `T`
-      // to `Inner` across its 3.x line and, read as text, every generic export
-      // it has "changed signature" — dozens of findings, each pointing at
-      // working code, none of them true. Two declarations that differ only in
-      // what their type parameters are spelled are the same declaration.
-      !alphaEquivalent(oldSignature, newSignature) &&
-      // And a call site cannot break on an argument it never passes. Growing
-      // `f()` into `f(options?)` is the most common shape of a minor release,
-      // and reporting it sends a developer to read code that was already
-      // correct. See `onlyRelaxesCallers` / `callableChangeIsBackwardCompatible`.
-      callerBreak
-    ) {
+    const reportSignatureChange = structuredCallableChange
+      ? !callableChangeIsBackwardCompatible(oldEntry.callable!, newEntry.callable!)
+      : oldSignature !== newSignature &&
+        oldEntry.kind !== 'interface' &&
+        oldEntry.kind !== 'class' &&
+        // Renaming a type parameter changes the text of a declaration without
+        // changing a single thing about how it can be called. `zod` renamed `T`
+        // to `Inner` across its 3.x line and, read as text, every generic export
+        // it has "changed signature" — dozens of findings, each pointing at
+        // working code, none of them true. Two declarations that differ only in
+        // what their type parameters are spelled are the same declaration.
+        !alphaEquivalent(oldSignature, newSignature) &&
+        // And a call site cannot break on an argument it never passes. Growing
+        // `f()` into `f(options?)` is the most common shape of a minor release,
+        // and reporting it sends a developer to read code that was already
+        // correct. See `onlyRelaxesCallers`.
+        !onlyRelaxesCallers(oldSignature, newSignature);
+
+    if (reportSignatureChange) {
       changes.push({
         kind: 'signature-changed',
         symbol: name,
@@ -2383,9 +2384,21 @@ export function callableChangeIsBackwardCompatible(before: CallableShape, after:
   if (newMinPositional > oldMinPositional) return false;
   if (newMaxPositional < oldMaxPositional) return false;
 
+  // The old shape had `*args`, so it accepted arbitrary trailing positionals —
+  // and a caller could pass extra positionals *and* a same-named keyword when
+  // `**kwargs` was also present. A new named positional slot in front of
+  // `*args` turns `f(<that position>, name=…)` into a "multiple values for
+  // argument" error and rebinds a positional a caller intended for `*args`.
+  // Any change to the positional-param list ahead of `*args` (an addition, or
+  // a keyword-only parameter reclassified into it) is therefore not provably
+  // safe.
+  if (hasVar(before, 'var-positional') && newPositional.length !== oldPositional.length) return false;
+
   // Positional slots that existed keep their meaning: a `positional-or-keyword`
   // parameter must not lose keyword addressability or be renamed out from under
-  // a keyword caller (unless `**kwargs` now absorbs it).
+  // a keyword caller. `**kwargs` on the new shape absorbs the *value* of an old
+  // keyword argument, but it does not *satisfy* a renamed required parameter —
+  // `f(oldname=1)` then leaves the new required parameter unfilled.
   for (const [index, oldParam] of oldPositional.entries()) {
     if (oldParam.kind !== 'positional-or-keyword') continue;
     const newParam = newPositional[index];
@@ -2394,7 +2407,12 @@ export function callableChangeIsBackwardCompatible(before: CallableShape, after:
       continue;
     }
     if (newParam.kind === 'positional-only') return false;
-    if (newParam.name !== oldParam.name && !hasVar(after, 'var-keyword')) return false;
+    if (
+      newParam.name !== oldParam.name &&
+      (oldParam.required || newParam.required || !hasVar(after, 'var-keyword'))
+    ) {
+      return false;
+    }
   }
 
   // Arbitrary keyword arguments the old shape accepted via `**kwargs` must
