@@ -66,6 +66,19 @@ describe('parseOpamMetadata', () => {
     assert.equal(meta.sourceUrl, 'https://github.com/mirage/ocaml-cohttp/archive/refs/tags/v5.3.0.tar.gz');
   });
 
+  test('the url stanza is still read when its closing brace is indented', () => {
+    const indented = [
+      'homepage: "https://github.com/o/r"',
+      'url {',
+      '  src: "https://github.com/o/r/archive/v1.0.0.tar.gz"',
+      '  checksum: [ "sha256=deadbeef" ]',
+      '  }',
+      '',
+    ].join('\n');
+    const meta = parseOpamMetadata(indented, 'r', '1.0.0');
+    assert.equal(meta.sourceUrl, 'https://github.com/o/r/archive/v1.0.0.tar.gz');
+  });
+
   test('a value containing an opam variable expansion is rejected, not returned raw', () => {
     const meta = parseOpamMetadata('homepage: "https://example.com/%{name}%"\n', 'x', '1');
     assert.equal(meta.homepage, null);
