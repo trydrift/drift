@@ -35,6 +35,30 @@ describe('recording refresh triggers stay in lockstep with fingerprint inputs', 
     assert.match(src, /RECORDING_ENGINE_PATHS/);
     assert.doesNotMatch(src, /const ENGINE_PATHS\s*=/);
   });
+
+  test('every workflow that validates recordings pins the same Python as the capture workflow', async () => {
+    // The engine fingerprint folds in `python3`'s major.minor. If a job that
+    // runs `validate-recordings` (directly or via the site build) does not pin
+    // the same interpreter the capture workflow uses, it computes a different
+    // expected fingerprint and rejects recordings another job just accepted.
+    const declared = RECORDING_ANALYZER_ENVIRONMENT.python.declared;
+    const pins = (yaml) => [...yaml.matchAll(/python-version:\s*'?([\d.]+)'?/g)].map((m) => m[1]);
+
+    const refresh = await readFile(join(repoRoot, '.github/workflows/refresh-recordings.yml'), 'utf8');
+    assert.ok(pins(refresh).length > 0, 'the capture workflow pins a Python version');
+    for (const v of pins(refresh)) assert.equal(v, declared, 'capture workflow pins the declared Python');
+
+    for (const wf of ['.github/workflows/ci.yml', '.github/workflows/pages.yml']) {
+      const yaml = await readFile(join(repoRoot, wf), 'utf8');
+      assert.ok(
+        yaml.includes('setup-python'),
+        `${wf} runs recording validation but never sets up Python`,
+      );
+      for (const v of pins(yaml)) {
+        assert.equal(v, declared, `${wf} pins Python ${v}, not the declared ${declared}`);
+      }
+    }
+  });
 });
 
 describe('recording freshness: what must carry the current engine fingerprint', () => {

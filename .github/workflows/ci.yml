@@ -45,6 +45,14 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
 
+      # `npm test` runs test/recording-engine-manifest.test.ts, which computes
+      # the recording engine fingerprint — that folds in `python3`'s major.minor
+      # (site/scripts/analyzer-environment.mjs). Pin the same 3.12 the capture
+      # and site jobs use so every context agrees on the canonical analyzer.
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
+
       - run: npm ci
 
       # Root/extension package.json and package-lock.json must all report the
@@ -186,6 +194,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      # `npm run build` in site validates the recordings, and the recording
+      # engine fingerprint folds in the Python analyzer's major.minor version
+      # (see site/scripts/analyzer-environment.mjs). This must match the version
+      # the recording-refresh workflow captures with, or every recording reads
+      # as stale here. Pinned to the same 3.12 as .github/workflows/refresh-recordings.yml.
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
 
       # The site's sync scripts read the root build's generated data.
       - run: npm ci && npm run build
