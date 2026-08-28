@@ -3,6 +3,7 @@ import { parseDocument, isMap, isScalar, isSeq, type Node } from 'yaml';
 import { isRuntimeConfigPath } from '../index/walk.js';
 import { memberOf } from '../detect/workspace.js';
 import { intersectsInterval, isSubsetInterval, parseSpecifierSet, type VersionInterval } from './pep440.js';
+import { classifyRustToolchain, datedNightlyFromMemo } from './rust-runtime.js';
 import type { RuntimeCompatibilityState, RuntimeName } from '../types.js';
 
 /**
@@ -42,6 +43,13 @@ export interface RuntimeDeclarationDiscovery {
 }
 
 export interface RuntimeCompatibility extends RuntimeDeclaration {
+  /**
+   * The concrete version a channel spec was resolved to for comparison, kept
+   * apart from the verbatim `requirement`. Currently only a Rust dated nightly
+   * (`nightly-2025-11-12` -> the `rustc` version from that day's frozen
+   * manifest); absent for a declaration compared as written.
+   */
+  resolvedRequirement?: string;
   /**
    * `'unknown'` means the declaration was found but could not be compared —
    * an alias (`lts/hydrogen`), a channel name, a range grammar this runtime's
@@ -242,11 +250,13 @@ export function checkRuntimeCompatibility(
   if (runtime === 'node') return checkNodeCompatibility(declarations, requirement);
   if (runtime === 'python') return checkPythonCompatibility(declarations, requirement);
   const out: RuntimeCompatibility[] = [];
-  const requiredRange = normalizeSemverRange(runtime === 'java' ? javaVersion(requirement) ?? requirement : requirement);
+  const requiredRange = normalizeSemverRange(comparisonText(runtime, requirement).text);
   for (const declaration of declarations) {
-    const declaredRange = normalizeSemverRange(runtime === 'java' ? javaVersion(declaration.requirement) ?? declaration.requirement : declaration.requirement);
+    const declared = comparisonText(runtime, declaration.requirement);
+    const declaredRange = normalizeSemverRange(declared.text);
+    const resolvedField = declared.resolved ? { resolvedRequirement: declared.resolved } : {};
     if (!declaredRange || !requiredRange) {
-      out.push({ ...declaration, verdict: 'unknown' });
+      out.push({ ...declaration, ...resolvedField, verdict: 'unknown' });
       continue;
     }
     let verdict: RuntimeCompatibility['verdict'];
@@ -257,9 +267,37 @@ export function checkRuntimeCompatibility(
     } catch {
       verdict = 'unknown';
     }
-    out.push({ ...declaration, verdict });
+    out.push({ ...declaration, ...resolvedField, verdict });
   }
   return out;
+}
+
+/**
+ * The text to feed the semver comparator for one runtime.
+ *
+ * Java maps a marketing version (`17`) to its semver (`17.0.0`). Rust maps a
+ * rustup channel spec: an exact `1.75.0` passes through, a *dated* nightly
+ * resolves to the compiler version already warmed from that day's manifest,
+ * and a bare moving channel resolves to `''` — comparator input for an honest
+ * `unknown`, never a guess.
+ */
+function comparisonText(runtime: RuntimeName, text: string): { text: string; resolved?: string } {
+  if (runtime === 'java') return { text: javaVersion(text) ?? text };
+  if (runtime === 'rust') {
+    const spec = classifyRustToolchain(text);
+    if (spec.kind === 'exact') return { text: spec.version, resolved: spec.version };
+    if (spec.kind === 'dated-nightly') {
+      const resolved = datedNightlyFromMemo(spec.date);
+      // A non-empty sentinel, not `''`: `semver.validRange('')` is `*`, which
+      // would compare as "any version" and manufacture a verdict.
+      return resolved ? { text: resolved, resolved } : { text: '\0unresolved-nightly' };
+    }
+    if (spec.kind !== 'unknown') return { text: '\0moving-channel' };
+    // `'unknown'` here is "not a rustup channel spec" — e.g. a plain `>=1.75`
+    // range from upstream. Hand it to the semver layer as written.
+    return { text };
+  }
+  return { text };
 }
 
 /**
@@ -280,12 +318,14 @@ export function checkUnsupportedRuntimeRange(
 ): RuntimeCompatibility[] {
   if (runtime === 'python') return checkUnsupportedPythonRange(declarations, unsupportedRequirement);
 
-  const unsupportedRange = normalizeSemverRange(runtime === 'java' ? javaVersion(unsupportedRequirement) ?? unsupportedRequirement : unsupportedRequirement);
+  const unsupportedRange = normalizeSemverRange(comparisonText(runtime, unsupportedRequirement).text);
   const out: RuntimeCompatibility[] = [];
   for (const declaration of declarations) {
-    const declaredRange = normalizeSemverRange(runtime === 'java' ? javaVersion(declaration.requirement) ?? declaration.requirement : declaration.requirement);
+    const declared = comparisonText(runtime, declaration.requirement);
+    const declaredRange = normalizeSemverRange(declared.text);
+    const resolvedField = declared.resolved ? { resolvedRequirement: declared.resolved } : {};
     if (!declaredRange || !unsupportedRange) {
-      out.push({ ...declaration, verdict: 'unknown' });
+      out.push({ ...declaration, ...resolvedField, verdict: 'unknown' });
       continue;
     }
     let verdict: RuntimeCompatibility['verdict'];
@@ -296,7 +336,7 @@ export function checkUnsupportedRuntimeRange(
     } catch {
       verdict = 'unknown';
     }
-    out.push({ ...declaration, verdict });
+    out.push({ ...declaration, ...resolvedField, verdict });
   }
   return out;
 }
