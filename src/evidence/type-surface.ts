@@ -35,6 +35,29 @@ export type SurfaceKind =
    */
   | 'unknown';
 
+/** How a single callable parameter may be supplied by a caller. */
+export type CallableParamKind =
+  | 'positional-only'
+  | 'positional-or-keyword'
+  | 'keyword-only'
+  | 'var-positional'
+  | 'var-keyword';
+
+export interface CallableParam {
+  name: string;
+  kind: CallableParamKind;
+  /** A caller must supply it — no default, not a variadic. */
+  required: boolean;
+}
+
+/**
+ * A deterministic, language-neutral account of a callable's parameters, in
+ * source order. Enough to decide caller compatibility; not a type system.
+ */
+export interface CallableShape {
+  parameters: CallableParam[];
+}
+
 export interface SurfaceEntry {
   name: string;
   kind: SurfaceKind;
@@ -69,6 +92,22 @@ export interface SurfaceEntry {
    * it. Absent means the package declares the symbol itself.
    */
   via?: string;
+  /**
+   * A language-neutral description of how this symbol can be *called*, when the
+   * producing reader can supply one.
+   *
+   * The human-readable {@link signature} is for display and for the TypeScript
+   * text diff; it loses structure a Python signature needs to answer the only
+   * question a call-site cares about — "can every call the old shape accepted
+   * still be accepted by the new one". A single `defaults=N` count cannot say
+   * which parameters are optional, which are keyword-only, where the
+   * positional-only boundary is, or whether `*args`/`**kwargs` are present, so
+   * {@link diffSurfaces} could not tell a safe optional-parameter addition
+   * (`f(a)` → `f(a, b=None)`) from a real break and reported both. Set today by
+   * the Python surface reader; absent for readers that do not populate it, in
+   * which case the text diff is used exactly as before.
+   */
+  callable?: CallableShape;
   /**
    * Interfaces and classes this one inherits from.
    *
@@ -2170,6 +2209,17 @@ export function diffSurfaces(
     // that is still `sveltekit()` and still compiles.
     const [oldSignature, newSignature] = comparableSignatures(oldEntry.signature, newEntry.signature);
 
+    // When both sides carry a structured callable shape (the Python reader
+    // supplies one), caller compatibility is decided from that shape rather
+    // than by trying to parse a display string the TypeScript-oriented
+    // `onlyRelaxesCallers` was never meant to read. A backward-compatible
+    // expansion — an added optional or keyword-only parameter — is not a
+    // breaking change and must not be reported or localized.
+    const structuredCallableChange = oldEntry.callable && newEntry.callable;
+    const callerBreak = structuredCallableChange
+      ? !callableChangeIsBackwardCompatible(oldEntry.callable!, newEntry.callable!)
+      : !onlyRelaxesCallers(oldSignature, newSignature);
+
     if (
       oldSignature !== newSignature &&
       oldEntry.kind !== 'interface' &&
@@ -2184,8 +2234,8 @@ export function diffSurfaces(
       // And a call site cannot break on an argument it never passes. Growing
       // `f()` into `f(options?)` is the most common shape of a minor release,
       // and reporting it sends a developer to read code that was already
-      // correct. See `onlyRelaxesCallers`.
-      !onlyRelaxesCallers(oldSignature, newSignature)
+      // correct. See `onlyRelaxesCallers` / `callableChangeIsBackwardCompatible`.
+      callerBreak
     ) {
       changes.push({
         kind: 'signature-changed',
@@ -2196,7 +2246,9 @@ export function diffSurfaces(
         // must find the same text in both.
         before: oldEntry.signature,
         after: newEntry.signature,
-        ...(whatChanged(oldSignature, newSignature) ?? {}),
+        // A structured callable break is, by construction, a parameter-list
+        // incompatibility; `whatChanged` only reads call-signature text.
+        ...(structuredCallableChange ? { changed: 'parameters' as const } : (whatChanged(oldSignature, newSignature) ?? {})),
       });
     }
   }
@@ -2294,6 +2346,91 @@ export function onlyRelaxesCallers(before: string, after: string): boolean {
   return now.parameters
     .slice(old.parameters.length)
     .every((parameter) => parameter.optional || parameter.rest);
+}
+
+/**
+ * Given two {@link CallableShape}s, can every call the old shape accepted still
+ * be accepted by the new one?
+ *
+ * `true` only when that is provable. Any shape this does not model, and every
+ * genuine tightening, returns `false` so the change is still reported — an
+ * added optional parameter must not become a licence to wave through a real
+ * break. This is the check that keeps a backward-compatible Python signature
+ * expansion (`safe_url_string(url, encoding='utf8', path_encoding='utf8')` →
+ * `…, quote_path=True`) from surfacing as `signature-changed`, while a new
+ * required parameter, an optional-turned-required one, a removed parameter, a
+ * dropped `**kwargs`, and a keyword-addressable rename all still do.
+ */
+export function callableChangeIsBackwardCompatible(before: CallableShape, after: CallableShape): boolean {
+  const positional = (shape: CallableShape): CallableParam[] =>
+    shape.parameters.filter((p) => p.kind === 'positional-only' || p.kind === 'positional-or-keyword');
+  const hasVar = (shape: CallableShape, kind: CallableParamKind): boolean =>
+    shape.parameters.some((p) => p.kind === kind);
+  const keywordAddressable = (shape: CallableShape): CallableParam[] =>
+    shape.parameters.filter((p) => p.kind === 'positional-or-keyword' || p.kind === 'keyword-only');
+  const paramNamed = (shape: CallableShape, name: string): CallableParam | undefined =>
+    shape.parameters.find((p) => p.name === name);
+
+  const oldPositional = positional(before);
+  const newPositional = positional(after);
+  const oldMinPositional = oldPositional.filter((p) => p.required).length;
+  const newMinPositional = newPositional.filter((p) => p.required).length;
+  const oldMaxPositional = hasVar(before, 'var-positional') ? Infinity : oldPositional.length;
+  const newMaxPositional = hasVar(after, 'var-positional') ? Infinity : newPositional.length;
+
+  // A caller that passed the fewest positionals the old shape allowed must not
+  // now be one argument short; a caller that passed the most must still fit.
+  if (newMinPositional > oldMinPositional) return false;
+  if (newMaxPositional < oldMaxPositional) return false;
+
+  // Positional slots that existed keep their meaning: a `positional-or-keyword`
+  // parameter must not lose keyword addressability or be renamed out from under
+  // a keyword caller (unless `**kwargs` now absorbs it).
+  for (const [index, oldParam] of oldPositional.entries()) {
+    if (oldParam.kind !== 'positional-or-keyword') continue;
+    const newParam = newPositional[index];
+    if (!newParam) {
+      if (!hasVar(after, 'var-keyword')) return false;
+      continue;
+    }
+    if (newParam.kind === 'positional-only') return false;
+    if (newParam.name !== oldParam.name && !hasVar(after, 'var-keyword')) return false;
+  }
+
+  // Arbitrary keyword arguments the old shape accepted via `**kwargs` must
+  // still be accepted.
+  if (hasVar(before, 'var-keyword') && !hasVar(after, 'var-keyword')) return false;
+
+  // Every name the old shape accepted as a keyword must still be passable as
+  // one — as the same-named keyword-capable parameter, or via `**kwargs`.
+  if (!hasVar(after, 'var-keyword')) {
+    for (const oldParam of keywordAddressable(before)) {
+      const newParam = paramNamed(after, oldParam.name);
+      if (!newParam || (newParam.kind !== 'positional-or-keyword' && newParam.kind !== 'keyword-only')) {
+        return false;
+      }
+    }
+  }
+
+  // A keyword-only parameter the old shape did not require must not become
+  // required — old callers never passed it.
+  for (const newParam of after.parameters) {
+    if (newParam.kind !== 'keyword-only' || !newParam.required) continue;
+    const oldParam = paramNamed(before, newParam.name);
+    if (!oldParam || oldParam.kind !== 'keyword-only' || !oldParam.required) return false;
+  }
+
+  // An old keyword-only parameter dropped entirely, with no `**kwargs` to
+  // absorb it, is a removed accepted argument.
+  if (!hasVar(after, 'var-keyword')) {
+    for (const oldParam of before.parameters) {
+      if (oldParam.kind === 'keyword-only' && !paramNamed(after, oldParam.name)) return false;
+    }
+  }
+
+  // Losing `*args` when the old shape had it (and the new one cannot take the
+  // extra positionals) is caught by the max-positional check above.
+  return true;
 }
 
 /**
