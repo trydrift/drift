@@ -9,6 +9,24 @@ import type { RuntimeCompatibilityState, RuntimeName } from '../types.js';
 /**
  * Where this repository itself declares a runtime version.
  */
+/**
+ * Whose declaration this is, once workspace context is known.
+ *
+ * - `member` — the declaration explicitly targets the member being evaluated
+ *   (a CI job with `working-directory`/`paths` naming it, or a version file
+ *   inside its directory).
+ * - `repository` — a repository-wide declaration with no member-specific
+ *   targeting: a `.github/workflows` job that checks out the whole repo and
+ *   names no member. It governs every member, including a child project.
+ * - `ambiguous` — recognized as a declaration but not attributable to any
+ *   member (an unresolved reusable workflow, GitLab's top-level job keys this
+ *   shallow parser will not slice). Recorded as *unresolved*, never votable.
+ *
+ * Absent on a declaration read before workspace scoping mattered (a
+ * single-package repository), which is treated as `repository`.
+ */
+export type RuntimeDeclarationScope = 'member' | 'repository' | 'ambiguous';
+
 export interface RuntimeDeclaration {
   /** Repo-relative path. */
   file: string;
@@ -16,6 +34,8 @@ export interface RuntimeDeclaration {
   line: number;
   /** The version or range exactly as declared, e.g. ">=22.6.0", "22", "22.6.0". */
   requirement: string;
+  /** Declaration ownership scope; absent means repository-wide. See {@link RuntimeDeclarationScope}. */
+  scope?: RuntimeDeclarationScope;
 }
 
 /** Which kind of file a declaration (resolved or not) was read out of. */
@@ -148,6 +168,45 @@ export function discoverRuntimeDeclarations(
     if (isCiPath(path)) ciDeclarations(path, content, runtime, found, member, allMembers);
   }
 
+  // Every non-CI declaration is stamped with an explicit ownership scope from
+  // the same `memberOf` logic `scopedTo` uses — a version file or manifest
+  // inside the evaluated member's own directory is `member`-scoped; an
+  // inherited root version file or a genuinely repository-global file is
+  // `repository`-scoped. CI declarations already carry their own job-level
+  // scope. Nothing is left implicit: an absent scope must not read as
+  // member-specific.
+  if (member !== undefined && (allMembers?.length ?? 0) > 1) {
+    for (const decl of found.resolved) {
+      if (!decl.scope && !isCiPath(decl.file)) decl.scope = fileScope(decl.file, member, allMembers);
+    }
+    for (const decl of found.unresolved) {
+      if (!decl.scope && !isCiPath(decl.file)) decl.scope = fileScope(decl.file, member, allMembers);
+    }
+  }
+
+  // Precedence, when evaluating one member of a real monorepo, applied to
+  // resolved and unresolved declarations alike:
+  //
+  //   1. explicit member-scoped declaration(s)  — beat everything below
+  //   2. otherwise repository-scoped declaration(s)
+  //   3. otherwise ambiguous / unresolved-ownership declarations → unknown
+  //
+  // An authoritative member-specific declaration must not be overridden by a
+  // repository-wide one, nor dragged to `unknown` by an unrelated ambiguous
+  // dynamic declaration; with no member-specific declaration a repository-wide
+  // one still governs the member.
+  if (member !== undefined && (allMembers?.length ?? 0) > 1) {
+    const tier = (s?: RuntimeDeclarationScope): 0 | 1 | 2 =>
+      s === 'member' ? 2 : s === 'ambiguous' ? 0 : 1;
+    const top = Math.max(
+      0,
+      ...found.resolved.map((d) => tier(d.scope)),
+      ...found.unresolved.map((d) => tier(d.scope)),
+    );
+    found.resolved = found.resolved.filter((d) => tier(d.scope) === top);
+    found.unresolved = found.unresolved.filter((d) => tier(d.scope) === top);
+  }
+
   found.resolved = dedupeDeclarations(found.resolved);
   found.unresolved = dedupeUnresolved(found.unresolved);
   return found;
@@ -182,9 +241,10 @@ function record(
   rawText: string,
   source: RuntimeDeclarationSource,
   requirement: string | null,
+  scope?: RuntimeDeclarationScope,
 ): void {
-  if (requirement) found.resolved.push({ file, line, requirement });
-  else found.unresolved.push({ runtime, file, line, rawText, source });
+  if (requirement) found.resolved.push({ file, line, requirement, ...(scope ? { scope } : {}) });
+  else found.unresolved.push({ runtime, file, line, rawText, source, ...(scope ? { scope } : {}) });
 }
 
 /**
@@ -416,6 +476,14 @@ export interface UnresolvedRuntimeDeclaration {
   /** The unresolvable value exactly as written, for the report to quote. */
   rawText: string;
   source: RuntimeDeclarationSource;
+  /**
+   * Declaration ownership scope, same meaning as {@link RuntimeDeclarationScope}.
+   * Precedence is applied to unresolved declarations too: an unrelated
+   * repository/ambiguous dynamic declaration must not drag an otherwise
+   * authoritative member-specific result to `unknown`. Absent means
+   * repository-wide.
+   */
+  scope?: RuntimeDeclarationScope;
 }
 
 const TOOL_VERSION_KEYS: Record<RuntimeName, readonly string[]> = {
@@ -480,6 +548,7 @@ function recordImage(
   line: number,
   image: string,
   source: RuntimeDeclarationSource,
+  scope?: RuntimeDeclarationScope,
 ): void {
   const identity = identifyRuntimeImage(image);
   if (!identity || identity.runtime !== runtime) return;
@@ -492,6 +561,7 @@ function recordImage(
     image,
     source,
     version && !isDynamicValue(version) ? numericRuntimeTag(version) : null,
+    scope,
   );
 }
 
@@ -788,7 +858,9 @@ function ciDeclarations(
 ): void {
   const lines = content.split('\n');
   const structural = yamlStructuralLineMask(lines);
-  const { allowed, ambiguous } = ciJobLinesForMember(lines, member, allMembers);
+  const { allowed, ambiguous, repositoryWide } = ciJobLinesForMember(lines, member, allMembers);
+  const scopeOf = (line: number): RuntimeDeclarationScope =>
+    ambiguous[line - 1] ? 'ambiguous' : repositoryWide[line - 1] ? 'repository' : 'member';
   // GitHub Actions only: a `${{ matrix.<key> }}` runtime value whose job
   // defines that matrix key statically can be resolved to concrete versions.
   const resolveMatrix = /^\.github\/workflows\/.+\.ya?ml$/i.test(path)
@@ -801,7 +873,16 @@ function ciDeclarations(
   // keeps `stateOf` from folding an unattributed root pin into a definite
   // `incompatible`/`compatible` verdict for a member it may not even govern.
   const recordCi = (line: number, rawText: string, source: RuntimeDeclarationSource, requirement: string | null) => {
-    record(found, runtime, path, line, rawText, source, ambiguous[line - 1] ? null : requirement);
+    record(
+      found,
+      runtime,
+      path,
+      line,
+      rawText,
+      source,
+      ambiguous[line - 1] ? null : requirement,
+      scopeOf(line),
+    );
   };
 
   for (const [i, line] of lines.entries()) {
@@ -835,7 +916,7 @@ function ciDeclarations(
     // every YAML `image:` key as the job runtime.
     if (/^\.github\/workflows\//i.test(path)) {
       const scalar = /^\s*container\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
-      if (scalar) recordCiImage(found, runtime, path, i + 1, scalar, 'ci', ambiguous);
+      if (scalar) recordCiImage(found, runtime, path, i + 1, scalar, 'ci', ambiguous, scopeOf(i + 1));
       if (/^\s*container\s*:\s*$/i.test(line)) {
         const baseIndent = /^\s*/.exec(line)![0].length;
         for (let j = i + 1; j < lines.length; j++) {
@@ -844,7 +925,7 @@ function ciDeclarations(
           const indent = /^\s*/.exec(next)![0].length;
           if (indent <= baseIndent) break;
           const image = /^\s*image\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
-          if (image) recordCiImage(found, runtime, path, j + 1, image, 'ci', ambiguous);
+          if (image) recordCiImage(found, runtime, path, j + 1, image, 'ci', ambiguous, scopeOf(j + 1));
         }
       }
       continue;
@@ -862,7 +943,7 @@ function ciDeclarations(
     // unreadable tag can mean anything about that runtime.
     const image = /^\s*(?:-\s*)?image\s*:\s*['"]?([^'"\s#]+)/i.exec(line)?.[1];
     if (image) {
-      recordCiImage(found, runtime, path, i + 1, image, 'ci', ambiguous);
+      recordCiImage(found, runtime, path, i + 1, image, 'ci', ambiguous, scopeOf(i + 1));
       continue;
     }
 
@@ -882,7 +963,7 @@ function ciDeclarations(
         if (indent <= baseIndent) break;
         if (!structural[j]) continue;
         const nameValue = /^\s*name\s*:\s*['"]?([^'"\s#]+)/i.exec(next)?.[1];
-        if (nameValue) recordCiImage(found, runtime, path, j + 1, nameValue, 'ci', ambiguous);
+        if (nameValue) recordCiImage(found, runtime, path, j + 1, nameValue, 'ci', ambiguous, scopeOf(j + 1));
       }
     }
   }
@@ -902,9 +983,10 @@ function recordCiImage(
   image: string,
   source: RuntimeDeclarationSource,
   ambiguous: readonly boolean[],
+  scope: RuntimeDeclarationScope = 'repository',
 ): void {
   if (!ambiguous[line - 1]) {
-    recordImage(found, runtime, path, line, image, source);
+    recordImage(found, runtime, path, line, image, source, scope);
     return;
   }
   const identity = identifyRuntimeImage(image);
@@ -1237,10 +1319,14 @@ function ciJobLinesForMember(
   lines: readonly string[],
   member?: string,
   allMembers?: readonly string[],
-): { allowed: boolean[]; ambiguous: boolean[] } {
+): { allowed: boolean[]; ambiguous: boolean[]; repositoryWide: boolean[] } {
   const allowed = Array.from({ length: lines.length }, () => true);
   const ambiguous = Array.from({ length: lines.length }, () => false);
-  if (member === undefined) return { allowed, ambiguous };
+  // A line's declaration governs the whole repository (no member targeting) vs.
+  // just the member being evaluated (a job that names it). Default true: a job
+  // with no `working-directory`/`paths` filter runs against the full checkout.
+  const repositoryWide = Array.from({ length: lines.length }, () => true);
+  if (member === undefined) return { allowed, ambiguous, repositoryWide };
 
   // A single-package repository (or a caller that has not gathered workspace
   // context) has no sibling member a root job's declaration could be
@@ -1254,9 +1340,20 @@ function ciJobLinesForMember(
   // exactly as unestablished here as it is for a recognized-but-unscoped
   // job, so the same rule applies: repository-wide when there is only one
   // member, ambiguous rather than silently authoritative when there is not.
-  const markUnresolvedStructure = (): { allowed: boolean[]; ambiguous: boolean[] } => {
-    if (isMonorepo) ambiguous.fill(true);
-    return { allowed, ambiguous };
+  const markUnresolvedStructure = (): {
+    allowed: boolean[];
+    ambiguous: boolean[];
+    repositoryWide: boolean[];
+  } => {
+    // GitLab's top-level job keys / an unresolved reusable workflow: recognized
+    // as CI, but this shallow parser cannot slice it into jobs, so ownership is
+    // genuinely unestablished. Ambiguous in a monorepo; repository-wide (the
+    // only thing it can mean) when there is one member.
+    if (isMonorepo) {
+      ambiguous.fill(true);
+      repositoryWide.fill(false);
+    }
+    return { allowed, ambiguous, repositoryWide };
   };
 
   const indentOf = (line: string) => /^[ \t]*/.exec(line)![0].length;
@@ -1266,6 +1363,7 @@ function ciJobLinesForMember(
   // belongs to.
   const jobs = githubActionsJobBlocks(lines);
   if (!jobs) return markUnresolvedStructure();
+  repositoryWide.fill(false);
 
   // Trim leading/trailing separators without `/^\/+|\/+$/` — `member` is
   // uncontrolled and a long internal run of slashes makes that pattern
@@ -1342,19 +1440,19 @@ function ciJobLinesForMember(
       continue;
     }
 
-    // No inclusion selector, and not excluded by name either: either the job
-    // carries no path/directory scoping at all, or it only carries a
-    // `paths-ignore:` that does not mention this member — "runs on
-    // everything except these paths" is not the same as "targets this
-    // member specifically". Either way ownership is not established:
-    // repository-wide evidence when there is nothing else it could mean,
-    // ambiguous ownership when there is a sibling it could instead belong to.
+    // No inclusion selector, and not excluded by name either: a
+    // `.github/workflows` job that checks out the whole repository and targets
+    // no member. It genuinely governs every member — including a child project
+    // like Scrapy's `docs` — so it is repository-wide and authoritative, not
+    // ambiguous. (A job that is really one package's is expected to say so
+    // with `working-directory`/`paths`; the inverse case — package A's job
+    // proving package B — is handled by that targeting above.)
     for (let i = job.start; i < job.end; i++) {
       allowed[i] = true;
-      if (isMonorepo) ambiguous[i] = true;
+      repositoryWide[i] = true;
     }
   }
-  return { allowed, ambiguous };
+  return { allowed, ambiguous, repositoryWide };
 }
 
 function lineValue(content: string, pattern: RegExp): { line: number; requirement: string } | null {
@@ -1483,6 +1581,25 @@ const HIERARCHICAL_VERSION_FILES = new Set([
   'rust-toolchain',
   'rust-toolchain.toml',
 ]);
+
+/**
+ * Ownership scope of a non-CI declaration file, from the same `memberOf`
+ * attribution `scopedTo` uses.
+ *
+ * `member` when the file is inside (owned by) the member being evaluated —
+ * `packages/api/.python-version`, `packages/api/pyproject.toml`. `repository`
+ * for everything else that survived `scopedTo`: an inherited root version
+ * file, a genuinely repository-global config, a file no member directory
+ * claims. Outside a real monorepo there is only one scope, `repository`.
+ */
+function fileScope(
+  path: string,
+  member: string | undefined,
+  allMembers: readonly string[] | undefined,
+): RuntimeDeclarationScope {
+  if (member === undefined || (allMembers?.length ?? 0) <= 1) return 'repository';
+  return memberOf(path, allMembers ?? []) === member ? 'member' : 'repository';
+}
 
 function scopedTo<T extends { path: string; content: string }>(
   files: readonly T[],

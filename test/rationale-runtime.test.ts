@@ -84,7 +84,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('a non-root member sees its own declaration', () => {
     const files = [{ path: 'packages/api/.nvmrc', content: '20.19.0' }];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0' },
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0', scope: 'member' },
     ]);
   });
 
@@ -93,30 +93,29 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
   });
 
-  test('a non-root member sees an unattributed CI job as evidence, but not as a resolved, authoritative pin (#123)', () => {
-    // `test:` names no member at all. In this real, three-member monorepo
-    // that ownership cannot be established from the file alone — see #123 —
-    // so it must not become a `resolved` declaration `findNodeDeclarations`
-    // (and therefore `checkNodeCompatibility`) could treat as a definite
-    // per-member verdict. It is still real evidence, so it stays visible in
-    // `discoverRuntimeDeclarations`'s `unresolved` half.
+  test('a non-root member sees an untargeted CI job as a repository-wide, authoritative declaration (#150)', () => {
+    // `test:` names no member and carries no `working-directory`/`paths`
+    // filter, so it checks out the whole repository and runs. Per #150 that
+    // is a *repository* scope — it governs every member, including this one —
+    // not the ambiguous non-verdict the old #123 model produced.
     const files = [
       {
         path: '.github/workflows/ci.yml',
         content: ['jobs:', '  test:', '    steps:', "      - uses: actions/setup-node@v5", '        with:', "          node-version: '22'"].join('\n'),
       },
     ];
-    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: '.github/workflows/ci.yml', line: 6, requirement: '22', scope: 'repository' },
+    ]);
     const discovery = discoverRuntimeDeclarations(files, 'node', 'packages/api', allMembers);
-    assert.deepEqual(discovery.resolved, []);
-    assert.equal(discovery.unresolved.length, 1);
-    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
+    assert.equal(discovery.resolved.length, 1);
+    assert.deepEqual(discovery.unresolved, []);
   });
 
   test('a non-root member still sees a root-level declaration', () => {
     const files = [{ path: '.nvmrc', content: '22.6.0' }];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+      { file: '.nvmrc', line: 1, requirement: '22.6.0', scope: 'repository' },
     ]);
   });
 
@@ -126,7 +125,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
       { path: 'packages/api/.nvmrc', content: '20' },
     ];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: 'packages/api/.nvmrc', line: 1, requirement: '20' },
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20', scope: 'member' },
     ]);
   });
 
@@ -136,24 +135,23 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
       { path: 'packages/api/.tool-versions', content: 'nodejs 20' },
     ];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: 'packages/api/.tool-versions', line: 1, requirement: '20' },
+      { file: 'packages/api/.tool-versions', line: 1, requirement: '20', scope: 'member' },
     ]);
   });
 
-  test('an unattributed CI workflow does not out-vote a member’s own .nvmrc, but is still surfaced (#123)', () => {
-    // Unlike a version-pin file, CI is not shadowed by a member's own file —
-    // but per #123, a CI declaration whose job names no member at all is not
-    // proof it governs this specific one either, in a repository with
-    // siblings it could instead belong to. `packages/api/.nvmrc` still
-    // resolves normally; the CI line is real evidence but stays unresolved.
+  test('a member’s own .nvmrc takes precedence over a repository-wide CI job (#150)', () => {
+    // Precedence: member-specific > repository-wide. `packages/api/.nvmrc`
+    // resolves; the untargeted repo-wide CI job (Node 18) is dropped for this
+    // member because the member declares its own runtime.
     const files = [
       { path: 'packages/api/.nvmrc', content: '20' },
       { path: '.github/workflows/ci.yml', content: 'jobs:\n  build:\n    steps:\n      - uses: actions/setup-node@v4\n        with:\n' + "          node-version: '18'" },
     ];
     const discovery = discoverRuntimeDeclarations(files, 'node', 'packages/api', allMembers);
-    assert.deepEqual(discovery.resolved, [{ file: 'packages/api/.nvmrc', line: 1, requirement: '20' }]);
-    assert.equal(discovery.unresolved.length, 1);
-    assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
+    assert.deepEqual(discovery.resolved, [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20', scope: 'member' },
+    ]);
+    assert.deepEqual(discovery.unresolved, []);
   });
 
   test('the root workspace (member === "") does not inherit a sibling’s .nvmrc', () => {
@@ -169,7 +167,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('the root workspace still sees its own root-level declaration', () => {
     const files = [{ path: '.nvmrc', content: '22.6.0' }];
     assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
-      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+      { file: '.nvmrc', line: 1, requirement: '22.6.0', scope: 'member' },
     ]);
   });
 
@@ -196,7 +194,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('the root package still sees its own package.json engines field', () => {
     const files = [{ path: 'package.json', content: JSON.stringify({ engines: { node: '>=18' } }) }];
     assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
-      { file: 'package.json', line: 1, requirement: '>=18' },
+      { file: 'package.json', line: 1, requirement: '>=18', scope: 'member' },
     ]);
   });
 
@@ -210,7 +208,7 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
   test('a root-level .nvmrc still applies globally even when the root is itself a member', () => {
     const files = [{ path: '.nvmrc', content: '18.18.0' }];
     assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
-      { file: '.nvmrc', line: 1, requirement: '18.18.0' },
+      { file: '.nvmrc', line: 1, requirement: '18.18.0', scope: 'repository' },
     ]);
   });
 
@@ -270,15 +268,12 @@ describe('#123: CI runtime declarations are attributed to the job that owns a wo
     assert.ok(!versions.includes('22'), 'the api job must not contaminate the web workspace');
   });
 
-  test('a job with no workspace selector is unattributed, not repository-wide, once there is a sibling it might instead belong to', () => {
-    // This was the actual #123 false positive: an unscoped root job used to
-    // become authoritative for every member unconditionally, so a build/lint
-    // job on a version one member's dependency upgrade would need could make
-    // an unrelated member look incompatible. Ownership is unestablished
-    // here, not repository-wide — the declaration is real evidence (kept
-    // `unresolved`) but never a `resolved`, votable pin for a member it may
-    // not govern. Single-package repositories are unaffected — see the
-    // 'a job with no workspace selector at all...' test below.
+  test('a job with no workspace selector is repository-wide: it governs every member (#150)', () => {
+    // A `.github/workflows` job with no `working-directory`/`paths` filter
+    // checks out and runs against the whole repository, so per #150 it is a
+    // repository-scoped, authoritative declaration for every member. (A job
+    // that is really one package's is expected to say so with a selector —
+    // the api/web tests above cover that.)
     const global = [
       'jobs:',
       '  lint:',
@@ -289,10 +284,12 @@ describe('#123: CI runtime declarations are attributed to the job that owns a wo
       '          node-version: 20',
     ].join('\n');
     const lintFile = [{ path: '.github/workflows/lint.yml', content: global }];
-    assert.deepEqual(findNodeDeclarations(lintFile, 'packages/api', allMembers), []);
+    assert.deepEqual(findNodeDeclarations(lintFile, 'packages/api', allMembers), [
+      { file: '.github/workflows/lint.yml', line: 7, requirement: '20', scope: 'repository' },
+    ]);
     const discovery = discoverRuntimeDeclarations(lintFile, 'node', 'packages/api', allMembers);
-    assert.equal(discovery.unresolved.length, 1);
-    assert.equal(discovery.unresolved[0].rawText, '20');
+    assert.equal(discovery.resolved.length, 1);
+    assert.deepEqual(discovery.unresolved, []);
   });
 
   test('a job with no workspace selector at all is repository-wide when there is no sibling it could instead belong to', () => {
@@ -629,7 +626,12 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
 
     for (const [runtime, path, content, expected] of fixtures) {
       assert.deepEqual(findRuntimeDeclarations([{ path, content }], runtime), [
-        { file: path, line: content.split('\n').findIndex((line) => line.includes('image:')) + 1, requirement: expected },
+        {
+          file: path,
+          line: content.split('\n').findIndex((line) => line.includes('image:')) + 1,
+          requirement: expected,
+          scope: 'repository',
+        },
       ]);
     }
   });
@@ -637,7 +639,7 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
   test("GitLab's map-form image (`image:` / `name:`) is recognized like the scalar form", () => {
     const content = 'test:\n  image:\n    name: node:18\n    entrypoint: [""]\n  script: npm test';
     assert.deepEqual(findRuntimeDeclarations([{ path: '.gitlab-ci.yml', content }], 'node'), [
-      { file: '.gitlab-ci.yml', line: 3, requirement: '18' },
+      { file: '.gitlab-ci.yml', line: 3, requirement: '18', scope: 'repository' },
     ]);
   });
 
@@ -677,7 +679,7 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
     }
   });
 
-  test('shared discovery preserves workspace ownership; an unattributed CI declaration is evidence, not a resolved sibling-crossing pin (#123)', () => {
+  test('shared discovery preserves workspace ownership; a sibling’s pin never crosses over (#123)', () => {
     const files = [
       { path: 'packages/api/.ruby-version', content: '3.3' },
       { path: 'packages/web/.ruby-version', content: '2.7' },
@@ -688,7 +690,28 @@ describe('shared runtime declaration discovery across supported runtimes', () =>
       findRuntimeDeclarations(files, 'ruby', 'packages/api', members).map((declaration) => declaration.file),
       ['packages/api/.ruby-version'],
     );
+    // #160 precedence: `packages/api` has its own member-scoped pin, so the
+    // unattributable (ambiguous) CI line is outranked and does not drag the
+    // member's authoritative result to `unknown`.
     const discovery = discoverRuntimeDeclarations(files, 'ruby', 'packages/api', members);
+    assert.deepEqual(
+      discovery.resolved.map((d) => d.file),
+      ['packages/api/.ruby-version'],
+    );
+    assert.deepEqual(discovery.unresolved, []);
+  });
+
+  test('with no member-specific pin, an ambiguous CI declaration still governs and stays unknown (#123)', () => {
+    const files = [
+      { path: 'packages/api/.ruby-version', content: '3.3' },
+      { path: 'packages/web/.ruby-version', content: '2.7' },
+      { path: '.github/workflows/ci.yml', content: 'ruby-version: "3.2"' },
+    ];
+    const members = ['', 'packages/api', 'packages/web'];
+    // The root workspace declares no Ruby version of its own; the only thing
+    // left is the unattributable CI line, which must remain unresolved.
+    const discovery = discoverRuntimeDeclarations(files, 'ruby', '', members);
+    assert.deepEqual(discovery.resolved, []);
     assert.equal(discovery.unresolved.length, 1);
     assert.equal(discovery.unresolved[0].file, '.github/workflows/ci.yml');
   });
