@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { isAvailable } from '../../util/exec.js';
 import { fetchArchive } from '../../util/http.js';
 import type { SurfaceChange } from '../type-surface.js';
+import { ensureHelperArtifact } from './helper-artifact.js';
 import {
   unavailable,
-  tryAutoInstall,
   type SurfaceProvider,
   type SurfaceRequest,
   type SurfaceOutcome,
@@ -21,14 +21,22 @@ import {
  */
 
 const TOOL = 'japicmp';
-const INSTALL = {
-  id: 'japicmp',
-  label: 'Install japicmp',
-  command: 'brew',
-  args: ['install', 'japicmp'],
-} as const;
-const REMEDY = 'Drift can install the missing `japicmp` helper for you after approval.';
 const CENTRAL = 'https://repo1.maven.org/maven2';
+
+/**
+ * The japicmp version Drift provisions. Pinned, not "latest": a recording is a
+ * published artifact and must not diff differently because the tap moved.
+ * `japicmp-<v>-jar-with-dependencies.jar` is the self-contained CLI fat JAR.
+ */
+const JAPICMP_VERSION = '0.23.1';
+const JAPICMP_JAR_URL =
+  `${CENTRAL}/com/github/siom79/japicmp/japicmp/${JAPICMP_VERSION}` +
+  `/japicmp-${JAPICMP_VERSION}-jar-with-dependencies.jar`;
+/** SHA-256 of the fat JAR above, verified before Drift ever runs `java -jar` on it. */
+const JAPICMP_JAR_SHA256 = 'f2300a8531b68e25b678247874a1eae13a07d6842a4a1236845481fc90c5c6c7';
+
+const JAVA_REMEDY =
+  'Install a JDK (11 or newer) and re-run. Drift downloads and runs japicmp itself, but does not install Java.';
 
 export const javaSurface: SurfaceProvider = {
   ecosystem: 'maven',
@@ -45,20 +53,36 @@ export const javaSurface: SurfaceProvider = {
       );
     }
 
-    if (!(await isAvailable(request.exec, 'japicmp', ['--help']))) {
-      const installed =
-        (await tryAutoInstall(request, INSTALL)) &&
-        (await isAvailable(request.exec, 'japicmp', ['--help']));
-      if (!installed) {
-        return unavailable(
-          TOOL,
-          'tool-missing',
-          `Drift's Java API helper is missing, so ${request.name}'s classfile API could not be compared directly.`,
-          REMEDY,
-          INSTALL,
-        );
-      }
+    // Java is an external runtime prerequisite. Drift provisions japicmp on top
+    // of it, never the JDK itself.
+    if (!(await isAvailable(request.exec, 'java', ['-version']))) {
+      return unavailable(
+        TOOL,
+        'tool-missing',
+        `Java is not installed, so ${request.name}'s classfile API could not be compared directly.`,
+        JAVA_REMEDY,
+      );
     }
+
+    // Download-and-verify the pinned japicmp fat JAR into Drift's own cache.
+    const helper = await ensureHelperArtifact({
+      id: 'japicmp',
+      version: JAPICMP_VERSION,
+      url: JAPICMP_JAR_URL,
+      sha256: JAPICMP_JAR_SHA256,
+    });
+    if (!helper.ok) {
+      // Every branch here is an evidence gap in the helper Drift manages, not a
+      // statement about Java: `java -version` already succeeded above.
+      const detail =
+        helper.error.kind === 'checksum-failed'
+          ? `Drift's pinned japicmp helper failed its SHA-256 check and was not run (${helper.error.detail}).`
+          : helper.error.kind === 'cache-failed'
+            ? `Drift verified its pinned japicmp helper but could not cache it for use (${helper.error.detail}).`
+            : `Drift could not download its pinned japicmp helper (${helper.error.detail}).`;
+      return unavailable(TOOL, 'toolchain-failed', detail);
+    }
+    const japicmpJar = helper.path;
 
     await mkdir(request.workdir, { recursive: true });
     // The "before" and "after" jars are independent downloads from Maven
@@ -76,8 +100,17 @@ export const javaSurface: SurfaceProvider = {
     if (!after.ok) return after.failure;
 
     const result = await request.exec(
-      'japicmp',
-      ['-o', before.path, '-n', after.path, '--only-modified', '--ignore-missing-classes'],
+      'java',
+      [
+        '-jar',
+        japicmpJar,
+        '-o',
+        before.path,
+        '-n',
+        after.path,
+        '--only-modified',
+        '--ignore-missing-classes',
+      ],
       { cwd: request.workdir, timeoutMs: request.timeoutMs },
     );
 
@@ -89,7 +122,18 @@ export const javaSurface: SurfaceProvider = {
         result.code === 0 ? 'no-public-surface' : 'toolchain-failed',
         result.code === 0
           ? `japicmp found no differences it could read between ${request.name} ${request.from} and ${request.to}.`
-          : `japicmp failed on ${request.name}: ${firstLine(result.stderr)}`,
+          : `japicmp execution failed on ${request.name}: ${firstLine(result.stderr)}`,
+      );
+    }
+
+    // Non-empty output that carries none of japicmp's structural markers is a
+    // format this parser cannot read — distinct from japicmp running fine and
+    // finding only compatible changes.
+    if (!looksLikeJapicmpReport(result.stdout)) {
+      return unavailable(
+        TOOL,
+        'parse-failed',
+        `japicmp output for ${request.name} was not in a recognised report format.`,
       );
     }
 
@@ -274,6 +318,25 @@ function symbolName(rest: string): string | null {
     .trim();
   const identifier = (cleaned.split('(')[0]!.trim().split(/\s+/).pop() ?? '').trim();
   return /^[\w.$]+$/.test(identifier) ? identifier : null;
+}
+
+/**
+ * Does this text look like japicmp's own report at all?
+ *
+ * Its default report opens with a `Comparing … compatibility of …` banner and
+ * lists changes as marker-prefixed rows (`***`, `+++`, `---`) or bare verb
+ * lines (`MODIFIED CLASS: …`). Output with none of those is a wrapper error,
+ * a stack trace, or a format change — none of which this parser should mine
+ * for findings.
+ */
+export function looksLikeJapicmpReport(output: string): boolean {
+  return (
+    /Comparing (?:binary|source) compatibility/i.test(output) ||
+    /^[*+-]{3}/m.test(output) ||
+    /^(?:UNCHANGED|MODIFIED|REMOVED|NEW)\s+(?:CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS)/m.test(
+      output,
+    )
+  );
 }
 
 function firstLine(text: string): string {

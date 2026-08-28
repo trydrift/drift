@@ -4,6 +4,10 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { javaSurface } from '../dist/evidence/surface/java.js';
+import {
+  setHelperArtifactOverride,
+  clearHelperArtifactOverrides,
+} from '../dist/evidence/surface/helper-artifact.js';
 import { clearHttpCache, configureHttpDiskCache } from '../dist/util/http.js';
 import { createLogger } from '../dist/util/logger.js';
 import type { SurfaceRequest } from '../dist/evidence/surface/types.js';
@@ -22,18 +26,23 @@ let cacheDir: string;
 beforeEach(async () => {
   cacheDir = await mkdtemp(join(tmpdir(), 'drift-java-parallel-'));
   configureHttpDiskCache(cacheDir);
+  // The japicmp fat JAR provisioning is exercised in its own unit test; here
+  // it is short-circuited to a dummy path so the two Maven jar downloads are
+  // the only fetches in flight.
+  setHelperArtifactOverride('japicmp', join(cacheDir, 'japicmp.jar'));
 });
 
 afterEach(async () => {
   globalThis.fetch = realFetch;
   clearHttpCache();
+  clearHelperArtifactOverrides();
   configureHttpDiskCache(null);
   await rm(cacheDir, { recursive: true, force: true });
 });
 
 const exec: SurfaceRequest['exec'] = async (command, args) => {
-  if (command === 'japicmp' && args[0] === '--help') return { code: 0, stdout: '', stderr: '' };
-  if (command === 'japicmp') {
+  if (command === 'java' && args[0] === '-version') return { code: 0, stdout: '', stderr: 'openjdk 21' };
+  if (command === 'java' && args[0] === '-jar') {
     return { code: 0, stdout: '***! MODIFIED CLASS: PUBLIC com.example.Client\n', stderr: '' };
   }
   return { code: 1, stdout: '', stderr: 'unexpected command' };
