@@ -29,7 +29,13 @@ import { findCommunityRecipe } from './remediation/registry.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
-import { findNodeDeclarations, findPythonDeclarations, type RuntimeDeclaration } from './rationale/runtime.js';
+import {
+  findNodeDeclarations,
+  findPythonDeclarations,
+  discoverRuntimeDeclarations,
+  type RuntimeDeclaration,
+} from './rationale/runtime.js';
+import { warmRustDatedNightlies } from './rationale/rust-runtime.js';
 import { CONFIDENT_SURFACE_WEIGHT, type SurfaceAddition, type SurfaceUnavailable } from './evidence/surface/types.js';
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
@@ -286,6 +292,21 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     if (layouts.length > 0) {
       repoRuntimeByWorkspace = new Map(members.map((m) => [m, findNodeDeclarations(files, m, members)]));
       pythonRuntimeByWorkspace = new Map(members.map((m) => [m, findPythonDeclarations(files, m, members)]));
+    }
+
+    // A Rust `rust-toolchain`/CI channel spec like `nightly-2025-11-12` only
+    // becomes a comparable compiler version after a lookup against that day's
+    // frozen distribution manifest. Warm it here so the synchronous runtime
+    // compatibility check during localization can resolve it from memory.
+    if (breakingChanges.some((c) => c.kind === 'runtime-requirement' && c.runtime?.runtime === 'rust')) {
+      await warmRustDatedNightlies([
+        ...discoverRuntimeDeclarations(files, 'rust', undefined, members).resolved.map((d) => d.requirement),
+        ...breakingChanges.flatMap((c) =>
+          c.kind === 'runtime-requirement' && c.runtime?.runtime === 'rust' && c.runtime.requirement
+            ? [c.runtime.requirement]
+            : [],
+        ),
+      ]);
     }
 
     if (breakingChanges.length > 0) {
