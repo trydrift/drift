@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyzeRuntimeRequirement } from '../dist/rationale/compatibility.js';
+import { discoverRuntimeDeclarations } from '../dist/rationale/runtime.js';
 
 /**
  * #150 — repository-wide CI vs package-member CI.
@@ -190,5 +191,44 @@ describe('#160: runtime declaration scope and precedence', () => {
     });
     const web = analyzeRuntimeRequirement(pythonChange('>=3.9'), repo, 'packages/web', members);
     assert.equal(web?.state, 'unknown');
+  });
+
+  // Case 5 — precedence selects an applicability tier; it must not resolve a
+  // conflict *within* that tier. Two declarations the member owns itself
+  // disagree, and that disagreement has to remain visible, not be silently
+  // collapsed to whichever one precedence happened to keep.
+  test('Case 5: two member-specific declarations that conflict are not hidden by precedence', () => {
+    const members = ['', 'packages/api'];
+    const repo = files({
+      'packages/api/.python-version': '3.8\n',
+      'packages/api/.tool-versions': 'python 3.13\n',
+    });
+    const analysis = analyzeRuntimeRequirement(pythonChange('>=3.9'), repo, 'packages/api', members);
+    // Both files are member-scoped (same tier), so both survive precedence and
+    // both are evaluated: 3.8 violates `>=3.9`, 3.13 satisfies it. The
+    // violating declaration still decides the state — the conflict is reported,
+    // per existing `stateOf` semantics, not swallowed.
+    assert.equal(analysis?.state, 'incompatible');
+    assert.deepEqual(
+      analysis?.declarations.map((d) => d.file).sort(),
+      ['packages/api/.python-version', 'packages/api/.tool-versions'],
+    );
+    assert.ok(analysis?.declarations.every((d) => d.scope === 'member'));
+  });
+
+  // Case 6 — an unresolved declaration carries an applicability scope even
+  // though it has no requirement to resolve, and that scope survives
+  // aggregation (dedupe + precedence) rather than being dropped as `undefined`.
+  test('Case 6: an unresolved declaration preserves its scope through aggregation', () => {
+    const members = ['', 'packages/api'];
+    const repo = files({ '.gitlab-ci.yml': 'image: "python:3.12"\n' });
+    const discovery = discoverRuntimeDeclarations(repo, 'python', 'packages/api', members);
+    assert.equal(discovery.resolved.length, 0);
+    assert.equal(discovery.unresolved.length, 1);
+    assert.equal(
+      discovery.unresolved[0]?.scope,
+      'ambiguous',
+      'the unresolved GitLab CI line keeps its ambiguous ownership scope',
+    );
   });
 });
