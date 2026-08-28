@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
-| Run date | 2026-08-24T17:08:03.602Z |
+| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
+| Run date | 2026-08-27T22:37:47.568Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,10 +42,10 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 49/61 (80.3%) | 68.9–90.2% |
-| consumer localization rate | 39/61 (63.9%) | 52.5–77.0% |
+| affected-repository identification rate | 42/61 (68.9%) | 57.4–80.3% |
+| consumer localization rate | 38/61 (62.3%) | 50.8–73.8% |
 | dependency-update detection rate | 61/61 (100.0%) | 100.0–100.0% |
-| false-safe verdicts | 9/61 (14.8%) | 6.6–24.6% |
+| false-safe verdicts | 6/61 (9.8%) | 3.3–18.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,9 +57,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: known-breaking-upgrade | 49/61 (80.3%) | 39/61 (63.9%) | 61/61 (100.0%) |
+| label: known-breaking-upgrade | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
 | versionToIsRange: false | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
-| versionToIsRange: true | 46/58 (79.3%) | 36/58 (62.1%) | 58/58 (100.0%) |
+| versionToIsRange: true | 39/58 (67.2%) | 35/58 (60.3%) | 58/58 (100.0%) |
 
 ## What is deliberately not reported
 
@@ -97,7 +97,7 @@ how generously the mapping was written.
 | `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
 | `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "17.0.20" 2026-07-21 | any Java case |
+| `java` | openjdk version "17.0.20.1" 2026-08-18 | any Java case |
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |
