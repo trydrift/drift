@@ -342,6 +342,123 @@ describe('bounded public re-export graph traversal', () => {
     assert.equal(reversed.incomplete, forward.incomplete, 'the incomplete flag is identical regardless of completion order');
   });
 
+  test('more than eight public re-export edges are all followed, not silently capped at eight', async () => {
+    reset();
+    const deps = Array.from({ length: 12 }, (_, i) => `edge${i}`);
+    stubRegistry({
+      'w@1.0.0': pkg(deps.map((d) => `export * from "${d}";`).join('\n'), deps),
+      ...Object.fromEntries(
+        deps.map((d, i) => [`${d}@1.0.0`, pkg(`export declare function sym${i}(): void;`)]),
+      ),
+    });
+
+    const surface = await fetchTypeSurface('w', '1.0.0');
+    const surfaced = names(surface?.api);
+    // The 9th..12th edges used to be dropped by a MAX_FOLLOWED_DEPENDENCIES=8
+    // bound with no incompleteness marker — a false `export-removed` waiting to
+    // happen. Every public edge is inspected now.
+    for (let i = 0; i < 12; i += 1) {
+      assert.ok(surfaced.has(`sym${i}`), `edge ${i}'s symbol is present`);
+    }
+    assert.equal(surface?.incomplete, false, 'every public edge was fully followed');
+  });
+
+  test('a public edge left unfollowed when the budget is exhausted marks the surface incomplete', async () => {
+    // Twelve public edges, each a four-deep chain: expanding them all would far
+    // exceed MAX_TOTAL_FOLLOWED_PACKAGES, so the later edges cannot be inspected.
+    reset();
+    const edges = Array.from({ length: 12 }, (_, i) => `c${i}`);
+    const chain = (id: string): Record<string, FakePackage> => ({
+      [`${id}@1.0.0`]: pkg(`export * from "${id}_a";`, [`${id}_a`]),
+      [`${id}_a@1.0.0`]: pkg(`export * from "${id}_b";`, [`${id}_b`]),
+      [`${id}_b@1.0.0`]: pkg(`export * from "${id}_c";`, [`${id}_c`]),
+      [`${id}_c@1.0.0`]: pkg(`export declare function ${id}deep(): void;`),
+    });
+    stubRegistry({
+      'w@1.0.0': pkg(edges.map((e) => `export * from "${e}";`).join('\n'), edges),
+      ...Object.assign({}, ...edges.map(chain)),
+    });
+
+    const before = await fetchTypeSurface('w', '1.0.0');
+    assert.equal(before?.incomplete, true, 'the budget could not cover every public edge');
+
+    // The same graph in an "after" world with one deep leaf symbol genuinely
+    // gone. Because the surface is budget-truncated its absence cannot be told
+    // apart from the truncation, so no confident removal may be emitted.
+    globalThis.fetch = realFetch;
+    reset();
+    const trimmed = {
+      'w@2.0.0': pkg(edges.map((e) => `export * from "${e}";`).join('\n'), edges),
+      ...Object.assign({}, ...edges.map(chain)),
+    };
+    trimmed['c11_c@1.0.0'] = pkg('export declare function somethingElse(): void;');
+    stubRegistry(trimmed);
+    const after = await fetchTypeSurface('w', '2.0.0');
+
+    const changes = diffSurfaces(before!.api, after!.api, {
+      beforeComplete: !before?.incomplete,
+      afterComplete: !after?.incomplete,
+    });
+    assert.ok(
+      !changes.some((c) => c.kind === 'export-removed'),
+      'an incomplete traversal never yields a confident export-removed',
+    );
+  });
+
+  test('a public re-export edge whose version cannot be resolved marks the surface incomplete', async () => {
+    reset();
+    const calls = stubRegistry({
+      'w@1.0.0': pkg('export * from "unresolvable";\nexport declare function own(): void;', ['unresolvable']),
+      // `unresolvable` is declared but its `/resolved` endpoint 404s: the stub
+      // only answers `resolved` for packages it knows, and this one is absent.
+    });
+    void calls;
+
+    const surface = await fetchTypeSurface('w', '1.0.0');
+    assert.ok(names(surface?.api).has('own'), 'the wrapper’s own symbol is still read');
+    assert.equal(
+      surface?.incomplete,
+      true,
+      'an unresolved public re-export dependency is a hole, not proof it exports nothing',
+    );
+  });
+
+  test('an implementation-only edge that cannot be resolved does not mark the surface incomplete', async () => {
+    reset();
+    stubRegistry({
+      'w@1.0.0': pkg('import { Helper } from "missingimpl";\nexport declare function use(): Helper;', ['missingimpl']),
+    });
+    const surface = await fetchTypeSurface('w', '1.0.0');
+    assert.equal(surface?.incomplete, false, 'an implementation reference cannot hide part of the public API');
+  });
+
+  test('the followed set is identical regardless of per-dependency resolution delay', async () => {
+    const graph = {
+      'w@1.0.0': pkg(
+        ['a', 'b', 'c', 'd'].map((d) => `export * from "${d}";`).join('\n'),
+        ['a', 'b', 'c', 'd'],
+      ),
+      'a@1.0.0': pkg('export declare function aSym(): void;'),
+      'b@1.0.0': pkg('export declare function bSym(): void;'),
+      'c@1.0.0': pkg('export declare function cSym(): void;'),
+      'd@1.0.0': pkg('export declare function dSym(): void;'),
+    };
+    const run = async (delay: (url: string) => number) => {
+      globalThis.fetch = realFetch;
+      reset();
+      stubRegistry(graph, { delay });
+      const surface = await fetchTypeSurface('w', '1.0.0');
+      return {
+        keys: [...(surface?.api.keys() ?? [])].sort(),
+        via: [...(surface?.viaDependencies ?? [])].sort(),
+        incomplete: surface?.incomplete ?? false,
+      };
+    };
+    const forward = await run((url) => (/\/npm\/([abcd])\//.exec(url) ? 'abcd'.indexOf(RegExp.$1) + 1 : 0));
+    const reversed = await run((url) => (/\/npm\/([abcd])\//.exec(url) ? 4 - 'abcd'.indexOf(RegExp.$1) : 0));
+    assert.deepEqual(reversed, forward);
+  });
+
   test(
     'Vue 3.5.42 surface contains ref, computed and watch',
     { skip: process.env.DRIFT_NETWORK_TESTS === '1' ? false : 'set DRIFT_NETWORK_TESTS=1' },
