@@ -1,3 +1,4 @@
+import { githubRepoSlug } from '../util/github-url.js';
 import { fetchJson, fetchText } from '../util/http.js';
 
 /**
@@ -16,10 +17,27 @@ import { fetchJson, fetchText } from '../util/http.js';
 
 const CONTENTS_API = (name: string): string =>
   `https://api.github.com/repos/ocaml/opam-repository/contents/packages/${encodeURIComponent(name)}`;
-const RAW_OPAM = (name: string, version: string): string =>
-  `https://raw.githubusercontent.com/ocaml/opam-repository/master/packages/${encodeURIComponent(
+const BRANCH_API = 'https://api.github.com/repos/ocaml/opam-repository/branches/master';
+const RAW_OPAM = (name: string, version: string, ref: string): string =>
+  `https://raw.githubusercontent.com/ocaml/opam-repository/${ref}/packages/${encodeURIComponent(
     name,
   )}/${encodeURIComponent(`${name}.${version}`)}/opam`;
+
+/**
+ * Resolve `opam-repository`'s `master` to the commit SHA it currently points
+ * at. `master` is a moving ref, so a raw URL built on it is *not* immutable;
+ * pinning it to a commit first makes the blob URL genuinely content-addressed
+ * and safe to cache immutably. Fetched with ordinary cache/TTL behaviour (the
+ * SHA does move), and `null` when the API is unreachable — the caller then
+ * falls back to `master` with non-immutable caching.
+ */
+async function resolveOpamRepoCommit(headers?: Record<string, string>): Promise<string | null> {
+  const branch = await fetchJson<{ commit?: { sha?: string } }>(BRANCH_API, {
+    ...(headers ? { headers } : {}),
+  }).catch(() => null);
+  const sha = branch?.commit?.sha;
+  return typeof sha === 'string' && /^[0-9a-f]{40}$/.test(sha) ? sha : null;
+}
 
 export interface OpamMetadata {
   name: string;
@@ -66,7 +84,14 @@ export async function fetchOpamPackageVersions(
 /** Literal metadata from `packages/<name>/<name>.<version>/opam`, or `null`. */
 export async function fetchOpamMetadata(name: string, version: string): Promise<OpamMetadata | null> {
   if (!validName(name)) return null;
-  const text = await fetchText(RAW_OPAM(name, version), { immutable: true }).catch(() => null);
+
+  // Pin `master` to a commit so the blob URL is content-addressed and can be
+  // cached immutably. Without a resolvable commit, read from `master` under
+  // ordinary cache/TTL rules — never as immutable, since the ref moves.
+  const commit = await resolveOpamRepoCommit();
+  const text = commit
+    ? await fetchText(RAW_OPAM(name, version, commit), { immutable: true }).catch(() => null)
+    : await fetchText(RAW_OPAM(name, version, 'master')).catch(() => null);
   return text ? parseOpamMetadata(text, name, version) : null;
 }
 
@@ -78,12 +103,19 @@ export async function fetchOpamMetadata(name: string, version: string): Promise<
  * left alone — this is a metadata read, not an evaluation.
  */
 export function parseOpamMetadata(text: string, name: string, version: string): OpamMetadata {
-  const scalar = (field: string): string | null => {
-    // `field: "value"` — reject a value containing an opam variable expansion.
+  // `field: "value"` string scalars. Every field read here is metadata Drift
+  // treats as a *resolved literal* (a URL, an attribution target), so a value
+  // carrying an opam variable expansion — `%{name}%`, `%{version}%` — is not a
+  // literal and must be rejected rather than used verbatim. Prose fields
+  // (synopsis, description) are captured separately and never evaluated.
+  const literal = (field: string): string | null => {
     const m = new RegExp(`(?:^|\\n)\\s*${field}\\s*:\\s*"([^"\\n]*)"`).exec(text);
-    if (!m) return null;
-    const value = m[1]!.trim();
-    return value && !value.includes('%{') ? value : null;
+    return m ? asLiteral(m[1]!) : null;
+  };
+  const scalar = (field: string): string | null => {
+    const m = new RegExp(`(?:^|\\n)\\s*${field}\\s*:\\s*"([^"\\n]*)"`).exec(text);
+    const value = m?.[1]?.trim();
+    return value ? value : null;
   };
 
   // `description: """ ... """` (triple-quoted block) or a single-quoted string.
@@ -97,20 +129,37 @@ export function parseOpamMetadata(text: string, name: string, version: string): 
     const stanza = /(?:^|\n)\s*url\s*\{([\s\S]*?)\n\}/.exec(text);
     const scope = stanza ? stanza[1]! : text;
     const src = /(?:^|\n)\s*src\s*:\s*"([^"\n]+)"/.exec(scope) ?? /(?:^|\n)\s*archive\s*:\s*"([^"\n]+)"/.exec(scope);
-    return src ? src[1]!.trim() : null;
+    // `src:`/`archive:` are literal URL evidence, held to the same bar as the
+    // other URL fields: an interpolated value is not a resolved location.
+    return src ? asLiteral(src[1]!) : null;
   })();
 
   return {
     name,
     version,
-    devRepo: scalar('dev-repo'),
-    homepage: scalar('homepage'),
-    bugReports: scalar('bug-reports'),
-    doc: scalar('doc'),
+    devRepo: literal('dev-repo'),
+    homepage: literal('homepage'),
+    bugReports: literal('bug-reports'),
+    doc: literal('doc'),
     synopsis: scalar('synopsis'),
     description,
     sourceUrl,
   };
+}
+
+/**
+ * A value used as literal URL / attribution evidence, or `null`.
+ *
+ * opam values can carry variable expansions (`%{version}%`, `%{name}%`),
+ * filter interpolations, and conditionals. Drift does not evaluate opam, so a
+ * value containing any of that is not a resolved literal and must not be used
+ * as one. Prose fields go through a separate path and are never interpreted.
+ */
+function asLiteral(raw: string): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+  if (/%\{[^}]*\}%?/.test(value)) return null;
+  return value;
 }
 
 /**
@@ -121,19 +170,9 @@ export function parseOpamMetadata(text: string, name: string, version: string): 
  */
 export function githubRepoFromOpam(meta: OpamMetadata): string | null {
   return (
-    githubSlug(meta.devRepo) ??
-    githubSlug(meta.sourceUrl) ??
-    githubSlug(meta.homepage) ??
-    githubSlug(meta.bugReports)
+    githubRepoSlug(meta.devRepo) ??
+    githubRepoSlug(meta.sourceUrl) ??
+    githubRepoSlug(meta.homepage) ??
+    githubRepoSlug(meta.bugReports)
   );
-}
-
-function githubSlug(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const match = /github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/#?].*)?$/.exec(url.trim());
-  if (!match) return null;
-  const owner = match[1]!;
-  const repo = match[2]!;
-  if (!owner || !repo || owner === 'sponsors') return null;
-  return `${owner}/${repo}`;
 }

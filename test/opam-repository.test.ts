@@ -76,6 +76,31 @@ describe('parseOpamMetadata', () => {
     const meta = parseOpamMetadata('dev-repo: "git+https://github.com/o/r.git"\nbuild: [ ["sh" "-c" "rm -rf /"] {os = "linux"} ]\n', 'x', '1');
     assert.equal(meta.devRepo, 'git+https://github.com/o/r.git');
   });
+
+  test('opam interpolation is rejected in every URL field, not just plain scalars', () => {
+    const meta = parseOpamMetadata(
+      [
+        'dev-repo: "git+https://github.com/o/%{name}%.git"',
+        'doc: "https://docs.example.com/%{version}%/"',
+        'bug-reports: "https://github.com/o/r/issues?v=%{version}%"',
+        'url {',
+        '  src: "https://github.com/o/r/archive/%{version}%.tar.gz"',
+        '}',
+      ].join('\n'),
+      'x',
+      '1',
+    );
+    assert.equal(meta.devRepo, null, 'interpolated dev-repo rejected');
+    assert.equal(meta.doc, null, 'interpolated doc rejected');
+    assert.equal(meta.bugReports, null, 'interpolated bug-reports rejected');
+    assert.equal(meta.sourceUrl, null, 'interpolated src: rejected');
+  });
+
+  test('a triple-quoted description stays prose but is never evaluated', () => {
+    const meta = parseOpamMetadata('description: """See %{name}% docs."""\n', 'x', '1');
+    // Prose keeps the literal text; it is not a URL field and is never interpreted.
+    assert.match(meta.description ?? '', /%\{name\}%/);
+  });
 });
 
 describe('githubRepoFromOpam', () => {
@@ -109,6 +134,13 @@ describe('githubRepoFromOpam', () => {
       null,
     );
   });
+  test('null for a deceptive look-alike host', () => {
+    assert.equal(githubRepoFromOpam({ ...base, devRepo: 'https://evilgithub.com/o/r' }), null);
+    assert.equal(
+      githubRepoFromOpam({ ...base, homepage: 'https://github.com.evil.com/o/r.git' }),
+      null,
+    );
+  });
 });
 
 describe('fetchOpamMetadata / versions over the wire', () => {
@@ -116,6 +148,39 @@ describe('fetchOpamMetadata / versions over the wire', () => {
     stub((url) => (url.includes('/packages/cohttp/cohttp.5.3.0/opam') ? OPAM_FILE : undefined));
     const meta = await fetchOpamMetadata('cohttp', '5.3.0');
     assert.equal(meta?.devRepo, 'git+https://github.com/mirage/ocaml-cohttp.git');
+  });
+
+  test('the release opam blob is pinned to a resolved commit, never the moving master ref', async () => {
+    const SHA = 'a'.repeat(40);
+    const s = stub((url) => {
+      if (url.includes('/branches/master')) return { commit: { sha: SHA } };
+      if (url.includes(`/${SHA}/packages/cohttp/cohttp.5.3.0/opam`)) return OPAM_FILE;
+      return undefined;
+    });
+    const meta = await fetchOpamMetadata('cohttp', '5.3.0');
+    assert.equal(meta?.devRepo, 'git+https://github.com/mirage/ocaml-cohttp.git');
+    assert.ok(
+      s.calls().some((u) => u.includes(`/${SHA}/packages/`)),
+      'the raw blob was fetched at the pinned commit SHA',
+    );
+    assert.ok(
+      !s.calls().some((u) => u.includes('/master/packages/')),
+      'the moving master ref was not used for the immutable blob fetch',
+    );
+  });
+
+  test('a moved master does not replay an earlier miss — the new commit is a new cache key', async () => {
+    const SHA_B = 'b'.repeat(40);
+    const s = stub((url) => {
+      if (url.includes('/branches/master')) return { commit: { sha: SHA_B } };
+      if (url.includes(`/${SHA_B}/packages/cohttp/cohttp.5.3.0/opam`)) return OPAM_FILE;
+      return undefined;
+    });
+    const meta = await fetchOpamMetadata('cohttp', '5.3.0');
+    // The blob URL now carries SHA_B; a stale immutable entry under any other
+    // ref (master, an older SHA) cannot satisfy this request.
+    assert.equal(meta?.devRepo, 'git+https://github.com/mirage/ocaml-cohttp.git');
+    assert.ok(s.calls().some((u) => u.includes(`/${SHA_B}/packages/`)));
   });
 
   test('version directories become versions; files do not', async () => {
