@@ -898,6 +898,47 @@ describe('assembling the rationale', () => {
 
   const noNetwork = { fetch: async () => null };
 
+  // 'pkg' resolves to vercel/pkg, which is archived upstream — a confirmed
+  // `polarity: 'blocks'` maintenance fact that a couple of the tests below
+  // depend on to pin the recommendation. buildRationale learns it from two
+  // live lookups (the npm packument, then the GitHub repo), and the GitHub
+  // one is unauthenticated from CI and rate-limits intermittently, silently
+  // degrading the fact — and the recommendation with it — to
+  // "insufficient-evidence". Serve both lookups from a fixed response so the
+  // assertions exercise the rationale logic rather than GitHub's rate limiter.
+  const withArchivedPkg = async (run: () => Promise<void>) => {
+    clearHttpCache();
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = ((input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.startsWith('https://registry.npmjs.org/pkg')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              repository: { url: 'git+https://github.com/vercel/pkg.git' },
+              time: { '1.0.0': '2018-01-01T00:00:00Z', '2.0.0': '2020-01-27T00:00:00Z' },
+              versions: { '1.0.0': { license: 'MIT' }, '2.0.0': { license: 'MIT' } },
+            }),
+          ),
+        );
+      }
+      if (url === 'https://api.github.com/repos/vercel/pkg') {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ archived: true, pushed_at: '2023-01-27T00:00:00Z', html_url: 'https://github.com/vercel/pkg' }),
+          ),
+        );
+      }
+      return Promise.resolve(new Response('not found', { status: 404 }));
+    }) as typeof fetch;
+    try {
+      await run();
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+    }
+  };
+
   const osvResponse = (vulns: Record<string, unknown>[]) => ({ vulns });
 
   const vuln = (id: string, fixed: string, over: Record<string, unknown> = {}) => ({
@@ -1087,19 +1128,21 @@ describe('assembling the rationale', () => {
   });
 
   test('an unreadable dependency is insufficient evidence, and says so', async () => {
-    const [rationale] = await buildRationale(
-      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
-      { config, logger, osv: noNetwork },
-    );
+    await withArchivedPkg(async () => {
+      const [rationale] = await buildRationale(
+        { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+        { config, logger, osv: noNetwork },
+      );
 
-    // 'pkg' (vercel/pkg on GitHub) is archived upstream, which is itself a
-    // confirmed, `polarity: 'blocks'` maintenance fact -- a real finding, not
-    // an absence of one -- so it outranks "insufficient evidence" the same
-    // way a known incompatibility would. The gap this test actually exercises
-    // (OSV being unreachable) still has to surface regardless of which
-    // recommendation wins.
-    assert.equal(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
-    assert.ok(rationale!.gaps.some((g) => /OSV advisory database could not be reached/.test(g)));
+      // 'pkg' (vercel/pkg on GitHub) is archived upstream, which is itself a
+      // confirmed, `polarity: 'blocks'` maintenance fact -- a real finding, not
+      // an absence of one -- so it outranks "insufficient evidence" the same
+      // way a known incompatibility would. The gap this test actually exercises
+      // (OSV being unreachable) still has to surface regardless of which
+      // recommendation wins.
+      assert.equal(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
+      assert.ok(rationale!.gaps.some((g) => /OSV advisory database could not be reached/.test(g)));
+    });
   });
 
   test('multiple upgrades use the OSV batch seam once', async () => {
@@ -1186,18 +1229,20 @@ describe('assembling the rationale', () => {
   });
 
   test('the rendered block leads with the recommendation and ends with its reasons', async () => {
-    const [rationale] = await buildRationale(
-      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
-      { config, logger, osv: noNetwork },
-    );
+    await withArchivedPkg(async () => {
+      const [rationale] = await buildRationale(
+        { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+        { config, logger, osv: noNetwork },
+      );
 
-    const markdown = renderOne(rationale!);
-    const lines = markdown.split('\n').filter(Boolean);
-    assert.match(lines[0]!, /^### `pkg` 1\.0\.0 → 2\.0\.0$/);
-    // 'pkg' is archived upstream (see the test above), a confirmed
-    // `polarity: 'blocks'` fact that now outranks "insufficient evidence".
-    assert.match(lines[1]!, /^\*\*Recommendation: Do not upgrade yet\*\*$/);
-    assert.match(markdown, /Why Drift concluded this/);
+      const markdown = renderOne(rationale!);
+      const lines = markdown.split('\n').filter(Boolean);
+      assert.match(lines[0]!, /^### `pkg` 1\.0\.0 → 2\.0\.0$/);
+      // 'pkg' is archived upstream (see the test above), a confirmed
+      // `polarity: 'blocks'` fact that now outranks "insufficient evidence".
+      assert.match(lines[1]!, /^\*\*Recommendation: Do not upgrade yet\*\*$/);
+      assert.match(markdown, /Why Drift concluded this/);
+    });
   });
 
   test('progress is reported in named stages, not as one opaque phase', async () => {

@@ -1,0 +1,11 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Backdrop } from "@/components/backdrop";
+import { FeatureBoard } from "@/components/feature-board";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { instrumentSerif } from "@/lib/fonts";
+import { FEATURE_FORM_URL, GITHUB_URL } from "@/lib/github-features";
+
+export const metadata: Metadata = { title: "Feature requests — Drift", description: "Request features, upvote ideas, and see what Drift is planning or has shipped." };
+
+export default function Features() { return <div className="relative min-h-screen"><Backdrop /><header className="relative z-10 mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8"><Link href="/" className={`${instrumentSerif.className} text-2xl text-landing`}>Drift</Link><nav className="ml-auto flex items-center gap-1 sm:gap-2"><Link href="/" className="rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-surface-hover hover:text-foreground">Home</Link><a href={GITHUB_URL} target="_blank" rel="noreferrer" className="rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-surface-hover hover:text-foreground">GitHub</a><ThemeToggle /></nav></header><main className="relative z-10 mx-auto max-w-5xl px-5 pb-24 sm:px-8"><section className="pt-8 sm:pt-16"><p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted"><span className="text-faint">//</span> feature requests</p><h1 className={`${instrumentSerif.className} mt-3 max-w-3xl text-4xl text-landing sm:text-5xl`}>Shape what Drift builds next.</h1><p className="mt-4 max-w-2xl text-base leading-relaxed text-muted">Request features, vote on what matters, and follow what is planned or shipped.</p><a href={FEATURE_FORM_URL} target="_blank" rel="noreferrer" className="mt-6 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground">Request a feature</a></section><FeatureBoard /></main><footer className="relative z-10 border-t border-border bg-background/60"><div className="mx-auto flex max-w-5xl flex-wrap gap-4 px-5 py-6 text-xs text-faint sm:px-8"><Link href="/" className={`${instrumentSerif.className} text-base text-landing`}>Drift</Link><a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a><a href={FEATURE_FORM_URL} target="_blank" rel="noreferrer">Request a feature</a></div></footer></div>; }
