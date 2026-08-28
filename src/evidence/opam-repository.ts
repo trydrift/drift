@@ -126,7 +126,12 @@ export function parseOpamMetadata(text: string, name: string, version: string): 
   })();
 
   const sourceUrl = (() => {
-    const stanza = /(?:^|\n)\s*url\s*\{([\s\S]*?)\n\}/.exec(text);
+    // opam permits the stanza's closing brace to be indented (`  }`), and some
+    // published `opam` files write it that way. Anchoring on `\n}` at column 0
+    // dropped the whole `url { … }` scope for those, losing the `src:` URL —
+    // the primary source-of-truth for GitHub attribution. Allow leading
+    // whitespace before the brace.
+    const stanza = /(?:^|\n)\s*url\s*\{([\s\S]*?)\n[ \t]*\}/.exec(text);
     const scope = stanza ? stanza[1]! : text;
     const src = /(?:^|\n)\s*src\s*:\s*"([^"\n]+)"/.exec(scope) ?? /(?:^|\n)\s*archive\s*:\s*"([^"\n]+)"/.exec(scope);
     // `src:`/`archive:` are literal URL evidence, held to the same bar as the
