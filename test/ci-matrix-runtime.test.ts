@@ -323,7 +323,7 @@ describe('genuinely dynamic matrix and non-matrix expressions stay unresolved', 
 describe('matrix resolution does not weaken workspace ownership', () => {
   const members = ['', 'packages/api', 'packages/web'];
 
-  test('an ambiguous monorepo job keeps its resolved matrix values non-authoritative', () => {
+  test('an untargeted repo-root matrix job is repository-wide and authoritative for a member (#150)', () => {
     const content = [
       'jobs:',
       '  test:',
@@ -334,11 +334,14 @@ describe('matrix resolution does not weaken workspace ownership', () => {
       '      - with:',
       '          node-version: ${{ matrix.node-version }}',
     ].join('\n');
-    // The job names no member: ownership is not established in a real monorepo.
-    assert.deepEqual(findRuntimeDeclarations([{ path: WORKFLOW, content }], 'node', 'packages/api', members), []);
+    // The job names no member and carries no path/dir filter: it runs against
+    // the whole checkout, so per #150 it governs `packages/api` too.
+    const declared = findRuntimeDeclarations([{ path: WORKFLOW, content }], 'node', 'packages/api', members);
+    assert.deepEqual(declared.map((d) => d.requirement).sort(), ['20', '22']);
+    assert.ok(declared.every((d) => d.scope === 'repository'));
     const { resolved, unresolved } = discover(content, 'node', 'packages/api', members);
-    assert.deepEqual(resolved, []);
-    assert.ok(unresolved.length > 0, 'the matrix values are still recorded, as unresolved evidence');
+    assert.deepEqual(resolved.map((d) => d.requirement).sort(), ['20', '22']);
+    assert.deepEqual(unresolved, []);
   });
 
   test('a job scoped to the analyzed member resolves its matrix normally', () => {

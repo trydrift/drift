@@ -374,7 +374,9 @@ describe('runtime declaration discovery: identity before unresolvability', () =>
       'packages/api/.nvmrc': '22\n',
     });
     const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', ['packages/api', 'packages/web']);
-    assert.deepEqual(found.resolved, [{ file: 'packages/api/.nvmrc', line: 1, requirement: '22' }]);
+    assert.deepEqual(found.resolved, [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '22', scope: 'member' },
+    ]);
   });
 });
 
@@ -415,7 +417,9 @@ ${extra}`;
   test('working-directory: a job scoped to the target member participates', () => {
     const repo = files({ '.github/workflows/ci.yml': ciWithScopedJobs() });
     const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
-    assert.deepEqual(found.resolved, [{ file: '.github/workflows/ci.yml', line: 18, requirement: '22' }]);
+    assert.deepEqual(found.resolved, [
+      { file: '.github/workflows/ci.yml', line: 18, requirement: '22', scope: 'member' },
+    ]);
   });
 
   test('sibling member exclusion: a job scoped to a different member never contributes a site', () => {
@@ -452,7 +456,9 @@ jobs:
 `,
     });
     const api = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
-    assert.deepEqual(api.resolved, [{ file: '.github/workflows/ci.yml', line: 11, requirement: '22' }]);
+    assert.deepEqual(api.resolved, [
+      { file: '.github/workflows/ci.yml', line: 11, requirement: '22', scope: 'member' },
+    ]);
     const web = discoverRuntimeDeclarations(repo, 'node', 'packages/web', monorepo);
     assert.equal(web.resolved.length, 0);
     assert.equal(web.unresolved.length, 0);
@@ -477,7 +483,7 @@ jobs:
     assert.equal(api.unresolved.length, 0);
   });
 
-  test('unattributed root job: an unscoped job in a monorepo is review/unknown for a member, never a false incompatible edit', () => {
+  test('repository-wide precedence: a member’s own .nvmrc overrides an untargeted repo job (#150)', () => {
     const repo = files({
       'packages/api/.nvmrc': '22\n',
       'packages/web/.nvmrc': '18\n',
@@ -489,12 +495,32 @@ jobs:
 `),
     });
     const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
-    assert.ok(!found.resolved.some((d) => d.requirement === '16'), 'the unattributed job must never resolve directly');
-    assert.ok(found.unresolved.some((d) => d.rawText === '16'), 'it must still be recorded as evidence Drift could not attribute');
+    // The repo-wide `lint` job's Node 16 is dropped: packages/api declares its
+    // own runtime (.nvmrc 22), which takes precedence.
+    assert.ok(!found.resolved.some((d) => d.requirement === '16'));
+    assert.ok(!found.unresolved.some((d) => d.rawText === '16'));
 
     const analysis = analyzeRuntimeRequirement(runtimeChange('node', '>=20'), repo, 'packages/api', monorepo);
-    assert.equal(analysis?.state, 'unknown');
-    assert.equal(analysis?.reason, 'dynamic');
+    assert.equal(analysis?.state, 'compatible');
+  });
+
+  test('a repo-wide job governs a member that has no runtime declaration of its own (#150)', () => {
+    const repo = files({
+      '.github/workflows/lint.yml': `jobs:
+  lint:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+`,
+    });
+    const found = discoverRuntimeDeclarations(repo, 'node', 'packages/api', monorepo);
+    assert.deepEqual(
+      found.resolved.map((d) => ({ requirement: d.requirement, scope: d.scope })).filter((d) => d.requirement === '16'),
+      [{ requirement: '16', scope: 'repository' }],
+    );
+    const analysis = analyzeRuntimeRequirement(runtimeChange('node', '>=20'), repo, 'packages/api', monorepo);
+    assert.equal(analysis?.state, 'incompatible');
   });
 
   test('normal repository/root package behavior: a single-package repo keeps unscoped CI authoritative', () => {
@@ -509,12 +535,12 @@ jobs:
 `,
     });
     assert.deepEqual(discoverRuntimeDeclarations(repo, 'node').resolved, [
-      { file: '.github/workflows/ci.yml', line: 7, requirement: '20' },
+      { file: '.github/workflows/ci.yml', line: 7, requirement: '20', scope: 'repository' },
     ]);
     // A caller that names a member but reports no siblings is the same case:
     // there is no other member the declaration could instead belong to.
     assert.deepEqual(discoverRuntimeDeclarations(repo, 'node', 'packages/api', ['packages/api']).resolved, [
-      { file: '.github/workflows/ci.yml', line: 7, requirement: '20' },
+      { file: '.github/workflows/ci.yml', line: 7, requirement: '20', scope: 'repository' },
     ]);
   });
 
@@ -531,7 +557,7 @@ build-api:
 `,
     });
     assert.deepEqual(discoverRuntimeDeclarations(gitlabCi, 'node').resolved, [
-      { file: '.gitlab-ci.yml', line: 3, requirement: '16' },
+      { file: '.gitlab-ci.yml', line: 3, requirement: '16', scope: 'repository' },
     ]);
     const monorepoFound = discoverRuntimeDeclarations(gitlabCi, 'node', 'packages/api', monorepo);
     assert.equal(monorepoFound.resolved.length, 0);
