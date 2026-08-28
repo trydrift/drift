@@ -18,11 +18,11 @@ import { BYAM_LLM_REPAIR_STUDY } from "@/lib/external-citations";
  * five-stage flow and one short line per stage without scrolling past five
  * essays, and the real, checkable artefact is one click (or keystroke) away.
  *
- * One example runs through all five stages, and it is real: w3lib 1.17.0 →
+ * One example runs through all five stages, and it is real: w3lib 2.1.1 →
  * 2.4.1 in Scrapy, taken from the recording on this same page
- * (`data/scrapy.json`). The signature line, the four call sites, their file
- * paths and their line numbers are the recording's, unedited. Nothing here is
- * an illustration of what a finding might look like.
+ * (`data/scrapy.json`). The release-note line, the four call sites, their
+ * file paths and their line numbers are the recording's, unedited. Nothing
+ * here is an illustration of what a finding might look like.
  *
  * Built from CSS and inline SVG rather than an image, so it stays legible at
  * any width, follows the theme, and can be read aloud.
@@ -42,55 +42,56 @@ interface Stage {
 
 const MANIFEST_DIFF: CodeLine[] = [
   { text: "@@ pyproject.toml — [project.dependencies] @@", kind: "hunk" },
-  { n: 41, text: '  "cssselect>=0.9.1",' },
-  { n: 42, text: '  "itemloaders>=1.0.1",' },
-  { n: 43, text: '  "w3lib>=1.17.0",', kind: "del" },
-  { n: 43, text: '  "w3lib>=2.4.1",', kind: "add" },
-  { n: 44, text: '  "parsel>=1.5.0",' },
+  { n: 25, text: '  "tldextract",' },
+  { n: 26, text: '  "w3lib>=2.1.1",', kind: "del" },
+  { n: 26, text: '  "w3lib>=2.4.1",', kind: "add" },
+  { n: 27, text: '  "zope.interface>=5.1.0",' },
 ];
 
-const SURFACE_DIFF: CodeLine[] = [
-  { text: "@@ w3lib.url — public surface · defaults 2 → 3 @@", kind: "hunk" },
-  { text: "def safe_url_string(url, encoding, path_encoding)", kind: "del" },
-  { text: "def safe_url_string(url, encoding, path_encoding, quote_path)", kind: "add" },
+const CHANGE_EVIDENCE: CodeLine[] = [
+  { text: "@@ w3lib v2.2.1 — release notes @@", kind: "hunk" },
+  { text: "canonicalize_url() no longer applies lowercase" },
+  { text: "to the userinfo URL component." },
 ];
 
 /** The four sites, exactly as the recording lists them. */
 const SITES: CodeLine[] = [
   {
-    n: 224,
-    text: 'location = safe_url_string(response.headers["Location"])',
-    kind: "hit",
-  },
-  { n: 269, text: "self._url = safe_url_string(url, self.encoding)", kind: "hit" },
-  {
-    n: 138,
-    text: "url = safe_url_string(url, encoding=response_encoding)",
+    n: 57,
+    text: "return canonicalize_url(link.url, keep_fragments=True)",
     kind: "hit",
     note: {
       tone: "found",
-      label: "high confidence · 1 of 25 sites",
+      label: "high confidence · 1 of 4 sites",
       body: (
         <>
-          This file binds <code className="font-mono">safe_url_string</code> from an import of
-          w3lib, so the name here is provably that function — not a local one that shares its
-          spelling.
+          This file directly binds <code className="font-mono">canonicalize_url</code> from an
+          import of w3lib, so the name here is provably that function — not a local one that
+          shares its spelling. These are the four places that call the API whose behavior
+          changed; whether a particular caller depends on lowercased userinfo is what the review
+          step must determine.
         </>
       ),
     },
   },
+  { n: 399, text: "link.url = canonicalize_url(link.url)", kind: "hit" },
   {
-    n: 196,
-    text: 'safe_url_string("http://EXAMPLE.ORG/SOMEPAGE/ITEM/12.HTML"),',
+    n: 100,
+    text: "url = canonicalize_url(request.url, keep_fragments=keep_fragments)",
+    kind: "hit",
+  },
+  {
+    n: 794,
+    text: "return canonicalize_url(url, *args, **kwargs)",
     kind: "hit",
   },
 ];
 
 const SITE_FILES = [
-  "scrapy/downloadermiddlewares/redirect.py",
-  "scrapy/http/request/__init__.py",
   "scrapy/linkextractors/lxmlhtml.py",
-  "tests/test_spider_crawl.py",
+  "scrapy/linkextractors/lxmlhtml.py",
+  "scrapy/utils/request.py",
+  "tests/test_linkextractors.py",
 ];
 
 const STAGES: Stage[] = [
@@ -142,7 +143,7 @@ const STAGES: Stage[] = [
       "A file that never imports w3lib can't be broken by a w3lib change, however often the word url appears in it. Within files that do, Drift matches the symbols the evidence named — skipping comments and strings, so a word in a docstring is never mistaken for a call. Each site gets its own confidence, highest when the file provably bound that symbol from that import.",
     chips: ["import graph", "#include graph", "AST-aligned index", "per-site confidence"],
     artefact: (
-      <GhPanel icon="search" name="symbol: safe_url_string" meta="25 results · 10 files">
+      <GhPanel icon="search" name="symbol: canonicalize_url" meta="4 results · 3 files">
         <div className="divide-y divide-border">
           {SITES.map((site, index) => (
             <div key={SITE_FILES[index]}>
@@ -164,22 +165,17 @@ const STAGES: Stage[] = [
     detail:
       "Never one 'upgrade everything' commit — a reviewer has to read, approve, or revert one piece at a time, and git bisect has to stay meaningful. Each change is resolved by a deterministic codemod where one exists, then a validated fix plan — one rule, applied to every call site at once — then an AI agent for whatever is left. Never silently, and always in that order.",
     artefact: (
-      <GhPanel icon="commit" name="drift/upgrade-w3lib" meta="3 commits">
+      <GhPanel icon="commit" name="drift/upgrade-w3lib" meta="2 commits">
         <div className="divide-y divide-border">
           <GhCommit
-            tag="codemod"
-            message="deps: w3lib 1.17.0 → 2.4.1"
-            detail="The manifest and the lockfile, alone, so the version move is revertible on its own."
-          />
-          <GhCommit
-            tag="fix plan"
-            message="fix(w3lib): pass quote_path explicitly at 25 call sites"
-            detail="One validated rule, applied by Drift to all 25 call sites. The plan states the rule, the evidence attesting it, and every site it declined."
+            tag="dependency"
+            message="deps: w3lib 2.1.1 → 2.4.1"
+            detail="The dependency move is isolated so it can be reviewed or reverted independently."
           />
           <GhCommit
             tag="agent"
-            message="fix(w3lib): canonicalize_url no longer lowercases userinfo"
-            detail="A behaviour change has no mechanical fix, so it is dispatched last and reviewed as its own commit."
+            message="review(w3lib): verify canonicalize_url userinfo semantics"
+            detail="The upstream change is behavioral, not syntactic. Review the four directly bound canonicalize_url call sites and only change code where it actually relies on userinfo being lowercased. If no caller relies on that behavior, no source edit is needed."
           />
         </div>
       </GhPanel>
@@ -314,7 +310,7 @@ export function Pipeline() {
       </ol>
 
       <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-muted">
-        Real example: <code className="font-mono text-brand-text">w3lib</code> 1.17.0 → 2.4.1 in
+        Real example: <code className="font-mono text-brand-text">w3lib</code> 2.1.1 → 2.4.1 in
         Scrapy, from the recording above. Each stage below opens to the artefact it actually
         produced.
       </p>
@@ -524,26 +520,28 @@ function ChevronIcon({ className }: { className?: string }) {
  * The finding itself, drawn as the check annotation it becomes.
  *
  * Every field is from `data/scrapy.json`: the kind, the confidence, the
- * summary, and the before/after signature the remediation quotes verbatim.
+ * summary, and the release-note line the remediation quotes verbatim.
  */
 function FindingCard() {
   return (
-    <GhPanel icon="check" name="drift / analyze" meta="w3lib · 13 breaking changes">
+    <GhPanel icon="check" name="drift / analyze" meta="w3lib · 6 breaking changes">
       <div className="border-b border-border px-3 py-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <GhBadge tone="warn">signature-change</GhBadge>
-          <GhBadge tone="brand">confidence: 95/100 — Very confident</GhBadge>
-          <GhBadge>cites: computed surface diff</GhBadge>
+          <GhBadge tone="warn">behaviour-change</GhBadge>
+          <GhBadge tone="brand">confidence: 60/100 — Fairly confident</GhBadge>
+          <GhBadge>cites: GitHub release notes</GhBadge>
         </div>
         <p className="mt-2.5 text-[13px] font-medium text-foreground">
-          The signature of <code className="font-mono">url.safe_url_string</code> changed.
+          <code className="font-mono">canonicalize_url</code> no longer applies lowercase to the
+          userinfo URL component.
         </p>
         <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
-          Update every call site to match the new signature — check argument order, count, and
-          whether an options object replaced positional arguments.
+          Review call sites for assumptions that no longer hold. Make any dependency on
+          lowercased userinfo explicit instead of silently relying on the previous
+          canonicalization behavior.
         </p>
       </div>
-      <Code lines={SURFACE_DIFF} />
+      <Code lines={CHANGE_EVIDENCE} />
     </GhPanel>
   );
 }
