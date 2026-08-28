@@ -29,8 +29,9 @@ interface FakePackage {
 /** A registry of fake published packages, served through a stubbed `fetch`. */
 function stubRegistry(
   packages: Record<string, FakePackage>,
-  options: { delay?: (url: string) => number } = {},
+  options: { delay?: (url: string) => number; unresolvable?: readonly string[] } = {},
 ): { calls: () => string[] } {
+  const unresolvable = new Set(options.unresolvable ?? []);
   const calls: string[] = [];
   const base = (input: string | URL | Request): Promise<Response> => {
     const url = String(input);
@@ -51,8 +52,14 @@ function stubRegistry(
       return Promise.resolve(new Response(JSON.stringify({ files: names }), { status: 200 }));
     }
 
-    // Range resolution — every fake dependency resolves to 1.0.0.
+    // Range resolution. A name in `options.unresolvable` fails the way jsDelivr
+    // does for a range it cannot satisfy (no `version` in the body); every
+    // other fake dependency resolves to 1.0.0.
     if (parsed.hostname === 'data.jsdelivr.com' && parsed.pathname.endsWith('/resolved')) {
+      const name = decodeURIComponent(parsed.pathname.split('/npm/')[1]?.replace(/\/resolved$/, '') ?? '');
+      if (unresolvable.has(name)) {
+        return Promise.resolve(new Response(JSON.stringify({}), { status: 404 }));
+      }
       return Promise.resolve(new Response(JSON.stringify({ version: '1.0.0' }), { status: 200 }));
     }
 
@@ -407,29 +414,64 @@ describe('bounded public re-export graph traversal', () => {
 
   test('a public re-export edge whose version cannot be resolved marks the surface incomplete', async () => {
     reset();
-    const calls = stubRegistry({
-      'w@1.0.0': pkg('export * from "unresolvable";\nexport declare function own(): void;', ['unresolvable']),
-      // `unresolvable` is declared but its `/resolved` endpoint 404s: the stub
-      // only answers `resolved` for packages it knows, and this one is absent.
-    });
-    void calls;
+    // `unresolvable` IS a published package here — its listing and declarations
+    // resolve fine — but jsDelivr cannot satisfy the declared range, so
+    // `resolveDependencyVersion` returns null. That is the case under test: a
+    // resolution failure, not a fetch failure.
+    const stub = stubRegistry(
+      {
+        'w@1.0.0': pkg('export * from "unresolvable";\nexport declare function own(): void;', ['unresolvable']),
+        'unresolvable@1.0.0': pkg('export declare function hidden(): void;'),
+      },
+      { unresolvable: ['unresolvable'] },
+    );
 
     const surface = await fetchTypeSurface('w', '1.0.0');
     assert.ok(names(surface?.api).has('own'), 'the wrapper’s own symbol is still read');
+    assert.ok(!names(surface?.api).has('hidden'), 'the unresolved edge contributed nothing');
     assert.equal(
       surface?.incomplete,
       true,
       'an unresolved public re-export dependency is a hole, not proof it exports nothing',
     );
+    assert.ok(
+      stub.calls().some((u) => u.includes('/unresolvable/resolved')),
+      'resolution was actually attempted',
+    );
+    assert.ok(
+      !stub.calls().some((u) => u.includes('cdn.jsdelivr.net') && u.includes('/unresolvable@')),
+      'no surface fetch was attempted for a version that never resolved',
+    );
   });
 
-  test('an implementation-only edge that cannot be resolved does not mark the surface incomplete', async () => {
+  test('a public re-export edge that resolves but cannot be fetched marks the surface incomplete', async () => {
     reset();
+    // Version resolves to 1.0.0, but no `missingpkg@1.0.0` is published, so the
+    // surface fetch 404s. A distinct failure mode from the one above, same
+    // conservative outcome.
     stubRegistry({
-      'w@1.0.0': pkg('import { Helper } from "missingimpl";\nexport declare function use(): Helper;', ['missingimpl']),
+      'w@1.0.0': pkg('export * from "missingpkg";\nexport declare function own(): void;', ['missingpkg']),
     });
     const surface = await fetchTypeSurface('w', '1.0.0');
-    assert.equal(surface?.incomplete, false, 'an implementation reference cannot hide part of the public API');
+    assert.ok(names(surface?.api).has('own'));
+    assert.equal(surface?.incomplete, true, 'a re-exported package Drift could not fetch is also a hole');
+  });
+
+  test('an implementation-only edge whose version cannot be resolved does not mark the surface incomplete', async () => {
+    reset();
+    stubRegistry(
+      {
+        'w@1.0.0': pkg('import { Helper } from "missingimpl";\nexport declare function use(): Helper;', ['missingimpl']),
+        'missingimpl@1.0.0': pkg('export declare class Helper {}'),
+      },
+      { unresolvable: ['missingimpl'] },
+    );
+    const surface = await fetchTypeSurface('w', '1.0.0');
+    assert.equal(
+      surface?.incomplete,
+      false,
+      'an implementation reference cannot hide part of the public API, resolved or not',
+    );
   });
 
   test('the followed set is identical regardless of per-dependency resolution delay', async () => {
