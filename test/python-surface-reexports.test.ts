@@ -126,7 +126,7 @@ describe('Python explicit re-exports are not false removals', () => {
     assert.deepEqual(api.get('pkg.Foo')!.members, ['m'], 'with the shape from a.py');
   });
 
-  test('a circular re-export terminates instead of recursing forever', async (t) => {
+  test('a circular re-export terminates and does not become shape-unknown', async (t) => {
     const python = await execCommand('python3', ['--version']).catch(() => null);
     if (!python || python.code !== 0) return t.skip('python3 not available');
 
@@ -136,10 +136,36 @@ describe('Python explicit re-exports are not false removals', () => {
       'pkg/b.py': 'from .a import Thing\n__all__ = ["Thing"]\n',
     });
 
-    // Neither module can resolve a concrete declaration, but both name Thing
-    // in __all__ via an import — so it is known-to-exist, shape unknown.
-    assert.equal(api.get('pkg.a.Thing')!.shapeUnknown, true);
-    assert.equal(api.get('pkg.b.Thing')!.shapeUnknown, true);
+    // The cycle never reaches a concrete declaration, so it proves nothing
+    // exists: the run terminates (no hang), and neither symbol is emitted —
+    // shape-unknown is only for a binding whose target is genuinely outside
+    // the parsed package, not for an internal chain that failed to resolve.
+    assert.ok(!api.has('pkg.a.Thing'));
+    assert.ok(!api.has('pkg.b.Thing'));
+  });
+
+  test('an internal re-export of a since-removed symbol becomes export-removed', async (t) => {
+    const python = await execCommand('python3', ['--version']).catch(() => null);
+    if (!python || python.code !== 0) return t.skip('python3 not available');
+
+    const before = await surfaceOf({
+      'pkg/__init__.py': '',
+      'pkg/api.py': 'from .internal import Foo\n__all__ = ["Foo"]\n',
+      'pkg/internal.py': 'class Foo:\n    pass\n',
+    });
+    const after = await surfaceOf({
+      'pkg/__init__.py': '',
+      'pkg/api.py': 'from .internal import Foo\n__all__ = ["Foo"]\n',
+      'pkg/internal.py': '# Foo removed\n',
+    });
+
+    assert.ok(before.has('pkg.api.Foo'), 'the re-export resolved before');
+    assert.ok(!after.has('pkg.api.Foo'), 'a broken internal re-export is not on the surface');
+    const changes = diffSurfaces(before, after);
+    assert.ok(
+      changes.some((c) => c.kind === 'export-removed' && c.symbol === 'pkg.api.Foo'),
+      JSON.stringify(changes),
+    );
   });
 
   test('an imported name absent from __all__ does not become public', async (t) => {

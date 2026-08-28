@@ -1074,27 +1074,46 @@ for path, import_root in sorted(sources.values()):
                     entry['imports'][alias.asname] = (alias.name, None)
 
 # ---- Stage 2: resolve public re-exports against the whole-package index ----
+# Follow an import binding to the declaration it ultimately names, across
+# re-export chains, with cycle detection. The outcome is not a single None:
+# the four cases below mean genuinely different things for the public surface.
+#   ('resolved', <local-symbol dict>) -- a concrete declaration was reached.
+#   ('external', None) -- the chain leaves the parsed package (an unparsed or
+#       third-party module, or a bound module object with no symbol shape).
+#       Existence is only known when the public module imported the name
+#       explicitly; shape is not.
+#   ('missing', None) -- the chain stayed inside parsed modules and the symbol
+#       does not exist in any of them. The re-export is broken; the public
+#       name must be omitted so a prior real export can become 'export-removed'.
+#   ('cycle', None) -- cycle detection stopped the walk before any concrete
+#       declaration. A cycle proves nothing exists; treated like 'missing'.
 def resolve(module, name, seen):
-    # Follow an import binding to the declaration it ultimately names, across
-    # re-export chains, with cycle detection. Returns a local-symbol dict, or
-    # None when the target is outside the parsed package or cannot be proven.
-    if not module or (module, name) in seen:
-        return None
+    if not module:
+        return ('external', None)
+    if (module, name) in seen:
+        return ('cycle', None)
     seen = seen | {(module, name)}
     entry = index.get(module)
     if entry is None:
-        return None
+        return ('external', None)
     local = entry['locals'].get(name)
     if local is not None:
-        return local
+        return ('resolved', local)
     if name in entry['imports']:
         tmod, tname = entry['imports'][name]
-        return resolve(tmod, tname, seen) if tname is not None else None
+        if tname is None:
+            return ('external', None)
+        return resolve(tmod, tname, seen)
+    outcome = ('missing', None)
     for star_mod in entry['stars']:
-        got = resolve(star_mod, name, seen)
-        if got is not None:
-            return got
-    return None
+        status, shape = resolve(star_mod, name, seen)
+        if status == 'resolved':
+            return (status, shape)
+        if status == 'external':
+            outcome = ('external', None)
+        elif status == 'cycle' and outcome[0] == 'missing':
+            outcome = ('cycle', None)
+    return outcome
 
 symbols = {}
 for module, entry in index.items():
@@ -1112,23 +1131,33 @@ for module, entry in index.items():
         shape = entry['locals'].get(name)
         if shape is None and exported is not None:
             # A name '__all__' promises that this module does not itself define.
+            status = 'missing'
             if name in entry['imports']:
                 tmod, tname = entry['imports'][name]
-                shape = resolve(tmod, tname, set()) if tname is not None else None
-            if shape is None:
+                status, shape = resolve(tmod, tname, set()) if tname is not None else ('external', None)
+            if status not in ('resolved', 'external'):
                 for star_mod in entry['stars']:
-                    shape = resolve(star_mod, name, set())
-                    if shape is not None:
+                    star_status, star_shape = resolve(star_mod, name, set())
+                    if star_status == 'resolved':
+                        status, shape = star_status, star_shape
                         break
-            if shape is None:
-                if name in entry['imports']:
-                    # Proven public -- explicitly imported and in '__all__' --
-                    # but the target declaration is outside the parsed package.
-                    # Existence is known, shape is not: never a removal.
-                    symbols[key] = {'name': key, 'kind': 'unknown', 'signature': key, 'members': [], 'shapeUnknown': True}
-                # A bare name in '__all__' with no binding at all (a submodule,
-                # or something built at import time): unchanged conservative
-                # behaviour is to say nothing about it.
+                    if star_status == 'external':
+                        status = 'external'
+            if status == 'external' and name in entry['imports']:
+                # Proven public -- explicitly imported and in '__all__' -- but
+                # the target declaration is outside the parsed package. Existence
+                # is known, shape is not: never a removal.
+                symbols[key] = {'name': key, 'kind': 'unknown', 'signature': key, 'members': [], 'shapeUnknown': True}
+                continue
+            elif status != 'resolved':
+                # 'missing': the referenced module was parsed but has no such
+                # symbol -- the public re-export is broken, so omit it and let a
+                # prior real export correctly become 'export-removed'.
+                # 'cycle': a circular chain that never reached a declaration
+                # proves nothing exists.
+                # 'external' via a star import only (no explicit binding), or a
+                # bare name with no binding at all: not enough evidence the
+                # public name exists, so say nothing about it.
                 continue
 
         if shape is None:
