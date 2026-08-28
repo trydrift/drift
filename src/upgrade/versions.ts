@@ -2,6 +2,7 @@ import semver from 'semver';
 import type { Ecosystem } from '../types.js';
 import { normalizeVersion } from '../detect/version.js';
 import { fetchRegistryInfo } from '../evidence/registry.js';
+import { fetchOpamPackageVersions } from '../evidence/opam-repository.js';
 import { fetchJson } from '../util/http.js';
 
 /**
@@ -341,21 +342,8 @@ async function opamRepositoryVersions(
   name: string,
   token?: string,
 ): Promise<{ latest: string | null; versions: string[] } | null> {
-  if (!/^[\w.+-]+$/.test(name)) return null;
-
-  const entries = await fetchJson<{ name?: string; type?: string }[]>(
-    `https://api.github.com/repos/ocaml/opam-repository/contents/packages/${encodeURIComponent(name)}`,
-    { headers: githubHeaders(token) },
-  );
-  if (!Array.isArray(entries)) return null;
-
-  const prefix = `${name}.`;
-  return {
-    latest: null,
-    versions: entries
-      .filter((entry) => entry.type === 'dir' && entry.name?.startsWith(prefix))
-      .map((entry) => entry.name!.slice(prefix.length)),
-  };
+  const versions = await fetchOpamPackageVersions(name, { headers: githubHeaders(token) });
+  return versions ? { latest: null, versions } : null;
 }
 
 /**

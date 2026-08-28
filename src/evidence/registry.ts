@@ -1,6 +1,11 @@
 import type { Ecosystem } from '../types.js';
 import { fetchJson, fetchText } from '../util/http.js';
 import { arduinoLibrary } from './arduino-index.js';
+import {
+  fetchOpamMetadata,
+  fetchOpamPackageVersions,
+  githubRepoFromOpam,
+} from './opam-repository.js';
 
 /** Normalised registry facts Drift needs, across every ecosystem. */
 export interface RegistryInfo {
@@ -59,14 +64,39 @@ export async function fetchRegistryInfo(
       return fetchVcpkg(name);
     case 'arduino':
       return fetchArduino(name);
-    // opam publishes no JSON metadata API. Returning `null` means the evidence
-    // stage reports "no registry data" rather than an empty version list, which
-    // would read as "this package has no releases".
     case 'opam':
-      return null;
+      return fetchOpam(name, targetVersion);
     default:
       return null;
   }
+}
+
+/**
+ * opam has no JSON metadata API, so its index git repository is read directly:
+ * the version list from `packages/<name>/`, and the source repository /
+ * homepage / description from the target version's `opam` file — literal
+ * fields only, never evaluated. This is what re-enables release/changelog
+ * research for opam packages with an explicit GitHub `dev-repo`.
+ */
+async function fetchOpam(
+  name: string,
+  targetVersion: string | null,
+): Promise<RegistryInfo | null> {
+  const [versions, meta] = await Promise.all([
+    fetchOpamPackageVersions(name),
+    targetVersion ? fetchOpamMetadata(name, targetVersion) : Promise.resolve(null),
+  ]);
+  if (!versions && !meta) return null;
+
+  return {
+    name,
+    ecosystem: 'opam',
+    githubRepo: meta ? githubRepoFromOpam(meta) : null,
+    homepage: meta?.homepage ?? meta?.devRepo ?? null,
+    versions: versions ?? [],
+    deprecated: null,
+    description: meta?.description ?? meta?.synopsis ?? null,
+  };
 }
 
 async function fetchNuGet(name: string): Promise<RegistryInfo | null> {
