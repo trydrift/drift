@@ -991,7 +991,12 @@ function recordCiImage(
   }
   const identity = identifyRuntimeImage(image);
   if (!identity || identity.runtime !== runtime) return;
-  record(found, runtime, path, line, image, source, null);
+  // Unresolved, but its applicability scope is still known — an image whose
+  // owning job could not be attributed to this member is `ambiguous`, a
+  // repository-wide job's is `repository`. Precedence is applied to unresolved
+  // declarations too, so dropping the scope here would let this line be
+  // evaluated in the wrong tier (and, as `undefined`, read as member-specific).
+  record(found, runtime, path, line, image, source, null, scope);
 }
 
 interface GithubJobBlock {
