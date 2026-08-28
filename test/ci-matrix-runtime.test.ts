@@ -40,7 +40,7 @@ describe('static GitHub Actions matrices resolve to concrete runtime declaration
   ] as const;
 
   for (const [runtime, field, a, b] of cases) {
-    test(`${field}: \${{ matrix.runtime }} resolves against the job's static matrix`, () => {
+    test(`${field}: ` + "${{ matrix.runtime }} resolves against the job's static matrix", () => {
       const content = [
         'jobs:',
         '  test:',
@@ -52,7 +52,7 @@ describe('static GitHub Actions matrices resolve to concrete runtime declaration
         '    steps:',
         '      - uses: actions/setup@v1',
         '        with:',
-        `          ${field}: \${{ matrix.runtime }}`,
+        `          ${field}: ` + '${{ matrix.runtime }}',
       ].join('\n');
 
       const { resolved, unresolved } = discover(content, runtime);
