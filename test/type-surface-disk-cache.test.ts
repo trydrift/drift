@@ -136,8 +136,8 @@ describe('type surface disk cache', () => {
     // wrong reason. Reading the artifact-cache entries directly is the only
     // way to check what this change actually claims: that the wrapper's own
     // key was never written, while its dependency's was.
-    const wrapperEntry = await readComputed('npm-surface:v1:demo@1.0.0#deps');
-    const dependencyEntry = await readComputed('npm-surface:v1:helper@2.0.0#own');
+    const wrapperEntry = await readComputed('npm-surface:v2:demo@1.0.0#deps');
+    const dependencyEntry = await readComputed('npm-surface:v2:helper@2.0.0#deps');
 
     assert.equal(
       wrapperEntry,
@@ -203,7 +203,7 @@ describe('type surface disk cache', () => {
     assert.ok(first!.api.has('ownFn'), "demo's own declaration was read regardless of helper's failure");
     assert.equal(first!.viaDependencies.length, 0, "nothing merged — 'helper' could not be reached");
 
-    const poisoned = await readComputed('npm-surface:v1:demo@1.0.0#deps');
+    const poisoned = await readComputed('npm-surface:v2:demo@1.0.0#deps');
     assert.equal(
       poisoned,
       null,
