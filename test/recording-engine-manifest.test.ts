@@ -1,8 +1,13 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, writeFile, rm } from 'node:fs/promises';
+import { readFile, writeFile, rm, mkdir, mkdtemp } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+
+const run = promisify(execFile);
 import { RECORDING_ENGINE_PATHS } from '../site/scripts/recording-engine-manifest.mjs';
 import {
   validateAuditInvariants,
@@ -71,16 +76,36 @@ describe('recording freshness: what must carry the current engine fingerprint', 
   });
 
   test('freshRecordingNames picks up a newly created, untracked recording', async () => {
-    const probe = join(repoRoot, 'site/src/data/__freshness_probe__.json');
-    await writeFile(probe, '{}\n');
+    // Built in a throwaway git repo, never under the real `site/src/data`: an
+    // earlier version wrote `site/src/data/__freshness_probe__.json` into this
+    // very checkout, and under a parallel test run `real-repo-recordings.test.ts`
+    // would glob that `{}` file as if it were a recording and crash on
+    // `recording.candidates`. An isolated fixture repo cannot be observed by any
+    // other suite, so the result no longer depends on test execution order.
+    const fixture = await mkdtemp(join(tmpdir(), 'drift-freshness-'));
     try {
-      const fresh = await freshRecordingNames(repoRoot);
+      await run('git', ['init', '-q'], { cwd: fixture });
+      await mkdir(join(fixture, 'site/src/data'), { recursive: true });
+      await writeFile(join(fixture, 'site/src/data/tracked.json'), '{}\n');
+      await run('git', ['add', '.'], { cwd: fixture });
+      await run('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'seed'], {
+        cwd: fixture,
+      });
+
+      // A brand-new, never-tracked recording: `git status --porcelain` reports
+      // it as untracked, so `freshRecordingNames` must include it.
+      await writeFile(join(fixture, 'site/src/data/__freshness_probe__.json'), '{}\n');
+      const fresh = await freshRecordingNames(fixture);
       assert.ok(
         fresh.has('__freshness_probe__.json'),
         'an untracked file under site/src/data is "produced by this run" and must be checked',
       );
+      assert.ok(
+        !fresh.has('tracked.json'),
+        'an unchanged committed recording is not "produced by this run"',
+      );
     } finally {
-      await rm(probe, { force: true });
+      await rm(fixture, { recursive: true, force: true });
     }
   });
 
