@@ -1,4 +1,5 @@
 import semver from 'semver';
+import { parseDocument, isMap, isScalar, isSeq, type Node } from 'yaml';
 import { isRuntimeConfigPath } from '../index/walk.js';
 import { memberOf } from '../detect/workspace.js';
 import { intersectsInterval, isSubsetInterval, parseSpecifierSet, type VersionInterval } from './pep440.js';
@@ -748,6 +749,11 @@ function ciDeclarations(
   const lines = content.split('\n');
   const structural = yamlStructuralLineMask(lines);
   const { allowed, ambiguous } = ciJobLinesForMember(lines, member, allMembers);
+  // GitHub Actions only: a `${{ matrix.<key> }}` runtime value whose job
+  // defines that matrix key statically can be resolved to concrete versions.
+  const resolveMatrix = /^\.github\/workflows\/.+\.ya?ml$/i.test(path)
+    ? buildGithubMatrixResolver(content, lines)
+    : null;
   // A CI declaration whose owning job could not be attributed to this
   // specific member is real evidence of *something*, but not evidence this
   // member's compatibility may be decided from — see `ciJobLinesForMember`.
@@ -761,10 +767,27 @@ function ciDeclarations(
   for (const [i, line] of lines.entries()) {
     if (!structural[i]) continue;
     if (!allowed[i]) continue;
+    // A `python-version:` key *inside* `strategy.matrix` is a matrix dimension,
+    // not a setup-action input — reading it as one records a spurious
+    // unresolved declaration that then forces the whole verdict to `unknown`.
+    if (resolveMatrix?.insideMatrix(i)) continue;
     const field = yamlKeyValue(line, CI_RUNTIME_FIELD_NAMES[runtime]);
     if (field) {
       const raw = field.raw;
-      recordCi(i + 1, raw, 'ci', isDynamicValue(raw) ? null : numericRuntimeTag(raw));
+      const matrixKey = resolveMatrix && exactMatrixReference(raw);
+      const resolved = resolveMatrix && matrixKey ? resolveMatrix.resolve(i, matrixKey) : null;
+      if (resolved?.ok) {
+        // The matrix feeding this expression is statically enumerable, so the
+        // consumer is not unresolved: it stands for these concrete versions,
+        // each cited at the matrix literal that produced it. The raw
+        // expression is deliberately not also recorded — a resolved consumer
+        // must leave nothing behind in `found.unresolved`.
+        for (const resolvedValue of resolved.values) {
+          recordCi(resolvedValue.line, resolvedValue.value, 'ci', numericRuntimeTag(resolvedValue.value));
+        }
+      } else {
+        recordCi(i + 1, raw, 'ci', isDynamicValue(raw) ? null : numericRuntimeTag(raw));
+      }
     }
 
     // GitHub Actions job containers are application runtimes; service
@@ -849,6 +872,285 @@ function recordCiImage(
   record(found, runtime, path, line, image, source, null);
 }
 
+interface GithubJobBlock {
+  name: string;
+  /** 0-indexed line of the job's key line. */
+  start: number;
+  /** 0-indexed line one past the job's last line. */
+  end: number;
+}
+
+/**
+ * Slice a GitHub Actions workflow into per-job line ranges.
+ *
+ * Shared by workspace-ownership scoping ({@link ciJobLinesForMember}) and
+ * static matrix resolution ({@link buildGithubMatrixResolver}) so there is a
+ * single notion of which job a line belongs to. The parse is intentionally
+ * shallow: it finds the `jobs:` key at whatever indentation the file uses,
+ * takes the indentation of the first mapping key beneath it as the job level,
+ * and slices each job block by that indentation. `null` when the structure is
+ * unrecognizable (no `jobs:` key, or nothing nested under it) — GitLab's
+ * top-level job keys, a malformed file — which every caller treats the same
+ * way it treats a recognized-but-unscoped job.
+ */
+function githubActionsJobBlocks(lines: readonly string[]): GithubJobBlock[] | null {
+  const indentOf = (line: string) => /^[ \t]*/.exec(line)![0].length;
+  const isBlank = (line: string) => !line.trim() || /^\s*#/.test(line);
+
+  const jobsLine = lines.findIndex((line) => /^[ \t]*jobs:\s*(#.*)?$/.test(line));
+  if (jobsLine === -1) return null;
+  const jobsIndent = indentOf(lines[jobsLine]!);
+
+  let jobIndent: number | null = null;
+  const starts: number[] = [];
+  const names: string[] = [];
+  let blockEnd = lines.length;
+  for (let i = jobsLine + 1; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (isBlank(line)) continue;
+    const indent = indentOf(line);
+    if (indent <= jobsIndent) {
+      blockEnd = i;
+      break;
+    }
+    if (jobIndent === null) jobIndent = indent;
+    const key = indent === jobIndent ? /^[ \t]*([A-Za-z0-9_.-]+):\s*(#.*)?$/.exec(line) : null;
+    if (key) {
+      starts.push(i);
+      names.push(key[1]!);
+    }
+  }
+  if (starts.length === 0) return null;
+
+  return starts.map((start, k) => ({
+    name: names[k]!,
+    start,
+    end: k + 1 < starts.length ? starts[k + 1]! : blockEnd,
+  }));
+}
+
+/** `${{ matrix.<key> }}` and nothing else — the only expression shape resolved statically. */
+const EXACT_MATRIX_REFERENCE = /^\s*\$\{\{\s*matrix\.([A-Za-z0-9_-]+)\s*\}\}\s*$/;
+
+function exactMatrixReference(raw: string): string | null {
+  return EXACT_MATRIX_REFERENCE.exec(raw)?.[1] ?? null;
+}
+
+interface ResolvedMatrixValue {
+  value: string;
+  /** 1-indexed line of the matrix literal that produced this value. */
+  line: number;
+}
+
+/**
+ * `{ ok: true }` only when every reachable static job configuration supplies a
+ * concrete value for the referenced key. `{ ok: false }` covers "no such
+ * matrix", a dynamic dimension (`runtime: ${{ fromJSON(...) }}`), an
+ * `include`/`exclude` entry Drift cannot evaluate, and an `include` that can
+ * leave the key unset — every case where the consumer must stay unresolved.
+ */
+type MatrixResolution = { ok: true; values: ResolvedMatrixValue[] } | { ok: false };
+
+/**
+ * A resolver for `${{ matrix.<key> }}` runtime values in one GitHub Actions
+ * workflow, or `null` when the file will not parse or has no recognizable
+ * `jobs:` structure.
+ *
+ * A matrix reference is job-scoped, so resolution is against the same job the
+ * consuming line sits in — the job boundaries come from the shared
+ * {@link githubActionsJobBlocks}, never a second guess. Its output is generic
+ * `{ value, line }` pairs; runtime-specific normalization stays in
+ * {@link ciDeclarations}.
+ */
+interface GithubMatrixResolver {
+  /** Resolve `${{ matrix.<key> }}` for the job containing a 0-indexed line. */
+  resolve(lineIndex: number, key: string): MatrixResolution;
+  /**
+   * Is this 0-indexed line inside a job's `strategy.matrix` block? Such a line
+   * is a matrix *dimension definition* — `python-version:` under `matrix:` —
+   * not a setup-action input, so the line-oriented field scan must skip it or
+   * it records a bogus unresolved declaration (which then forces `unknown`).
+   */
+  insideMatrix(lineIndex: number): boolean;
+}
+
+function buildGithubMatrixResolver(content: string, lines: readonly string[]): GithubMatrixResolver | null {
+  let doc: ReturnType<typeof parseDocument>;
+  try {
+    doc = parseDocument(content, { prettyErrors: false });
+  } catch {
+    return null;
+  }
+  if (doc.errors.length > 0 || !isMap(doc.contents)) return null;
+
+  const blocks = githubActionsJobBlocks(lines);
+  if (!blocks) return null;
+
+  // 1-indexed inclusive line spans of every job's `strategy.matrix` value, so
+  // the field scan can tell a matrix dimension from a setup-action input.
+  const matrixSpans: [number, number][] = [];
+  for (const block of blocks) {
+    const node = doc.getIn(['jobs', block.name, 'strategy', 'matrix'], true) as Node | null;
+    if (!node?.range) continue;
+    matrixSpans.push([
+      content.slice(0, node.range[0]).split('\n').length,
+      content.slice(0, node.range[2]).split('\n').length,
+    ]);
+  }
+
+  const cache = new Map<string, MatrixResolution>();
+  const resolve = (lineIndex: number, key: string): MatrixResolution => {
+    const block = blocks.find((b) => lineIndex >= b.start && lineIndex < b.end);
+    if (!block) return { ok: false };
+    const cacheKey = `${block.name} ${key}`;
+    let resolution = cache.get(cacheKey);
+    if (!resolution) {
+      resolution = resolveJobMatrixKey(doc, content, block.name, key);
+      cache.set(cacheKey, resolution);
+    }
+    return resolution;
+  };
+
+  return {
+    resolve,
+    insideMatrix: (lineIndex) => {
+      const line = lineIndex + 1;
+      return matrixSpans.some(([from, to]) => line >= from && line <= to);
+    },
+  };
+}
+
+/**
+ * Expand one job's static `strategy.matrix` — base dimensions × `exclude` ×
+ * `include`, GitHub's own semantics — and project `key` from the reachable
+ * configurations.
+ */
+function resolveJobMatrixKey(
+  doc: ReturnType<typeof parseDocument>,
+  content: string,
+  jobName: string,
+  key: string,
+): MatrixResolution {
+  const matrixNode = doc.getIn(['jobs', jobName, 'strategy', 'matrix'], true);
+  if (!isMap(matrixNode)) return { ok: false };
+
+  const lineAt = (node: unknown): number => {
+    const range = (node as Node | null)?.range;
+    return range ? content.slice(0, range[0]).split('\n').length : 1;
+  };
+  // A scalar Drift can trust as a literal: a plain string/number/bool, never a
+  // `${{ }}` expression.
+  const literal = (node: unknown): { value: string; line: number } | null => {
+    if (!isScalar(node)) return null;
+    const raw = node.value;
+    if (typeof raw !== 'string' && typeof raw !== 'number' && typeof raw !== 'boolean') return null;
+    const text = String(raw);
+    return /\$\{\{/.test(text) ? null : { value: text, line: lineAt(node) };
+  };
+
+  const baseKeys: string[] = [];
+  const dimensions = new Map<string, { value: string; line: number }[]>();
+  for (const pair of matrixNode.items) {
+    const k = isScalar(pair.key) ? String(pair.key.value) : null;
+    if (k === null || k === 'include' || k === 'exclude') continue;
+    baseKeys.push(k);
+    if (isScalar(pair.value)) {
+      // GitHub treats a scalar dimension as a one-element list.
+      const lit = literal(pair.value);
+      if (!lit) return { ok: false }; // a dynamic dimension
+      dimensions.set(k, [lit]);
+      continue;
+    }
+    if (!isSeq(pair.value)) return { ok: false };
+    const values: { value: string; line: number }[] = [];
+    for (const item of pair.value.items) {
+      const lit = literal(item);
+      if (!lit) return { ok: false };
+      values.push(lit);
+    }
+    dimensions.set(k, values);
+  }
+
+  // Cartesian product of the base dimensions. No base dimensions is a valid
+  // include-only matrix — the product then starts empty, not with one config.
+  let configs: Map<string, { value: string; line: number }>[] = baseKeys.length > 0 ? [new Map()] : [];
+  for (const k of baseKeys) {
+    const next: typeof configs = [];
+    for (const config of configs) {
+      for (const value of dimensions.get(k) ?? []) {
+        const copy = new Map(config);
+        copy.set(k, value);
+        next.push(copy);
+      }
+    }
+    configs = next;
+  }
+  const baseKeySet = new Set(baseKeys);
+
+  const excludeNode = matrixNode.get('exclude', true);
+  if (isSeq(excludeNode)) {
+    for (const entry of excludeNode.items) {
+      if (!isMap(entry)) return { ok: false };
+      const pairs: { k: string; value: string }[] = [];
+      for (const p of entry.items) {
+        const pk = isScalar(p.key) ? String(p.key.value) : null;
+        const lit = literal(p.value);
+        if (pk === null || !lit) return { ok: false };
+        pairs.push({ k: pk, value: lit.value });
+      }
+      // GitHub removes every base combination matching all of an exclude
+      // entry's key/value pairs.
+      configs = configs.filter((config) => !pairs.every((p) => config.get(p.k)?.value === p.value));
+    }
+  }
+
+  const includeNode = matrixNode.get('include', true);
+  if (isSeq(includeNode)) {
+    // Only the base Cartesian product is a merge target. An include entry that
+    // becomes its own standalone combination is never one — otherwise a second
+    // include-only entry would overwrite the first instead of standing beside
+    // it. Earlier includes' *augmentations* of an original combination can
+    // still be overwritten by a later include, since those combos stay in the
+    // list. Mutations here are in place, so the list keeps the changes.
+    const originalCombos = configs.slice();
+    for (const entry of includeNode.items) {
+      if (!isMap(entry)) return { ok: false };
+      const pairs: { k: string; value: string; line: number }[] = [];
+      for (const p of entry.items) {
+        const pk = isScalar(p.key) ? String(p.key.value) : null;
+        const lit = literal(p.value);
+        if (pk === null || !lit) return { ok: false };
+        pairs.push({ k: pk, value: lit.value, line: lit.line });
+      }
+      let merged = false;
+      for (const config of originalCombos) {
+        const overwritesOriginal = pairs.some(
+          (p) => baseKeySet.has(p.k) && config.has(p.k) && config.get(p.k)!.value !== p.value,
+        );
+        if (overwritesOriginal) continue;
+        for (const p of pairs) config.set(p.k, { value: p.value, line: p.line });
+        merged = true;
+      }
+      if (!merged) configs.push(new Map(pairs.map((p) => [p.k, { value: p.value, line: p.line }])));
+    }
+  }
+
+  if (configs.length === 0) return { ok: false };
+
+  const values: ResolvedMatrixValue[] = [];
+  const seen = new Set<string>();
+  for (const config of configs) {
+    const hit = config.get(key);
+    // A reachable configuration with no value for this key — an include-only
+    // matrix that does not always set it. The consumer cannot be proven.
+    if (!hit) return { ok: false };
+    if (seen.has(hit.value)) continue;
+    seen.add(hit.value);
+    values.push({ value: hit.value, line: hit.line });
+  }
+  return { ok: true, values };
+}
+
 /**
  * Keep runtime declarations inside the job that owns a workspace member.
  *
@@ -911,32 +1213,12 @@ function ciJobLinesForMember(
   };
 
   const indentOf = (line: string) => /^[ \t]*/.exec(line)![0].length;
-  const isBlank = (line: string) => !line.trim() || /^\s*#/.test(line);
 
-  const jobsLine = lines.findIndex((line) => /^[ \t]*jobs:\s*(#.*)?$/.test(line));
-  if (jobsLine === -1) return markUnresolvedStructure();
-  const jobsIndent = indentOf(lines[jobsLine]!);
-
-  let jobIndent: number | null = null;
-  const jobStarts: number[] = [];
-  let blockEnd = lines.length;
-  for (let i = jobsLine + 1; i < lines.length; i++) {
-    const line = lines[i]!;
-    if (isBlank(line)) continue;
-    const indent = indentOf(line);
-    if (indent <= jobsIndent) {
-      blockEnd = i;
-      break;
-    }
-    if (jobIndent === null) jobIndent = indent;
-    if (indent === jobIndent && /^[ \t]*[A-Za-z0-9_.-]+:\s*(#.*)?$/.test(line)) jobStarts.push(i);
-  }
-  if (jobStarts.length === 0) return markUnresolvedStructure();
-
-  const jobs = jobStarts.map((start, k) => ({
-    start,
-    end: k + 1 < jobStarts.length ? jobStarts[k + 1]! : blockEnd,
-  }));
+  // The one shallow `jobs:` slice both this ownership pass and static matrix
+  // resolution read from, so the two cannot disagree about which job a line
+  // belongs to.
+  const jobs = githubActionsJobBlocks(lines);
+  if (!jobs) return markUnresolvedStructure();
 
   // Trim leading/trailing separators without `/^\/+|\/+$/` — `member` is
   // uncontrolled and a long internal run of slashes makes that pattern
