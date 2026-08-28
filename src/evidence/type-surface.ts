@@ -2395,10 +2395,12 @@ export function callableChangeIsBackwardCompatible(before: CallableShape, after:
   if (hasVar(before, 'var-positional') && newPositional.length !== oldPositional.length) return false;
 
   // Positional slots that existed keep their meaning: a `positional-or-keyword`
-  // parameter must not lose keyword addressability or be renamed out from under
-  // a keyword caller. `**kwargs` on the new shape absorbs the *value* of an old
-  // keyword argument, but it does not *satisfy* a renamed required parameter —
-  // `f(oldname=1)` then leaves the new required parameter unfilled.
+  // parameter must not lose keyword addressability, and it must not be renamed.
+  // A rename is not provably safe even when `**kwargs` remains: `f(a=0, **kw)` →
+  // `f(b=0, **kw)` turns the old-valid `f(1, b=2)` (which bound `a=1`,
+  // `kw={'b': 2}`) into `b=1` positionally *and* `b=2` by keyword — a "multiple
+  // values for argument 'b'" error. `**kwargs` absorbs the old name's value but
+  // does not stand in for the renamed slot.
   for (const [index, oldParam] of oldPositional.entries()) {
     if (oldParam.kind !== 'positional-or-keyword') continue;
     const newParam = newPositional[index];
@@ -2407,11 +2409,22 @@ export function callableChangeIsBackwardCompatible(before: CallableShape, after:
       continue;
     }
     if (newParam.kind === 'positional-only') return false;
-    if (
-      newParam.name !== oldParam.name &&
-      (oldParam.required || newParam.required || !hasVar(after, 'var-keyword'))
-    ) {
-      return false;
+    if (newParam.name !== oldParam.name) return false;
+  }
+
+  // A positional-only parameter becoming keyword-addressable is normally a pure
+  // relaxation — but not when the old shape had `**kwargs`. A caller could have
+  // passed that name as a keyword (it landed in `**kwargs`) while also filling
+  // the positional-only slot: `f(a, /, **kw)` → `f(a, **kw)` turns the
+  // old-valid `f(1, a=2)` (`a=1`, `kw={'a': 2}`) into a "multiple values for
+  // argument 'a'" error.
+  if (hasVar(before, 'var-keyword')) {
+    for (const oldParam of before.parameters) {
+      if (oldParam.kind !== 'positional-only') continue;
+      const newParam = paramNamed(after, oldParam.name);
+      if (newParam && (newParam.kind === 'positional-or-keyword' || newParam.kind === 'keyword-only')) {
+        return false;
+      }
     }
   }
 

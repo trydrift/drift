@@ -138,6 +138,44 @@ describe('callableChangeIsBackwardCompatible', () => {
     );
   });
 
+  test('renaming an existing positional-or-keyword slot is breaking even when **kwargs stays', () => {
+    // `f(a=0, **kw)` -> `f(b=0, **kw)`: the old-valid `f(1, b=2)` bound `a=1`,
+    // `kw={'b': 2}`; after the rename it is `b=1` positionally *and* `b=2` by
+    // keyword. `**kwargs` absorbing the old name's value does not save it.
+    assert.equal(
+      callableChangeIsBackwardCompatible(
+        shape(p('a', { opt: true }), p('kw', { kind: 'var-keyword' })),
+        shape(p('b', { opt: true }), p('kw', { kind: 'var-keyword' })),
+      ),
+      false,
+    );
+  });
+
+  test('a positional-only parameter becoming keyword-addressable is breaking when the old shape had **kwargs', () => {
+    // `f(a, /, **kw)` -> `f(a, **kw)`: the old-valid `f(1, a=2)` bound `a=1`,
+    // `kw={'a': 2}`; after, `a` receives both the positional and the keyword.
+    assert.equal(
+      callableChangeIsBackwardCompatible(
+        shape(p('a', { kind: 'positional-only' }), p('kw', { kind: 'var-keyword' })),
+        shape(p('a'), p('kw', { kind: 'var-keyword' })),
+      ),
+      false,
+    );
+  });
+
+  test('a positional-only parameter losing its slot stays safe when the name does not reappear', () => {
+    // `f(a, /, **kw)` -> `f(b, /, **kw)`: `f(1, a=2)` was `a=1`, `kw={'a': 2}`
+    // and is still `b=1`, `kw={'a': 2}` — no collision, callers cannot name a
+    // positional-only parameter.
+    assert.equal(
+      callableChangeIsBackwardCompatible(
+        shape(p('a', { kind: 'positional-only' }), p('kw', { kind: 'var-keyword' })),
+        shape(p('b', { kind: 'positional-only' }), p('kw', { kind: 'var-keyword' })),
+      ),
+      true,
+    );
+  });
+
   test('an identical shape is compatible', () => {
     assert.equal(
       callableChangeIsBackwardCompatible(shape(p('a'), p('b', { opt: true })), shape(p('a'), p('b', { opt: true }))),
@@ -318,6 +356,20 @@ describe('the Python reader emits a structured callable shape', () => {
     const before = await surfaceOf('def f(a):\n    return a\n');
     const after = await surfaceOf('def f(a, b):\n    return a\n');
     assert.ok(brokeSignature(before, after));
+  });
+
+  test('blocker A: f(a, /, **kwargs) -> f(a, **kwargs) is breaking (positional-only name now collides via **kwargs)', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a, /, **kwargs):\n    return a\n');
+    const after = await surfaceOf('def f(a, **kwargs):\n    return a\n');
+    assert.ok(brokeSignature(before, after), 'f(1, a=2) bound cleanly before and now collides on `a`');
+  });
+
+  test('blocker B: f(a=0, **kwargs) -> f(b=0, **kwargs) is breaking (renamed optional slot collides via **kwargs)', async (t) => {
+    if (!(await skipUnlessPython(t))) return;
+    const before = await surfaceOf('def f(a=0, **kwargs):\n    return a\n');
+    const after = await surfaceOf('def f(b=0, **kwargs):\n    return b\n');
+    assert.ok(brokeSignature(before, after), 'f(1, b=2) bound cleanly before and now collides on `b`');
   });
 });
 
