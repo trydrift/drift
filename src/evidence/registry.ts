@@ -1,6 +1,7 @@
 import type { Ecosystem } from '../types.js';
 import { fetchJson, fetchText } from '../util/http.js';
 import { arduinoLibrary } from './arduino-index.js';
+import { fetchCocoaPodsSpec, githubRepoFromSpec } from './cocoapods-spec.js';
 import {
   fetchOpamMetadata,
   fetchOpamPackageVersions,
@@ -57,7 +58,7 @@ export async function fetchRegistryInfo(
     case 'swift':
       return swiftRegistryInfo(name);
     case 'cocoapods':
-      return fetchCocoaPods(name);
+      return fetchCocoaPods(name, targetVersion);
     case 'conan':
       return fetchConan(name);
     case 'vcpkg':
@@ -263,26 +264,31 @@ function swiftRegistryInfo(name: string): RegistryInfo | null {
   };
 }
 
-async function fetchCocoaPods(name: string): Promise<RegistryInfo | null> {
-  // Trunk answers with the owner and the published versions, but nothing about
-  // the source repository — that lives in the podspec, which is served from the
-  // CDN as JSON at a path keyed by a hash of the name. Following that would
-  // cost two more round trips for a link, so Drift takes the versions and lets
-  // the changelog stage find the repository from the GitHub search it already
-  // does for every ecosystem.
-  const data = await fetchJson<{ versions?: { name?: string }[] }>(
-    `https://trunk.cocoapods.org/api/v1/pods/${encodeURIComponent(name)}`,
-  );
+async function fetchCocoaPods(
+  name: string,
+  targetVersion: string | null,
+): Promise<RegistryInfo | null> {
+  // Trunk is the source of truth for the published version list. The source
+  // repository, `module_name`, and description live in the podspec instead —
+  // read through the shared `fetchCocoaPodsSpec` resolver so localization and
+  // evidence agree on one fetch. A podspec that names a GitHub `source` is
+  // what re-enables the ordinary release/changelog research path.
+  const [data, spec] = await Promise.all([
+    fetchJson<{ versions?: { name?: string }[] }>(
+      `https://trunk.cocoapods.org/api/v1/pods/${encodeURIComponent(name)}`,
+    ),
+    targetVersion ? fetchCocoaPodsSpec(name, targetVersion) : Promise.resolve(null),
+  ]);
   if (!data) return null;
 
   return {
     name,
     ecosystem: 'cocoapods',
-    githubRepo: null,
-    homepage: `https://cocoapods.org/pods/${name}`,
+    githubRepo: spec ? githubRepoFromSpec(spec) : null,
+    homepage: spec?.homepage ?? `https://cocoapods.org/pods/${name}`,
     versions: (data.versions ?? []).map((v) => v.name).filter((v): v is string => Boolean(v)),
     deprecated: null,
-    description: null,
+    description: spec?.description ?? spec?.summary ?? null,
   };
 }
 

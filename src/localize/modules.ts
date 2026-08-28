@@ -1,9 +1,9 @@
-import { createHash } from 'node:crypto';
 import type { DependencyChange, Ecosystem } from '../types.js';
 import type { Logger } from '../util/logger.js';
 import { readArchive, type ArchiveEntry } from '../util/archive.js';
 import { fetchArchive as fetchCachedArchive, fetchJson, fetchText } from '../util/http.js';
 import { mapWithConcurrency } from '../util/http.js';
+import { fetchCocoaPodsSpec } from '../evidence/cocoapods-spec.js';
 
 /**
  * What a package is called *inside* your source code.
@@ -567,17 +567,12 @@ const swiftModules: Resolver = async (name, version, { timeoutMs }) => {
  * here rather than a path being assembled from the name alone.
  */
 const cocoapodsModules: Resolver = async (name, version, { timeoutMs }) => {
-  const hash = createHash('md5').update(name).digest('hex');
-  const shard = `${hash[0]}/${hash[1]}/${hash[2]}`;
-  const spec = await fetchJson<{ module_name?: string; name?: string }>(
-    `https://cdn.cocoapods.org/Specs/${shard}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/${encodeURIComponent(name)}.podspec.json`,
-    { timeoutMs, immutable: true },
-  );
+  const spec = await fetchCocoaPodsSpec(name, version, { timeoutMs });
   if (!spec) return undefined;
 
   // A pod name with a dot or a hyphen cannot be a module name; CocoaPods
   // replaces those with underscores when it generates one.
-  const declared = spec.module_name ?? (spec.name ?? name).replace(/[-.]/g, '_');
+  const declared = spec.moduleName ?? (spec.name ?? name).replace(/[-.]/g, '_');
   return { names: [...new Set([declared, name])], source: `${name} ${version} podspec` };
 };
 
