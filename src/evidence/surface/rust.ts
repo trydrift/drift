@@ -39,18 +39,35 @@ const RUST_SURFACE_CACHE_VERSION = 1;
 let activeCargoProbes = 0;
 const cargoQueue: Array<() => void> = [];
 
-/** Acquire one Cargo-probe slot; returns the release function. */
-async function acquireCargoSlot(): Promise<() => void> {
-  if (activeCargoProbes >= CARGO_SURFACE_CONCURRENCY) {
+/**
+ * Acquire one Cargo-probe permit; returns the release function.
+ *
+ * The permit count is only ever changed by a caller that genuinely *enters*
+ * with a free permit, or one that *leaves* with nobody waiting. On release
+ * with a waiter, the permit is handed straight to that waiter and the count is
+ * left untouched — there is no transient "free" state for a third caller to
+ * observe between the release and the waiter resuming. A queued caller has
+ * therefore already been given its permit by the time its promise resolves,
+ * and must not increment the count again.
+ */
+export async function acquireCargoSlot(): Promise<() => void> {
+  if (activeCargoProbes < CARGO_SURFACE_CONCURRENCY) {
+    activeCargoProbes += 1;
+  } else {
     await new Promise<void>((resolve) => cargoQueue.push(resolve));
+    // The releasing probe transferred its permit to us; the count is unchanged.
   }
-  activeCargoProbes += 1;
+
   let released = false;
   return () => {
     if (released) return;
     released = true;
-    activeCargoProbes -= 1;
-    cargoQueue.shift()?.();
+    const next = cargoQueue.shift();
+    if (next) {
+      next(); // hand this permit directly to the next waiter; count stays put
+    } else {
+      activeCargoProbes -= 1;
+    }
   };
 }
 

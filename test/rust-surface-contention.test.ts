@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { computeSurfaceDiff } from '../dist/evidence/surface/index.js';
-import { isCargoLockContention } from '../dist/evidence/surface/rust.js';
+import { acquireCargoSlot, isCargoLockContention } from '../dist/evidence/surface/rust.js';
 import { configureHttpDiskCache, clearHttpCache } from '../dist/util/http.js';
 import { createLogger } from '../dist/util/logger.js';
 
@@ -166,6 +166,60 @@ describe('cargo probe scheduling', () => {
     assert.equal(outcome.available, false);
     // One attempt per version, and no more — a build error is not retried.
     assert.ok(attempts <= 2, `expected no retries, saw ${attempts} probe attempts`);
+  });
+});
+
+describe('cargo permit handoff (concurrency 1)', () => {
+  // Directly exercises the release -> next-waiter boundary the old
+  // `active -= 1; queue.shift()?.()` order could not hold: it briefly showed a
+  // free permit, so a third caller arriving during the handoff could acquire
+  // alongside the waking waiter. This is deterministic — no timers, no cargo.
+  test('a third contender arriving exactly during A -> B handoff cannot acquire', async () => {
+    const flags: Record<string, boolean> = { b: false, c: false };
+
+    const releaseA = await acquireCargoSlot(); // A holds the only permit
+    const pB = acquireCargoSlot().then((release) => {
+      flags.b = true;
+      return release;
+    });
+    // B is now queued. Release A; a correct semaphore hands the permit straight
+    // to B without ever lowering the active count.
+    releaseA();
+    // C races in synchronously, in the same tick, before B's continuation runs.
+    const pC = acquireCargoSlot().then((release) => {
+      flags.c = true;
+      return release;
+    });
+
+    // Flush the microtask queue several times so every ready continuation runs.
+    for (let i = 0; i < 8; i += 1) await Promise.resolve();
+
+    assert.equal(flags.b, true, 'the queued waiter B received the transferred permit');
+    assert.equal(flags.c, false, 'C queued behind the limit and did not acquire during the handoff');
+
+    const releaseB = await pB;
+    releaseB(); // hands the permit to C
+    for (let i = 0; i < 8; i += 1) await Promise.resolve();
+    assert.equal(flags.c, true, 'C acquires once B releases');
+    (await pC)();
+  });
+
+  test('N contenders through one permit never overlap', async () => {
+    let active = 0;
+    let peak = 0;
+    const run = async (): Promise<void> => {
+      const release = await acquireCargoSlot();
+      active += 1;
+      peak = Math.max(peak, active);
+      // Yield across several microtasks while "holding" the permit, so any
+      // handoff race has room to double up.
+      for (let i = 0; i < 5; i += 1) await Promise.resolve();
+      active -= 1;
+      release();
+    };
+    await Promise.all(Array.from({ length: 6 }, run));
+    assert.equal(peak, 1, 'peak concurrent permit holders never exceeded the limit of 1');
+    assert.equal(active, 0, 'every permit was released');
   });
 });
 
