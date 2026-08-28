@@ -675,12 +675,23 @@ async function firstPublished(
 /* ------------------------------------------------------------------ */
 
 /**
- * How many dependencies one package's surface may be assembled from.
+ * How many *implementation-only* dependencies one package's surface may be
+ * assembled from — a dependency whose symbols merely appear in an exported
+ * signature, not one this package re-exports.
  *
  * A wrapper has a handful; anything past that is a package whose own
- * declarations are the API, and following further only buys latency.
+ * declarations are the API, and following further only buys latency. Silent
+ * truncation past this bound is acceptable *here* because an implementation
+ * reference cannot carry part of the package's own public API — see
+ * {@link isPublicReexportEdge}. Public re-export edges are deliberately *not*
+ * governed by this count: they are bounded only by {@link MAX_REEXPORT_DEPTH}
+ * and {@link MAX_TOTAL_FOLLOWED_PACKAGES}, and any public edge left unfollowed
+ * marks the surface {@link TypeSurface.incomplete}.
  */
-const MAX_FOLLOWED_DEPENDENCIES = 8;
+const MAX_IMPLEMENTATION_DEPENDENCIES = 8;
+
+/** Concurrency for the version-resolve and non-recursive surface-fetch waves. */
+const DEPENDENCY_FETCH_WIDTH = 8;
 
 /**
  * How many public re-export hops the traversal will follow from the entry
@@ -760,90 +771,129 @@ async function mergeDependencySurfaces(
 
   const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
   const attempted = wanted.length > 0;
+  if (!attempted) return { followed: [], attempted: false, incomplete: false };
+
   const followed: string[] = [];
   let incomplete = false;
 
-  // Read a chunk at a time, and merge that chunk strictly in order.
+  // The traversal is split into three phases so its output is a pure function
+  // of the (deterministic) reference order and the entry budget — never of
+  // which network response happened to land first:
   //
-  // Each dependency here is a full surface fetch — a listing, its declaration
-  // files, and the parse over them — and doing them one after another made a
-  // wrapper package cost eight of those back to back. The chunk is the same
-  // size as the follow budget, so the outcome is identical to the serial loop
-  // (the first eight references that resolve, merged in reference order, with
-  // earlier ones winning a name collision); only the waiting overlaps.
-  for (let at = 0; at < wanted.length && followed.length < MAX_FOLLOWED_DEPENDENCIES; at += MAX_FOLLOWED_DEPENDENCIES) {
-    const chunk = wanted.slice(at, at + MAX_FOLLOWED_DEPENDENCIES);
-    const fetched = await mapWithConcurrency(chunk, MAX_FOLLOWED_DEPENDENCIES, async ([specifier, reference]) => {
-      const resolved = await resolveDependencyVersion(specifier, declared[specifier]!);
-      if (!resolved) return null;
-      const childNode = `${specifier}@${resolved}`;
+  //   1. resolve every dependency's pinned version, concurrently. Each answer
+  //      depends only on (specifier, range), so order cannot matter.
+  //   2. decide, synchronously and strictly in reference order, which edges to
+  //      follow and how much recursion budget each draws. No await here.
+  //   3. fetch the planned surfaces and merge them in reference order.
+  //      Non-recursive fetches run concurrently; the recursive descent runs
+  //      one edge at a time so the *shared* budget is drawn down in a single
+  //      deterministic depth-first order rather than a race between subtrees.
 
-      // Recurse only along genuine public re-export edges — `export * from` /
-      // `export { x } from`. An implementation import that merely appears in an
-      // exported signature contributes that one dependency's symbols but says
-      // nothing about *its* dependency graph, so it stays one level deep.
-      const reExportEdge = isPublicReexportEdge(reference);
-      const cycle = visited.has(childNode);
-      const canRecurse =
-        reExportEdge && !cycle && depth < MAX_REEXPORT_DEPTH && budget.remaining > 0;
+  // Phase 1 — versions.
+  const resolvedVersions = await mapWithConcurrency(wanted, DEPENDENCY_FETCH_WIDTH, ([specifier]) =>
+    resolveDependencyVersion(specifier, declared[specifier]!),
+  );
 
-      if (canRecurse) budget.remaining -= 1;
+  // Phase 2 — plan.
+  interface EdgePlan {
+    specifier: string;
+    reference: ExternalReference;
+    resolved: string;
+    /** A genuine `export * from` / `export { x } from` edge. */
+    publicEdge: boolean;
+    /** Recurse into this edge's own re-exports (public edge, within depth+budget, not a cycle). */
+    recurse: boolean;
+  }
+  const plan: EdgePlan[] = [];
+  let implementationFollows = 0;
+  for (const [index, [specifier, reference]] of wanted.entries()) {
+    const resolved = resolvedVersions[index];
+    const publicEdge = isPublicReexportEdge(reference);
 
-      // A re-export edge Drift refuses to expand — depth/budget exhausted — is
-      // a hole in this surface, not a fact about the package. `cycle` is not:
-      // it terminates with everything reachable without looping.
-      const truncated = reExportEdge && !cycle && !canRecurse;
-
-      const surface = await fetchTypeSurface(specifier, resolved, {
-        followDependencies: canRecurse,
-        ...(canRecurse
-          ? {
-              traversal: {
-                depth: depth + 1,
-                visited: new Set([...visited, childNode]),
-                budget,
-              },
-            }
-          : {}),
-      }).catch(() => null);
-
-      // A re-exported package Drift could not fetch at all is the same kind of
-      // hole: its symbols are missing for a reason that has nothing to do with
-      // whether the package still exports them.
-      const fetchHole = reExportEdge && !surface;
-
-      return { resolved, surface, truncated: truncated || Boolean(surface?.incomplete), fetchHole };
-    });
-
-    for (const [index, [specifier, reference]] of chunk.entries()) {
-      if (followed.length >= MAX_FOLLOWED_DEPENDENCIES) break;
-      const found = fetched[index];
-      if (!found) continue;
-      const { resolved, surface, truncated, fetchHole } = found;
-      if (truncated || fetchHole) incomplete = true;
-      if (!surface) continue;
-
-      let merged = 0;
-      for (const [exportedAs, declaredAs] of reference.names(surface.api)) {
-        const entry = surface.api.get(declaredAs);
-        if (!entry) continue;
-        // A name the parent genuinely re-exports — `export { x } from` or
-        // `export * from` — is one of the parent's *own* public exports and is
-        // keyed bare, so a leaf removal three hops down still lines up with the
-        // wrapper's symbol on the other side of the diff. An implementation
-        // import that merely surfaced in a signature is keyed by origin, so it
-        // cannot silently mask a same-named symbol the wrapper declares itself.
-        const key =
-          reference.star || reference.reExported.has(exportedAs)
-            ? exportedAs
-            : `${specifier}#${exportedAs}`;
-        if (api.has(key)) continue;
-        api.set(key, { ...renameEntry(entry, exportedAs), via: specifier });
-        merged += 1;
-      }
-
-      if (merged > 0) followed.push(`${specifier}@${resolved}`);
+    if (!resolved) {
+      // A public re-export edge whose version could not be resolved is a hole
+      // in this surface — not evidence the dependency exports nothing, so a
+      // symbol missing beyond it must not become a confident `export-removed`.
+      // An implementation-only edge that fails to resolve is skipped as before.
+      if (publicEdge) incomplete = true;
+      continue;
     }
+
+    const cycle = visited.has(`${specifier}@${resolved}`);
+
+    if (!publicEdge) {
+      // Implementation-only dependency: bounded, and silent truncation past the
+      // bound is acceptable — it cannot hide part of this package's own API.
+      if (implementationFollows >= MAX_IMPLEMENTATION_DEPENDENCIES) continue;
+      implementationFollows += 1;
+      plan.push({ specifier, reference, resolved, publicEdge, recurse: false });
+      continue;
+    }
+
+    // Public re-export edge — always inspected, never dropped for a count.
+    // Recurse when depth and budget allow and it is not a cycle; otherwise the
+    // immediate surface is still fetched (one bounded fetch) but this surface
+    // is marked incomplete, because a symbol absent beyond an unfollowed hop
+    // cannot be told apart from a removal. A cycle is *not* incompleteness — it
+    // terminates with everything reachable without looping.
+    const canRecurse = !cycle && depth < MAX_REEXPORT_DEPTH && budget.remaining > 0;
+    if (canRecurse) budget.remaining -= 1;
+    else if (!cycle) incomplete = true;
+    plan.push({ specifier, reference, resolved, publicEdge, recurse: canRecurse });
+  }
+
+  // Phase 3 — fetch and merge.
+  const fetchedSurfaces = new Array<TypeSurface | null>(plan.length);
+  await mapWithConcurrency(
+    plan.map((entry, index) => ({ entry, index })),
+    DEPENDENCY_FETCH_WIDTH,
+    async ({ entry, index }) => {
+      if (entry.recurse) return; // fetched in the sequential pass below
+      fetchedSurfaces[index] = await fetchTypeSurface(entry.specifier, entry.resolved, {
+        followDependencies: false,
+      }).catch(() => null);
+    },
+  );
+  for (const [index, entry] of plan.entries()) {
+    if (!entry.recurse) continue;
+    fetchedSurfaces[index] = await fetchTypeSurface(entry.specifier, entry.resolved, {
+      followDependencies: true,
+      traversal: {
+        depth: depth + 1,
+        visited: new Set([...visited, `${entry.specifier}@${entry.resolved}`]),
+        budget,
+      },
+    }).catch(() => null);
+  }
+
+  for (const [index, entry] of plan.entries()) {
+    const surface = fetchedSurfaces[index];
+    // A public edge whose surface could not be fetched at all, or whose own
+    // traversal came back incomplete, propagates that incompleteness up.
+    if (entry.publicEdge && !surface) incomplete = true;
+    if (surface?.incomplete) incomplete = true;
+    if (!surface) continue;
+
+    let merged = 0;
+    for (const [exportedAs, declaredAs] of entry.reference.names(surface.api)) {
+      const declEntry = surface.api.get(declaredAs);
+      if (!declEntry) continue;
+      // A name the parent genuinely re-exports — `export { x } from` or
+      // `export * from` — is one of the parent's *own* public exports and is
+      // keyed bare, so a leaf removal three hops down still lines up with the
+      // wrapper's symbol on the other side of the diff. An implementation
+      // import that merely surfaced in a signature is keyed by origin, so it
+      // cannot silently mask a same-named symbol the wrapper declares itself.
+      const key =
+        entry.reference.star || entry.reference.reExported.has(exportedAs)
+          ? exportedAs
+          : `${entry.specifier}#${exportedAs}`;
+      if (api.has(key)) continue;
+      api.set(key, { ...renameEntry(declEntry, exportedAs), via: entry.specifier });
+      merged += 1;
+    }
+
+    if (merged > 0) followed.push(`${entry.specifier}@${entry.resolved}`);
   }
 
   return { followed, attempted, incomplete };
