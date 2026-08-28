@@ -132,7 +132,23 @@ export const rustSurface: SurfaceProvider = {
   weight: 1.0,
 
   async compute(request: SurfaceRequest): Promise<SurfaceOutcome> {
-    if (!(await commandWorks(request.exec, 'cargo', ['--version'], request.env))) {
+    // Every version probe that decides the analyzer identity has to resolve the
+    // *same* toolchain the real `cargo public-api` build will. That build runs
+    // in `request.workdir/probe-<version>` with `request.env`; rustup picks a
+    // toolchain from the process cwd (a `rust-toolchain`/`rust-toolchain.toml`
+    // or a directory override), so an identity probe run from Drift's own cwd —
+    // typically the repository root — can name a different compiler than the one
+    // that actually emits the rustdoc JSON. `request.workdir` is Drift's own
+    // mkdtemp directory and the parent of every `probe-<version>` dir, so it
+    // shares their toolchain selection and carries no repo-local override.
+    const idCwd = request.workdir;
+    const idStdout = (command: string, args: readonly string[]): Promise<string | null> =>
+      commandStdout(request.exec, command, args, request.env, idCwd);
+    const idWorks = (command: string, args: readonly string[]): Promise<boolean> =>
+      commandWorks(request.exec, command, args, request.env, idCwd);
+
+    const cargoVersion = await idStdout('cargo', ['--version']);
+    if (cargoVersion === null) {
       return unavailable(
         TOOL,
         'tool-missing',
@@ -141,12 +157,11 @@ export const rustSurface: SurfaceProvider = {
       );
     }
 
-    let cpaVersion = await commandStdout(request.exec, 'cargo', ['public-api', '--version'], request.env);
+    let cpaVersion = await idStdout('cargo', ['public-api', '--version']);
     if (cpaVersion === null) {
       const installed =
         (await tryAutoInstall(request, PUBLIC_API_INSTALL)) &&
-        ((cpaVersion = await commandStdout(request.exec, 'cargo', ['public-api', '--version'], request.env)) !==
-          null);
+        ((cpaVersion = await idStdout('cargo', ['public-api', '--version'])) !== null);
       if (!installed) {
         return unavailable(
           TOOL,
@@ -158,26 +173,43 @@ export const rustSurface: SurfaceProvider = {
       }
     }
 
-    let nightlyVersion: string | null = null;
-    if (await commandWorks(request.exec, 'rustup', ['--version'], request.env)) {
+    // `cargo public-api` builds rustdoc JSON with a nightly compiler, but *which*
+    // one is decided the same way `cargo-public-api` itself decides it, from the
+    // active `cargo --version` (resolved above under the probe's own cwd/env):
+    //
+    //   - the active build is recognisably stable (`cargo 1.x`, no `nightly`
+    //     in the string) -> `cargo-public-api` shells out to the `nightly`
+    //     rustup alias, so the compiler identity is a *moving* target that
+    //     `rustup run nightly rustc --version` reports;
+    //   - the active build carries `nightly` in its version -> `cargo-public-api`
+    //     stays on the active toolchain, so the compiler is the pinned
+    //     `rustc --version` under the same cwd/env, and the moving `nightly`
+    //     alias is irrelevant;
+    //   - anything else (an unmodelled version string, e.g. a future `cargo 2`)
+    //     -> Drift cannot prove which compiler the tool will pick, so it runs
+    //     the probe but does not persist a cache entry keyed on a guess.
+    //
+    // Keying the surface cache on the wrong one either never invalidates when
+    // the real compiler rolled (active nightly, alias read) or needlessly
+    // invalidates when only the unused alias rolled.
+    const activeCargoIsProbablyStable = /^cargo 1\b/.test(cargoVersion) && !/nightly/.test(cargoVersion);
+    const activeCargoIsNightly = /nightly/.test(cargoVersion);
+    let compilerVersion: string | null = null;
+    let compilerTag = 'nightly';
+    if (activeCargoIsNightly) {
+      compilerTag = 'active';
+      compilerVersion = await idStdout('rustc', ['--version']);
+      // `rustc` missing under an active nightly `cargo` should not happen, but
+      // if it does the identity is unprovable — degrade caching, not evidence.
+    } else if (activeCargoIsProbablyStable && (await idWorks('rustup', ['--version']))) {
       // Only rustup-managed installs can be checked/fixed here; a nightly toolchain
       // installed some other way (e.g. a distro package) is invisible to `rustup` but
       // still works, so its absence is not treated as a failure on its own.
-      nightlyVersion = await commandStdout(
-        request.exec,
-        'rustup',
-        ['run', 'nightly', 'rustc', '--version'],
-        request.env,
-      );
-      if (nightlyVersion === null) {
+      compilerVersion = await idStdout('rustup', ['run', 'nightly', 'rustc', '--version']);
+      if (compilerVersion === null) {
         const installed =
           (await tryAutoInstall(request, NIGHTLY_INSTALL)) &&
-          ((nightlyVersion = await commandStdout(
-            request.exec,
-            'rustup',
-            ['run', 'nightly', 'rustc', '--version'],
-            request.env,
-          )) !== null);
+          ((compilerVersion = await idStdout('rustup', ['run', 'nightly', 'rustc', '--version'])) !== null);
         if (!installed) {
           return unavailable(
             TOOL,
@@ -189,22 +221,26 @@ export const rustSurface: SurfaceProvider = {
         }
       }
     }
+    // else: stable `cargo` with no `rustup` on PATH, or a `cargo` version string
+    // Drift does not model — the probe is allowed to run, but Drift cannot name
+    // the compiler it builds with, so `compilerVersion` stays `null`.
 
-    // Everything that decides what a probe produces, so a cached surface from
-    // an older analyzer is never reused: the `cargo public-api` build, the
-    // nightly rustc that emits the rustdoc JSON it reads, and this parser's own
-    // version. (The crate name and exact version are added per probe below.)
+    // Everything that decides what a probe produces, so a cached surface from an
+    // older analyzer is never reused: the `cargo public-api` build, the nightly
+    // rustc that emits the rustdoc JSON it reads, and this parser's own version.
+    // (The crate name and exact version are added per probe below.)
     //
-    // `nightlyVersion` is `null` only when rustup is not on PATH: nightly can
-    // still be the ambient default there, so the probe is allowed to run, but
-    // Drift then cannot name the compiler `cargo public-api` builds rustdoc
-    // JSON with. An unprovable compiler identity must degrade caching, never
+    // `compilerVersion` is `null` only when the compiler identity cannot be
+    // proven (no `rustup` and a stable `cargo`, or a missing `rustc` under an
+    // active nightly). An unprovable identity must degrade caching, never
     // evidence — so `analyzerId` is `null` and the persistent surface cache is
     // switched off for this probe rather than keyed on a guessed identity.
     const analyzerId =
-      cpaVersion === null || nightlyVersion === null
+      cpaVersion === null || compilerVersion === null
         ? null
-        : [`cpa=${cpaVersion}`, `nightly=${nightlyVersion}`, `parser=${RUST_SURFACE_CACHE_VERSION}`].join('|');
+        : [`cpa=${cpaVersion}`, `${compilerTag}=${compilerVersion}`, `parser=${RUST_SURFACE_CACHE_VERSION}`].join(
+            '|',
+          );
 
     const beforePromise = surfaceOf(request, request.from, analyzerId);
     const afterPromise = surfaceOf(request, request.to, analyzerId);
@@ -467,28 +503,32 @@ function firstLine(text: string): string {
   return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
 }
 
-async function nightlyAvailable(exec: Exec, env?: NodeJS.ProcessEnv): Promise<boolean> {
-  return commandWorks(exec, 'rustup', ['run', 'nightly', 'rustc', '--version'], env);
-}
-
 async function commandWorks(
   exec: Exec,
   command: string,
   args: readonly string[],
   env?: NodeJS.ProcessEnv,
+  cwd?: string,
 ): Promise<boolean> {
-  const result = await exec(command, args, { timeoutMs: 20_000, env });
+  const result = await exec(command, args, { timeoutMs: 20_000, env, cwd });
   return result.failure !== 'not-found' && result.code === 0;
 }
 
-/** Trimmed stdout of a probe command, or `null` if it could not run / failed. */
+/**
+ * Trimmed stdout of a probe command, or `null` if it could not run / failed.
+ *
+ * `cwd` matters for the toolchain-selection commands: rustup resolves the
+ * toolchain relative to it, so identity probes pass the same directory the real
+ * `cargo public-api` build will run in.
+ */
 async function commandStdout(
   exec: Exec,
   command: string,
   args: readonly string[],
   env?: NodeJS.ProcessEnv,
+  cwd?: string,
 ): Promise<string | null> {
-  const result = await exec(command, args, { timeoutMs: 20_000, env });
+  const result = await exec(command, args, { timeoutMs: 20_000, env, cwd });
   if (result.failure === 'not-found' || result.code !== 0) return null;
   return result.stdout.trim();
 }
