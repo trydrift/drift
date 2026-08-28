@@ -14,7 +14,7 @@ export function FeatureBoard() {
   const [refreshError, setRefreshError] = useState(false);
   const [hasCachedSnapshot, setHasCachedSnapshot] = useState(false);
   const active = useRef(true);
-  useEffect(() => () => { active.current = false; }, []);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
