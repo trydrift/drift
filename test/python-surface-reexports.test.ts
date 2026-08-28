@@ -168,6 +168,54 @@ describe('Python explicit re-exports are not false removals', () => {
     );
   });
 
+  test('an entire internal module disappearing makes its re-export export-removed', async (t) => {
+    const python = await execCommand('python3', ['--version']).catch(() => null);
+    if (!python || python.code !== 0) return t.skip('python3 not available');
+
+    const before = await surfaceOf({
+      'pkg/__init__.py': '',
+      'pkg/api.py': 'from .internal import Foo\n__all__ = ["Foo"]\n',
+      'pkg/internal.py': 'class Foo:\n    pass\n',
+    });
+    const after = await surfaceOf({
+      'pkg/__init__.py': '',
+      'pkg/api.py': 'from .internal import Foo\n__all__ = ["Foo"]\n',
+    });
+
+    assert.ok(before.has('pkg.api.Foo'));
+    assert.ok(!after.has('pkg.api.Foo'), 'a target module the archive dropped is not shape-unknown');
+    assert.ok(
+      diffSurfaces(before, after).some(
+        (c) => c.kind === 'export-removed' && c.symbol === 'pkg.api.Foo',
+      ),
+      JSON.stringify(diffSurfaces(before, after)),
+    );
+  });
+
+  test('an absolute internal import to a dropped module is also export-removed', async (t) => {
+    const python = await execCommand('python3', ['--version']).catch(() => null);
+    if (!python || python.code !== 0) return t.skip('python3 not available');
+
+    const before = await surfaceOf({
+      'pkg/__init__.py': '',
+      'pkg/api.py': 'from pkg.internal import Foo\n__all__ = ["Foo"]\n',
+      'pkg/internal.py': 'class Foo:\n    pass\n',
+    });
+    const after = await surfaceOf({
+      'pkg/__init__.py': '',
+      'pkg/api.py': 'from pkg.internal import Foo\n__all__ = ["Foo"]\n',
+    });
+
+    assert.ok(before.has('pkg.api.Foo'));
+    assert.ok(!after.has('pkg.api.Foo'), 'an owned top-level name absent from the index is missing, not external');
+    assert.ok(
+      diffSurfaces(before, after).some(
+        (c) => c.kind === 'export-removed' && c.symbol === 'pkg.api.Foo',
+      ),
+      JSON.stringify(diffSurfaces(before, after)),
+    );
+  });
+
   test('an imported name absent from __all__ does not become public', async (t) => {
     const python = await execCommand('python3', ['--version']).catch(() => null);
     if (!python || python.code !== 0) return t.skip('python3 not available');

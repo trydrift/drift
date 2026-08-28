@@ -975,8 +975,9 @@ def package_roots(root):
         roots = [(os.path.dirname(root), {os.path.basename(root)}, set())]
     return roots
 
+package_root_info = package_roots(root)
 sources = {}
-for import_root, package_names, module_names in package_roots(root):
+for import_root, package_names, module_names in package_root_info:
     for base, dirs, files in os.walk(import_root):
         rel = os.path.relpath(base, import_root).replace(os.sep, '/')
         top = '' if rel == '.' else rel.split('/')[0]
@@ -1095,7 +1096,12 @@ def resolve(module, name, seen):
     seen = seen | {(module, name)}
     entry = index.get(module)
     if entry is None:
-        return ('external', None)
+        # A target module absent from the index is only 'external' when its
+        # top-level name is genuinely foreign. A name this distribution owns
+        # (see owned_tops) that is missing from the parsed sources is a module
+        # the new archive dropped -- 'missing', so a broken internal re-export
+        # yields export-removed rather than being masked as shapeUnknown.
+        return ('missing', None) if module.split('.')[0] in owned_tops else ('external', None)
     local = entry['locals'].get(name)
     if local is not None:
         return ('resolved', local)
@@ -1114,6 +1120,18 @@ def resolve(module, name, seen):
         elif status == 'cycle' and outcome[0] == 'missing':
             outcome = ('cycle', None)
     return outcome
+
+# The top-level import names this distribution owns: every package/module root
+# package_roots() discovered, plus the first component of every parsed module.
+# resolve() uses this to tell a dropped internal module ('missing') from a
+# third-party dependency ('external') when a re-export target is not in the
+# index -- derived from the sources already parsed, not a second package guess.
+owned_tops = set()
+for _ir, _package_names, _module_names in package_root_info:
+    owned_tops |= set(_package_names) | set(_module_names)
+for _module in index:
+    if _module and _module not in ('__init__', '__main__'):
+        owned_tops.add(_module.split('.')[0])
 
 symbols = {}
 for module, entry in index.items():
