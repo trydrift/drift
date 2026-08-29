@@ -75,7 +75,7 @@ import {
 } from '../verification/upgrade-probe.js';
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
-import type { CargoDependencyPlacement } from '../detect/ecosystems/types.js';
+import type { CargoDependencyPlacement, DependencyResolution } from '../detect/ecosystems/types.js';
 import { versionSemantics } from '../version-semantics.js';
 import {
   isCompiledPythonRequirements,
@@ -1067,7 +1067,7 @@ export async function scanUpgrades(args: {
     const source = versionSourceLabel(dep.target.manager.ecosystem);
     announce(dep, `Asking ${source} what has been published`);
     const lookupSpan = diagSpan('registry.lookup', { package: dep.name });
-    const lookupKey = JSON.stringify([dep.target.manager.ecosystem, dep.name, dep.current, dep.range ?? null]);
+    const lookupKey = JSON.stringify([dep.target.manager.ecosystem, dep.name, dep.current, dep.range ?? null, dep.resolution ?? null]);
     let lookupPromise = versionLookups.get(lookupKey);
     if (!lookupPromise) {
       lookupPromise = measure('versions', dep.target.manager.ecosystem, () => lookupVersions({
@@ -1075,6 +1075,7 @@ export async function scanUpgrades(args: {
         ecosystem: dep.target.manager.ecosystem,
         current: dep.current,
         range: dep.range,
+        ...(dep.resolution ? { resolution: dep.resolution } : {}),
         ...(githubToken ? { githubToken } : {}),
       }));
       versionLookups.set(lookupKey, lookupPromise);
@@ -2523,6 +2524,8 @@ export interface ScanDependency {
   /** The constraint as written in the manifest, e.g. `^1.2.0`. */
   range: string;
   target: EcosystemTarget;
+  /** Set when a workspace `replace` directive, not a registry, decides this. */
+  resolution?: DependencyResolution;
 }
 
 /**
@@ -2574,6 +2577,7 @@ export async function directDependencies(
       name,
       kind: entry.kind,
       ...(entry.cargo ? { cargo: entry.cargo } : {}),
+      ...(entry.resolution ? { resolution: entry.resolution } : {}),
       current,
       range: entry.version ?? current,
       target,
