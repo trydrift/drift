@@ -7,7 +7,7 @@ import { DriftReportPanel } from './report.js';
 import { confidenceDisplay } from '../../../src/report/confidence.js';
 
 const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'requirements.txt', 'Gemfile']);
-const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'unchecked', 'pending', 'clean', 'error'];
+const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'review-required', 'runtime-unresolved', 'evidence-missing', 'pending', 'clean', 'error'];
 
 type DependencyNode =
   | { kind: 'group'; severity: UpgradeSeverity; candidates: UpgradeCandidate[] }
@@ -297,8 +297,12 @@ function groupLabel(severity: UpgradeSeverity): string {
       return 'Affected';
     case 'verification-failed':
       return "Checks failed";
-    case 'unchecked':
-      return 'Unchecked';
+    case 'review-required':
+      return 'Review Required';
+    case 'runtime-unresolved':
+      return 'Runtime Unknown';
+    case 'evidence-missing':
+      return 'Evidence Missing';
     case 'clean':
     case 'upstream-only':
       return 'Safe';
@@ -315,7 +319,9 @@ function iconFor(severity: UpgradeSeverity): string {
       return 'warning';
     case 'verification-failed':
       return 'error';
-    case 'unchecked':
+    case 'review-required':
+    case 'runtime-unresolved':
+    case 'evidence-missing':
       return 'question';
     case 'clean':
     case 'upstream-only':

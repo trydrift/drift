@@ -101,7 +101,7 @@ This does. Three things decide it, and the tier is how many of them hold:
 
 ## Python
 
-**Files:** `pyproject.toml`, `requirements.txt`, `setup.py`, `poetry.lock`, `uv.lock`, `Pipfile`
+**Files:** `pyproject.toml`, `requirements.in`, `requirements.txt`, `setup.py`, `poetry.lock`, `uv.lock`, `Pipfile`
 
 **Package managers:** pip, Poetry, uv
 

@@ -86,7 +86,7 @@ describe('dependency scan tree', () => {
     const groups = tree.getChildren();
     assert.deepEqual(groups.map((g) => tree.getTreeItem(g).label), [
       'Affected (1)',
-      'Unchecked (1)',
+      'Evidence Missing (1)',
       'Safe (1)',
       'Failed (1)',
     ]);

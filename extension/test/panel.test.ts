@@ -1707,7 +1707,7 @@ test('an upgrade that closes an advisory is worth taking, not merely safe', () =
   assert.match(describeSeverity(c), /Worth taking/);
 });
 
-test('a rationale that reached "insufficient evidence" is still unverified', () => {
+test('a rationale that reached "insufficient evidence" is Evidence Missing', () => {
   const c = candidate({
     name: 'zod',
     current: '3.24.1',
@@ -1720,11 +1720,11 @@ test('a rationale that reached "insufficient evidence" is still unverified', () 
     recommendation: 'insufficient-evidence',
   });
 
-  assert.equal(severityOf(c), 'unchecked');
+  assert.equal(severityOf(c), 'evidence-missing');
   assert.ok(!/Safe/.test(describeSeverity(c)));
 });
 
-test('an unverified upgrade is never rendered as safe', () => {
+test('an evidence-missing upgrade is never rendered as safe', () => {
   const c = candidate({
     name: 'zod',
     current: '3.24.1',
@@ -1736,8 +1736,8 @@ test('an unverified upgrade is never rendered as safe', () => {
     gaps: ['zod publishes no TypeScript declarations Drift could compare.'],
   });
 
-  assert.equal(severityOf(c), 'unchecked');
-  assert.match(describeSeverity(c), /Not verified/);
+  assert.equal(severityOf(c), 'evidence-missing');
+  assert.match(describeSeverity(c), /Evidence Missing/);
   assert.ok(!/Safe/.test(describeSeverity(c)), 'must not contain the word "safe"');
 
   const html = renderPanel(
@@ -1747,13 +1747,12 @@ test('an unverified upgrade is never rendered as safe', () => {
     }),
   );
 
-  assert.match(html, /Not verified/);
-  assert.match(html, /Could not verify/);
-  assert.match(html, /class="dot unchecked"/);
+  assert.match(html, /Evidence Missing/);
+  assert.match(html, /class="dot evidence-missing"/);
   // The reason is on the page, not in a log file.
   assert.match(html, /no TypeScript declarations Drift could compare/);
   // And it is not filed under the collapsed "Safe to upgrade" group.
-  assert.ok(!/pkg-subhead clean/.test(html) || !/grp:safe/.test(html.split('Could not verify')[0]!));
+  assert.ok(!/pkg-subhead clean/.test(html) || !/grp:safe/.test(html.split('Evidence Missing')[0]!));
 });
 
 test('a missing Drift helper is offered as an approval action', () => {

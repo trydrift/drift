@@ -90,11 +90,23 @@ const FACADE: Record<UpgradeSeverity, Facade> = {
     heading: 'Safe',
     gloss: 'Breaking changes upstream, none of them on any API this repository uses.',
   },
-  unchecked: {
+  'review-required': {
     glyph: 'unknown',
     style: 'cyan',
-    heading: 'Unchecked',
-    gloss: 'Drift found nothing it could check these against. Not the same as safe.',
+    heading: 'Review Required',
+    gloss: 'Drift found local evidence that is not strong enough for an automatic edit.',
+  },
+  'runtime-unresolved': {
+    glyph: 'unknown',
+    style: 'cyan',
+    heading: 'Runtime Unknown',
+    gloss: 'Repository runtime compatibility could not be resolved.',
+  },
+  'evidence-missing': {
+    glyph: 'unknown',
+    style: 'cyan',
+    heading: 'Evidence Missing',
+    gloss: 'Upstream evidence was unavailable or incomplete. Not the same as safe.',
   },
   pending: {
     glyph: 'pending',
@@ -144,7 +156,11 @@ function exemplarOf(severity: UpgradeSeverity): Parameters<typeof compareSeverit
       return { ...base, status: 'error' };
     case 'upstream-only':
       return { ...base, breakingCount: 1 };
-    case 'unchecked':
+    case 'review-required':
+      return { ...base, impactCount: 1, actionableImpactCount: 0, impactConfidence: 'low' };
+    case 'runtime-unresolved':
+      return { ...base, runtimeCompatibility: 'unknown' };
+    case 'evidence-missing':
       return { ...base, gaps: ['nothing to compare against'] };
     case 'pending':
       return { ...base, status: 'pending' };

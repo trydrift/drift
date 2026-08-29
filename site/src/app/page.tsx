@@ -234,7 +234,7 @@ export default function Home() {
         {/* ── The demo, the outcome distribution, and the benchmark proof ─ */}
         {/*
           One proof section instead of three: a real recorded run, the one
-          distribution that matters (Safe Here / Affects You / Not Verified),
+          distribution that matters (Safe Here / Affects You / Review Required / Runtime Unknown / Evidence Missing),
           and Drift's own measured benchmark result with a link to the full
           methodology. No prose explaining why a browser can't run a package
           manager — a one-line label says what the panels are.
@@ -407,7 +407,9 @@ interface ProofSummary {
   packages: number;
   affected: number;
   clean: number;
-  unchecked: number;
+  reviewRequired: number;
+  runtimeUnknown: number;
+  evidenceMissing: number;
   breaking: number;
   sites: number;
 }
@@ -419,7 +421,9 @@ function summarizeRecordings(recordings: Recording[]): ProofSummary {
       summary.packages += totals.packages;
       summary.affected += totals.affected;
       summary.clean += totals.clean;
-      summary.unchecked += totals.unchecked;
+      summary.reviewRequired += totals.reviewRequired;
+      summary.runtimeUnknown += totals.runtimeUnknown;
+      summary.evidenceMissing += totals.evidenceMissing;
       summary.breaking += totals.breaking;
       summary.sites += totals.sites;
       return summary;
@@ -430,7 +434,9 @@ function summarizeRecordings(recordings: Recording[]): ProofSummary {
       packages: 0,
       affected: 0,
       clean: 0,
-      unchecked: 0,
+      reviewRequired: 0,
+      runtimeUnknown: 0,
+      evidenceMissing: 0,
       breaking: 0,
       sites: 0,
     },
@@ -475,11 +481,13 @@ function StatCard({
 }
 
 function VerdictStack({ proof }: { proof: ProofSummary }) {
-  const total = Math.max(1, proof.clean + proof.affected + proof.unchecked);
+  const total = Math.max(1, proof.clean + proof.affected + proof.reviewRequired + proof.runtimeUnknown + proof.evidenceMissing);
   const lanes = [
     { label: "Safe Here", value: proof.clean, className: "bg-brand" },
     { label: "Affects You", value: proof.affected, className: "bg-rose-600" },
-    { label: "Not Verified", value: proof.unchecked, className: "bg-amber-500" },
+    { label: "Review Required", value: proof.reviewRequired, className: "bg-amber-500" },
+    { label: "Runtime Unknown", value: proof.runtimeUnknown, className: "bg-orange-500" },
+    { label: "Evidence Missing", value: proof.evidenceMissing, className: "bg-yellow-500" },
   ];
 
   return (

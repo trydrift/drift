@@ -554,6 +554,7 @@ function slimCandidate(candidate) {
     actionableImpactCount: candidate.actionableImpactCount ?? 0,
     actionableImpactFiles: candidate.actionableImpactFiles ?? 0,
     runtimeDeclarationSiteCount: candidate.runtimeDeclarationSiteCount ?? 0,
+    sourceCoverage: candidate.sourceCoverage ?? null,
     runtimeChanges: (candidate.plan?.breakingChanges ?? [])
       .filter((change) => change.kind === 'runtime-requirement' && change.runtime)
       .map((change) => ({ id: change.id, runtime: change.runtime.runtime })),

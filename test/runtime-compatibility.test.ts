@@ -1000,14 +1000,14 @@ describe('#133: reasons are rendered from the completed runtime-analysis set', (
 });
 
 describe('runtime severity: unresolved compatibility can never render as safe', () => {
-  test('runtime unknown with zero sites is unchecked, not upstream-only', () => {
+  test('runtime unknown with zero sites is explicitly runtime unresolved', () => {
     const candidate = { ...baseCandidate, runtimeCompatibility: 'unknown' as const };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'runtime-unresolved');
     assert.doesNotMatch(describeSeverity(candidate), /none used here|Safe for your code/);
   });
 
-  test('runtime partial with zero sites is unchecked, not upstream-only', () => {
-    assert.equal(severityOf({ ...baseCandidate, runtimeCompatibility: 'partial' }), 'unchecked');
+  test('runtime partial with zero sites is explicitly runtime unresolved', () => {
+    assert.equal(severityOf({ ...baseCandidate, runtimeCompatibility: 'partial' }), 'runtime-unresolved');
   });
 
   test('runtime partial with a site is review-only rather than affected', () => {
@@ -1021,7 +1021,7 @@ describe('runtime severity: unresolved compatibility can never render as safe', 
       impactConfidence: 'high' as const,
       runtimeCompatibility: 'partial' as const,
     };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'runtime-unresolved');
     assert.doesNotMatch(describeSeverity(candidate), /affect your code/i);
   });
 
@@ -1050,7 +1050,7 @@ describe('runtime severity: unresolved compatibility can never render as safe', 
       actionableImpactFiles: 0,
       impactConfidence: 'low' as const,
     };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'review-required');
     const line = describeSeverity(candidate);
     assert.doesNotMatch(line, /none used here|Safe for your code|Not verified/);
     assert.match(line, /Review required/);
@@ -1072,7 +1072,7 @@ describe('runtime recording validator consumes recorded structure', () => {
     name: 'pkg',
     runtimeCompatibility: 'unknown',
     recommendation: 'upgrade-after-review',
-    severity: 'unchecked',
+    severity: 'runtime-unresolved',
     independentActionableFindingCount: 0,
     breakingCount: 1,
     impactCount: 0,
@@ -1089,7 +1089,7 @@ describe('runtime recording validator consumes recorded structure', () => {
     ...overrides,
   });
 
-  test('unknown with zero sites and upstream changes is valid when severity is unchecked', () => {
+  test('unknown with zero sites and upstream changes is valid when severity is runtime-unresolved', () => {
     assert.doesNotThrow(() => validateRuntimeCompatibilityState(recorded(), 'fixture'));
   });
 

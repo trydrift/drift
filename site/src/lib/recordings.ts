@@ -109,11 +109,18 @@ export interface Candidate {
     declarationCount: number;
     unresolvedCount: number;
   }[];
-  severity?: "affected" | "verification-failed" | "upstream-only" | "unchecked" | "clean" | "error" | "pending";
+  severity?: "affected" | "verification-failed" | "review-required" | "runtime-unresolved" | "evidence-missing" | "upstream-only" | "clean" | "error" | "pending";
   independentActionableFindingCount?: number;
   actionableImpactCount?: number;
   actionableImpactFiles?: number;
   runtimeDeclarationSiteCount?: number;
+  sourceCoverage?: {
+    sourceFilesDiscovered: number;
+    sourceFilesIndexed: number;
+    sourceTruncated: boolean;
+    runtimeConfigsDiscovered: number;
+    runtimeConfigsIndexed: number;
+  };
   /** Complete runtime-finding identity set; unlike `breaking`, never sliced. */
   runtimeChanges?: { id: string; runtime: RuntimeRequirement["runtime"] }[];
   dispositions?: {
@@ -282,7 +289,9 @@ export interface Totals {
   packages: number;
   affected: number;
   clean: number;
-  unchecked: number;
+  reviewRequired: number;
+  runtimeUnknown: number;
+  evidenceMissing: number;
   breaking: number;
   sites: number;
   files: number;
@@ -300,7 +309,9 @@ export function totalsOf(recording: Recording): Totals {
     // "Upstream-only" counts as clean for the summary bar: it is a package the
     // developer does not have to touch, which is the question the bar answers.
     clean: verdicts.filter((v) => v === "clean" || v === "upstream-only").length,
-    unchecked: verdicts.filter((v) => v === "unchecked").length,
+    reviewRequired: verdicts.filter((v) => v === "review-required").length,
+    runtimeUnknown: verdicts.filter((v) => v === "runtime-unresolved").length,
+    evidenceMissing: verdicts.filter((v) => v === "evidence-missing").length,
     breaking: recording.candidates.reduce((sum, c) => sum + c.breakingCount, 0),
     sites: recording.candidates.reduce((sum, c) => sum + c.impactCount, 0),
     files: files.size,

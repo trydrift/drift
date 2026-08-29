@@ -1021,7 +1021,9 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
   // `affected` than to anything that could be called "safe", so it gets its
   // own group rather than silently vanishing from every bucket below.
   const verificationFailed = settled.filter((c) => severityOf(c) === 'verification-failed');
-  const unchecked = settled.filter((c) => severityOf(c) === 'unchecked');
+  const reviewRequired = settled.filter((c) => severityOf(c) === 'review-required');
+  const runtimeUnknown = settled.filter((c) => severityOf(c) === 'runtime-unresolved');
+  const evidenceMissing = settled.filter((c) => severityOf(c) === 'evidence-missing');
   const safe = settled.filter(
     (c) => severityOf(c) === 'clean' || severityOf(c) === 'upstream-only',
   );
@@ -1041,7 +1043,9 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         <span class="tallies">
           ${affected.length ? tally(affected.length, 'affected', 'affected') : ''}
           ${verificationFailed.length ? tally(verificationFailed.length, 'checks failed', 'error') : ''}
-          ${unchecked.length ? tally(unchecked.length, 'unverified', 'unchecked') : ''}
+          ${reviewRequired.length ? tally(reviewRequired.length, 'review', 'unchecked') : ''}
+          ${runtimeUnknown.length ? tally(runtimeUnknown.length, 'runtime unknown', 'unchecked') : ''}
+          ${evidenceMissing.length ? tally(evidenceMissing.length, 'evidence missing', 'unchecked') : ''}
           ${safe.length ? tally(safe.length, 'safe', 'clean') : ''}
           ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
           ${checking.length ? tally(checking.length, 'in progress', 'unchecked') : ''}
@@ -1087,10 +1091,28 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         // read about is the one a developer most needs to see before they reach
         // for a bulk action — collapsing it would reproduce the failure this
         // group exists to prevent.
-        unchecked.length
+        reviewRequired.length
           ? `<section class="pkg-group">
-              <h4 class="pkg-subhead unchecked">${ICON_ALERT}<span>Could not verify</span><small>${unchecked.length}</small></h4>
-              <div class="pkg-list">${unchecked.map((c) => renderCandidate(c, unchecked.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
+              <h4 class="pkg-subhead unchecked">${ICON_ALERT}<span>Review Required</span><small>${reviewRequired.length}</small></h4>
+              <div class="pkg-list">${reviewRequired.map((c) => renderCandidate(c, reviewRequired.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
+            </section>`
+          : ''
+      }
+
+      ${
+        runtimeUnknown.length
+          ? `<section class="pkg-group">
+              <h4 class="pkg-subhead unchecked">${ICON_ALERT}<span>Runtime Unknown</span><small>${runtimeUnknown.length}</small></h4>
+              <div class="pkg-list">${runtimeUnknown.map((c) => renderCandidate(c, runtimeUnknown.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
+            </section>`
+          : ''
+      }
+
+      ${
+        evidenceMissing.length
+          ? `<section class="pkg-group">
+              <h4 class="pkg-subhead unchecked">${ICON_ALERT}<span>Evidence Missing</span><small>${evidenceMissing.length}</small></h4>
+              <div class="pkg-list">${evidenceMissing.map((c) => renderCandidate(c, evidenceMissing.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
             </section>`
           : ''
       }
@@ -1386,8 +1408,12 @@ function shortVerdict(candidate: UpgradeCandidate, severity: UpgradeSeverity): s
       return 'Verified breaking';
     case 'upstream-only':
       return verified ? 'Verified safe' : 'Safe here';
-    case 'unchecked':
-      return 'Not verified';
+    case 'review-required':
+      return 'Review Required';
+    case 'runtime-unresolved':
+      return 'Runtime Unknown';
+    case 'evidence-missing':
+      return 'Evidence Missing';
     case 'clean':
       return verified ? 'Verified safe' : 'Safe';
     case 'error':
@@ -3100,7 +3126,7 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--vscode-testing-iconPassed); }
 .dot.affected { background: var(--vscode-editorWarning-foreground); }
 .dot.error, .dot.verification-failed { background: var(--vscode-editorError-foreground); }
-.dot.unchecked { background: var(--vscode-descriptionForeground); }
+.dot.review-required, .dot.runtime-unresolved, .dot.evidence-missing { background: var(--vscode-descriptionForeground); }
 .dot.pending { background: var(--vscode-descriptionForeground); opacity: .5; }
 .pkg-name { min-width: 0; display: flex; flex-direction: column; }
 .pkg-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3142,7 +3168,7 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
   border-color: var(--vscode-editorWarning-foreground);
 }
 .verdict.clean, .verdict.upstream-only { color: var(--vscode-testing-iconPassed); border-color: transparent; }
-.verdict.unchecked {
+.verdict.review-required, .verdict.runtime-unresolved, .verdict.evidence-missing {
   color: var(--vscode-editorWarning-foreground);
   border-color: var(--vscode-editorWarning-foreground);
 }

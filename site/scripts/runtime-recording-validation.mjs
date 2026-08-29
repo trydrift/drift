@@ -1,5 +1,8 @@
 const RUNTIME_STATES = ['compatible', 'incompatible', 'partial', 'unknown'];
-const SEVERITIES = ['affected', 'verification-failed', 'upstream-only', 'unchecked', 'clean', 'error', 'pending'];
+// `unchecked` is accepted only for the pre-#170 generated corpus. PR 4
+// regenerates that corpus and removes this migration allowance; live severity
+// computation no longer produces the overloaded value.
+const SEVERITIES = ['affected', 'verification-failed', 'review-required', 'runtime-unresolved', 'evidence-missing', 'upstream-only', 'clean', 'error', 'pending', 'unchecked'];
 const STATE_ORDER = ['incompatible', 'partial', 'unknown', 'compatible'];
 
 /** Validate recorded runtime answers without reconstructing production logic. */

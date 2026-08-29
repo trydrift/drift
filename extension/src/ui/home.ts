@@ -1845,7 +1845,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     if (severity === 'affected') {
       lines.push('', `Say \`/fix ${candidate.name}\` to let ${this.agentLabel()} update the affected code.`);
-    } else if (severity === 'unchecked') {
+    } else if (severity === 'review-required') {
+      lines.push('', `Drift found local evidence that needs a person to review before upgrading.`);
+    } else if (severity === 'runtime-unresolved') {
+      lines.push('', `Drift could not resolve this repository's runtime compatibility, so it will not call the upgrade safe.`);
+    } else if (severity === 'evidence-missing') {
       lines.push(
         '',
         `I have nothing to go on for this one, so I will not call it safe. Read the release notes, then say \`/upgrade ${candidate.name}\` if you want it anyway.`,
@@ -2136,18 +2140,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // It is put to the developer in the same shape as forcing past a range,
     // because it carries the same kind of risk: Drift has no idea what this
     // does to their code, and saying nothing would imply it does.
-    const unverified = candidates.filter((candidate) => severityOf(candidate) === 'unchecked');
+    const unverified = candidates.filter((candidate) =>
+      ['review-required', 'runtime-unresolved', 'evidence-missing'].includes(severityOf(candidate)),
+    );
     if (unverified.length > 0) {
       const names = unverified.map((c) => `**${c.name}**`).join(', ');
       const answer = await this.session.ask(
-        `I could not verify ${names}. ${
-          unverified.length === 1 ? 'There was' : 'There were'
-        } no reachable changelog, release notes or type declarations to check against, so "no breaking changes" is not something I can claim here. Install ${unverified.length === 1 ? 'it' : 'them'} anyway?`,
+        `${names} ${unverified.length === 1 ? 'requires' : 'require'} review: Drift found review-only local evidence, unresolved runtime compatibility, or incomplete upstream evidence. "Safe" is not something I can claim here. Install ${unverified.length === 1 ? 'it' : 'them'} anyway?`,
         [
           {
             label: 'Install anyway',
             value: 'yes',
-            description: 'I have read the release notes myself',
+            description: 'I reviewed the reported uncertainty myself',
           },
           {
             label: 'Skip the unverified ones',
@@ -2164,7 +2168,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return false;
       }
       if (answer === 'skip') {
-        const remaining = candidates.filter((c) => severityOf(c) !== 'unchecked');
+        const remaining = candidates.filter((candidate) =>
+          !['review-required', 'runtime-unresolved', 'evidence-missing'].includes(severityOf(candidate)),
+        );
         if (remaining.length === 0) {
           this.session.notice('info', 'That left nothing to install.');
           return false;
@@ -6429,7 +6435,9 @@ function headline(
   // just upstream of this function instead of in it.
   const affected =
     candidates.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length;
-  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
+  const uncertain = candidates.filter((candidate) =>
+    ['review-required', 'runtime-unresolved', 'evidence-missing'].includes(severityOf(candidate)),
+  ).length + unlooked;
 
   // Rows a manifest produced that nothing has looked at yet. They are counted
   // separately and never folded into `safe`: while a scan is running the list
@@ -6446,7 +6454,7 @@ function headline(
     );
   }
 
-  const safe = candidates.length - affected - (unchecked - unlooked);
+  const safe = candidates.length - affected - (uncertain - unlooked);
   const scope = checked > 0 ? ` out of ${checked} checked` : '';
 
   if (candidates.length === 0) {
@@ -6459,9 +6467,9 @@ function headline(
   // safe is the same claim that put zod 4 and typescript 7 into this
   // repository, one level further up the page.
   const caveat =
-    unchecked === 0
+    uncertain === 0
       ? ''
-      : ` ${unchecked} ${unchecked === 1 ? 'could not be verified at all — read that one yourself' : 'could not be verified at all — read those yourself'}.`;
+      : ` ${uncertain} ${uncertain === 1 ? 'requires review before upgrading' : 'require review before upgrading'}.`;
 
   if (affected === 0 && safe === candidates.length) {
     return `**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}, and none of them affect code in this repository. Safe to take.`;

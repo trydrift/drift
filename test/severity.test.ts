@@ -46,6 +46,24 @@ describe('a failed verification outranks a clean-looking result', () => {
     assert.equal(severityOf({ ...base, breakingCount: 1 }), 'upstream-only');
   });
 
+  test('Deep Verification not-run is orthogonal to a clean static verdict', () => {
+    const candidate = { ...base, recommendation: 'safe-to-upgrade' };
+    assert.equal(severityOf(candidate), 'clean');
+    assert.match(describeSeverity(candidate), /not deeply verified/);
+  });
+
+  test('an upstream evidence gap is Evidence Missing, not a review or runtime verdict', () => {
+    const candidate = { ...base, recommendation: 'insufficient-evidence', gaps: ['artifact unavailable'] };
+    assert.equal(severityOf(candidate), 'evidence-missing');
+    assert.match(describeSeverity(candidate), /^Evidence Missing/);
+  });
+
+  test('truncated source localization cannot become upstream-only', () => {
+    const candidate = { ...base, breakingCount: 1, sourceCoverage: { sourceTruncated: true } };
+    assert.equal(severityOf(candidate), 'evidence-missing');
+    assert.doesNotMatch(describeSeverity(candidate), /none used here|safe/i);
+  });
+
   test('a real impact site still outranks a failed verification', () => {
     // Static analysis pinpointing an actual call site is the strongest, most
     // actionable signal Drift has; a failed check with no location does not
@@ -121,7 +139,7 @@ describe('impact wording is hedged to match how sure the match actually is', () 
  * `src/upgrade/severity.ts`.
  */
 describe('legacy-caller fallback stays conservative about unresolved runtime evidence', () => {
-  test('unknown runtime, one site, low confidence, no canonical counts -> unchecked, never affected', () => {
+  test('unknown runtime, one site, low confidence, no canonical counts -> runtime unresolved', () => {
     const candidate = {
       status: 'ready',
       breakingCount: 1,
@@ -130,10 +148,10 @@ describe('legacy-caller fallback stays conservative about unresolved runtime evi
       impactConfidence: 'low' as const,
       runtimeCompatibility: 'unknown' as const,
     };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'runtime-unresolved');
   });
 
-  test('partial runtime, one site, low confidence, no canonical counts -> unchecked, never affected', () => {
+  test('partial runtime, one site, low confidence, no canonical counts -> runtime unresolved', () => {
     const candidate = {
       status: 'ready',
       breakingCount: 1,
@@ -142,10 +160,10 @@ describe('legacy-caller fallback stays conservative about unresolved runtime evi
       impactConfidence: 'low' as const,
       runtimeCompatibility: 'partial' as const,
     };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'runtime-unresolved');
   });
 
-  test('unknown runtime, no confidence supplied at all, no canonical counts -> unchecked, never affected', () => {
+  test('unknown runtime, no confidence supplied at all -> runtime unresolved', () => {
     // Absent confidence cannot be read as "certain" here the way it can when
     // runtime is resolved: there is no way to tell a bare unresolved runtime
     // site from a confirmed API site without either a confidence signal or
@@ -157,7 +175,7 @@ describe('legacy-caller fallback stays conservative about unresolved runtime evi
       impactFiles: 1,
       runtimeCompatibility: 'unknown' as const,
     };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'runtime-unresolved');
   });
 
   test('medium-confidence API-only impact with no canonical actionable count reads as review, not affected', () => {
@@ -168,7 +186,7 @@ describe('legacy-caller fallback stays conservative about unresolved runtime evi
       impactFiles: 1,
       impactConfidence: 'medium' as const,
     };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'review-required');
   });
 
   test('mixed: unresolved runtime evidence plus a confirmed high-confidence API impact stays affected', () => {
@@ -187,7 +205,7 @@ describe('legacy-caller fallback stays conservative about unresolved runtime evi
     assert.equal(severityOf(candidate), 'affected');
   });
 
-  test('canonical caller with actionableImpactCount: 0 stays unchecked regardless of confidence', () => {
+  test('canonical caller with only unresolved runtime sites stays runtime unresolved', () => {
     const candidate = {
       status: 'ready',
       breakingCount: 1,
@@ -199,7 +217,7 @@ describe('legacy-caller fallback stays conservative about unresolved runtime evi
       impactConfidence: 'high' as const,
       runtimeCompatibility: 'unknown' as const,
     };
-    assert.equal(severityOf(candidate), 'unchecked');
+    assert.equal(severityOf(candidate), 'runtime-unresolved');
   });
 
   test('canonical caller with a nonzero actionableImpactCount is affected even with unresolved runtime', () => {

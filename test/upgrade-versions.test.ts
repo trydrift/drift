@@ -360,7 +360,7 @@ describe('scan title: a run that could not check something never claims it did',
 
   test('unlooked dependencies keep a candidate list from being titled "all safe"', () => {
     const safe = { status: 'clean', breakingCount: 0, impactCount: 0, impactFiles: 0, recommendation: 'safe' };
-    assert.match(scanTitle([safe], 10, 2), /unverified/);
+    assert.match(scanTitle([safe], 10, 2), /require review/);
     assert.match(scanTitle([safe], 10, 0), /all safe/);
   });
 });
