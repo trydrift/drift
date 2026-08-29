@@ -34,6 +34,12 @@ export type SurfaceUnavailableReason =
   | 'artifact-unavailable'
   /** The artifact was retrieved but could not be read as an archive. */
   | 'artifact-corrupt'
+  /**
+   * The package's role is known and is not one Drift compares — a build-tool
+   * package, an analyzer, an asset bundle, an unsupported Maven packaging.
+   * Distinct from the library artifact unexpectedly going missing.
+   */
+  | 'artifact-role-unsupported'
   /** Output arrived in a shape this parser does not understand. */
   | 'parse-failed'
   /** No computed surface exists for this ecosystem at all. */
