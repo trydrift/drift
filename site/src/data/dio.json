@@ -6,10 +6,10 @@
   "language": "Dart",
   "repo": "https://github.com/cfug/dio",
   "blurb": "Dart's most-used HTTP client, in the package that declares its dependencies.",
-  "capturedAt": "2026-08-29T12:16:10.808Z",
+  "capturedAt": "2026-08-29T17:49:20.865Z",
   "commit": "6c1033ef0adbb53892192b8406e49af214909dfe",
-  "engine": "552f9ca8378d690d",
-  "durationMs": 680,
+  "engine": "425d2bf99ac66f81",
+  "durationMs": 422,
   "packagesChecked": 0,
   "manifests": [
     "pubspec.yaml",
@@ -34,7 +34,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 639,
+      "at": 191,
       "phase": "Looking for manifests",
       "detail": "cfug/dio",
       "done": 0,
@@ -42,7 +42,7 @@
     },
     {
       "type": "progress",
-      "at": 664,
+      "at": 361,
       "phase": "Reading the workspace",
       "detail": "17 packages · undeclared",
       "done": 0,
@@ -50,7 +50,7 @@
     },
     {
       "type": "progress",
-      "at": 674,
+      "at": 404,
       "phase": "Reading manifest",
       "detail": "pubspec.yaml",
       "done": 0,
@@ -58,7 +58,7 @@
     },
     {
       "type": "progress",
-      "at": 675,
+      "at": 405,
       "phase": "Reading manifest",
       "detail": "dio/pubspec.yaml",
       "done": 0,
@@ -66,7 +66,7 @@
     },
     {
       "type": "progress",
-      "at": 676,
+      "at": 407,
       "phase": "Reading manifest",
       "detail": "dio_test/pubspec.yaml",
       "done": 0,
@@ -74,7 +74,7 @@
     },
     {
       "type": "progress",
-      "at": 676,
+      "at": 407,
       "phase": "Reading manifest",
       "detail": "example_dart/pubspec.yaml",
       "done": 0,
@@ -82,7 +82,7 @@
     },
     {
       "type": "progress",
-      "at": 676,
+      "at": 408,
       "phase": "Reading manifest",
       "detail": "example_flutter_app/pubspec.yaml",
       "done": 0,
@@ -90,7 +90,7 @@
     },
     {
       "type": "progress",
-      "at": 676,
+      "at": 408,
       "phase": "Reading manifest",
       "detail": "example_flutter_app/android/build.gradle.kts",
       "done": 0,
@@ -98,7 +98,7 @@
     },
     {
       "type": "progress",
-      "at": 677,
+      "at": 408,
       "phase": "Reading manifest",
       "detail": "example_flutter_app/android/app/build.gradle.kts",
       "done": 0,
@@ -106,7 +106,7 @@
     },
     {
       "type": "progress",
-      "at": 677,
+      "at": 409,
       "phase": "Reading manifest",
       "detail": "plugins/compatibility_layer/pubspec.yaml",
       "done": 0,
@@ -114,7 +114,7 @@
     },
     {
       "type": "progress",
-      "at": 677,
+      "at": 410,
       "phase": "Reading manifest",
       "detail": "plugins/cookie_manager/pubspec.yaml",
       "done": 0,
@@ -122,7 +122,7 @@
     },
     {
       "type": "progress",
-      "at": 677,
+      "at": 411,
       "phase": "Reading manifest",
       "detail": "plugins/http2_adapter/pubspec.yaml",
       "done": 0,
@@ -130,7 +130,7 @@
     },
     {
       "type": "progress",
-      "at": 677,
+      "at": 412,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/pubspec.yaml",
       "done": 0,
@@ -138,7 +138,7 @@
     },
     {
       "type": "progress",
-      "at": 677,
+      "at": 412,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/pubspec.yaml",
       "done": 0,
@@ -146,7 +146,7 @@
     },
     {
       "type": "progress",
-      "at": 678,
+      "at": 413,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/android/build.gradle",
       "done": 0,
@@ -154,7 +154,7 @@
     },
     {
       "type": "progress",
-      "at": 678,
+      "at": 414,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/android/app/build.gradle",
       "done": 0,
@@ -162,7 +162,7 @@
     },
     {
       "type": "progress",
-      "at": 678,
+      "at": 415,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/ios/Podfile",
       "done": 0,
@@ -170,7 +170,7 @@
     },
     {
       "type": "progress",
-      "at": 680,
+      "at": 421,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/macos/Podfile",
       "done": 0,
@@ -178,7 +178,7 @@
     },
     {
       "type": "progress",
-      "at": 680,
+      "at": 421,
       "phase": "Reading manifest",
       "detail": "plugins/web_adapter/pubspec.yaml",
       "done": 0,
@@ -186,7 +186,7 @@
     },
     {
       "type": "progress",
-      "at": 680,
+      "at": 422,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -194,7 +194,7 @@
     },
     {
       "type": "progress",
-      "at": 680,
+      "at": 422,
       "phase": "Checking registries",
       "detail": "0 direct dependencies",
       "done": 0,
