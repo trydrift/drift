@@ -312,7 +312,7 @@ function satisfiesRange(version: ParsedPublishedVersion, rawRange: string): bool
     const valid = semver.validRange(normalized);
     return valid ? semver.satisfies(version.comparable.value, valid) : null;
   }
-  if (version.comparable.kind === 'pep440') return satisfiesPep440(version.comparable.value, range);
+  if (version.comparable.kind === 'pep440') return satisfiesPep440(version.comparable.value, version.raw, range);
   if (version.comparable.kind === 'ruby') return satisfiesRuby(version, range);
   if (version.comparable.kind === 'maven') return satisfiesInterval(version, range, /^([[(])\s*([^,]*)\s*,\s*([^\])]*?)\s*([\])])$/);
   if (version.comparable.kind === 'nuget') {
@@ -385,22 +385,59 @@ function comparisonAnchor(range: string, ecosystem: Ecosystem): ParsedPublishedV
   return match ? parsePublishedVersion(match[1]!, ecosystem) : null;
 }
 
+/**
+ * PEP 440's own grammar, transcribed from the specification's reference
+ * regular expression.
+ *
+ * Normalization is structural, not textual. Rewriting every `-` to `.` before
+ * parsing loses the distinction PEP 440 draws between the implicit post
+ * release `1.0-1` (which is `1.0.post1`) and the three-segment release
+ * `1.0.1`.
+ */
+const PEP440_PATTERN =
+  /^v?(?:(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(alpha|a|beta|b|preview|pre|c|rc)[-_.]?(\d+)?)?(?:(?:-(\d+))|(?:[-_.]?(post|rev|r)[-_.]?(\d+)?))?(?:[-_.]?(dev)[-_.]?(\d+)?)?)(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/;
+
 function parsePep440(raw: string): Pep440Version | null {
-  const value = raw.toLowerCase().replace(/[-_]/g, '.');
-  const match = /^(?:(\d+)!)?(\d+(?:\.\d+)*)(?:(?:\.)?(a|b|c|rc|alpha|beta|pre|preview)(?:\.)?(\d+)?)?(?:(?:\.(post|rev|r)(?:\.)?(\d+)?)|-(\d+))?(?:\.?(dev)(?:\.)?(\d+)?)?(?:\+([a-z0-9]+(?:[._-][a-z0-9]+)*))?$/.exec(value);
+  const match = PEP440_PATTERN.exec(raw.trim().toLowerCase());
   if (!match) return null;
+
   const preLabel = match[3];
-  const preRank = preLabel ? (/^(a|alpha)$/.test(preLabel) ? 0 : /^(b|beta)$/.test(preLabel) ? 1 : 2) : null;
+  // `alpha`/`a`, `beta`/`b`, and `c`/`pre`/`preview`/`rc` are the three
+  // spellings PEP 440 collapses; the implicit number is 0.
+  const preRank = preLabel
+    ? /^(a|alpha)$/.test(preLabel)
+      ? 0
+      : /^(b|beta)$/.test(preLabel)
+        ? 1
+        : 2
+    : null;
+
   return {
     epoch: Number(match[1] ?? 0),
     release: match[2]!.split('.').map(Number),
     pre: preRank === null ? null : [preRank, Number(match[4] ?? 0)],
-    post: match[7] !== undefined ? Number(match[7]) : match[5] ? Number(match[6] ?? 0) : null,
+    // `1.0-1` is an implicit post release; `1.0.post`/`1.0.rev`/`1.0-r2` are
+    // the explicit spellings, with an implicit number of 0.
+    post: match[5] !== undefined ? Number(match[5]) : match[6] ? Number(match[7] ?? 0) : null,
     dev: match[8] ? Number(match[9] ?? 0) : null,
     local: match[10]
-      ? match[10].split(/[._-]/).map((part) => (/^\d+$/.test(part) ? Number(part) : part))
+      ? match[10].split(/[-_.]/).map((part) => (/^\d+$/.test(part) ? Number(part) : part))
       : null,
   };
+}
+
+/** `X.Y.Z` with the pre/post/dev/local parts dropped — PEP 440's base version. */
+function pep440BaseVersion(version: Pep440Version): Pep440Version {
+  return { epoch: version.epoch, release: version.release, pre: null, post: null, dev: null, local: null };
+}
+
+/** The public version: everything except the local label. */
+function pep440Public(version: Pep440Version): Pep440Version {
+  return version.local === null ? version : { ...version, local: null };
+}
+
+function isPep440Prerelease(version: Pep440Version): boolean {
+  return version.pre !== null || version.dev !== null;
 }
 
 function comparePep440(a: Pep440Version, b: Pep440Version): number {
@@ -438,36 +475,107 @@ function compareLocal(a: (number | string)[] | null, b: (number | string)[] | nu
   return 0;
 }
 
-function satisfiesPep440(version: Pep440Version, range: string): boolean | null {
+/**
+ * PEP 440 specifier semantics, clause by clause.
+ *
+ * The ordered comparison operators are not plain applications of the version
+ * ordering. `<V` must not admit a pre-release *of V itself* unless V is a
+ * pre-release, `>V` must not admit a post-release or local build of V, and
+ * `<=`/`>=`/`==` compare the public version unless the specifier carries a
+ * local label of its own. Anything this function cannot evaluate under those
+ * rules returns `null` — unknown — rather than a guess in either direction.
+ */
+function satisfiesPep440(version: Pep440Version, raw: string, range: string): boolean | null {
   const clauses = range.split(',').map((part) => part.trim()).filter(Boolean);
   if (!clauses.length) return true;
   for (const clause of clauses) {
-    const match = /^(~=|==|!=|<=|>=|<|>)\s*v?(.+)$/.exec(clause);
-    if (!match) return null;
-    const [, operator, raw] = match;
-    if ((operator === '==' || operator === '!=') && raw!.endsWith('.*')) {
-      const prefix = raw!.slice(0, -2).split('.').map(Number);
-      if (prefix.some(Number.isNaN)) return null;
-      const equal = prefix.every((part, index) => (version.release[index] ?? 0) === part);
-      if ((operator === '==' && !equal) || (operator === '!=' && equal)) return false;
-      continue;
-    }
-    const other = parsePep440(raw!);
-    if (!other) return null;
-    const cmp = comparePep440(version, other);
-    if (operator === '>=' && cmp < 0) return false;
-    if (operator === '>' && cmp <= 0) return false;
-    if (operator === '<=' && cmp > 0) return false;
-    if (operator === '<' && cmp >= 0) return false;
-    if (operator === '==' && cmp !== 0) return false;
-    if (operator === '!=' && cmp === 0) return false;
-    if (operator === '~=') {
-      if (cmp < 0 || other.release.length < 2) return false;
-      const prefix = other.release.slice(0, -1);
-      if (!prefix.every((part, index) => (version.release[index] ?? 0) === part)) return false;
-    }
+    const result = satisfiesPep440Clause(version, raw, clause);
+    if (result !== true) return result;
   }
   return true;
+}
+
+function satisfiesPep440Clause(version: Pep440Version, raw: string, clause: string): boolean | null {
+  const match = /^(===|~=|==|!=|<=|>=|<|>)\s*(.+)$/.exec(clause);
+  if (!match) return null;
+  const operator = match[1]!;
+  const spec = match[2]!.trim();
+
+  // `===` is arbitrary string equality with no normalization at all.
+  if (operator === '===') return raw.trim().toLowerCase() === spec.toLowerCase();
+
+  if (spec.endsWith('.*')) {
+    // Only `==` and `!=` accept a wildcard; every other operator with one is
+    // an invalid specifier rather than a looser match.
+    if (operator !== '==' && operator !== '!=') return null;
+    const equal = matchesPep440Prefix(version, spec.slice(0, -2));
+    if (equal === null) return null;
+    return operator === '==' ? equal : !equal;
+  }
+
+  const other = parsePep440(spec);
+  if (!other) return null;
+
+  switch (operator) {
+    case '==':
+      // A candidate's local label may not block a specifier that has none.
+      return comparePep440(other.local === null ? pep440Public(version) : version, other) === 0;
+    case '!=':
+      return comparePep440(other.local === null ? pep440Public(version) : version, other) !== 0;
+    case '<=':
+      return comparePep440(pep440Public(version), other) <= 0;
+    case '>=':
+      return comparePep440(pep440Public(version), other) >= 0;
+    case '<': {
+      if (comparePep440(version, other) >= 0) return false;
+      // `<3.1` matches `3.0.dev0` but must not match `3.1.dev0`.
+      if (!isPep440Prerelease(other) && isPep440Prerelease(version)) {
+        if (comparePep440(pep440BaseVersion(version), pep440BaseVersion(other)) === 0) return false;
+      }
+      return true;
+    }
+    case '>': {
+      if (comparePep440(version, other) <= 0) return false;
+      if (other.post === null && version.post !== null) {
+        if (comparePep440(pep440BaseVersion(version), pep440BaseVersion(other)) === 0) return false;
+      }
+      // A local build of the specified version is technically greater, and is
+      // still excluded.
+      if (version.local !== null) {
+        if (comparePep440(pep440BaseVersion(version), pep440BaseVersion(other)) === 0) return false;
+      }
+      return true;
+    }
+    case '~=': {
+      // `~=V` is `>=V` plus `==` on V's release with the last segment dropped.
+      if (other.local !== null) return null;
+      const segments = other.pre === null ? other.release.length : other.release.length + 1;
+      if (segments < 2) return null;
+      if (comparePep440(pep440Public(version), other) < 0) return false;
+      const prefix = other.release.slice(0, Math.min(segments - 1, other.release.length));
+      return (
+        version.epoch === other.epoch &&
+        prefix.every((part, index) => (version.release[index] ?? 0) === part)
+      );
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * `==X.Y.*` prefix matching. Only a plain `[N!]N(.N)*` prefix is evaluated;
+ * anything else (a pre/post/dev/local prefix) is reported as unknown rather
+ * than reinterpreted.
+ */
+function matchesPep440Prefix(version: Pep440Version, prefix: string): boolean | null {
+  const match = /^v?(?:(\d+)!)?(\d+(?:\.\d+)*)$/.exec(prefix.trim());
+  if (!match) return null;
+  const epoch = Number(match[1] ?? 0);
+  const release = match[2]!.split('.').map(Number);
+  return (
+    version.epoch === epoch && release.every((part, index) => (version.release[index] ?? 0) === part)
+  );
 }
 
 function rubySegments(raw: string): RubyPart[] {

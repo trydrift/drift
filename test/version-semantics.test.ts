@@ -54,7 +54,11 @@ describe('canonical ecosystem version semantics', () => {
   });
 
   test('interprets ranges with the owning ecosystem grammar', () => {
-    assert.equal(satisfiesPackageRange('1.0rc1', '>=1.0b1,<1.0', 'pypi'), true);
+    // PEP 440: `<1.0` must not admit a prerelease of 1.0 itself, because the
+    // specified version is not a prerelease. Plain ordering says rc1 < 1.0;
+    // the specifier says no.
+    assert.equal(satisfiesPackageRange('1.0rc1', '>=1.0b1,<1.0', 'pypi'), false);
+    assert.equal(satisfiesPackageRange('1.0rc1', '>=1.0b1,<1.0rc2', 'pypi'), true);
     assert.equal(satisfiesPackageRange('2.2.9', '~> 2.2', 'rubygems'), true);
     assert.equal(satisfiesPackageRange('3.0.0', '~> 2.2', 'rubygems'), false);
     assert.equal(satisfiesPackageRange('1.5', '[1.0,2.0)', 'maven'), true);
