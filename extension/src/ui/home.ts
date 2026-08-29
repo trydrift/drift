@@ -1849,6 +1849,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       lines.push('', `Drift found local evidence that needs a person to review before upgrading.`);
     } else if (severity === 'runtime-unresolved') {
       lines.push('', `Drift could not resolve this repository's runtime compatibility, so it will not call the upgrade safe.`);
+    } else if (severity === 'localization-incomplete') {
+      lines.push('', `Drift searched only the indexed source subset, so it could not prove the breaking API is unused everywhere.`);
     } else if (severity === 'evidence-missing') {
       lines.push(
         '',
@@ -2141,7 +2143,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // because it carries the same kind of risk: Drift has no idea what this
     // does to their code, and saying nothing would imply it does.
     const unverified = candidates.filter((candidate) =>
-      ['review-required', 'runtime-unresolved', 'evidence-missing'].includes(severityOf(candidate)),
+      ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
     );
     if (unverified.length > 0) {
       const names = unverified.map((c) => `**${c.name}**`).join(', ');
@@ -2169,7 +2171,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
       if (answer === 'skip') {
         const remaining = candidates.filter((candidate) =>
-          !['review-required', 'runtime-unresolved', 'evidence-missing'].includes(severityOf(candidate)),
+          !['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
         );
         if (remaining.length === 0) {
           this.session.notice('info', 'That left nothing to install.');
@@ -6436,7 +6438,7 @@ function headline(
   const affected =
     candidates.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length;
   const uncertain = candidates.filter((candidate) =>
-    ['review-required', 'runtime-unresolved', 'evidence-missing'].includes(severityOf(candidate)),
+    ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
   ).length + unlooked;
 
   // Rows a manifest produced that nothing has looked at yet. They are counted

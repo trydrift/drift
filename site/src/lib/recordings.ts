@@ -108,18 +108,22 @@ export interface Candidate {
     siteCount: number;
     declarationCount: number;
     unresolvedCount: number;
+    statement: string;
   }[];
-  severity?: "affected" | "verification-failed" | "review-required" | "runtime-unresolved" | "evidence-missing" | "upstream-only" | "clean" | "error" | "pending";
+  severity?: "affected" | "verification-failed" | "review-required" | "runtime-unresolved" | "localization-incomplete" | "evidence-missing" | "upstream-only" | "clean" | "error" | "pending";
   independentActionableFindingCount?: number;
   actionableImpactCount?: number;
   actionableImpactFiles?: number;
   runtimeDeclarationSiteCount?: number;
   sourceCoverage?: {
+    localizationRan: boolean;
+    localizationComplete: boolean;
     sourceFilesDiscovered: number;
     sourceFilesIndexed: number;
     sourceTruncated: boolean;
     runtimeConfigsDiscovered: number;
     runtimeConfigsIndexed: number;
+    runtimeConfigComplete: boolean;
   };
   /** Complete runtime-finding identity set; unlike `breaking`, never sliced. */
   runtimeChanges?: { id: string; runtime: RuntimeRequirement["runtime"] }[];

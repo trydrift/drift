@@ -591,6 +591,9 @@ function renderChangeCard(
       ? plan.dispositions?.find((entry) => entry.changeId === change.id)?.runtimeAnalysis?.state ??
         plan.rationale?.flatMap((entry) => entry.runtimeAnalyses ?? []).find((analysis) => analysis.changeId === change.id)?.state
       : undefined;
+  const runtimeAnalysis = change.kind === 'runtime-requirement'
+    ? plan.rationale?.flatMap((entry) => entry.runtimeAnalyses ?? []).find((analysis) => analysis.changeId === change.id)
+    : undefined;
 
   const siteList = sites.length
     ? `<ul class="sites">
@@ -609,7 +612,7 @@ function renderChangeCard(
        </ul>`
     : change.kind === 'runtime-requirement'
       ? runtimeState === 'unknown' || runtimeState === 'partial'
-        ? `<p class="muted">Drift has no concrete runtime declaration edit to point at, and compatibility remains <b>${escapeHtml(runtimeState)}</b>. Confirm the runtime used to build and deploy before upgrading.</p>`
+        ? `<p class="muted">${escapeHtml(runtimeAnalysis?.statement ?? `Drift has no concrete runtime declaration edit to point at, and compatibility remains ${runtimeState}. Confirm the runtime used to build and deploy before upgrading.`)}</p>`
         : `<p class="muted">The repository's runtime declaration satisfies this requirement, so no runtime configuration edit is planned.</p>`
     : notSearched(change)
       // "Searched and found nothing" and "could not search" produce the same

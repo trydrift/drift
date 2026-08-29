@@ -23,6 +23,7 @@ export type UpgradeSeverity =
   | 'verification-failed'
   | 'review-required'
   | 'runtime-unresolved'
+  | 'localization-incomplete'
   | 'evidence-missing'
   | 'upstream-only'
   | 'clean'
@@ -114,8 +115,18 @@ export interface SeverityInput {
    * unaffected* — never *found them and failed to find a local site*.
    */
   runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+  runtimeAnalyses?: readonly {
+    state: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+    reason: string;
+    statement?: string;
+  }[];
   /** Source-localization completeness; config completeness is tracked separately. */
-  sourceCoverage?: { sourceTruncated: boolean };
+  sourceCoverage?: {
+    sourceTruncated: boolean;
+    localizationRan?: boolean;
+    localizationComplete?: boolean;
+    runtimeConfigComplete?: boolean;
+  };
 }
 
 /**
@@ -221,7 +232,10 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
     return 'runtime-unresolved';
   }
 
-  if (candidate.sourceCoverage?.sourceTruncated) return 'evidence-missing';
+  if (
+    candidate.breakingCount > 0 &&
+    (candidate.sourceCoverage?.localizationComplete === false || candidate.sourceCoverage?.sourceTruncated)
+  ) return 'localization-incomplete';
 
   if (candidate.breakingCount > 0) return 'upstream-only';
 
@@ -255,6 +269,7 @@ export function describeSeverity(candidate: SeverityInput): string {
       : state === 'skipped'
         ? ' — deep verification did not complete'
         : '';
+  const runtimeUncertainty = runtimeUncertaintyText(candidate);
 
   switch (severityOf(candidate)) {
     case 'pending':
@@ -296,10 +311,7 @@ export function describeSeverity(candidate: SeverityInput): string {
       // than left to the generic `deepNote`, which only speaks to whether
       // verification ran, not to what it found.
       const measured = state === 'failed' ? ' — and its own checks fail with this installed, measured not predicted' : deepNote;
-      const runtimeReview = (candidate.runtimeDeclarationSiteCount ?? 0) > 0 &&
-        (candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial')
-        ? ` · ${candidate.runtimeDeclarationSiteCount} runtime declaration${candidate.runtimeDeclarationSiteCount === 1 ? '' : 's'} to review`
-        : '';
+      const runtimeReview = runtimeUncertainty ? ` · ${runtimeUncertainty}` : '';
       return `${verb} your code · ${actionable} ${siteNoun}${actionable === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${runtimeReview}${unconfirmed}${measured}`;
     }
     case 'verification-failed': {
@@ -321,12 +333,17 @@ export function describeSeverity(candidate: SeverityInput): string {
         ? candidate.runtimeDeclarationSiteCount ?? 0
         : 0;
       const n = Math.max(1, candidate.impactCount - runtimeSites);
+      const detail = runtimeUncertainty ? ` · ${runtimeUncertainty}` : '';
       return candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
-        ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — Review required; check before upgrading`
-        : `Review Required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm`;
+        ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — Review required; check before upgrading${detail}`
+        : `Review Required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm${detail}`;
     }
     case 'runtime-unresolved':
-      return 'Runtime Unknown · Drift could not resolve this repository’s runtime compatibility';
+      return runtimeUncertainty
+        ? `Runtime Unknown · ${runtimeUncertainty}`
+        : 'Runtime Unknown · Drift could not resolve this repository’s runtime compatibility';
+    case 'localization-incomplete':
+      return 'Localization Incomplete · Drift searched the indexed source subset, but the file limit prevented proving the breaking API is unused';
     case 'evidence-missing':
       return 'Evidence Missing · Drift could not obtain enough upstream evidence to decide';
     case 'clean': {
@@ -352,22 +369,31 @@ export function describeSeverity(candidate: SeverityInput): string {
  * finding: they are not an emergency, but leaving them at the bottom of the
  * list next to the genuinely safe ones is how one gets installed by accident.
  */
-export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
-  const rank = {
+export function severityRank(severity: UpgradeSeverity): number {
+  const rank: Record<UpgradeSeverity, number> = {
     affected: 0,
     'verification-failed': 1,
     error: 2,
     'review-required': 3,
     'runtime-unresolved': 4,
-    'evidence-missing': 5,
-    'upstream-only': 6,
+    'localization-incomplete': 5,
+    'evidence-missing': 6,
+    'upstream-only': 7,
     // Above `clean` deliberately: a package nobody has looked at yet is not a
     // package that has been cleared, and sorting it under the safe ones is how
     // it would be read as one.
-    pending: 7,
-    clean: 8,
-  } as const;
-  return rank[severityOf(a)] - rank[severityOf(b)];
+    pending: 8,
+    clean: 9,
+  };
+  return rank[severity];
+}
+
+export function compareUpgradeSeverities(a: UpgradeSeverity, b: UpgradeSeverity): number {
+  return severityRank(a) - severityRank(b);
+}
+
+export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
+  return compareUpgradeSeverities(severityOf(a), severityOf(b));
 }
 
 /**
@@ -411,7 +437,7 @@ export function scanTitle(
   // `affected` would report "all safe" over a build Drift just watched fail.
   const verificationFailed = candidates.filter((c) => severityOf(c) === 'verification-failed').length;
   const uncertain = candidates.filter((candidate) =>
-    ['review-required', 'runtime-unresolved', 'evidence-missing'].includes(severityOf(candidate)),
+    ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
   ).length + unlooked;
   const total = candidates.length;
 
@@ -422,4 +448,16 @@ export function scanTitle(
   // says otherwise is the claim Drift exists to stop making.
   if (uncertain > 0) return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, ${uncertain} require review`;
   return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, all safe`;
+}
+
+function runtimeUncertaintyText(candidate: SeverityInput): string | undefined {
+  if (candidate.runtimeCompatibility !== 'unknown' && candidate.runtimeCompatibility !== 'partial') return undefined;
+  const analysis = candidate.runtimeAnalyses?.find((entry) => entry.state === 'unknown' || entry.state === 'partial');
+  if (analysis?.statement) return analysis.statement;
+  if (analysis?.reason === 'config-incomplete') {
+    return 'Drift could not index every authoritative runtime configuration file';
+  }
+  const sites = candidate.runtimeDeclarationSiteCount ?? 0;
+  if (sites > 0) return `${sites} runtime declaration${sites === 1 ? '' : 's'} to review`;
+  return 'Drift could not resolve this repository’s runtime compatibility';
 }

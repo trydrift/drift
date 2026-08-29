@@ -2,12 +2,12 @@ import * as vscode from 'vscode';
 import { basename, join } from 'node:path';
 import type { UpgradeCandidate } from '../upgrades.js';
 import type { DriftState } from '../state.js';
-import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
+import { compareUpgradeSeverities, describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import { DriftReportPanel } from './report.js';
 import { confidenceDisplay } from '../../../src/report/confidence.js';
+import { isPythonRequirementsFile } from '../../../src/detect/python-requirements.js';
 
-const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'requirements.txt', 'Gemfile']);
-const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'review-required', 'runtime-unresolved', 'evidence-missing', 'pending', 'clean', 'error'];
+const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'Gemfile']);
 
 type DependencyNode =
   | { kind: 'group'; severity: UpgradeSeverity; candidates: UpgradeCandidate[] }
@@ -54,7 +54,7 @@ export class DriftDependencyTreeProvider
       else grouped.set(key, [candidate]);
     }
 
-    return ORDER.filter((severity) => (grouped.get(severity)?.length ?? 0) > 0).map((severity) => ({
+    return [...grouped.keys()].sort(compareUpgradeSeverities).map((severity) => ({
       kind: 'group',
       severity,
       candidates: grouped.get(severity)!,
@@ -217,6 +217,9 @@ export function candidatesForDocument(state: DriftState, uri: vscode.Uri): Upgra
 
 export function lineMentionsDependency(line: string, name: string, manifestName: string): boolean {
   const escaped = escapeRegExp(name);
+  if (isPythonRequirementsFile(manifestName)) {
+    return new RegExp(`^\\s*${escaped}(\\[[^\\]]+\\])?\\s*(?:==|~=|>=|<=|!=|>|<)`, 'i').test(line);
+  }
   switch (manifestName) {
     case 'package.json':
       return new RegExp(`^\\s*"${escaped}"\\s*:`).test(line);
@@ -226,8 +229,6 @@ export function lineMentionsDependency(line: string, name: string, manifestName:
       return new RegExp(`^\\s*${escaped}\\s*=`).test(line);
     case 'pom.xml':
       return new RegExp(`<artifactId>\\s*${escaped}\\s*</artifactId>`).test(line);
-    case 'requirements.txt':
-      return new RegExp(`^\\s*${escaped}(\\[[^\\]]+\\])?\\s*(==|~=|>=|<=|>|<)`, 'i').test(line);
     case 'Gemfile':
       return new RegExp(`^\\s*gem\\s+["']${escaped}["']`).test(line);
     default:
@@ -253,7 +254,7 @@ function inFlight(candidate: UpgradeCandidate): boolean {
 }
 
 function isManifest(path: string): boolean {
-  return MANIFESTS.has(basename(path));
+  return MANIFESTS.has(basename(path)) || isPythonRequirementsFile(path);
 }
 
 function candidatesForTextDocument(state: DriftState, document: vscode.TextDocument): UpgradeCandidate[] {
@@ -301,6 +302,8 @@ function groupLabel(severity: UpgradeSeverity): string {
       return 'Review Required';
     case 'runtime-unresolved':
       return 'Runtime Unknown';
+    case 'localization-incomplete':
+      return 'Localization Incomplete';
     case 'evidence-missing':
       return 'Evidence Missing';
     case 'clean':
@@ -321,6 +324,7 @@ function iconFor(severity: UpgradeSeverity): string {
       return 'error';
     case 'review-required':
     case 'runtime-unresolved':
+    case 'localization-incomplete':
     case 'evidence-missing':
       return 'question';
     case 'clean':
