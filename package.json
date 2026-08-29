@@ -52,7 +52,7 @@
     "prepublishOnly": "npm run build",
     "release:check": "node scripts/release-check.mjs",
     "release:version": "node scripts/check-release-version.mjs",
-    "test:release": "node --test scripts/check-release-version.test.mjs scripts/release-workflow.test.mjs scripts/set-version.test.mjs",
+    "test:release": "node --test scripts/check-release-version.test.mjs scripts/direct-execution.test.mjs scripts/release-workflow.test.mjs scripts/set-version.test.mjs",
     "version:set": "node scripts/set-version.mjs",
     "serve": "node dist/runners/webhook.js",
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",

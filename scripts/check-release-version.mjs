@@ -18,9 +18,10 @@
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import semver from 'semver';
 import { isExactSemVer } from './semver-utils.mjs';
+import { isDirectExecution } from './direct-execution.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -119,13 +120,8 @@ function parseTag(argv) {
   return argv[index + 1] ?? '';
 }
 
-function isDirectExecution() {
-  if (!process.argv[1]) return false;
-  return resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
-}
-
 // Only runs the CLI when this file is executed directly, not when imported by tests.
-if (isDirectExecution()) {
+if (isDirectExecution(import.meta.url)) {
   const tag = parseTag(process.argv.slice(2));
   const versions = readVersions(repoRoot);
   const problems = findVersionMismatches({ ...versions, tag });
