@@ -21,6 +21,16 @@ export interface RegistryInfo {
   /** Deprecation notice for the *target* version, when the registry has one. */
   deprecated: string | null;
   description: string | null;
+  /**
+   * Metadata the registry states outright, rather than metadata Drift inferred.
+   *
+   * A declared changelog URL is stronger evidence than any filename guess, and
+   * throwing it away after using it only as a repository hint is how packages
+   * that publish a changelog ended up reported as having none.
+   */
+  repositoryUrl?: string | null;
+  changelogUrl?: string | null;
+  documentationUrl?: string | null;
 }
 
 /**
@@ -926,6 +936,7 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     homepage_uri?: string;
     source_code_uri?: string;
     changelog_uri?: string;
+    documentation_uri?: string;
   }>(`https://rubygems.org/api/v1/gems/${encodeURIComponent(name)}.json`);
   if (!data) return null;
 
@@ -944,6 +955,11 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     versions: (versions ?? []).map((v) => v.number),
     deprecated: null,
     description: data.info ?? null,
+    // RubyGems lets a gem state these directly. They are kept as themselves,
+    // not collapsed into a repository hint and discarded.
+    repositoryUrl: data.source_code_uri ?? null,
+    changelogUrl: data.changelog_uri ?? null,
+    documentationUrl: data.documentation_uri ?? null,
   };
 }
 

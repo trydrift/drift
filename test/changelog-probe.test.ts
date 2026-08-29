@@ -51,8 +51,11 @@ describe('finding a changelog by guessing its name', () => {
 
     assert.equal(found, null);
     // Every candidate is still asked about — the same coverage as before — but
-    // the first is alone and the rest go out in waves.
-    assert.equal(calls().length, 30);
+    // the first is alone and the rest go out in waves. The one extra request is
+    // the repository root listing, asked only after every guess missed, so a
+    // differently-cased spelling (`Changes.md`) is found without growing the
+    // guess list forever.
+    assert.equal(calls().length, 31);
   });
 
   test('the winner is the highest-priority match, not whichever answered first', async () => {

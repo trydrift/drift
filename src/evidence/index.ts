@@ -263,7 +263,9 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   // document per release, and the index that lists them is not itself prose.
   const changelogsPending =
     githubRepo && config.evidence.changelog
-      ? fetchChangelogDocuments(githubRepo, change.from, change.to, change.ecosystem)
+      ? fetchChangelogDocuments(githubRepo, change.from, change.to, change.ecosystem, {
+          declaredUrl: registry?.changelogUrl ?? null,
+        })
       : null;
   // Migration guides are the artefact LADU relies on exclusively. Drift
   // treats one as strong corroboration rather than the sole input, so a
