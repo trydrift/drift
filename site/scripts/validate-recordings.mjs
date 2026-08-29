@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import { validateRecording } from './recording-validation.mjs';
 import { engineFingerprint } from './engine-fingerprint.mjs';
 import { validateRuntimeCompatibilityState } from './runtime-recording-validation.mjs';
+import { validateSemanticInvariants } from './semantic-recording-validation.mjs';
 
 export const RECORDING_SCHEMA_VERSION = 2;
 
@@ -29,6 +30,7 @@ export async function freshRecordingNames(repoRoot, dataRelPath = 'site/src/data
   return names;
 }
 
+/** Non-fatal observations a reader should confirm, collected per recording. */
 export function validateAuditInvariants(recording, name, freshnessRequired, expectedEngine) {
   // ---------------------------------------------------------------------------
   // Layer A — baseline artifact validity. Always enforced, current or stale.
@@ -88,6 +90,11 @@ export function validateAuditInvariants(recording, name, freshnessRequired, expe
     validateCompatibilityEvidence(candidate, name);
     validateRuntimeCompatibilityState(candidate, name);
   }
+
+  // Layer C — semantic accuracy. A recording can be structurally perfect and
+  // still say false things; these are the classes of false thing found during
+  // the launch audit, so they cannot come back quietly.
+  return validateSemanticInvariants(recording, name);
 }
 
 function validateSurfaceSymbols(change, ecosystem) {
@@ -384,6 +391,7 @@ async function main() {
   let checked = 0;
   let legacy = 0;
   const failures = [];
+  const diagnostics = [];
 
   for (const name of names) {
     let recording;
@@ -405,10 +413,18 @@ async function main() {
     checked += 1;
     try {
       validateRecording(recording, RECORDING_SCHEMA_VERSION);
-      validateAuditInvariants(recording, name, !allowStale || requireFresh.has(name), expectedEngine);
+      diagnostics.push(
+        ...(validateAuditInvariants(recording, name, !allowStale || requireFresh.has(name), expectedEngine) ?? []),
+      );
     } catch (error) {
       failures.push(`${name}: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  // Diagnostics are printed whether or not anything failed: they are the
+  // shapes a human has to look at, not conclusions the validator can draw.
+  if (diagnostics.length > 0) {
+    process.stdout.write(`Semantic diagnostics:\n${diagnostics.map((line) => `- ${line}`).join('\n')}\n`);
   }
 
   if (failures.length > 0) {
