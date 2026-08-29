@@ -112,8 +112,17 @@ describe('recording freshness: what must carry the current engine fingerprint', 
   test('a current recording that violates a current-engine semantic invariant is rejected', () => {
     const bad = clone();
     // `unknown` runtime compatibility may never be recorded as `upstream-only`.
-    for (const candidate of bad.candidates) {
-      if (candidate.runtimeCompatibility === 'unknown') candidate.severity = 'upstream-only';
+    const candidate = bad.candidates.find((entry) => (entry.runtimeAnalyses?.length ?? 0) > 0);
+    assert.ok(candidate, 'fixture must contain a runtime-analyzed candidate');
+    candidate.runtimeCompatibility = 'unknown';
+    candidate.recommendation = 'upgrade-after-review';
+    candidate.severity = 'upstream-only';
+    for (const analysis of candidate.runtimeAnalyses) {
+      analysis.state = 'unknown';
+      analysis.reason = 'no-declaration';
+      analysis.siteCount = 0;
+      analysis.declarationCount = 0;
+      analysis.unresolvedCount = 0;
     }
     assert.throws(
       () => validateAuditInvariants(bad, 'scrapy.json', true, bad.engine),

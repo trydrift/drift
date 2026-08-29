@@ -1,8 +1,5 @@
 const RUNTIME_STATES = ['compatible', 'incompatible', 'partial', 'unknown'];
-// `unchecked` is accepted only for the pre-#170 generated corpus. PR 4
-// regenerates that corpus and removes this migration allowance; live severity
-// computation no longer produces the overloaded value.
-const SEVERITIES = ['affected', 'verification-failed', 'review-required', 'runtime-unresolved', 'evidence-missing', 'upstream-only', 'clean', 'error', 'pending', 'unchecked'];
+const SEVERITIES = ['affected', 'verification-failed', 'review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing', 'upstream-only', 'clean', 'error', 'pending'];
 const STATE_ORDER = ['incompatible', 'partial', 'unknown', 'compatible'];
 
 /** Validate recorded runtime answers without reconstructing production logic. */
@@ -54,7 +51,7 @@ export function validateRuntimeCompatibilityState(candidate, recordingName) {
       compatible: ['satisfies'],
       incompatible: ['violates'],
       partial: ['overlaps'],
-      unknown: ['dynamic', 'no-declaration', 'unparseable', 'not-analyzed'],
+      unknown: ['dynamic', 'no-declaration', 'unparseable', 'not-analyzed', 'config-incomplete'],
     };
     if (!expectedReasons[analysis.state].includes(analysis.reason)) {
       throw new Error(`${where} claims ${analysis.runtime} ${analysis.state} for reason ${analysis.reason}`);
