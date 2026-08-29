@@ -1,9 +1,13 @@
-import semver from 'semver';
 import type { Ecosystem } from '../types.js';
-import { normalizeVersion } from '../detect/version.js';
 import { fetchRegistryInfo } from '../evidence/registry.js';
 import { fetchOpamPackageVersions } from '../evidence/opam-repository.js';
 import { fetchJson } from '../util/http.js';
+import {
+  compareParsedVersions,
+  parsePublishedVersion,
+  versionSemantics,
+  type ParsedPublishedVersion,
+} from '../version-semantics.js';
 
 /**
  * "Is there a newer version of this, and can I even tell?"
@@ -57,69 +61,16 @@ export interface VersionLookupRequest {
  * `raw` is the registry identity and is the only value returned to callers;
  * `comparable` exists solely so releases can be ordered locally.
  */
-export interface PublishedVersion {
-  raw: string;
-  comparable: string;
-  prerelease: boolean;
-}
-
-const SEMVER_ECOSYSTEMS = new Set<Ecosystem>(['npm', 'cargo', 'go', 'swift']);
+export type PublishedVersion = ParsedPublishedVersion;
 
 /** Parse a registry version without changing its upstream identity. */
 export function publishedVersion(raw: string, ecosystem: Ecosystem): PublishedVersion | null {
-  const identity = raw.trim();
-  if (!identity) return null;
-
-  if (SEMVER_ECOSYSTEMS.has(ecosystem)) {
-    const comparable = semver.valid(identity) ?? semver.valid(identity.replace(/^v(?=\d)/, ''));
-    if (!comparable) return null;
-    return { raw: identity, comparable, prerelease: semver.prerelease(comparable) !== null };
-  }
-
-  // Registry grammars differ, but all supported registries publish ordered
-  // numeric/alphanumeric release identifiers. Keep their spelling untouched
-  // and build a stable comparison key instead of coercing it into SemVer.
-  if (!/\d/.test(identity) || /\s/.test(identity)) return null;
-  const comparable = identity.replace(/^v(?=\d)/i, '');
-  const prerelease =
-    ecosystem === 'pypi'
-      ? /(?:^|[.\-_])(?:a|b|rc|dev)\d*(?:$|[.\-_])/i.test(comparable) || /\d(?:a|b|rc|dev)\d*/i.test(comparable)
-      : ecosystem === 'rubygems'
-        ? /[a-z]/i.test(comparable)
-        : /(?:^|[.\-_])(?:alpha|beta|pre|preview|rc|snapshot|dev)\d*(?:$|[.\-_])/i.test(comparable);
-  return { raw: identity, comparable, prerelease };
-}
-
-function versionTokens(version: PublishedVersion): (number | string)[] {
-  const out: (number | string)[] = [];
-  for (const part of version.comparable.toLowerCase().split(/([0-9]+)/).filter(Boolean)) {
-    if (/^\d+$/.test(part)) out.push(Number(part));
-    else out.push(...part.split(/[.\-_+]/).filter(Boolean));
-  }
-  while (out.length > 1 && out.at(-1) === 0) out.pop();
-  return out;
+  return parsePublishedVersion(raw, ecosystem);
 }
 
 /** Ecosystem-local ordering. Raw values are never returned from this helper. */
 export function comparePublishedVersions(a: PublishedVersion, b: PublishedVersion): number {
-  if (semver.valid(a.comparable) && semver.valid(b.comparable)) {
-    return semver.compare(a.comparable, b.comparable);
-  }
-  const left = versionTokens(a);
-  const right = versionTokens(b);
-  const length = Math.max(left.length, right.length);
-  for (let i = 0; i < length; i++) {
-    const x = left[i];
-    const y = right[i];
-    if (x === y) continue;
-    if (x === undefined) return b.prerelease ? 1 : -1;
-    if (y === undefined) return a.prerelease ? -1 : 1;
-    if (typeof x === 'number' && typeof y === 'number') return x < y ? -1 : 1;
-    if (typeof x === 'number') return 1;
-    if (typeof y === 'number') return -1;
-    return x.localeCompare(y);
-  }
-  return 0;
+  return compareParsedVersions(a, b) ?? 0;
 }
 
 interface NpmPackument {
@@ -248,7 +199,11 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
     };
   }
 
-  const newer = parsed
+  // A stable installation does not opt into prereleases merely because the
+  // registry has no newer stable release. Once already on a prerelease, the
+  // ecosystem ordering may progress through prereleases and into the final.
+  const eligible = comparisonCurrent.prerelease ? parsed : parsed.filter((version) => !version.prerelease);
+  const newer = eligible
     .filter((version) => comparePublishedVersions(version, comparisonCurrent) > 0)
     .sort((a, b) => comparePublishedVersions(b, a));
 
@@ -256,8 +211,10 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
 
   const latest =
     ecosystem === 'swift'
-      ? parsed.filter((version) => !version.prerelease).sort((a, b) => comparePublishedVersions(b, a))[0] ?? parsed[0]
-      : publishedLatest ?? newer.find((version) => !version.prerelease) ?? newer[0];
+      ? newer[0]
+      : publishedLatest && (comparisonCurrent.prerelease || !publishedLatest.prerelease)
+        ? publishedLatest
+        : newer[0];
   if (!latest || comparePublishedVersions(latest, comparisonCurrent) <= 0) return { outcome: 'up-to-date' };
 
   // Computed over every published version, never over the truncated list the
@@ -270,10 +227,9 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
   // versions of zod came back as one release and nine canaries, with no 3.x in
   // sight — the safe upgrade was not merely hard to find, it was not on the
   // list. The in-range version is now pinned into the list by construction.
-  const onPrerelease = comparisonCurrent.prerelease;
-  const stable = newer.filter((version) => onPrerelease || !version.prerelease);
+  const stable = newer;
 
-  const withinMajor = latestWithinMajor(stable, comparisonCurrent);
+  const withinMajor = latestWithinMajor(stable, comparisonCurrent, ecosystem);
 
   const versions = [
     ...new Map([latest, ...(safe ? [safe] : []), ...(withinMajor ? [withinMajor] : []), ...stable.slice(0, 18)].map((version) => [version.raw, version])).values(),
@@ -297,7 +253,7 @@ type VersionFamily = 'semver' | 'calendar' | 'unknown';
 function versionFamily(raw: string): VersionFamily {
   const value = raw.trim().replace(/^[^\d]*/, '');
   if (/^\d{4}[.-]\d{1,2}[.-]\d{1,2}(?:[.-]\d+)?(?:$|[-+])/.test(value)) return 'calendar';
-  return normalizeVersion(raw) ? 'semver' : 'unknown';
+  return parsePublishedVersion(raw, 'swift') ? 'semver' : 'unknown';
 }
 
 /**
@@ -439,15 +395,14 @@ async function opamRepositoryVersions(
  * Returns undefined when the only thing ahead is a major bump — in which case
  * offering it would be offering a choice that does not exist.
  */
-function latestWithinMajor(versions: readonly PublishedVersion[], current: PublishedVersion): PublishedVersion | undefined {
-  const parsed = semver.parse(current.comparable);
-  if (!parsed) return undefined;
-
+function latestWithinMajor(
+  versions: readonly PublishedVersion[],
+  current: PublishedVersion,
+  ecosystem: Ecosystem,
+): PublishedVersion | undefined {
+  const semantics = versionSemantics(ecosystem);
   return versions
-    .filter((version) => {
-      const next = semver.parse(version.comparable);
-      return next !== null && next.major === parsed.major && comparePublishedVersions(version, current) > 0;
-    })
+    .filter((version) => semantics.sameCompatibilityLine(current, version) === true)
     .sort((a, b) => comparePublishedVersions(b, a))[0];
 }
 
@@ -483,53 +438,14 @@ function safeLatest(
   range: string,
   ecosystem: Ecosystem,
 ): PublishedVersion | undefined {
+  const semantics = versionSemantics(ecosystem);
   const candidates = versions.filter((version) => comparePublishedVersions(version, current) > 0);
-
-  // Ruby's `~>` pessimistic operator has no npm-semver equivalent: `semver`
-  // still parses it (as `~`, which narrows differently) rather than failing,
-  // so relying on `validRange`'s success/failure to decide when to use it
-  // would silently misinterpret the range instead of falling back.
-  const rubyBound = ecosystem === 'rubygems' ? rubyPessimisticUpperBound(range) : null;
-  if (rubyBound) {
-    const upper = publishedVersion(rubyBound, ecosystem);
-    return upper
-      ? candidates.filter((version) => comparePublishedVersions(version, upper) < 0).sort((a, b) => comparePublishedVersions(b, a))[0]
-      : undefined;
-  }
-
-  const validRange = semver.validRange(range);
-  if (validRange) {
-    return candidates
-      .filter((version) => semver.valid(version.comparable) && semver.satisfies(version.comparable, validRange))
-      .sort((a, b) => comparePublishedVersions(b, a))[0];
-  }
-
-  const parsed = semver.parse(current.comparable);
-  if (!parsed) return undefined;
-
-  const sameCompatibilityBand = candidates.filter((version) => {
-    const next = semver.parse(version.comparable);
-    if (!next) return false;
-    if (parsed.major === 0) {
-      return next.major === 0 && next.minor === parsed.minor;
-    }
-    return next.major === parsed.major;
-  });
-
-  return sameCompatibilityBand.sort((a, b) => comparePublishedVersions(b, a))[0];
-}
-
-/**
- * Ruby's `~> a.b` allows anything up to (excluding) `(a+1).0`; `~> a.b.c`
- * allows anything up to (excluding) `a.(b+1).0` — the constraint locks
- * everything left of the rightmost declared component. Returns `null` for
- * anything that isn't a bare pessimistic constraint (compound ranges with
- * `,`/`&&`, or a non-`~>` operator), which falls back to the generic path.
- */
-function rubyPessimisticUpperBound(range: string): string | null {
-  const match = /^~>\s*(\d+)\.(\d+)(?:\.(\d+))?\s*$/.exec(range.trim());
-  if (!match) return null;
-  const [, major, minor, patch] = match;
-  // `~> 2.2.0` (patch declared) -> `< 2.3.0`; `~> 2.2` (patch omitted) -> `< 3.0.0`.
-  return patch !== undefined ? `${major}.${Number(minor) + 1}.0` : `${Number(major) + 1}.0.0`;
+  const satisfaction = candidates.map((version) => ({ version, satisfies: semantics.satisfies(version, range) }));
+  // Unknown range grammar fails closed. `latestMinor` may still be offered
+  // independently when the ecosystem defines a compatibility line.
+  if (satisfaction.some((item) => item.satisfies === null)) return undefined;
+  return satisfaction
+    .filter((item) => item.satisfies)
+    .map((item) => item.version)
+    .sort((a, b) => comparePublishedVersions(b, a))[0];
 }

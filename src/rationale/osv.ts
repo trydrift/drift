@@ -1,6 +1,5 @@
-import semver from 'semver';
 import type { Ecosystem } from '../types.js';
-import { normalizeVersion } from '../detect/version.js';
+import { compareParsedVersions, parsePublishedVersion } from '../version-semantics.js';
 import type {
   SecurityAssessment,
   SecurityDirection,
@@ -143,7 +142,7 @@ export async function assessSecurity(
     query(OSV_QUERY, osvQuery(name, osvEcosystem, to)),
   ]);
 
-  return compareSecurityResponses(currentRaw, targetRaw, from, to);
+  return compareSecurityResponses(currentRaw, targetRaw, from, to, ecosystem);
 }
 
 /**
@@ -213,7 +212,13 @@ export async function assessSecurityBatch(
     const targetRaw = responses[i * 2 + 1];
     out.set(
       covered[i]!.lookup,
-      compareSecurityResponses(currentRaw, targetRaw, covered[i]!.lookup.from, covered[i]!.lookup.to),
+      compareSecurityResponses(
+        currentRaw,
+        targetRaw,
+        covered[i]!.lookup.from,
+        covered[i]!.lookup.to,
+        covered[i]!.lookup.ecosystem,
+      ),
     );
   }
 
@@ -225,6 +230,7 @@ function compareSecurityResponses(
   targetRaw: unknown | null | undefined,
   from: string,
   to: string,
+  ecosystem: Ecosystem,
 ): SecurityAssessment {
   // A network failure is not an all-clear. Both sides must have answered for
   // the comparison between them to mean anything — an empty `{}` body is an
@@ -238,8 +244,8 @@ function compareSecurityResponses(
     );
   }
 
-  const current = readVulnerabilities(currentRaw, from);
-  const target = readVulnerabilities(targetRaw, to);
+  const current = readVulnerabilities(currentRaw, from, ecosystem);
+  const target = readVulnerabilities(targetRaw, to, ecosystem);
 
   const resolved = current.filter((v) => !appearsIn(v, target));
   const introduced = target.filter((v) => !appearsIn(v, current));
@@ -300,7 +306,7 @@ export function unchecked(reason?: string): SecurityAssessment {
 }
 
 /** Read an OSV query response into Drift's shape. Tolerates every field being absent. */
-export function readVulnerabilities(payload: unknown, version: string): Vulnerability[] {
+export function readVulnerabilities(payload: unknown, version: string, ecosystem: Ecosystem = 'npm'): Vulnerability[] {
   const vulns = (payload as { vulns?: OsvVuln[] } | null)?.vulns;
   if (!Array.isArray(vulns)) return [];
 
@@ -314,13 +320,13 @@ export function readVulnerabilities(payload: unknown, version: string): Vulnerab
       summary: firstSentence(vuln.summary || vuln.details || 'No summary published.'),
       severity: readSeverity(vuln),
       url: advisoryUrl(vuln),
-      fixedIn: firstFixedVersion(vuln, version),
+      fixedIn: firstFixedVersion(vuln, version, ecosystem),
     });
   }
 
   // Most serious first: a reader who stops after one line should have read the
   // one that mattered.
-  return mergeAliases(out).sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
+  return mergeAliases(out, ecosystem).sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
 }
 
 /**
@@ -337,7 +343,7 @@ export function readVulnerabilities(payload: unknown, version: string): Vulnerab
  * record usually does not — and the group's identifiers are merged onto it, so
  * nothing a reader might search for is lost.
  */
-export function mergeAliases(vulnerabilities: readonly Vulnerability[]): Vulnerability[] {
+export function mergeAliases(vulnerabilities: readonly Vulnerability[], ecosystem: Ecosystem = 'npm'): Vulnerability[] {
   const groupOf = new Map<string, number>();
   const groups: Vulnerability[][] = [];
 
@@ -358,18 +364,18 @@ export function mergeAliases(vulnerabilities: readonly Vulnerability[]): Vulnera
       ...lead,
       aliases: [...identifiers].sort(),
       // The lowest stated fix is the one that actually clears the advisory.
-      fixedIn: lowestVersion(group.map((v) => v.fixedIn)),
+      fixedIn: lowestVersion(group.map((v) => v.fixedIn), ecosystem),
       summary: group.find((v) => v.summary !== 'No summary published.')?.summary ?? lead.summary,
     };
   });
 }
 
-function lowestVersion(versions: readonly (string | null)[]): string | null {
+function lowestVersion(versions: readonly (string | null)[], ecosystem: Ecosystem): string | null {
   const parsed = versions
     .filter((v): v is string => Boolean(v))
-    .map((raw) => ({ raw, parsed: normalizeVersion(raw) }))
-    .filter((v): v is { raw: string; parsed: string } => v.parsed !== null)
-    .sort((a, b) => semver.compare(a.parsed, b.parsed));
+    .map((raw) => ({ raw, parsed: parsePublishedVersion(raw, ecosystem) }))
+    .filter((v): v is { raw: string; parsed: NonNullable<typeof v.parsed> } => v.parsed !== null)
+    .sort((a, b) => compareParsedVersions(a.parsed, b.parsed) ?? 0);
   return parsed[0]?.raw ?? versions.find((v): v is string => Boolean(v)) ?? null;
 }
 
@@ -468,8 +474,8 @@ export function cvssBaseScore(vector: string): number | null {
  * where they are — quoting a fix from a range they have already passed would
  * send them to a version that does not help.
  */
-export function firstFixedVersion(vuln: OsvVuln, version: string): string | null {
-  const current = normalizeVersion(version);
+export function firstFixedVersion(vuln: OsvVuln, version: string, ecosystem: Ecosystem = 'npm'): string | null {
+  const current = parsePublishedVersion(version, ecosystem);
   const candidates: string[] = [];
 
   for (const affected of vuln.affected ?? []) {
@@ -482,16 +488,16 @@ export function firstFixedVersion(vuln: OsvVuln, version: string): string | null
   if (candidates.length === 0) return null;
 
   const comparable = candidates
-    .map((raw) => ({ raw, parsed: normalizeVersion(raw) }))
-    .filter((c): c is { raw: string; parsed: string } => c.parsed !== null);
+    .map((raw) => ({ raw, parsed: parsePublishedVersion(raw, ecosystem) }))
+    .filter((c): c is { raw: string; parsed: NonNullable<typeof c.parsed> } => c.parsed !== null);
 
   if (!current || comparable.length === 0) return candidates[0] ?? null;
 
   const ahead = comparable
-    .filter((c) => semver.gt(c.parsed, current))
-    .sort((a, b) => semver.compare(a.parsed, b.parsed));
+    .filter((c) => (compareParsedVersions(c.parsed, current) ?? -1) > 0)
+    .sort((a, b) => compareParsedVersions(a.parsed, b.parsed) ?? 0);
 
-  return (ahead[0] ?? comparable.sort((a, b) => semver.compare(a.parsed, b.parsed))[0])?.raw ?? null;
+  return (ahead[0] ?? comparable.sort((a, b) => compareParsedVersions(a.parsed, b.parsed) ?? 0)[0])?.raw ?? null;
 }
 
 /**

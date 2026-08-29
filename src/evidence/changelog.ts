@@ -1,6 +1,6 @@
-import semver from 'semver';
-import { normalizeVersion } from '../detect/version.js';
+import type { Ecosystem } from '../types.js';
 import { fetchText } from '../util/http.js';
+import { compareParsedVersions, parsePublishedVersion } from '../version-semantics.js';
 
 /** One version's worth of changelog prose. */
 export interface ChangelogSection {
@@ -164,7 +164,7 @@ export interface ChangelogLink {
  * Links are matched on the version in their text or their path, so both
  * `[3.90](…)` and `[Full changelog](changelog/v3/3.90/…)` resolve.
  */
-export function changelogIndexLinks(content: string): ChangelogLink[] {
+export function changelogIndexLinks(content: string, ecosystem: Ecosystem = 'npm'): ChangelogLink[] {
   const links: ChangelogLink[] = [];
   const seen = new Set<string>();
 
@@ -177,7 +177,7 @@ export function changelogIndexLinks(content: string): ChangelogLink[] {
     if (/^[a-z]+:/i.test(href) || href.startsWith('#')) continue;
     if (!/\.(md|markdown|rst|txt)$/i.test(href)) continue;
 
-    const version = extractVersion(text) ?? extractVersion(href.replace(/[/\\]/g, ' '));
+    const version = extractVersion(text, ecosystem) ?? extractVersion(href.replace(/[/\\]/g, ' '), ecosystem);
     if (!version) continue;
 
     const path = href.replace(/^\.?\//, '').split('#')[0]!;
@@ -202,6 +202,7 @@ export async function fetchChangelogDocuments(
   githubRepo: string,
   from: string,
   to: string,
+  ecosystem: Ecosystem = 'npm',
   options: { branches?: readonly string[]; maxDocuments?: number } = {},
 ): Promise<FetchedDocument[]> {
   const { branches = ['main', 'master'], maxDocuments = 12 } = options;
@@ -209,17 +210,17 @@ export async function fetchChangelogDocuments(
   const root = await fetchChangelog(githubRepo, branches);
   if (!root) return [];
 
-  if (sectionsBetween(parseChangelogSections(root.content), from, to).length > 0) return [root];
+  if (sectionsBetween(parseChangelogSections(root.content, ecosystem), from, to, ecosystem).length > 0) return [root];
 
-  const wanted = changelogIndexLinks(root.content).filter((link) =>
-    withinRange(link.version, from, to),
+  const wanted = changelogIndexLinks(root.content, ecosystem).filter((link) =>
+    withinRange(link.version, from, to, ecosystem),
   );
   if (wanted.length === 0) return [root];
 
   const documents = await Promise.all(
     // Newest first, so the cap keeps the releases nearest the target version.
     [...wanted]
-      .sort((a, b) => semver.rcompare(a.version, b.version))
+      .sort((a, b) => compareRawVersions(b.version, a.version, ecosystem))
       .slice(0, maxDocuments)
       .map(async (link): Promise<FetchedDocument | null> => {
         const content = await fetchText(
@@ -286,14 +287,18 @@ export async function fetchMigrationGuides(
 const MIGRATION_LINK = /migrat|upgrad/i;
 
 /** Is `version` inside `(from, to]`, in whichever direction the move goes? */
-function withinRange(version: string, from: string, to: string): boolean {
-  const lower = normalizeVersion(from);
-  const upper = normalizeVersion(to);
-  const target = normalizeVersion(version);
+function withinRange(version: string, from: string, to: string, ecosystem: Ecosystem): boolean {
+  const lower = parsePublishedVersion(from, ecosystem);
+  const upper = parsePublishedVersion(to, ecosystem);
+  const target = parsePublishedVersion(version, ecosystem);
   if (!lower || !upper || !target) return false;
 
-  const [lo, hi] = semver.gt(upper, lower) ? [lower, upper] : [upper, lower];
-  return semver.gt(target, lo) && semver.lte(target, hi);
+  const direction = compareParsedVersions(upper, lower);
+  if (direction === null) return false;
+  const [lo, hi] = direction > 0 ? [lower, upper] : [upper, lower];
+  const above = compareParsedVersions(target, lo);
+  const atMost = compareParsedVersions(target, hi);
+  return above !== null && atMost !== null && above > 0 && atMost <= 0;
 }
 
 /**
@@ -305,7 +310,7 @@ function withinRange(version: string, from: string, to: string): boolean {
  * version's body. This handles Keep-a-Changelog, `## v1.2.3 (2024-01-01)`,
  * `## [1.2.3](link)`, and bare `# 1.2.3` alike.
  */
-export function parseChangelogSections(content: string): ChangelogSection[] {
+export function parseChangelogSections(content: string, ecosystem: Ecosystem = 'npm'): ChangelogSection[] {
   const sections: ChangelogSection[] = [];
   const lines = content.split('\n');
 
@@ -316,7 +321,7 @@ export function parseChangelogSections(content: string): ChangelogSection[] {
     const heading = /^(#{1,4})\s(.*)$/.exec(line);
 
     if (heading) {
-      const version = extractVersion(heading[2]!.trimStart());
+      const version = extractVersion(heading[2]!.trimStart(), ecosystem);
       if (version) {
         if (current) {
           sections.push({ version: current.version, body: current.body.join('\n').trim(), line: current.line });
@@ -337,12 +342,19 @@ export function parseChangelogSections(content: string): ChangelogSection[] {
 }
 
 /** Pull a semver-parseable version out of a heading, ignoring dates and links. */
-function extractVersion(heading: string): string | null {
+function extractVersion(heading: string, ecosystem: Ecosystem): string | null {
   // Strip markdown link syntax so `## [1.2.3](url)` yields `1.2.3`.
   const text = heading.replace(/\[([^\]]{0,300})\]\([^)]{0,2000}\)/g, '$1');
-  const match = /\bv?(\d+\.\d+(?:\.\d+)?(?:[-+][\w.-]+)?)\b/.exec(text);
-  if (!match) return null;
-  return normalizeVersion(match[1]!);
+  const candidates = text.match(/(?:\d+!)?v?\d+(?:\.\d+)+(?:[A-Za-z][0-9A-Za-z.-]*|[-+][\w.-]+)?/g) ?? [];
+  for (const candidate of candidates) {
+    const direct = parsePublishedVersion(candidate, ecosystem);
+    if (direct) return direct.raw;
+    if (candidate.startsWith('v')) {
+      const stripped = parsePublishedVersion(candidate.slice(1), ecosystem);
+      if (stripped) return stripped.raw;
+    }
+  }
+  return null;
 }
 
 /**
@@ -356,20 +368,32 @@ export function sectionsBetween(
   sections: readonly ChangelogSection[],
   from: string,
   to: string,
+  ecosystem: Ecosystem = 'npm',
 ): ChangelogSection[] {
-  const lower = normalizeVersion(from);
-  const upper = normalizeVersion(to);
+  const lower = parsePublishedVersion(from, ecosystem);
+  const upper = parsePublishedVersion(to, ecosystem);
   if (!lower || !upper) return [];
 
   // Downgrades: the relevant prose is what you are losing, i.e. (to, from].
-  const [lo, hi] = semver.gt(upper, lower) ? [lower, upper] : [upper, lower];
+  const direction = compareParsedVersions(upper, lower);
+  if (direction === null) return [];
+  const [lo, hi] = direction > 0 ? [lower, upper] : [upper, lower];
 
   return sections
     .filter((s) => {
-      const v = normalizeVersion(s.version);
-      return v !== null && semver.gt(v, lo) && semver.lte(v, hi);
+      const version = parsePublishedVersion(s.version, ecosystem);
+      if (!version) return false;
+      const above = compareParsedVersions(version, lo);
+      const atMost = compareParsedVersions(version, hi);
+      return above !== null && atMost !== null && above > 0 && atMost <= 0;
     })
-    .sort((a, b) => semver.rcompare(normalizeVersion(a.version)!, normalizeVersion(b.version)!));
+    .sort((a, b) => compareRawVersions(b.version, a.version, ecosystem));
+}
+
+function compareRawVersions(a: string, b: string, ecosystem: Ecosystem): number {
+  const left = parsePublishedVersion(a, ecosystem);
+  const right = parsePublishedVersion(b, ecosystem);
+  return left && right ? (compareParsedVersions(left, right) ?? 0) : 0;
 }
 
 /**

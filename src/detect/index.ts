@@ -1,7 +1,8 @@
 import type { DependencyChange, Ecosystem } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import { matchesAny } from '../util/glob.js';
-import { classifyBump, isDowngrade, isZeroVerBreaking, normalizeVersion, normalizeVersionExact } from './version.js';
+import { classifyBump, isDowngrade, isZeroVerBreaking, normalizeVersion } from './version.js';
+import { classifyPackageRangeBump, comparePackageVersions, versionSemantics } from '../version-semantics.js';
 import { arduinoParser } from './ecosystems/arduino.js';
 import { cargoParser } from './ecosystems/cargo.js';
 import { conanParser } from './ecosystems/conan.js';
@@ -99,16 +100,22 @@ export function detectChanges(snapshots: readonly ManifestSnapshot[]): Dependenc
       // Unchanged, including "both unparseable in the same way".
       if (rawFrom === rawTo) continue;
 
-      const fromVersion = normalizeVersion(rawFrom);
-      const toVersion = normalizeVersion(rawTo);
+      const semantics = versionSemantics(parser.ecosystem);
+      const fromVersion = rawFrom === null ? null : semantics.exactVersion(rawFrom);
+      const toVersion = rawTo === null ? null : semantics.exactVersion(rawTo);
 
       // A range widening that resolves to the same version (`^1.2.0` -> `>=1.2.0`)
       // is churn, not a dependency change. Use the non-coercing comparison so a
       // real qualifier-only move (Maven's `1.0.0.Final` -> `1.0.0.SP1`) isn't
       // mistaken for churn just because both coerce to the same SemVer point.
-      const fromExact = normalizeVersionExact(rawFrom);
-      const toExact = normalizeVersionExact(rawTo);
-      if (fromExact && toExact && fromExact === toExact) continue;
+      const exactComparison =
+        fromVersion && toVersion ? comparePackageVersions(fromVersion, toVersion, parser.ecosystem) : null;
+      if (exactComparison === 0) continue;
+      if (parser.ecosystem === 'npm' && !fromVersion && !toVersion) {
+        const fromComparable = normalizeVersion(rawFrom);
+        const toComparable = normalizeVersion(rawTo);
+        if (fromComparable && fromComparable === toComparable) continue;
+      }
 
       const declaredKind = next?.kind ?? prev?.kind ?? 'runtime';
       const kind = fromLockfile && declaredKind === 'runtime' ? 'transitive' : declaredKind;
@@ -119,7 +126,9 @@ export function detectChanges(snapshots: readonly ManifestSnapshot[]): Dependenc
         from: fromVersion,
         to: toVersion,
         kind,
-        bump: classifyBump(rawFrom, rawTo),
+        bump: fromVersion && toVersion
+          ? classifyBump(fromVersion, toVersion, parser.ecosystem)
+          : classifyPackageRangeBump(rawFrom, rawTo, parser.ecosystem),
         manifestPath: snapshot.path,
         rawFrom,
         rawTo,
@@ -128,7 +137,18 @@ export function detectChanges(snapshots: readonly ManifestSnapshot[]): Dependenc
 
       const key = `${parser.ecosystem}:${manifestDir(snapshot.path)}:${name}`;
       const existing = byKey.get(key);
-      if (!existing || shouldPreferNew(existing, change, fromLockfile)) {
+      if (existing && existing.source !== change.source) {
+        const manifest = existing.source === 'manifest' ? existing : change;
+        const lock = existing.source === 'lockfile' ? existing : change;
+        const from = lock.from ?? manifest.from;
+        const to = lock.to ?? manifest.to;
+        byKey.set(key, {
+          ...manifest,
+          from,
+          to,
+          bump: classifyBump(from, to, parser.ecosystem),
+        });
+      } else if (!existing || shouldPreferNew(existing, change, fromLockfile)) {
         byKey.set(key, change);
       }
     }
@@ -205,6 +225,12 @@ function rejectionReason(
   if (matchesAny(config.ignore, change.name)) {
     return 'matched an `ignore` pattern in drift.yml';
   }
+  if (change.rawTo !== null && change.rawTo !== undefined && change.to === null) {
+    return 'target manifest range has no exact resolved registry version';
+  }
+  if (change.rawFrom !== null && change.rawFrom !== undefined && change.from === null) {
+    return 'previous manifest range has no exact resolved registry version';
+  }
   if (change.to === null) {
     return 'dependency was removed; removals need no compatibility fix';
   }
@@ -219,7 +245,7 @@ function rejectionReason(
   }
 
   // 0.x minors are breaking per semver, so they bypass the `minor` toggle.
-  const zeroVerBreaking = isZeroVerBreaking(change.from, change.to);
+  const zeroVerBreaking = isZeroVerBreaking(change.from, change.to, change.ecosystem);
 
   if (change.bump === 'major' && !config.triggerOn.major) {
     return 'major bumps are disabled in drift.yml (enable `triggerOn.major` to include these)';

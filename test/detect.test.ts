@@ -61,6 +61,11 @@ describe('npm detection', () => {
         before: JSON.stringify({ dependencies: { express: '^4.18.0' } }),
         after: JSON.stringify({ dependencies: { express: '^5.0.0' } }),
       },
+      {
+        path: 'package-lock.json',
+        before: JSON.stringify({ packages: { 'node_modules/express': { version: '4.18.0' } } }),
+        after: JSON.stringify({ packages: { 'node_modules/express': { version: '5.0.0' } } }),
+      },
     ]);
 
     assert.equal(changes.length, 1);
@@ -189,7 +194,9 @@ describe('python detection', () => {
 
     assert.equal(changes.length, 1, 'the python interpreter constraint is not a package');
     assert.equal(changes[0]?.name, 'flask');
-    assert.equal(changes[0]?.bump, 'major');
+    assert.equal(changes[0]?.bump, 'major', 'range movement can be classified without becoming an installed identity');
+    assert.equal(changes[0]?.from, null);
+    assert.equal(changes[0]?.to, null);
   });
 
   test('parses PEP 621 project dependencies', () => {
@@ -201,7 +208,7 @@ describe('python detection', () => {
       },
     ]);
     assert.equal(changes[0]?.name, 'httpx');
-    assert.equal(changes[0]?.to, '0.27.0');
+    assert.equal(changes[0]?.to, null, 'a lower bound is kept as a range, not promoted to registry identity');
   });
 });
 
@@ -263,7 +270,7 @@ describe('cargo and rubygems detection', () => {
       },
     ]);
     assert.equal(changes[0]?.name, 'serde');
-    assert.equal(changes[0]?.to, '1.0.200');
+    assert.equal(changes[0]?.to, null, 'Cargo manifest requirements are ranges without a lock resolution');
   });
 
   test('parses Gemfile group blocks', () => {

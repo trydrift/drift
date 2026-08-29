@@ -254,7 +254,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   const surfacePending = config.evidence.typeSurface ? surfaceEvidence(change, ctx) : null;
   const releasesPending =
     githubRepo && config.evidence.githubReleases
-      ? fetchReleaseNotes(githubRepo, change.from, change.to, {
+      ? fetchReleaseNotes(githubRepo, change.from, change.to, change.ecosystem, {
           token: ctx.githubToken,
           maxReleases: config.evidence.maxReleases,
         })
@@ -263,7 +263,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   // document per release, and the index that lists them is not itself prose.
   const changelogsPending =
     githubRepo && config.evidence.changelog
-      ? fetchChangelogDocuments(githubRepo, change.from, change.to)
+      ? fetchChangelogDocuments(githubRepo, change.from, change.to, change.ecosystem)
       : null;
   // Migration guides are the artefact LADU relies on exclusively. Drift
   // treats one as strong corroboration rather than the sole input, so a
@@ -315,7 +315,12 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     const documents = await changelogsPending;
 
     for (const changelog of documents) {
-      const sections = sectionsBetween(parseChangelogSections(changelog.content), change.from, change.to);
+      const sections = sectionsBetween(
+        parseChangelogSections(changelog.content, change.ecosystem),
+        change.from,
+        change.to,
+        change.ecosystem,
+      );
       const breaking = sections.some((section) => extractBreakingPassages(section.body).length > 0);
       ctx.onProseConsulted?.(change, {
         kind: 'changelog',
@@ -978,7 +983,7 @@ function formatSpecChanges(changes: readonly SpecChange[]): string {
  * clause, §8 is the one that permits arbitrary breakage across a major bump.
  */
 function semverClauseUrl(change: DependencyChange): string {
-  if (change.from && change.to && isZeroVerBreaking(change.from, change.to)) {
+  if (change.from && change.to && isZeroVerBreaking(change.from, change.to, change.ecosystem)) {
     return 'https://semver.org/#spec-item-4';
   }
   if (change.bump === 'major') return 'https://semver.org/#spec-item-8';
@@ -993,7 +998,7 @@ function describeSemver(change: DependencyChange): string | null {
     notes.push(
       `Major version bump ${change.from} → ${change.to}. Semver permits arbitrary breaking changes across a major boundary.`,
     );
-  } else if (isZeroVerBreaking(change.from, change.to)) {
+  } else if (isZeroVerBreaking(change.from, change.to, change.ecosystem)) {
     notes.push(
       `0.x minor bump ${change.from} → ${change.to}. Under semver §4 the minor position carries breaking changes while the major version is 0.`,
     );
@@ -1008,7 +1013,7 @@ function describeSemver(change: DependencyChange): string | null {
     notes.push(`Patch bump ${change.from} → ${change.to}. Breakage here is usually accidental.`);
   }
 
-  if (isDowngrade(change.from, change.to)) {
+  if (isDowngrade(change.from, change.to, change.ecosystem)) {
     notes.push(
       `This is a DOWNGRADE. Code written against ${change.from} may rely on APIs that do not exist in ${change.to}.`,
     );

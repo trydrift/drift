@@ -697,7 +697,7 @@ describe('a changelog that is an index of other changelogs', () => {
 
     assert.ok(paths.includes('changelog/v3/3.90/CHANGELOG-v3.90.md'));
     assert.ok(paths.includes('changelog/v4/4.2/CHANGELOG-v4.2.0.md'));
-    assert.equal(links.find((l) => l.path.includes('3.90'))?.version, '3.90.0');
+    assert.equal(links.find((l) => l.path.includes('3.90'))?.version, '3.90');
   });
 
   test('reads the version out of the path when the link text has none', () => {
