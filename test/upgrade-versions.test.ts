@@ -1,6 +1,6 @@
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { lookupVersions } from '../dist/upgrade/versions.js';
+import { lookupVersions, publishedVersion } from '../dist/upgrade/versions.js';
 import { scanTitle } from '../dist/upgrade/severity.js';
 import { clearHttpCache } from '../dist/util/http.js';
 
@@ -40,6 +40,40 @@ afterEach(() => {
 });
 
 describe('version lookup: the three honest outcomes', () => {
+  test('published versions preserve exact registry identity across ecosystem grammars', () => {
+    const cases = [
+      ['pypi', '2.14.0b1'],
+      ['pypi', '0.8.0rc1'],
+      ['pypi', '0.23'],
+      ['pypi', '3.11'],
+      ['rubygems', '4.0.0.beta1'],
+      ['opam', 'v0.17.0'],
+      ['maven', '2.4.0-b180830.0359'],
+    ] as const;
+
+    for (const [ecosystem, raw] of cases) {
+      assert.equal(publishedVersion(raw, ecosystem)?.raw, raw);
+    }
+  });
+
+  test('a selected PyPI prerelease is an exact version returned by PyPI', async () => {
+    const registryVersions = ['0.7.1', '0.8.0rc1'];
+    stubFetch(() => json({ releases: Object.fromEntries(registryVersions.map((version) => [version, []])) }));
+
+    const result = await lookupVersions({
+      name: 'defusedxml',
+      ecosystem: 'pypi',
+      current: '0.7.1',
+      range: '>=0.7.1',
+    });
+
+    assert.equal(result.outcome, 'upgrade');
+    if (result.outcome !== 'upgrade') return;
+    assert.equal(result.latest, '0.8.0rc1');
+    assert.ok(registryVersions.includes(result.latest));
+    assert.notEqual(result.latest, '0.8.0');
+  });
+
   test('a registry that answers with nothing newer is up-to-date', async () => {
     stubFetch(() => json({ 'dist-tags': { latest: '1.0.0' }, versions: { '1.0.0': {} } }));
 
