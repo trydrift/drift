@@ -216,6 +216,18 @@ export interface WalkOptions {
   members?: readonly string[];
 }
 
+/** Explicit completeness facts for consumers that reason from missing sites. */
+export interface WalkCoverage {
+  sourceFilesDiscovered: number;
+  sourceFilesIndexed: number;
+  sourceTruncated: boolean;
+  runtimeConfigsDiscovered: number;
+  runtimeConfigsIndexed: number;
+}
+
+/** Array-compatible so existing index/localization consumers need no adapter. */
+export type WalkResult = SourceFile[] & { coverage: WalkCoverage };
+
 /**
  * Read every analysable source file under `root`.
  *
@@ -226,7 +238,7 @@ export interface WalkOptions {
 export async function walkSourceFiles(
   root: string,
   options: WalkOptions = {},
-): Promise<SourceFile[]> {
+): Promise<WalkResult> {
   const { maxFileBytes = 512 * 1024, maxFiles = 5000, extraIgnores = [], members } = options;
   const ignored = new Set([...IGNORED_DIRECTORIES, ...extraIgnores]);
 
@@ -297,6 +309,8 @@ export async function walkSourceFiles(
   };
 
   const candidates = await list(root);
+  const runtimeConfigs = candidates.filter((candidate) => candidate.language === 'config');
+  const sourceCandidates = candidates.filter((candidate) => candidate.language !== 'config');
 
   // Phase two: read them, in candidate order, many at once.
   //
@@ -308,10 +322,7 @@ export async function walkSourceFiles(
   const files: SourceFile[] = [];
   let cursor = 0;
 
-  while (files.length < maxFiles && cursor < candidates.length) {
-    const take = candidates.slice(cursor, cursor + (maxFiles - files.length));
-    cursor += take.length;
-
+  const readCandidates = async (take: readonly Candidate[]): Promise<void> => {
     const read = await mapWithConcurrency(take, READ_CONCURRENCY, async (candidate) => {
       try {
         const info = await stat(candidate.full);
@@ -333,9 +344,31 @@ export async function walkSourceFiles(
         ...(members ? { member: memberOf(candidate.repoPath, members) } : {}),
       });
     }
+  };
+
+  // Authoritative configuration is completeness-critical and never spends a
+  // source-localization slot.
+  await readCandidates(runtimeConfigs);
+
+  let indexedSources = 0;
+  while (indexedSources < maxFiles && cursor < sourceCandidates.length) {
+    const before = files.length;
+    const take = sourceCandidates.slice(cursor, cursor + (maxFiles - indexedSources));
+    cursor += take.length;
+    await readCandidates(take);
+    indexedSources += files.length - before;
   }
 
-  return files.sort((a, b) => a.path.localeCompare(b.path));
+  const sorted = files.sort((a, b) => a.path.localeCompare(b.path)) as WalkResult;
+  const coverage: WalkCoverage = {
+    sourceFilesDiscovered: sourceCandidates.length,
+    sourceFilesIndexed: indexedSources,
+    sourceTruncated: cursor < sourceCandidates.length,
+    runtimeConfigsDiscovered: runtimeConfigs.length,
+    runtimeConfigsIndexed: files.filter((file) => file.language === 'config').length,
+  };
+  Object.defineProperty(sorted, 'coverage', { value: coverage, enumerable: false });
+  return sorted;
 }
 
 /**

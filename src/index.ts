@@ -51,7 +51,7 @@ export type { AnalyzeOptions, ProseMatch } from './analyze/index.js';
 export { buildIndex, unitAtLine, packageNameFromSpecifier } from './index/metarag.js';
 export type { RepoIndex, FileIndex, CodeUnit, ImportRecord } from './index/metarag.js';
 export { walkSourceFiles, languageOf, IGNORED_DIRECTORIES } from './index/walk.js';
-export type { SourceFile, Language, WalkOptions } from './index/walk.js';
+export type { SourceFile, Language, WalkOptions, WalkCoverage, WalkResult } from './index/walk.js';
 
 export { localize } from './localize/index.js';
 export type { LocalizeOptions } from './localize/index.js';

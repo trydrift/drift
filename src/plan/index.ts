@@ -65,6 +65,8 @@ export interface BuildPlanInput {
    * the distinction between searched-and-clean and never-searched.
    */
   localizationRan?: boolean;
+  /** True when the source cap did not truncate localization coverage. */
+  localizationComplete?: boolean;
   /** Checks that ran against this plan. Empty means nothing was verified. */
   verification?: readonly VerificationOutcome[];
   /** Surfaces the earlier stages looked at, and how that went. */
@@ -109,7 +111,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     breakingChanges,
     impactSites,
     input.runtimeAnalyses ?? input.rationale?.flatMap((entry) => entry.runtimeAnalyses ?? []) ?? [],
-    input.localizationRan ?? true,
+    (input.localizationRan ?? true) && (input.localizationComplete ?? true),
   );
 
   const graph = planCommitGraph({
@@ -169,7 +171,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
  */
 function assessAll(input: BuildPlanInput): BreakingChange[] {
   const { evidence, breakingChanges, impactSites } = input;
-  const localizationRan = input.localizationRan ?? true;
+  const localizationRan = (input.localizationRan ?? true) && (input.localizationComplete ?? true);
 
   return breakingChanges.map((change) => {
     const sites = impactSites.filter((site) => site.breakingChangeId === change.id);
@@ -223,6 +225,18 @@ function collectGaps(
   const { changes, evidence, impactSites, config } = input;
   const gaps: AnalysisGap[] = [];
   const localizationRan = input.localizationRan ?? true;
+
+  if (localizationRan && input.localizationComplete === false && breakingChanges.length > 0) {
+    gaps.push({
+      stage: 'localize',
+      surface: 'repository source',
+      reason:
+        'Source localization reached its file limit. Runtime configuration was still indexed completely, but zero local API sites is not an exhaustive absence claim.',
+      severity: 'blocking',
+      automaticExecution: 'blocks',
+      remediation: 'Raise the source indexing limit or narrow the scan to the relevant workspace.',
+    });
+  }
 
   if (!localizationRan && breakingChanges.length > 0) {
     gaps.push({

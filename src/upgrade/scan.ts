@@ -51,7 +51,7 @@ import {
 } from '../evidence/surface/types.js';
 import type { ProseSource } from '../evidence/index.js';
 import { analyze } from '../analyze/index.js';
-import { walkSourceFiles } from '../index/walk.js';
+import { walkSourceFiles, type WalkCoverage } from '../index/walk.js';
 import { buildIndex } from '../index/metarag.js';
 import { localizeWithRuntime } from '../localize/index.js';
 import { resolveModuleMaps } from '../localize/modules.js';
@@ -179,6 +179,8 @@ export interface UpgradeCandidate {
    * actually traced. See `SeverityInput.impactConfidence`.
    */
   impactConfidence: 'high' | 'medium' | 'low' | 'none';
+  /** Completeness facts for absence-of-local-usage claims. */
+  sourceCoverage?: WalkCoverage;
   /**
    * What Drift established about this repository's runtime relative to this
    * upgrade's runtime requirements, or absent when it announced none.
@@ -2238,7 +2240,14 @@ async function analyzeUpgrade(args: {
     localization.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
     const [rationale] = await measure('rationale', target.manager.ecosystem, () => buildRationale(
-      { changes: [change], evidence, breakingChanges, impactSites, runtimeAnalyses, localizationRan: true },
+      {
+        changes: [change],
+        evidence,
+        breakingChanges,
+        impactSites,
+        runtimeAnalyses,
+        localizationRan: !files.coverage.sourceTruncated,
+      },
       {
         config: args.config,
         logger: args.logger,
@@ -2270,6 +2279,7 @@ async function analyzeUpgrade(args: {
       breakingChanges,
       impactSites,
       runtimeAnalyses,
+      localizationComplete: !files.coverage.sourceTruncated,
       ...(rationale ? { rationale: [rationale] } : {}),
     });
 
@@ -2286,6 +2296,7 @@ async function analyzeUpgrade(args: {
         .reduce((count, disposition) => count + disposition.sites.length, 0),
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
       impactConfidence: strongestImpactConfidence(impactSites),
+      sourceCoverage: files.coverage,
       risk: plan.risk,
       summary: summarize(breakingChanges.length, breakingChanges, impactSites, args.dep.name, rationale),
       // Kept even when there are findings: "two breaking changes, and the type

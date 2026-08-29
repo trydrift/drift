@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { walkSourceFiles, languageOf, isRuntimeConfigPath } from '../dist/index/walk.js';
+import { discoverRuntimeDeclarations } from '../dist/rationale/runtime.js';
 
 /**
  * The walk reads directory listings concurrently and then reads the files it
@@ -103,6 +104,36 @@ describe('walking a repository for source files', () => {
       // And the same run, uncapped, is a superset in the same order.
       const all = await walkSourceFiles(root);
       assert.deepEqual(all.slice(0, 3).map((f) => f.path), capped.map((f) => f.path));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('authoritative runtime config survives a exhausted source budget and reports coverage', async () => {
+    const manySources = Object.fromEntries(
+      Array.from({ length: 24 }, (_, index) => [`src/${String(index).padStart(3, '0')}.go`, 'package source\n']),
+    );
+    const root = await fixture({
+      ...manySources,
+      'workhorse/go.mod': 'module example.com/workhorse\n\ngo 1.25.10\n',
+      '.python-version': '3.14\n',
+    });
+    try {
+      const files = await walkSourceFiles(root, { maxFiles: 5 });
+      assert.ok(files.some((file) => file.path === 'workhorse/go.mod'));
+      assert.ok(files.some((file) => file.path === '.python-version'));
+      assert.equal(files.filter((file) => file.language !== 'config').length, 5);
+      assert.deepEqual(files.coverage, {
+        sourceFilesDiscovered: 24,
+        sourceFilesIndexed: 5,
+        sourceTruncated: true,
+        runtimeConfigsDiscovered: 2,
+        runtimeConfigsIndexed: 2,
+      });
+      assert.deepEqual(
+        discoverRuntimeDeclarations(files, 'go').resolved.map((declaration) => declaration.requirement),
+        ['1.25.10'],
+      );
     } finally {
       await rm(root, { recursive: true, force: true });
     }
