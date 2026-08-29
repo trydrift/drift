@@ -41,6 +41,8 @@ export const DEPENDENCY_FILE_GLOBS: readonly string[] = [
   // Python
   '**/requirements*.txt',
   '**/constraints*.txt',
+  '**/requirements*.in',
+  '**/constraints*.in',
   '**/pyproject.toml',
   '**/poetry.lock',
   '**/uv.lock',

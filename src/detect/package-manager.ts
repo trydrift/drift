@@ -299,7 +299,10 @@ const MANAGERS: readonly PackageManager[] = [
     batchable: true,
     ecosystem: 'pypi',
     label: 'pip',
-    manifests: ['requirements.txt', 'pyproject.toml', 'setup.py'],
+    // A compiler output is a resolved graph; prefer its source declaration
+    // whenever both conventional files exist in a directory.
+    manifests: ['requirements.in', 'requirements.txt', 'pyproject.toml', 'setup.py'],
+    manifestPattern: /^(?:requirements|constraints)[\w.-]*\.(?:in|txt)$/i,
     lockfiles: [],
     outdated: { command: 'pip', args: ['list', '--outdated', '--format=json'] },
     // pip installs into the environment; it does not rewrite requirements.txt.

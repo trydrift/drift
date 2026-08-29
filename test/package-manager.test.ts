@@ -44,6 +44,8 @@ describe('package manager detection', () => {
     assert.deepEqual(ids(['pyproject.toml', 'poetry.lock']), ['poetry']);
     assert.deepEqual(ids(['pyproject.toml', 'uv.lock']), ['uv']);
     assert.deepEqual(ids(['requirements.txt']), ['pip']);
+    assert.deepEqual(ids(['requirements.in', 'requirements.txt']), ['pip']);
+    assert.deepEqual(ids(['requirements-docs.in']), ['pip']);
     assert.deepEqual(ids(['go.mod', 'go.sum']), ['go']);
     assert.deepEqual(ids(['Cargo.toml', 'Cargo.lock']), ['cargo']);
     assert.deepEqual(ids(['Gemfile', 'Gemfile.lock']), ['bundler']);
