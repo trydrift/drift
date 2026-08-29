@@ -379,7 +379,7 @@ async function surfaceOf(
             missing ? 'version-unavailable' : 'toolchain-failed',
             missing
               ? `crates.io has no ${request.name} ${version}; it may have been yanked, or the crate may be private.`
-              : `\`cargo public-api\` failed on ${request.name} ${version}: ${firstLine(result.stderr)}`,
+              : `\`cargo public-api\` failed on ${request.name} ${version}: ${summarizeCargoFailure(result.stderr)}`,
           ),
     };
   }
@@ -499,8 +499,61 @@ function escapeToml(value: string): string {
   return value.replace(/["\\]/g, '');
 }
 
-function firstLine(text: string): string {
-  return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
+/**
+ * Cargo narrates its progress on stderr before it says anything useful, so the
+ * first line of a failed run is almost always `Updating crates.io index`.
+ * Reporting that as the reason a crate could not be analysed told the
+ * developer nothing and, worse, read as though fetching the index were the
+ * failure.
+ */
+const CARGO_PROGRESS =
+  /^(Updating|Downloading|Downloaded|Compiling|Checking|Building|Blocking|Waiting|Adding|Locking|Installing|Fresh|Finished|Ignored|Removing|Unpacking|Verifying)\b/i;
+
+/**
+ * Causal diagnostics, most specific first. The first pattern that matches any
+ * line wins, so a concrete `error[E0433]` outranks the generic `error: could
+ * not compile ... due to 3 previous errors` summary Cargo prints after it.
+ */
+const CARGO_CAUSES: readonly RegExp[] = [
+  /^error\[E\d+\]/i,
+  /failed to select a version/i,
+  /no matching package/i,
+  /failed to run custom build command/i,
+  /requires rustc |rust-version|package requires.*rustc/i,
+  /linking with .* failed|error: linker|cannot find -l/i,
+  /feature .*(?:not found|does not exist|is not available)|does not have (?:the )?feature/i,
+  /^error: could not find/i,
+  /^error:/i,
+  /could not compile/i,
+];
+
+/**
+ * The one or two lines that actually explain a failed Cargo run.
+ *
+ * Full stderr is still carried in the run diagnostics; this is only what the
+ * developer is shown in place of the failure.
+ */
+export function summarizeCargoFailure(stderr: string): string {
+  const lines = stderr
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (lines.length === 0) return 'no output';
+
+  for (const pattern of CARGO_CAUSES) {
+    const index = lines.findIndex((line) => pattern.test(line));
+    if (index === -1) continue;
+    const cause = lines[index]!;
+    // A location or `caused by` line immediately after the diagnostic is the
+    // other half of the same sentence; anything else is noise.
+    const detail = lines[index + 1];
+    return detail && /^(-->|caused by:)/i.test(detail) ? `${cause} ${detail}` : cause;
+  }
+
+  // Nothing causal was printed. The last substantive line is a better account
+  // than the first progress line; if the run really only ever narrated
+  // progress, that narration is the honest answer.
+  return lines.filter((line) => !CARGO_PROGRESS.test(line)).at(-1) ?? lines[0]!;
 }
 
 async function commandWorks(
