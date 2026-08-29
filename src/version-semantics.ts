@@ -1,5 +1,12 @@
 import semver from 'semver';
 import type { BumpKind, Ecosystem } from './types.js';
+import {
+  compareMavenVersions,
+  mavenIsPrerelease,
+  mavenReleaseTuple,
+  parseMavenVersion,
+  type MavenComparableVersion,
+} from './maven-version.js';
 
 /** A registry identity paired with an ecosystem-owned comparison value. */
 export interface ParsedPublishedVersion {
@@ -28,12 +35,11 @@ type ComparableVersion =
   | { kind: 'semver'; value: string }
   | { kind: 'pep440'; value: Pep440Version }
   | { kind: 'ruby'; value: readonly RubyPart[] }
-  | { kind: 'maven'; value: readonly MavenPart[] }
+  | { kind: 'maven'; value: MavenComparableVersion }
   | { kind: 'nuget'; value: NugetVersion }
   | { kind: 'opam'; value: string };
 
 type RubyPart = number | string;
-type MavenPart = number | string;
 
 interface Pep440Version {
   epoch: number;
@@ -126,14 +132,17 @@ export function parsePublishedVersion(raw: string, ecosystem: Ecosystem): Parsed
   }
 
   if (ecosystem === 'maven') {
+    // Maven itself accepts any string, but a version Drift cannot anchor to a
+    // numeric release (`RELEASE`, `LATEST`, an unresolved `${revision}`) has no
+    // safe ordering here, so parsing fails closed rather than inventing one.
     if (!/^\d[0-9A-Za-z._+-]*$/.test(identity)) return null;
-    const value = mavenSegments(identity);
+    const value = parseMavenVersion(identity);
     return {
       raw: identity,
       ecosystem,
       prerelease: mavenIsPrerelease(value),
       comparable: { kind: 'maven', value },
-      release: leadingRelease(value),
+      release: mavenReleaseTuple(value),
     };
   }
 
@@ -178,7 +187,7 @@ export function compareParsedVersions(a: ParsedPublishedVersion, b: ParsedPublis
     case 'ruby':
       return compareRuby(a.comparable.value, (b.comparable as typeof a.comparable).value);
     case 'maven':
-      return compareMaven(a.comparable.value, (b.comparable as typeof a.comparable).value);
+      return compareMavenVersions(a.comparable.value, (b.comparable as typeof a.comparable).value);
     case 'nuget':
       return compareNuget(a.comparable.value, (b.comparable as typeof a.comparable).value);
     case 'opam':
@@ -505,42 +514,6 @@ function satisfiesRuby(version: ParsedPublishedVersion, range: string): boolean 
     }
   }
   return true;
-}
-
-const MAVEN_QUALIFIERS = new Map<string, number>([
-  ['alpha', -5], ['a', -5], ['beta', -4], ['b', -4], ['milestone', -3], ['m', -3],
-  ['rc', -2], ['cr', -2], ['snapshot', -1], ['', 0], ['final', 0], ['ga', 0], ['release', 0], ['sp', 1],
-]);
-
-function mavenSegments(raw: string): MavenPart[] {
-  return raw.toLowerCase().match(/[0-9]+|[a-z]+/g)?.map((part) => (/^\d+$/.test(part) ? Number(part) : part)) ?? [];
-}
-
-function mavenIsPrerelease(parts: readonly MavenPart[]): boolean {
-  return parts.some((part) => typeof part === 'string' && (MAVEN_QUALIFIERS.get(part) ?? -1) < 0);
-}
-
-function compareMaven(a: readonly MavenPart[], b: readonly MavenPart[]): number {
-  const length = Math.max(a.length, b.length);
-  for (let i = 0; i < length; i++) {
-    const leftPart = a[i];
-    const rightPart = b[i];
-    const left = leftPart ?? (typeof rightPart === 'string' ? '' : 0);
-    const right = rightPart ?? (typeof leftPart === 'string' ? '' : 0);
-    if (left === right) continue;
-    if (typeof left === 'number' && typeof right === 'number') return left < right ? -1 : 1;
-    if (typeof left === 'number') return right === '' ? compareNumber(left, 0) : 1;
-    if (typeof right === 'number') return left === '' ? compareNumber(0, right) : -1;
-    const leftRank = MAVEN_QUALIFIERS.get(left);
-    const rightRank = MAVEN_QUALIFIERS.get(right);
-    if (leftRank !== undefined || rightRank !== undefined) {
-      const cmp = compareNumber(leftRank ?? -0.5, rightRank ?? -0.5);
-      if (cmp) return cmp;
-    }
-    const cmp = left.localeCompare(right);
-    if (cmp) return cmp < 0 ? -1 : 1;
-  }
-  return 0;
 }
 
 function parseNuget(raw: string): NugetVersion | null {
