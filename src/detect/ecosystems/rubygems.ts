@@ -1,4 +1,5 @@
 import type { DependencyKind } from '../../types.js';
+import { parseLockfilePlatforms, resolveGemIdentity } from './rubygems-identity.js';
 import { basename, type DependencyMap, type ManifestParser } from './types.js';
 
 export const rubygemsParser: ManifestParser = {
@@ -69,9 +70,14 @@ function parseGemfile(content: string): DependencyMap {
 /**
  * Gemfile.lock resolved versions live under `GEM > specs:` at 4-space indent
  * for top-level gems; deeper indents are that gem's own dependencies.
+ *
+ * A spec token can carry a `Gem::Platform` suffix (`4.36.0-x86_64-linux-gnu`).
+ * The platform is recorded separately so version ordering, registry lookups,
+ * and upgrade discovery only ever see the RubyGems version.
  */
 function parseGemfileLock(content: string): DependencyMap {
   const out: DependencyMap = new Map();
+  const platforms = parseLockfilePlatforms(content);
   let inSpecs = false;
 
   for (const raw of content.split('\n')) {
@@ -88,7 +94,13 @@ function parseGemfileLock(content: string): DependencyMap {
     if (!inSpecs) continue;
 
     const spec = /^ {4}([A-Za-z0-9_.-]+) \(([^)]+)\)$/.exec(line);
-    if (spec) out.set(spec[1]!, { version: spec[2]!, kind: 'transitive' });
+    if (!spec) continue;
+    const identity = resolveGemIdentity(spec[2]!, platforms);
+    out.set(spec[1]!, {
+      version: identity.version,
+      kind: 'transitive',
+      ...(identity.platform ? { platform: identity.platform } : {}),
+    });
   }
 
   return out;
