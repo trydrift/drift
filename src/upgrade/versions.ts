@@ -157,6 +157,18 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
     };
   }
 
+  // An identity Drift recognises but cannot order. Comparing published
+  // versions would be arbitrary, and "nothing is newer" would read as a clean
+  // bill of health for a question that was never answered. Explicitly
+  // supplied changes still reach analysis — see `parsePublishedVersion` — but
+  // *discovering* an upgrade needs an ordering.
+  if (comparisonCurrent.comparable.kind === 'opaque') {
+    return {
+      outcome: 'unchecked',
+      reason: `${name} is installed at “${current}”, and ${source} defines no single ordering for ${ecosystem} versions, so Drift cannot say whether a newer release exists.`,
+    };
+  }
+
   const published = await publishedVersions(request);
   if (!published) {
     return { outcome: 'unchecked', reason: `Drift could not reach ${source} for ${name}.` };

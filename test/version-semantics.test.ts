@@ -96,8 +96,32 @@ describe('canonical ecosystem version semantics', () => {
     ]);
   });
 
-  test('fails closed for package-authored schemes without one safe ordering', () => {
-    assert.equal(parsePublishedVersion('release-2026', 'conan'), null);
-    assert.equal(parsePublishedVersion('date#1', 'vcpkg'), null);
+  test('separates exact identity from ordering for package-authored schemes', () => {
+    // Conan and vcpkg let a recipe pick the version scheme, so there is no one
+    // correct ordering — but the identity is exact, and refusing to recognise
+    // it skipped every C/C++ change before the header differ could run.
+    for (const [ecosystem, raw] of [
+      ['conan', 'release-2026'],
+      ['conan', '10.2.1'],
+      ['vcpkg', 'date#1'],
+      ['vcpkg', '2023-01-25'],
+    ] as const) {
+      const parsed = parsePublishedVersion(raw, ecosystem);
+      assert.equal(parsed?.raw, raw);
+      assert.equal(parsed?.release, null, 'no release tuple is invented');
+    }
+
+    // Ordering stays unknown; equality is still provable from the identity.
+    assert.equal(comparePackageVersions('9.1.0', '10.2.1', 'conan'), null);
+    assert.equal(comparePackageVersions('10.2.1', '10.2.1', 'conan'), 0);
+
+    // A constraint is not an identity and still fails closed.
+    for (const [ecosystem, raw] of [
+      ['conan', '[>=1.0 <2.0]'],
+      ['conan', '*'],
+      ['vcpkg', '>=1.0'],
+    ] as const) {
+      assert.equal(parsePublishedVersion(raw, ecosystem), null, raw);
+    }
   });
 });
