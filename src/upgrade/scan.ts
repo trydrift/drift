@@ -13,7 +13,7 @@ import type {
 } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
-import { classifyBump, normalizeVersion } from '../detect/version.js';
+import { classifyBump } from '../detect/version.js';
 import { parserFor } from '../detect/index.js';
 import {
   describeCommand,
@@ -39,6 +39,7 @@ import {
 import { discoverNestedProjects, type NestedProject } from '../detect/nested.js';
 import { gatherDependencyEvidence } from '../evidence/index.js';
 import { buildRationale, finalizeRationale, prepareRationaleFacts, type PreparedRationaleFacts } from '../rationale/index.js';
+import type { RuntimeRequirementAnalysis } from '../rationale/compatibility.js';
 import { findNodeDeclarations, findPythonDeclarations } from '../rationale/runtime.js';
 import { assessSecurityBatch, unchecked as uncheckedSecurity, type SecurityLookup } from '../rationale/osv.js';
 import type { SecurityAssessment } from '../rationale/types.js';
@@ -75,8 +76,32 @@ import {
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
 import type { CargoDependencyPlacement } from '../detect/ecosystems/types.js';
+import { versionSemantics } from '../version-semantics.js';
+import {
+  isCompiledPythonRequirements,
+  isPythonRequirementsInputFile,
+} from '../detect/python-requirements.js';
 
 const run = promisify(execFile);
+
+/** Downgrade absence-based runtime conclusions when authoritative config coverage is incomplete. */
+export function accountForRuntimeConfigCoverage(
+  analyses: readonly RuntimeRequirementAnalysis[],
+  runtimeConfigComplete: boolean,
+): RuntimeRequirementAnalysis[] {
+  if (runtimeConfigComplete) return [...analyses];
+  return analyses.map((analysis) => {
+    // A declaration already shown to violate or overlap the requirement is a
+    // positive fact. An unread config elsewhere cannot make that fact vanish.
+    if (analysis.state === 'incompatible' || analysis.state === 'partial') return analysis;
+    return {
+      ...analysis,
+      state: 'unknown',
+      reason: 'config-incomplete',
+      statement: `${analysis.statement} Drift could not index every authoritative runtime configuration file, so this result is incomplete.`,
+    };
+  });
+}
 
 /**
  * Scanning a repository for available upgrades — not "what changed", which is
@@ -210,6 +235,7 @@ export interface UpgradeCandidate {
     siteCount: number;
     declarationCount: number;
     unresolvedCount: number;
+    statement: string;
   }[];
   /**
    * `impactCount` includes a compiler-provable finding that only a batch pass
@@ -512,13 +538,22 @@ export async function discoverTargets(
     }
 
     for (const entry of chooseManagers(detected, dir, preferences, rootDefaults)) {
+      const patterned = entry.manager.manifestPattern
+        ? entries.filter((file) => entry.manager.manifestPattern!.test(file))
+        : [];
       const manifest =
         entry.manager.manifests.find((f) => entries.includes(f)) ??
-        (entry.manager.manifestPattern
-          ? entries.find((f) => entry.manager.manifestPattern!.test(f))
-          : undefined);
+        patterned.find(isPythonRequirementsInputFile) ??
+        patterned[0];
       if (!manifest) continue;
-      const lockfile = entry.manager.lockfiles.find((f) => entries.includes(f)) ?? null;
+      let lockfile = entry.manager.lockfiles.find((f) => entries.includes(f)) ?? null;
+      if (entry.manager.id === 'pip' && isPythonRequirementsInputFile(manifest)) {
+        const compiled = manifest.replace(/\.in$/i, '.txt');
+        if (entries.includes(compiled)) {
+          const compiledContent = await fs.readFile(join(absolute, compiled));
+          if (compiledContent && isCompiledPythonRequirements(compiledContent)) lockfile = compiled;
+        }
+      }
       targets.push({
         manager: entry.manager,
         dir,
@@ -1270,7 +1305,7 @@ export async function scanUpgrades(args: {
       from: dep.current,
       to: selected,
       kind: dep.kind,
-      bump: classifyBump(dep.current, selected),
+      bump: classifyBump(dep.current, selected, dep.target.manager.ecosystem),
       manifestPath: dep.target.manifestPath,
       rawFrom: dep.current,
       rawTo: selected,
@@ -2110,7 +2145,7 @@ async function analyzeUpgrade(args: {
     from: args.dep.current,
     to: args.selected,
     kind: args.dep.kind,
-    bump: classifyBump(args.dep.current, args.selected),
+    bump: classifyBump(args.dep.current, args.selected, target.manager.ecosystem),
     manifestPath: target.manifestPath,
     rawFrom: args.dep.current,
     rawTo: args.selected,
@@ -2229,13 +2264,17 @@ async function analyzeUpgrade(args: {
     awaitIndex.end();
     const localizing = span('localize', target.manager.ecosystem, { changes: breakingChanges.length });
     const localization = diagSpan('localization', { package: args.dep.name, changes: breakingChanges.length, filesConsidered: files.length });
-    const { sites: impactSites, runtimeAnalyses } = localizeWithRuntime(breakingChanges, [change], index, files, {
+    const { sites: impactSites, runtimeAnalyses: localizedRuntimeAnalyses } = localizeWithRuntime(breakingChanges, [change], index, files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
       members: args.allMembers,
       ...(moduleMaps ? { moduleMaps } : {}),
     });
+    const runtimeAnalyses = accountForRuntimeConfigCoverage(
+      localizedRuntimeAnalyses,
+      files.coverage.runtimeConfigComplete,
+    );
     localizing.end({ sites: impactSites.length });
     localization.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
@@ -2246,7 +2285,8 @@ async function analyzeUpgrade(args: {
         breakingChanges,
         impactSites,
         runtimeAnalyses,
-        localizationRan: !files.coverage.sourceTruncated,
+        localizationRan: true,
+        localizationComplete: !files.coverage.sourceTruncated,
       },
       {
         config: args.config,
@@ -2279,7 +2319,9 @@ async function analyzeUpgrade(args: {
       breakingChanges,
       impactSites,
       runtimeAnalyses,
+      localizationRan: true,
       localizationComplete: !files.coverage.sourceTruncated,
+      runtimeConfigComplete: files.coverage.runtimeConfigComplete,
       ...(rationale ? { rationale: [rationale] } : {}),
     });
 
@@ -2324,6 +2366,7 @@ async function analyzeUpgrade(args: {
                     siteCount: analysis.sites.length,
                     declarationCount: analysis.declarations.length,
                     unresolvedCount: analysis.unresolved.length,
+                    statement: analysis.statement,
                   })),
                 }
               : {}),
@@ -2520,7 +2563,12 @@ export async function directDependencies(
   const out: ScanDependency[] = [];
   for (const [name, entry] of declared) {
     if (!kinds.includes(entry.kind)) continue;
-    const current = normalizeVersion(locked?.get(name)?.version ?? entry.version);
+    const ecosystem = target.manager.ecosystem;
+    const resolved = locked?.get(name)?.version ?? null;
+    const semantics = versionSemantics(ecosystem);
+    const current = resolved
+      ? (semantics.exactVersion(resolved) ?? semantics.parse(resolved)?.raw ?? null)
+      : semantics.exactVersion(entry.version ?? '');
     if (!current) continue;
     out.push({
       name,

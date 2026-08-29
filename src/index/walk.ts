@@ -218,11 +218,14 @@ export interface WalkOptions {
 
 /** Explicit completeness facts for consumers that reason from missing sites. */
 export interface WalkCoverage {
+  localizationRan: boolean;
+  localizationComplete: boolean;
   sourceFilesDiscovered: number;
   sourceFilesIndexed: number;
   sourceTruncated: boolean;
   runtimeConfigsDiscovered: number;
   runtimeConfigsIndexed: number;
+  runtimeConfigComplete: boolean;
 }
 
 /** Array-compatible so existing index/localization consumers need no adapter. */
@@ -360,12 +363,17 @@ export async function walkSourceFiles(
   }
 
   const sorted = files.sort((a, b) => a.path.localeCompare(b.path)) as WalkResult;
+  const localizationComplete = indexedSources === sourceCandidates.length;
+  const runtimeConfigsIndexed = files.filter((file) => file.language === 'config').length;
   const coverage: WalkCoverage = {
+    localizationRan: true,
+    localizationComplete,
     sourceFilesDiscovered: sourceCandidates.length,
     sourceFilesIndexed: indexedSources,
-    sourceTruncated: cursor < sourceCandidates.length,
+    sourceTruncated: !localizationComplete,
     runtimeConfigsDiscovered: runtimeConfigs.length,
-    runtimeConfigsIndexed: files.filter((file) => file.language === 'config').length,
+    runtimeConfigsIndexed,
+    runtimeConfigComplete: runtimeConfigs.length === runtimeConfigsIndexed,
   };
   Object.defineProperty(sorted, 'coverage', { value: coverage, enumerable: false });
   return sorted;

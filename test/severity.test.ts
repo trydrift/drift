@@ -60,8 +60,40 @@ describe('a failed verification outranks a clean-looking result', () => {
 
   test('truncated source localization cannot become upstream-only', () => {
     const candidate = { ...base, breakingCount: 1, sourceCoverage: { sourceTruncated: true } };
-    assert.equal(severityOf(candidate), 'evidence-missing');
+    assert.equal(severityOf(candidate), 'localization-incomplete');
+    assert.match(describeSeverity(candidate), /^Localization Incomplete/);
     assert.doesNotMatch(describeSeverity(candidate), /none used here|safe/i);
+  });
+
+  test('truncation does not weaken a substantive no-breaking-change conclusion', () => {
+    const candidate = {
+      ...base,
+      recommendation: 'safe-to-upgrade',
+      sourceCoverage: { sourceTruncated: true, localizationComplete: false },
+    };
+    assert.equal(severityOf(candidate), 'clean');
+  });
+
+  test('a positive site outranks incomplete localization', () => {
+    const candidate = {
+      ...base,
+      breakingCount: 1,
+      impactCount: 1,
+      sourceCoverage: { sourceTruncated: true, localizationComplete: false },
+    };
+    assert.equal(severityOf(candidate), 'affected');
+  });
+
+  test('affected and review-required wording retain independent runtime uncertainty', () => {
+    const runtime = {
+      runtimeCompatibility: 'unknown' as const,
+      runtimeDeclarationSiteCount: 0,
+      runtimeAnalyses: [{ state: 'unknown' as const, reason: 'config-incomplete', statement: 'A runtime config could not be indexed.' }],
+    };
+    const affected = { ...base, ...runtime, impactCount: 1, actionableImpactCount: 1, impactFiles: 1 };
+    const review = { ...base, ...runtime, impactCount: 1, actionableImpactCount: 0, impactConfidence: 'low' as const };
+    assert.match(describeSeverity(affected), /runtime config could not be indexed/);
+    assert.match(describeSeverity(review), /runtime config could not be indexed/);
   });
 
   test('a real impact site still outranks a failed verification', () => {

@@ -40,6 +40,7 @@ export function deriveBreakingChangeDispositions(
   sites: readonly ImpactSite[],
   runtimeAnalyses: readonly RuntimeAnalysisDispositionInput[],
   localizationRan: boolean,
+  localizationComplete = true,
 ): BreakingChangeDisposition[] {
   const analysesById = new Map<string, RuntimeAnalysisDispositionInput[]>();
   for (const analysis of runtimeAnalyses) {
@@ -86,8 +87,11 @@ export function deriveBreakingChangeDispositions(
     if (changeSites.length > 0) {
       return { changeId: change.id, state: 'review-only', reason: 'low-confidence-impact', sites: changeSites, actionableSites };
     }
-    return localizationRan
+    if (!localizationRan) {
+      return { changeId: change.id, state: 'unknown', reason: 'not-localized', sites: [], actionableSites: [] };
+    }
+    return localizationComplete
       ? { changeId: change.id, state: 'unaffected', reason: 'no-local-impact', sites: [], actionableSites: [] }
-      : { changeId: change.id, state: 'unknown', reason: 'not-localized', sites: [], actionableSites: [] };
+      : { changeId: change.id, state: 'unknown', reason: 'localization-incomplete', sites: [], actionableSites: [] };
   });
 }

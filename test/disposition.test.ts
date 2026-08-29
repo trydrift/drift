@@ -88,6 +88,17 @@ describe('deriveBreakingChangeDispositions: API findings', () => {
     assert.equal(d.state, 'unknown');
     assert.equal(d.reason, 'not-localized');
   });
+
+  test('no hit in a partial localization is unknown, never unaffected', () => {
+    const d = only(deriveBreakingChangeDispositions([apiChange()], [], [], true, false));
+    assert.equal(d.state, 'unknown');
+    assert.equal(d.reason, 'localization-incomplete');
+  });
+
+  test('a positive hit remains actionable in a partial localization', () => {
+    const d = only(deriveBreakingChangeDispositions([apiChange()], [site('bc_api', 'high')], [], true, false));
+    assert.equal(d.state, 'actionable');
+  });
 });
 
 describe('deriveBreakingChangeDispositions: runtime findings resolve per change id', () => {

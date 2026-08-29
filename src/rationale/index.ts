@@ -121,6 +121,8 @@ export interface RationaleInput {
   runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
   /** Whether API/runtime localization actually ran for this repository. */
   localizationRan?: boolean;
+  /** Whether localization covered every eligible source file. */
+  localizationComplete?: boolean;
 }
 
 /**
@@ -427,6 +429,7 @@ export async function finalizeRationale(
         proseRead: prose.length,
         runtimeAnalyses,
         localizationRan: input.localizationRan,
+        localizationComplete: input.localizationComplete,
       };
       const assessment = assessUpgrade(assessmentInput);
 

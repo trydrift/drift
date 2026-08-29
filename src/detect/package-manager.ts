@@ -1,6 +1,7 @@
 import { basename } from 'node:path';
 import type { DependencyKind, Ecosystem } from '../types.js';
 import type { CargoDependencyPlacement } from './ecosystems/types.js';
+import { isPythonRequirementsFile } from './python-requirements.js';
 
 /**
  * Which tool actually owns the dependencies in a directory.
@@ -313,7 +314,7 @@ const MANAGERS: readonly PackageManager[] = [
       args: ['install', '--upgrade', `${name}==${version}`],
     }),
     rewriteManifest: (content, { name, version }, manifestPath) =>
-      basename(manifestPath).toLowerCase().endsWith('.txt')
+      isPythonRequirementsFile(manifestPath)
         ? rewriteRequirementsTxt(content, name, version)
         : rewritePythonQuotedRequirement(content, name, version),
   },

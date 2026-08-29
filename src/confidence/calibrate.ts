@@ -229,6 +229,8 @@ export interface LocalImpactInput {
   sites: readonly ImpactSite[];
   /** False when there was no checkout to search. */
   localizationRan: boolean;
+  /** False when the source walker searched only a bounded subset. */
+  localizationComplete?: boolean;
   runtimeState?: RuntimeCompatibilityState;
 }
 
@@ -277,6 +279,7 @@ export function assessLocalImpact(input: LocalImpactInput): ConfidenceScore {
     // the surfaces a search can cover. An endpoint change has no import edge,
     // so finding nothing says almost nothing.
     const unprovable = isLocallyUnprovable(taxonomy);
+    const incomplete = input.localizationComplete === false;
     // A runtime requirement has no symbol and no call site, so "searched the
     // importers and found no usage" is not merely unhelpful here -- it is
     // false, and it is the sentence that made an unresolved runtime condition
@@ -289,9 +292,17 @@ export function assessLocalImpact(input: LocalImpactInput): ConfidenceScore {
       evidence: [],
       penalties: [
         {
-          code: runtimeScoped ? 'runtime-compatibility-unresolved' : unprovable ? 'not-locally-checkable' : 'no-usage-found',
+          code: runtimeScoped
+            ? 'runtime-compatibility-unresolved'
+            : incomplete
+              ? 'localization-incomplete'
+              : unprovable
+                ? 'not-locally-checkable'
+                : 'no-usage-found',
           detail: runtimeScoped
             ? "This is a requirement on the runtime this repository builds and deploys on, not on any code it calls. No source search can answer it; the repository's own declared runtime version is what decides."
+            : incomplete
+              ? 'Drift searched the indexed source subset, but the file limit prevented an exhaustive absence claim.'
             : unprovable
               ? 'This change is only observable at runtime, so a source search cannot establish whether this repository is affected.'
               : 'Drift searched the files that import this dependency and found no usage of the affected symbols.',
@@ -524,6 +535,7 @@ export interface AssessmentInput {
   evidence: readonly Evidence[];
   sites: readonly ImpactSite[];
   localizationRan: boolean;
+  localizationComplete?: boolean;
   outcomes?: readonly VerificationOutcome[];
   checkedSurfaces?: readonly CheckedSurface[];
   gaps?: readonly AnalysisGap[];
@@ -538,6 +550,7 @@ export function assess(input: AssessmentInput): ConfidenceAssessment {
     taxonomy: input.taxonomy,
     sites: input.sites,
     localizationRan: input.localizationRan,
+    localizationComplete: input.localizationComplete,
     runtimeState: input.runtimeState,
   });
   const verification = assessVerification({

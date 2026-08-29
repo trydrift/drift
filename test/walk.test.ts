@@ -124,16 +124,35 @@ describe('walking a repository for source files', () => {
       assert.ok(files.some((file) => file.path === '.python-version'));
       assert.equal(files.filter((file) => file.language !== 'config').length, 5);
       assert.deepEqual(files.coverage, {
+        localizationRan: true,
+        localizationComplete: false,
         sourceFilesDiscovered: 24,
         sourceFilesIndexed: 5,
         sourceTruncated: true,
         runtimeConfigsDiscovered: 2,
         runtimeConfigsIndexed: 2,
+        runtimeConfigComplete: true,
       });
       assert.deepEqual(
         discoverRuntimeDeclarations(files, 'go').resolved.map((declaration) => declaration.requirement),
         ['1.25.10'],
       );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('an oversized authoritative runtime config makes config coverage incomplete', async () => {
+    const root = await fixture({
+      '.nvmrc': '22\n',
+      '.github/workflows/ci.yml': `name: ci\n${'x'.repeat(300)}\n`,
+      'src/app.ts': 'export const app = true;\n',
+    });
+    try {
+      const files = await walkSourceFiles(root, { maxFileBytes: 64 });
+      assert.equal(files.coverage.runtimeConfigsDiscovered, 2);
+      assert.equal(files.coverage.runtimeConfigsIndexed, 1);
+      assert.equal(files.coverage.runtimeConfigComplete, false);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
