@@ -453,12 +453,23 @@ export async function diffPackageModuleMetadata(
   ]);
   if (!before || !after) return [];
 
-  const beforeCjs = commonJsCompatibility(packageName, before);
-  const afterCjs = commonJsCompatibility(packageName, after);
+  // Node resolves a `.js` entry's format from the nearest `package.json`, so
+  // the directories an entry lives in are part of the evidence.
+  const [beforeScopes, afterScopes] = await Promise.all([
+    fetchPackageScopes(packageName, from, before),
+    fetchPackageScopes(packageName, to, after),
+  ]);
+
+  const beforeCjs = commonJsCompatibility(packageName, before, beforeScopes);
+  const afterCjs = commonJsCompatibility(packageName, after, afterScopes);
   const changes: SurfaceChange[] = [];
 
+  // A subpath's require condition may disappear and still leave a CommonJS
+  // resolution behind it (a plain `.cjs` string export, say). Only a subpath
+  // with no remaining proven CommonJS path is a break.
   const removedRequireConditions = [...beforeCjs.requireConditions].filter(
-    (condition) => !afterCjs.requireConditions.has(condition) && !afterCjs.commonJsExports.has(condition),
+    (condition) =>
+      !afterCjs.requireConditions.has(condition) && afterCjs.formats.get(condition) !== 'commonjs',
   );
   for (const removed of removedRequireConditions) {
     const affected = specifierForExportPath(packageName, removed);
@@ -482,7 +493,13 @@ export async function diffPackageModuleMetadata(
   }
 
   const rootRequireConditionRemoved = removedRequireConditions.includes('.');
-  if (beforeCjs.hasRootCommonJsEntry && !afterCjs.hasRootCommonJsEntry && !rootRequireConditionRemoved) {
+  const beforeRoot = beforeCjs.formats.get('.') ?? 'unknown';
+  const afterRoot = afterCjs.formats.get('.') ?? 'unknown';
+
+  // `esm`, not `!== 'commonjs'`. Claiming removal requires positive evidence
+  // that the target cannot serve a `require()` consumer; an entry Drift could
+  // not classify is unknown, and unknown is not proof.
+  if (beforeRoot === 'commonjs' && afterRoot === 'esm' && !rootRequireConditionRemoved) {
     changes.push({
       kind: 'commonjs-entry-removed',
       symbol: packageName,
@@ -499,7 +516,7 @@ export async function diffPackageModuleMetadata(
   } else if (
     before.type !== after.type
     && after.type === 'module'
-    && !afterCjs.hasRootCommonJsEntry
+    && afterRoot === 'esm'
     && !rootRequireConditionRemoved
   ) {
     changes.push({
@@ -520,20 +537,100 @@ export async function diffPackageModuleMetadata(
   return dedupeModuleMetadataChanges(changes);
 }
 
+/**
+ * What Drift can prove about the module format behind one resolved entry.
+ *
+ * `unknown` is a first-class answer. Node resolves a `.js` file's format from
+ * the *nearest* `package.json`, not the package root, so a root `"type":
+ * "module"` alone says nothing about `./dist/commonjs/index.js` — the
+ * de-facto dual-package layout puts a `{"type": "commonjs"}` marker in that
+ * directory. Reading `unknown` as `esm` is what produced a high-confidence
+ * "no longer exposes a CommonJS-compatible entry point" for packages that
+ * `require()` perfectly well.
+ */
+type ModuleFormat = 'commonjs' | 'esm' | 'unknown';
+
+/** Nested `package.json` markers: directory (no leading `./`) -> declared type. */
+export type PackageScopes = ReadonlyMap<string, string>;
+
+/**
+ * How many nested `package.json` markers one version is worth looking up.
+ * A dual build has one or two output directories; a package that would need
+ * more than this is left partly unknown rather than paid for.
+ */
+const MAX_NESTED_SCOPES = 6;
+
+/**
+ * Read the nested `package.json` markers for the directories this manifest's
+ * entry points live in.
+ *
+ * A directory that answers nothing simply stays absent, which leaves its
+ * entries `unknown`. A transport failure must never look like a declaration.
+ */
+async function fetchPackageScopes(
+  packageName: string,
+  version: string,
+  manifest: Manifest,
+): Promise<PackageScopes> {
+  const directories = [...entryDirectories(manifest)].sort().slice(0, MAX_NESTED_SCOPES);
+  const scopes = new Map<string, string>();
+  await Promise.all(
+    directories.map(async (directory) => {
+      const nested = await fetchJson<{ type?: unknown }>(
+        `${JSDELIVR_CDN}/${packageName}@${version}/${directory}/package.json`,
+      );
+      if (typeof nested?.type === 'string') scopes.set(directory, nested.type);
+    }),
+  );
+  return scopes;
+}
+
+/** Every non-root directory an entry point of this manifest resolves into. */
+function entryDirectories(manifest: Manifest): Set<string> {
+  const out = new Set<string>();
+  const add = (entry: unknown): void => {
+    if (typeof entry !== 'string') return;
+    const directory = entryDirectory(entry);
+    // A wildcard directory is not a real path and cannot be fetched.
+    if (directory && !directory.includes('*')) out.add(directory);
+  };
+  const walk = (value: unknown): void => {
+    if (typeof value === 'string') return add(value);
+    if (Array.isArray(value)) return value.forEach(walk);
+    if (value && typeof value === 'object') Object.values(value).forEach(walk);
+  };
+  walk(manifest.exports);
+  add(manifest.main);
+  add(manifest.module);
+  return out;
+}
+
 interface CommonJsCompatibility {
-  hasRootCommonJsEntry: boolean;
+  /** Export paths carrying an explicit `require` condition. */
   requireConditions: Set<string>;
+  /** Export path -> what a `require()` of it resolves to, as far as Drift knows. */
+  formats: Map<string, ModuleFormat>;
+  /** Export paths Drift can prove resolve to CommonJS. */
   commonJsExports: Set<string>;
   entrySummary: string;
 }
 
-function commonJsCompatibility(packageName: string, manifest: Manifest): CommonJsCompatibility {
+function commonJsCompatibility(
+  packageName: string,
+  manifest: Manifest,
+  scopes: PackageScopes = new Map(),
+): CommonJsCompatibility {
   const requireConditions = requireConditionsIn(manifest.exports);
-  const commonJsExports = commonJsExportsIn(manifest.exports, manifest);
-  const hasRootCommonJsEntry =
-    manifest.exports !== undefined
-      ? commonJsExports.has('.')
-      : entryLooksCommonJs(manifest.main, manifest) || entryLooksCommonJs('./index.js', manifest);
+  const formats = new Map<string, ModuleFormat>();
+  if (manifest.exports !== undefined) {
+    collectExportFormats(manifest.exports, '.', manifest, scopes, formats);
+  } else {
+    const main = entryFormat(manifest.main, manifest, scopes);
+    formats.set('.', main === 'unknown' ? entryFormat('./index.js', manifest, scopes) : main);
+  }
+  const commonJsExports = new Set(
+    [...formats].filter(([, format]) => format === 'commonjs').map(([path]) => path),
+  );
 
   const entrySummary = [
     `type: ${manifest.type ?? '(absent)'}`,
@@ -549,7 +646,7 @@ function commonJsCompatibility(packageName: string, manifest: Manifest): CommonJ
     .filter(Boolean)
     .join('\n') || '(no CommonJS-compatible entry point detected)';
 
-  return { hasRootCommonJsEntry, requireConditions, commonJsExports, entrySummary };
+  return { requireConditions, formats, commonJsExports, entrySummary };
 }
 
 function requireConditionsIn(exportsField: unknown): Set<string> {
@@ -573,26 +670,31 @@ function visitExports(value: unknown, path: string, out: Set<string>): void {
   }
 }
 
-function commonJsExportsIn(exportsField: unknown, manifest: Manifest): Set<string> {
-  const out = new Set<string>();
-  visitCommonJsExports(exportsField, '.', manifest, out);
-  return out;
-}
-
-function visitCommonJsExports(value: unknown, path: string, manifest: Manifest, out: Set<string>): void {
-  if (exportValueLooksCommonJs(value, manifest)) out.add(path);
-  if (Array.isArray(value)) {
-    for (const nested of value) visitCommonJsExports(nested, path, manifest, out);
+/**
+ * Record the format of every export path. `exportValueFormat` already folds
+ * arrays and condition objects, so recursion here is only for subpath maps.
+ */
+function collectExportFormats(
+  value: unknown,
+  path: string,
+  manifest: Manifest,
+  scopes: PackageScopes,
+  out: Map<string, ModuleFormat>,
+): void {
+  const subpaths = subpathEntries(value);
+  if (!subpaths.length) {
+    out.set(path, exportValueFormat(value, manifest, scopes));
     return;
   }
-  if (!value || typeof value !== 'object') return;
+  for (const [key, nested] of subpaths) collectExportFormats(nested, key, manifest, scopes, out);
+}
 
+/** The `.`/`./x` entries of a subpath map, looking through array alternatives. */
+function subpathEntries(value: unknown): [string, unknown][] {
+  if (Array.isArray(value)) return value.flatMap((nested) => subpathEntries(nested));
+  if (!value || typeof value !== 'object') return [];
   const entries = Object.entries(value as Record<string, unknown>);
-  const isSubpathMap = entries.some(([key]) => key === '.' || key.startsWith('./'));
-  if (!isSubpathMap) return;
-  for (const [key, nested] of entries) {
-    if (key === '.' || key.startsWith('./')) visitCommonJsExports(nested, key, manifest, out);
-  }
+  return entries.filter(([key]) => key === '.' || key.startsWith('./'));
 }
 
 function specifierForExportPath(packageName: string, exportPath: string): string {
@@ -604,24 +706,63 @@ function isExportPattern(exportPath: string): boolean {
   return exportPath.includes('*');
 }
 
-function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
-  if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
-  if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
-  if (!value || typeof value !== 'object') return false;
+function exportValueFormat(value: unknown, manifest: Manifest, scopes: PackageScopes): ModuleFormat {
+  if (typeof value === 'string') return entryFormat(value, manifest, scopes);
+  if (Array.isArray(value)) {
+    // Array alternatives: Node takes the first that resolves, so any branch
+    // that proves a CommonJS path is enough.
+    const formats = value.map((nested) => exportValueFormat(nested, manifest, scopes));
+    if (formats.includes('commonjs')) return 'commonjs';
+    return formats.includes('unknown') || formats.length === 0 ? 'unknown' : 'esm';
+  }
+  if (!value || typeof value !== 'object') return 'unknown';
 
   const record = value as Record<string, unknown>;
-  if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
-  if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
-  if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
-  return false;
+  if ('require' in record) {
+    // An explicit `require` condition is what Node loads for `require()`. It
+    // is positive evidence that a CommonJS resolution path exists, whatever
+    // the root `type` says — only an explicitly ESM target contradicts it.
+    const target = exportValueFormat(record.require, manifest, scopes);
+    return target === 'esm' ? 'esm' : 'commonjs';
+  }
+  const node = 'node' in record ? exportValueFormat(record.node, manifest, scopes) : null;
+  if (node === 'commonjs') return 'commonjs';
+  if ('default' in record) return exportValueFormat(record.default, manifest, scopes);
+  return node ?? 'unknown';
 }
 
-function entryLooksCommonJs(entry: string | undefined, manifest: Manifest): boolean {
-  if (!entry) return false;
-  if (/\.cjs$/i.test(entry)) return true;
-  if (/\.mjs$/i.test(entry)) return false;
-  if (/\.[jt]sx?$/i.test(entry)) return manifest.type !== 'module';
-  return manifest.type !== 'module';
+function entryFormat(entry: string | undefined, manifest: Manifest, scopes: PackageScopes): ModuleFormat {
+  if (!entry) return 'unknown';
+  if (/\.(cjs|cts)$/i.test(entry)) return 'commonjs';
+  if (/\.(mjs|mts)$/i.test(entry)) return 'esm';
+
+  const scope = nearestScope(entry, scopes);
+  if (scope) return scope === 'module' ? 'esm' : 'commonjs';
+
+  // No nested marker is known. At the package root the root `type` is the
+  // nearest scope and therefore authoritative; below it, a directory Drift
+  // has not inspected may declare its own, so the format is unknown.
+  return entryDirectory(entry) === '' ? (manifest.type === 'module' ? 'esm' : 'commonjs') : 'unknown';
+}
+
+/** The directory part of an entry path, normalised and without a leading `./`. */
+function entryDirectory(entry: string): string {
+  const normalized = entry.replace(/^\.\//, '').replace(/^\//, '');
+  const slash = normalized.lastIndexOf('/');
+  return slash === -1 ? '' : normalized.slice(0, slash);
+}
+
+/** The declared `type` of the nearest inspected package scope above `entry`. */
+function nearestScope(entry: string, scopes: PackageScopes): string | undefined {
+  if (scopes.size === 0) return undefined;
+  let directory = entryDirectory(entry);
+  for (;;) {
+    const declared = scopes.get(directory);
+    if (declared) return declared;
+    if (directory === '') return undefined;
+    const slash = directory.lastIndexOf('/');
+    directory = slash === -1 ? '' : directory.slice(0, slash);
+  }
 }
 
 function packageTypeSummary(manifest: Manifest): string {
