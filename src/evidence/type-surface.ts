@@ -1,4 +1,5 @@
 import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
+import { fetchNpmArtifact, type NpmArtifactResult } from './npm-artifact.js';
 import { count, measure } from '../util/profile.js';
 import { readComputed, writeComputed } from '../util/artifact-cache.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
@@ -323,7 +324,7 @@ export function clearTypeSurfaceCache(): void {
  * cannot change, so the only way this cache can be wrong is an unbumped parser
  * change, not staleness.
  */
-const SURFACE_PARSER_VERSION = 2;
+const SURFACE_PARSER_VERSION = 3;
 
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
@@ -347,14 +348,36 @@ async function computeTypeSurface(
   count('surface.diskCache.miss');
 
   const manifest = await fetchManifest(packageName, version);
-  const entryPath = await resolveTypesEntry(packageName, version, manifest);
+  let entryPath = await resolveTypesEntry(packageName, version, manifest);
+
+  // Nothing found. Saying "this package publishes no declarations" is an
+  // absence claim and needs positive provenance: something has to have
+  // enumerated what the version actually ships. `fileListing` is that
+  // provenance — jsDelivr's flat listing, or the registry's own tarball when
+  // jsDelivr will not answer. `emoji-regex@10.6.0` ships `index.d.ts` and was
+  // reported as having no declaration surface purely because jsDelivr did not
+  // answer for it.
+  let inspection: 'cdn' | NpmArtifactResult['state'] = 'cdn';
+  if (!entryPath) {
+    const enumerated = await fileListing(packageName, version);
+    if (!enumerated) {
+      const artifact = await fetchNpmArtifact(packageName, version);
+      inspection = artifact.state;
+    }
+  }
+
   // No manifest and no declaration fallback is a fact about the fetch, not
   // about the package: a yanked version, a private registry, a CDN that has not
   // mirrored this release. Saying "publishes no declarations" there would be
   // Drift reporting its own reach as the package's shortcoming. But if
   // DefinitelyTyped can still answer, take that evidence instead of stopping.
-  if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version);
-  if (!entryPath) return null;
+  if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version, inspection);
+  if (!entryPath) {
+    // Neither the CDN nor the artifact enumerated this version, so its
+    // contents were never inspected and absence is unproven.
+    if (inspection !== 'cdn') throw new VersionUnavailableError(packageName, version, inspection);
+    return null;
+  }
 
   const sources = await measure('surface-sources', packageName, () =>
     collectDeclarationSources(packageName, version, entryPath),
@@ -421,6 +444,12 @@ export class VersionUnavailableError extends Error {
   constructor(
     readonly packageName: string,
     readonly version: string,
+    /**
+     * How far inspection got. `artifact-unavailable` and `artifact-corrupt`
+     * are facts about the fetch; neither may be reported as a fact about what
+     * the package publishes.
+     */
+    readonly inspection: 'cdn' | 'ok' | 'artifact-unavailable' | 'artifact-corrupt' = 'cdn',
   ) {
     super(`${packageName}@${version} could not be fetched`);
     this.name = 'VersionUnavailableError';
@@ -438,8 +467,28 @@ interface Manifest {
   peerDependencies?: Record<string, string>;
 }
 
-function fetchManifest(packageName: string, version: string): Promise<Manifest | null> {
-  return fetchJson<Manifest>(`${JSDELIVR_CDN}/${packageName}@${version}/package.json`);
+async function fetchManifest(packageName: string, version: string): Promise<Manifest | null> {
+  const mirrored = await fetchJson<Manifest>(`${JSDELIVR_CDN}/${packageName}@${version}/package.json`);
+  if (mirrored) return mirrored;
+  const artifact = await fetchNpmArtifact(packageName, version);
+  return artifact.state === 'ok' ? ((artifact.artifact.packageJson as Manifest | null) ?? null) : null;
+}
+
+/**
+ * One published file's text: the CDN first, the published tarball after.
+ *
+ * A file the CDN will not serve is not a file the package does not ship, and
+ * every conclusion drawn from its absence would be wrong.
+ */
+async function fetchPublishedFile(
+  packageName: string,
+  version: string,
+  path: string,
+): Promise<string | null> {
+  const mirrored = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, { retries: 0 });
+  if (mirrored !== null) return mirrored;
+  const artifact = await fetchNpmArtifact(packageName, version);
+  return artifact.state === 'ok' ? artifact.artifact.read(path) : null;
 }
 
 export async function diffPackageModuleMetadata(
@@ -576,10 +625,16 @@ async function fetchPackageScopes(
   const scopes = new Map<string, string>();
   await Promise.all(
     directories.map(async (directory) => {
-      const nested = await fetchJson<{ type?: unknown }>(
-        `${JSDELIVR_CDN}/${packageName}@${version}/${directory}/package.json`,
-      );
-      if (typeof nested?.type === 'string') scopes.set(directory, nested.type);
+      const text = await fetchPublishedFile(packageName, version, `${directory}/package.json`);
+      if (!text) return;
+      try {
+        const nested: unknown = JSON.parse(text);
+        const type = (nested as { type?: unknown } | null)?.type;
+        if (typeof type === 'string') scopes.set(directory, type);
+      } catch {
+        // A marker Drift cannot parse leaves the directory unknown, which is
+        // the honest answer and never becomes a removal claim.
+      }
     }),
   );
   return scopes;
@@ -816,8 +871,13 @@ function fileListing(packageName: string, version: string): Promise<ReadonlySet<
     `${JSDELIVR_DATA}/${packageName}@${version}?structure=flat`,
     { immutable: true, retries: 0 },
   )
-    .then((body) => {
-      if (!body?.files) return null;
+    .then(async (body) => {
+      // jsDelivr is a fast path, not the authority on what npm published.
+      // When it will not answer, the registry's own tarball still will.
+      if (!body?.files) {
+        const artifact = await fetchNpmArtifact(packageName, version);
+        return artifact.state === 'ok' ? artifact.artifact.files : null;
+      }
       // jsDelivr names every file from the package root with a leading slash;
       // every path Drift asks about is relative, so the slash comes off here
       // rather than at each of the call sites.
@@ -1247,18 +1307,7 @@ async function resolveTypesEntry(
   // have probed them. Asked of the listing as one question, so the common case
   // costs no requests at all beyond the listing itself; a version with no
   // listing falls back to the same sequential probing as before.
-  const wanted: string[] = [];
-  if (pkg) {
-    const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
-    // A `types` field routinely points at a directory or an extensionless
-    // path (`"types": "dist/source"`) rather than a `.d.ts` file. Fetching it
-    // verbatim 404s and silently costs us the strongest evidence we have, so
-    // try the conventional expansions before giving up.
-    if (declared) wanted.push(...expandTypesEntry(normalizePath(declared)));
-    // A JS entry point often has a sibling declaration file.
-    if (pkg.main) wanted.push(normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts'));
-  }
-  wanted.push(...conventionalTypeEntries(packageName));
+  const wanted = typesEntryCandidates(packageName, pkg);
 
   const published = await firstPublished(packageName, version, wanted);
   if (published !== undefined) {
@@ -1277,6 +1326,28 @@ async function resolveTypesEntry(
   if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
 
   return null;
+}
+
+/**
+ * Every path a declaration entry point could be at, most likely first.
+ *
+ * Shared by the CDN-backed resolution and the tarball fallback, so both ask
+ * exactly the same question of whatever file list they hold.
+ */
+export function typesEntryCandidates(packageName: string, pkg: Manifest | null): string[] {
+  const wanted: string[] = [];
+  if (pkg) {
+    const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
+    // A `types` field routinely points at a directory or an extensionless
+    // path (`"types": "dist/source"`) rather than a `.d.ts` file. Fetching it
+    // verbatim 404s and silently costs us the strongest evidence we have, so
+    // try the conventional expansions before giving up.
+    if (declared) wanted.push(...expandTypesEntry(normalizePath(declared)));
+    // A JS entry point often has a sibling declaration file.
+    if (pkg.main) wanted.push(normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts'));
+  }
+  wanted.push(...conventionalTypeEntries(packageName));
+  return wanted;
 }
 
 /**
@@ -1368,7 +1439,7 @@ async function collectDeclarationSources(
 ): Promise<DeclarationSource[]> {
   if (entryPath.startsWith('@types:')) {
     const dtName = entryPath.slice('@types:'.length);
-    const content = await fetchText(`${JSDELIVR_CDN}/${dtName}@latest/index.d.ts`);
+    const content = await fetchPublishedFile(dtName, 'latest', 'index.d.ts');
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
@@ -1385,9 +1456,7 @@ async function collectDeclarationSources(
   const resolveGroup = async (candidates: readonly string[]): Promise<DeclarationSource | null> => {
     const published = listing ? (candidates.find((path) => listing.has(path)) ?? null) : undefined;
     for (const path of published === undefined ? candidates : published ? [published] : []) {
-      const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
-        retries: 0,
-      });
+      const content = await fetchPublishedFile(packageName, version, path);
       if (content) return { path, content };
     }
     return null;
@@ -1504,7 +1573,7 @@ function normalizePath(path: string): string {
 async function exists(packageName: string, version: string, path: string): Promise<boolean> {
   const published = await firstPublished(packageName, version, [path]);
   if (published !== undefined) return published !== null;
-  const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, { retries: 0 });
+  const content = await fetchPublishedFile(packageName, version, path);
   return content !== null;
 }
 

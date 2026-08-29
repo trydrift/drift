@@ -27,6 +27,13 @@ export type SurfaceUnavailableReason =
   | 'no-public-surface'
   /** One of the two versions could not be fetched (yanked, deleted, private). */
   | 'version-unavailable'
+  /**
+   * The published artifact itself could not be retrieved, so nothing about
+   * its contents was inspected. Never the same fact as "publishes nothing".
+   */
+  | 'artifact-unavailable'
+  /** The artifact was retrieved but could not be read as an archive. */
+  | 'artifact-corrupt'
   /** Output arrived in a shape this parser does not understand. */
   | 'parse-failed'
   /** No computed surface exists for this ecosystem at all. */

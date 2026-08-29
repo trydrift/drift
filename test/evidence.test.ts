@@ -262,8 +262,12 @@ describe('a package-level change with no declarations to compare it against', ()
           status: 200,
         });
       }
-      // No listing, no declaration file, no DefinitelyTyped package: this
-      // package has never shipped types.
+      // The listing enumerates both versions and neither ships a `.d.ts`, so
+      // the absence is proven rather than merely unfetched. No declaration
+      // file, no DefinitelyTyped package: this package has never shipped types.
+      if (isMetadataApi(url) && url.includes('demo@')) {
+        return new Response(JSON.stringify({ files: [{ name: '/package.json' }] }), { status: 200 });
+      }
       return new Response('', { status: 404 });
     });
 
@@ -356,9 +360,13 @@ describe('a package-level change with no declarations to compare it against', ()
       },
     );
 
-    const gap = gaps.find((g) => g.reason === 'version-unavailable');
-    assert.ok(gap, `expected a version-unavailable gap for the unreachable version; got ${JSON.stringify(gaps)}`);
-    assert.match(gap!.detail, /could not be fetched, so nothing was compared/);
+    // `artifact-unavailable` and `artifact-corrupt` are more precise members
+    // of the same family: Drift could not reach the thing it would inspect.
+    const gap = gaps.find((g) =>
+      ['version-unavailable', 'artifact-unavailable', 'artifact-corrupt'].includes(g.reason),
+    );
+    assert.ok(gap, `expected an unreachable-version gap; got ${JSON.stringify(gaps)}`);
+    assert.match(gap!.detail, /so nothing was compared/);
     // The specific lie this must never tell: wording indistinguishable from
     // the genuine-absence case above.
     assert.doesNotMatch(gap!.detail, /publishes no TypeScript declarations Drift could compare/);

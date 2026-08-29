@@ -521,14 +521,30 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       return null;
     }
     if (surface.unreachable) {
+      // Three different facts, kept apart. None of them is "this package
+      // publishes no declarations" — that claim requires having looked.
+      const detail =
+        surface.unreachableReason === 'artifact-corrupt'
+          ? `${surface.unreachable}'s published tarball could not be read, so nothing was compared. This is not evidence about what it publishes.`
+          : surface.unreachableReason === 'artifact-unavailable'
+            ? `${surface.unreachable}'s published tarball could not be retrieved from the npm registry, so nothing was compared. This is not evidence about what it publishes.`
+            : `${surface.unreachable} could not be fetched, so nothing was compared. That version may have been unpublished, or the CDN may not carry it.`;
       ctx.onUnavailableSurface?.(
         change,
-        unavailable(
-          'TypeScript declarations',
-          'version-unavailable',
-          `${surface.unreachable} could not be fetched, so nothing was compared. That version may have been unpublished, or the CDN may not carry it.`,
-        ),
+        unavailable('TypeScript declarations', surface.unreachableReason ?? 'version-unavailable', detail),
       );
+      // A declaration comparison that could not run does not erase a real
+      // package.json-level finding that did.
+      if (moduleMetadataChanges.length > 0) {
+        return surfaceRecord(change, {
+          changes: moduleMetadataChanges,
+          weight: WEIGHTS['type-surface-diff'],
+          locator: `${change.name}@${from}:package.json → ${change.name}@${to}:package.json`,
+          url: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+          beforeUrl: jsdelivrDeclarationUrl(change.name, from, 'package.json'),
+          afterUrl: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+        });
+      }
       return null;
     }
     if (surface.definitelyTyped) {
@@ -710,6 +726,12 @@ async function diffTypeSurfaces(
   afterEntryPath: string;
   unreachable?: string;
   /**
+   * Why the version was unreachable, when Drift got as far as the published
+   * artifact. Distinguishes "the tarball would not download" and "the tarball
+   * would not read" from a version that simply is not there.
+   */
+  unreachableReason?: 'artifact-unavailable' | 'artifact-corrupt';
+  /**
    * Both sides resolved to DefinitelyTyped.
    *
    * `@types/x` is fetched at `latest` because it carries no version of its own
@@ -777,6 +799,9 @@ async function diffTypeSurfaces(
         beforeEntryPath: '',
         afterEntryPath: '',
         unreachable: `${err.packageName}@${err.version}`,
+        ...(err.inspection === 'artifact-unavailable' || err.inspection === 'artifact-corrupt'
+          ? { unreachableReason: err.inspection }
+          : {}),
       };
     }
     return {
