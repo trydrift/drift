@@ -48,42 +48,23 @@ jobs:
 
           path = Path('src/evidence/type-surface.ts')
           source = path.read_text()
-          old = """function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
-            if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
-            if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
-            if (!value || typeof value !== 'object') return false;
 
-            const record = value as Record<string, unknown>;
-            if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
-            if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
-            if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
-            return false;
-          }
-          """
-          new = """function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
-            if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
-            if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
-            if (!value || typeof value !== 'object') return false;
+          needle = "if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);"
+          replacement = "if ('require' in record) return exportRequireValueLooksCommonJs(record.require);"
+          count = source.count(needle)
+          if count != 1:
+            raise SystemExit(f'expected one require handling line, found {count}')
+          source = source.replace(needle, replacement, 1)
 
-            const record = value as Record<string, unknown>;
-            if ('require' in record) return exportRequireValueLooksCommonJs(record.require);
-            if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
-            if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
-            return false;
-          }
+          anchor = "\nfunction entryLooksCommonJs(entry: string | undefined, manifest: Manifest): boolean {"
+          count = source.count(anchor)
+          if count != 1:
+            raise SystemExit(f'expected one entryLooksCommonJs anchor, found {count}')
 
-          /**
-           * An explicit `exports.require` branch is positive Node package-contract
-           * evidence that the selected target is meant for `require(...)`. Do not
-           * reinterpret an ambiguous `.js` target through the root package `type`:
-           * tshy-style dual packages commonly keep `type: module` at the root while
-           * routing `require` to a CommonJS build.
-           *
-           * An explicit ESM extension is contradictory evidence and remains unsafe.
-           */
+          helper = r'''
           function exportRequireValueLooksCommonJs(value: unknown): boolean {
             if (typeof value === 'string') {
-              if (/\\.mjs$/i.test(value)) return false;
+              if (/\.mjs$/i.test(value)) return false;
               return true;
             }
             if (Array.isArray(value)) {
@@ -97,10 +78,9 @@ jobs:
             if ('default' in record && exportRequireValueLooksCommonJs(record.default)) return true;
             return false;
           }
-          """
-          if old not in source:
-            raise SystemExit('expected CommonJS compatibility block not found; refusing to patch')
-          path.write_text(source.replace(old, new, 1))
+          '''
+          source = source.replace(anchor, '\n' + textwrap.dedent(helper).strip() + '\n' + anchor, 1)
+          path.write_text(source)
 
           test = r'''import { afterEach, test } from 'node:test';
           import assert from 'node:assert/strict';
@@ -172,7 +152,7 @@ jobs:
             assert.ok(changes.some((change) => change.kind === 'commonjs-entry-removed'));
           });
           '''
-          Path('test/npm-commonjs-exports.test.ts').write_text(textwrap.dedent(test))
+          Path('test/npm-commonjs-exports.test.ts').write_text(textwrap.dedent(test).lstrip())
           PY
 
       - name: Verify CommonJS regression
@@ -197,8 +177,15 @@ jobs:
           git config user.name "$(git log -1 --format='%an')"
           git config user.email "$(git log -1 --format='%ae')"
           git checkout origin/main -- .github/workflows/update-action-bundle.yml
-          git rm -f .github/workflows/apply-npm-commonjs-fix.yml .github/workflows/apply-npm-commonjs-fix-pr.yml src/.apply-npm-commonjs-fix
-          git add src/evidence/type-surface.ts test/npm-commonjs-exports.test.ts action/index.cjs .github/workflows/update-action-bundle.yml
+          git rm -f --ignore-unmatch \
+            .github/workflows/apply-npm-commonjs-fix.yml \
+            .github/workflows/apply-npm-commonjs-fix-pr.yml \
+            src/.apply-npm-commonjs-fix
+          git add \
+            src/evidence/type-surface.ts \
+            test/npm-commonjs-exports.test.ts \
+            action/index.cjs \
+            .github/workflows/update-action-bundle.yml
           git commit -m "fix(npm): trust explicit CommonJS require exports"
           git push origin HEAD:${{ github.ref_name }}
 
