@@ -150,10 +150,11 @@ function checkRemovalEvidence(candidate, at) {
     const removal = /removed|no longer/i.test(change.kind) || /no longer/i.test(change.summary ?? '');
     if (!removal || change.confidence !== 'high') continue;
     const sources = (change.evidence ?? []).map((evidence) => evidence.source);
-    if (sources.length > 0 && !sources.some((source) => COMPUTED_EVIDENCE.has(source))) {
+    if (!sources.some((source) => COMPUTED_EVIDENCE.has(source))) {
+      const provenance = sources.length > 0 ? `cites only ${sources.join(', ')}` : 'cites no evidence';
       at(
         candidate,
-        `high-confidence removal "${change.summary}" cites only ${sources.join(', ')}; an absence claim needs a computed artifact comparison`,
+        `high-confidence removal "${change.summary}" ${provenance}; an absence claim needs a computed artifact comparison`,
       );
     }
     if (change.moduleSystem && change.moduleSystem.incompatibleUsage?.includes('require')) {
