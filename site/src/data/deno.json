@@ -6,10 +6,10 @@
   "language": "Rust",
   "repo": "https://github.com/denoland/deno",
   "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
-  "capturedAt": "2026-08-30T17:04:34.998Z",
+  "capturedAt": "2026-08-30T17:13:47.373Z",
   "commit": "1aa88c0388ba56970ec1bc7e8196bf688cb22ac9",
-  "engine": "dde3b9292059f1dc",
-  "durationMs": 23693,
+  "engine": "074c07756c903153",
+  "durationMs": 25222,
   "packagesChecked": 3,
   "manifests": [
     "cli/Cargo.toml",
@@ -100,7 +100,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 79,
+      "at": 235,
       "phase": "Looking for manifests",
       "detail": "denoland/deno",
       "done": 0,
@@ -108,7 +108,7 @@
     },
     {
       "type": "progress",
-      "at": 207,
+      "at": 469,
       "phase": "Reading the workspace",
       "detail": "83 packages · cargo-workspace, undeclared",
       "done": 0,
@@ -116,7 +116,7 @@
     },
     {
       "type": "progress",
-      "at": 222,
+      "at": 488,
       "phase": "Reading manifest",
       "detail": "cli/Cargo.toml",
       "done": 0,
@@ -124,7 +124,7 @@
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 492,
       "phase": "Reading manifest",
       "detail": "cli/lib/Cargo.toml",
       "done": 0,
@@ -132,7 +132,7 @@
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 492,
       "phase": "Reading manifest",
       "detail": "cli/rt/Cargo.toml",
       "done": 0,
@@ -140,7 +140,7 @@
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 493,
       "phase": "Reading manifest",
       "detail": "cli/rt_desktop/Cargo.toml",
       "done": 0,
@@ -148,7 +148,7 @@
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 493,
       "phase": "Reading manifest",
       "detail": "cli/snapshot/Cargo.toml",
       "done": 0,
@@ -156,7 +156,7 @@
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 493,
       "phase": "Reading manifest",
       "detail": "ext/bundle/Cargo.toml",
       "done": 0,
@@ -164,7 +164,7 @@
     },
     {
       "type": "progress",
-      "at": 224,
+      "at": 493,
       "phase": "Reading manifest",
       "detail": "ext/cache/Cargo.toml",
       "done": 0,
@@ -172,7 +172,7 @@
     },
     {
       "type": "progress",
-      "at": 225,
+      "at": 494,
       "phase": "Reading manifest",
       "detail": "ext/canvas/Cargo.toml",
       "done": 0,
@@ -180,7 +180,7 @@
     },
     {
       "type": "progress",
-      "at": 225,
+      "at": 494,
       "phase": "Reading manifest",
       "detail": "ext/cron/Cargo.toml",
       "done": 0,
@@ -188,7 +188,7 @@
     },
     {
       "type": "progress",
-      "at": 225,
+      "at": 494,
       "phase": "Reading manifest",
       "detail": "ext/crypto/Cargo.toml",
       "done": 0,
@@ -196,7 +196,7 @@
     },
     {
       "type": "progress",
-      "at": 225,
+      "at": 494,
       "phase": "Reading manifest",
       "detail": "ext/fetch/Cargo.toml",
       "done": 0,
@@ -204,7 +204,7 @@
     },
     {
       "type": "progress",
-      "at": 225,
+      "at": 494,
       "phase": "Reading manifest",
       "detail": "ext/ffi/Cargo.toml",
       "done": 0,
@@ -212,7 +212,7 @@
     },
     {
       "type": "progress",
-      "at": 226,
+      "at": 494,
       "phase": "Reading manifest",
       "detail": "ext/fs/Cargo.toml",
       "done": 0,
@@ -220,7 +220,7 @@
     },
     {
       "type": "progress",
-      "at": 226,
+      "at": 495,
       "phase": "Reading manifest",
       "detail": "ext/http/Cargo.toml",
       "done": 0,
@@ -228,7 +228,7 @@
     },
     {
       "type": "progress",
-      "at": 226,
+      "at": 495,
       "phase": "Reading manifest",
       "detail": "ext/image/Cargo.toml",
       "done": 0,
@@ -236,7 +236,7 @@
     },
     {
       "type": "progress",
-      "at": 226,
+      "at": 495,
       "phase": "Reading manifest",
       "detail": "ext/io/Cargo.toml",
       "done": 0,
@@ -244,7 +244,7 @@
     },
     {
       "type": "progress",
-      "at": 226,
+      "at": 496,
       "phase": "Reading manifest",
       "detail": "ext/kv/Cargo.toml",
       "done": 0,
@@ -252,7 +252,7 @@
     },
     {
       "type": "progress",
-      "at": 226,
+      "at": 496,
       "phase": "Reading manifest",
       "detail": "ext/napi/Cargo.toml",
       "done": 0,
@@ -260,7 +260,7 @@
     },
     {
       "type": "progress",
-      "at": 227,
+      "at": 496,
       "phase": "Reading manifest",
       "detail": "ext/napi/sym/Cargo.toml",
       "done": 0,
@@ -268,7 +268,7 @@
     },
     {
       "type": "progress",
-      "at": 227,
+      "at": 496,
       "phase": "Reading manifest",
       "detail": "ext/net/Cargo.toml",
       "done": 0,
@@ -276,7 +276,7 @@
     },
     {
       "type": "progress",
-      "at": 227,
+      "at": 496,
       "phase": "Reading manifest",
       "detail": "ext/node/Cargo.toml",
       "done": 0,
@@ -284,7 +284,7 @@
     },
     {
       "type": "progress",
-      "at": 227,
+      "at": 496,
       "phase": "Reading manifest",
       "detail": "ext/node_crypto/Cargo.toml",
       "done": 0,
@@ -292,7 +292,7 @@
     },
     {
       "type": "progress",
-      "at": 227,
+      "at": 497,
       "phase": "Reading manifest",
       "detail": "ext/node_sqlite/Cargo.toml",
       "done": 0,
@@ -300,7 +300,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 497,
       "phase": "Reading manifest",
       "detail": "ext/rt_helper/Cargo.toml",
       "done": 0,
@@ -308,7 +308,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 497,
       "phase": "Reading manifest",
       "detail": "ext/signals/Cargo.toml",
       "done": 0,
@@ -316,7 +316,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 497,
       "phase": "Reading manifest",
       "detail": "ext/telemetry/Cargo.toml",
       "done": 0,
@@ -324,7 +324,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 497,
       "phase": "Reading manifest",
       "detail": "ext/url/Cargo.toml",
       "done": 0,
@@ -332,7 +332,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 497,
       "phase": "Reading manifest",
       "detail": "ext/web/Cargo.toml",
       "done": 0,
@@ -340,7 +340,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 498,
       "phase": "Reading manifest",
       "detail": "ext/webgpu/Cargo.toml",
       "done": 0,
@@ -348,7 +348,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 498,
       "phase": "Reading manifest",
       "detail": "ext/webidl/Cargo.toml",
       "done": 0,
@@ -356,7 +356,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 499,
       "phase": "Reading manifest",
       "detail": "ext/websocket/Cargo.toml",
       "done": 0,
@@ -364,7 +364,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 499,
       "phase": "Reading manifest",
       "detail": "ext/webstorage/Cargo.toml",
       "done": 0,
@@ -372,7 +372,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 499,
       "phase": "Reading manifest",
       "detail": "libs/cache_dir/Cargo.toml",
       "done": 0,
@@ -380,7 +380,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 499,
       "phase": "Reading manifest",
       "detail": "libs/cli_parser/Cargo.toml",
       "done": 0,
@@ -388,7 +388,7 @@
     },
     {
       "type": "progress",
-      "at": 229,
+      "at": 499,
       "phase": "Reading manifest",
       "detail": "libs/config/Cargo.toml",
       "done": 0,
@@ -396,7 +396,7 @@
     },
     {
       "type": "progress",
-      "at": 230,
+      "at": 499,
       "phase": "Reading manifest",
       "detail": "libs/core/Cargo.toml",
       "done": 0,
@@ -404,7 +404,7 @@
     },
     {
       "type": "progress",
-      "at": 230,
+      "at": 500,
       "phase": "Reading manifest",
       "detail": "libs/core/examples/snapshot/Cargo.toml",
       "done": 0,
@@ -412,7 +412,7 @@
     },
     {
       "type": "progress",
-      "at": 230,
+      "at": 500,
       "phase": "Reading manifest",
       "detail": "libs/core_testing/Cargo.toml",
       "done": 0,
@@ -420,7 +420,7 @@
     },
     {
       "type": "progress",
-      "at": 230,
+      "at": 500,
       "phase": "Reading manifest",
       "detail": "libs/crypto/Cargo.toml",
       "done": 0,
@@ -428,7 +428,7 @@
     },
     {
       "type": "progress",
-      "at": 230,
+      "at": 500,
       "phase": "Reading manifest",
       "detail": "libs/dcore/Cargo.toml",
       "done": 0,
@@ -436,7 +436,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 230,
+      "at": 500,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -474,7 +474,7 @@
     },
     {
       "type": "progress",
-      "at": 230,
+      "at": 500,
       "phase": "Reading manifest",
       "detail": "libs/deno_v8/Cargo.toml",
       "done": 0,
@@ -482,7 +482,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 231,
+      "at": 501,
       "candidate": {
         "id": "libs/deno_v8/Cargo.toml#v8x_backend@149.4.0-rc.4",
         "name": "v8x_backend",
@@ -520,7 +520,7 @@
     },
     {
       "type": "progress",
-      "at": 231,
+      "at": 501,
       "phase": "Reading manifest",
       "detail": "libs/dotenv/Cargo.toml",
       "done": 0,
@@ -528,7 +528,7 @@
     },
     {
       "type": "progress",
-      "at": 231,
+      "at": 501,
       "phase": "Reading manifest",
       "detail": "libs/eszip/Cargo.toml",
       "done": 0,
@@ -536,7 +536,7 @@
     },
     {
       "type": "progress",
-      "at": 231,
+      "at": 501,
       "phase": "Reading manifest",
       "detail": "libs/http_h1/Cargo.toml",
       "done": 0,
@@ -544,7 +544,7 @@
     },
     {
       "type": "progress",
-      "at": 231,
+      "at": 502,
       "phase": "Reading manifest",
       "detail": "libs/inspector_server/Cargo.toml",
       "done": 0,
@@ -552,7 +552,7 @@
     },
     {
       "type": "progress",
-      "at": 231,
+      "at": 502,
       "phase": "Reading manifest",
       "detail": "libs/lockfile/Cargo.toml",
       "done": 0,
@@ -560,7 +560,7 @@
     },
     {
       "type": "progress",
-      "at": 231,
+      "at": 502,
       "phase": "Reading manifest",
       "detail": "libs/maybe_sync/Cargo.toml",
       "done": 0,
@@ -568,7 +568,7 @@
     },
     {
       "type": "progress",
-      "at": 232,
+      "at": 502,
       "phase": "Reading manifest",
       "detail": "libs/napi_sys/Cargo.toml",
       "done": 0,
@@ -576,7 +576,7 @@
     },
     {
       "type": "progress",
-      "at": 232,
+      "at": 502,
       "phase": "Reading manifest",
       "detail": "libs/node_resolver/Cargo.toml",
       "done": 0,
@@ -584,7 +584,7 @@
     },
     {
       "type": "progress",
-      "at": 232,
+      "at": 502,
       "phase": "Reading manifest",
       "detail": "libs/node_shim/Cargo.toml",
       "done": 0,
@@ -592,7 +592,7 @@
     },
     {
       "type": "progress",
-      "at": 232,
+      "at": 503,
       "phase": "Reading manifest",
       "detail": "libs/npm/Cargo.toml",
       "done": 0,
@@ -600,7 +600,7 @@
     },
     {
       "type": "progress",
-      "at": 232,
+      "at": 503,
       "phase": "Reading manifest",
       "detail": "libs/npm_cache/Cargo.toml",
       "done": 0,
@@ -608,7 +608,7 @@
     },
     {
       "type": "progress",
-      "at": 232,
+      "at": 504,
       "phase": "Reading manifest",
       "detail": "libs/npm_installer/Cargo.toml",
       "done": 0,
@@ -616,7 +616,7 @@
     },
     {
       "type": "progress",
-      "at": 232,
+      "at": 504,
       "phase": "Reading manifest",
       "detail": "libs/npmrc/Cargo.toml",
       "done": 0,
@@ -624,7 +624,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 504,
       "phase": "Reading manifest",
       "detail": "libs/ops/Cargo.toml",
       "done": 0,
@@ -632,7 +632,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 504,
       "phase": "Reading manifest",
       "detail": "libs/ops/compile_test_runner/Cargo.toml",
       "done": 0,
@@ -640,7 +640,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 504,
       "phase": "Reading manifest",
       "detail": "libs/package_json/Cargo.toml",
       "done": 0,
@@ -648,7 +648,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 504,
       "phase": "Reading manifest",
       "detail": "libs/print/Cargo.toml",
       "done": 0,
@@ -656,7 +656,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 505,
       "phase": "Reading manifest",
       "detail": "libs/resolver/Cargo.toml",
       "done": 0,
@@ -664,7 +664,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 505,
       "phase": "Reading manifest",
       "detail": "libs/serde_v8/Cargo.toml",
       "done": 0,
@@ -672,7 +672,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 505,
       "phase": "Reading manifest",
       "detail": "runtime/Cargo.toml",
       "done": 0,
@@ -680,7 +680,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 505,
       "phase": "Reading manifest",
       "detail": "runtime/features/Cargo.toml",
       "done": 0,
@@ -688,7 +688,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 505,
       "phase": "Reading manifest",
       "detail": "runtime/permissions/Cargo.toml",
       "done": 0,
@@ -696,7 +696,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 505,
       "phase": "Reading manifest",
       "detail": "runtime/subprocess_windows/Cargo.toml",
       "done": 0,
@@ -704,7 +704,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 506,
       "phase": "Reading manifest",
       "detail": "tests/bench/Cargo.toml",
       "done": 0,
@@ -712,7 +712,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 506,
       "phase": "Reading manifest",
       "detail": "tests/bench_util/Cargo.toml",
       "done": 0,
@@ -720,7 +720,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 506,
       "phase": "Reading manifest",
       "detail": "tests/ffi/Cargo.toml",
       "done": 0,
@@ -728,7 +728,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 506,
       "phase": "Reading manifest",
       "detail": "tests/integration/Cargo.toml",
       "done": 0,
@@ -736,7 +736,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 506,
       "phase": "Reading manifest",
       "detail": "tests/napi/Cargo.toml",
       "done": 0,
@@ -744,7 +744,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 506,
       "phase": "Reading manifest",
       "detail": "tests/node_compat/Cargo.toml",
       "done": 0,
@@ -752,7 +752,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 506,
       "phase": "Reading manifest",
       "detail": "tests/specs/Cargo.toml",
       "done": 0,
@@ -760,7 +760,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 507,
       "phase": "Reading manifest",
       "detail": "tests/unit/Cargo.toml",
       "done": 0,
@@ -768,7 +768,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 507,
       "phase": "Reading manifest",
       "detail": "tests/unit_node/Cargo.toml",
       "done": 0,
@@ -776,7 +776,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 507,
       "phase": "Reading manifest",
       "detail": "tests/util/lib/Cargo.toml",
       "done": 0,
@@ -784,7 +784,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 507,
       "phase": "Reading manifest",
       "detail": "tests/util/server/Cargo.toml",
       "done": 0,
@@ -792,7 +792,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 507,
       "phase": "Reading manifest",
       "detail": "tests/util/test_macro/Cargo.toml",
       "done": 0,
@@ -800,7 +800,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 508,
       "phase": "Reading manifest",
       "detail": "tools/bsdiff_helper/Cargo.toml",
       "done": 0,
@@ -808,7 +808,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 508,
       "phase": "Reading manifest",
       "detail": "ext/broadcast_channel/Cargo.toml",
       "done": 0,
@@ -816,7 +816,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 508,
       "phase": "Reading manifest",
       "detail": "ext/console/Cargo.toml",
       "done": 0,
@@ -824,7 +824,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 508,
       "phase": "Reading manifest",
       "detail": "ext/os/Cargo.toml",
       "done": 0,
@@ -832,7 +832,7 @@
     },
     {
       "type": "progress",
-      "at": 236,
+      "at": 508,
       "phase": "Reading manifest",
       "detail": "ext/process/Cargo.toml",
       "done": 0,
@@ -840,7 +840,7 @@
     },
     {
       "type": "progress",
-      "at": 236,
+      "at": 508,
       "phase": "Reading manifest",
       "detail": "ext/tls/Cargo.toml",
       "done": 0,
@@ -848,7 +848,7 @@
     },
     {
       "type": "progress",
-      "at": 236,
+      "at": 508,
       "phase": "Reading manifest",
       "detail": "tests/sqlite_extension/Cargo.toml",
       "done": 0,
@@ -856,7 +856,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 236,
+      "at": 509,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -894,7 +894,7 @@
     },
     {
       "type": "progress",
-      "at": 236,
+      "at": 509,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -902,7 +902,7 @@
     },
     {
       "type": "progress",
-      "at": 236,
+      "at": 510,
       "phase": "Checking registries",
       "detail": "3 direct dependencies",
       "done": 0,
@@ -910,7 +910,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 510,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -948,7 +948,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 510,
       "candidate": {
         "id": "libs/deno_v8/Cargo.toml#v8x_backend@149.4.0-rc.4",
         "name": "v8x_backend",
@@ -986,7 +986,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 237,
+      "at": 510,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -1023,8 +1023,21 @@
       }
     },
     {
+      "type": "candidate-drop",
+      "at": 652,
+      "id": "libs/deno_v8/Cargo.toml#v8x_backend@149.4.0-rc.4"
+    },
+    {
+      "type": "progress",
+      "at": 652,
+      "phase": "Could not check",
+      "detail": "v8x_backend@149.4.0-rc.4 · Drift could not reach crates.io for v8x_backend.",
+      "done": 1,
+      "total": 3
+    },
+    {
       "type": "candidate-upsert",
-      "at": 545,
+      "at": 664,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1062,28 +1075,15 @@
     },
     {
       "type": "progress",
-      "at": 545,
+      "at": 664,
       "phase": "Outdated",
       "detail": "hyper 1.6.0 → 1.11.1",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-drop",
-      "at": 562,
-      "id": "libs/deno_v8/Cargo.toml#v8x_backend@149.4.0-rc.4"
-    },
-    {
-      "type": "progress",
-      "at": 562,
-      "phase": "Could not check",
-      "detail": "v8x_backend@149.4.0-rc.4 · Drift could not reach crates.io for v8x_backend.",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 815,
+      "at": 669,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -1121,7 +1121,7 @@
     },
     {
       "type": "progress",
-      "at": 815,
+      "at": 669,
       "phase": "Outdated",
       "detail": "rusqlite 0.37.0 → 0.40.2",
       "done": 3,
@@ -1129,7 +1129,7 @@
     },
     {
       "type": "progress",
-      "at": 816,
+      "at": 670,
       "phase": "Reading release notes and changelog",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1137,7 +1137,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 816,
+      "at": 670,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1175,7 +1175,7 @@
     },
     {
       "type": "progress",
-      "at": 817,
+      "at": 671,
       "phase": "Checking package metadata",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1183,7 +1183,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 817,
+      "at": 671,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1221,7 +1221,7 @@
     },
     {
       "type": "progress",
-      "at": 817,
+      "at": 671,
       "phase": "Reading release notes and changelog",
       "detail": "rusqlite 0.37.0 → 0.40.2",
       "done": 0,
@@ -1229,7 +1229,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 817,
+      "at": 671,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -1267,7 +1267,7 @@
     },
     {
       "type": "progress",
-      "at": 817,
+      "at": 671,
       "phase": "Checking package metadata",
       "detail": "rusqlite 0.37.0 → 0.40.2",
       "done": 0,
@@ -1275,7 +1275,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 817,
+      "at": 671,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -1313,7 +1313,7 @@
     },
     {
       "type": "progress",
-      "at": 818,
+      "at": 672,
       "phase": "Checking repository status",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1321,7 +1321,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 672,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1359,7 +1359,7 @@
     },
     {
       "type": "progress",
-      "at": 818,
+      "at": 672,
       "phase": "Checking repository status",
       "detail": "rusqlite 0.37.0 → 0.40.2",
       "done": 0,
@@ -1367,7 +1367,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 672,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -1405,15 +1405,7 @@
     },
     {
       "type": "progress",
-      "at": 1230,
-      "phase": "Indexing your code",
-      "detail": "5739 files indexed · 3 direct dependencies to check",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "progress",
-      "at": 2358,
+      "at": 708,
       "phase": "Checking security advisories",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1421,7 +1413,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2358,
+      "at": 708,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1459,53 +1451,7 @@
     },
     {
       "type": "progress",
-      "at": 2358,
-      "phase": "Checking license",
-      "detail": "hyper 1.6.0 → 1.11.1",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2358,
-      "candidate": {
-        "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
-        "name": "hyper",
-        "ecosystem": "cargo",
-        "manifestPath": "libs/dcore/Cargo.toml",
-        "workspace": "libs/dcore",
-        "workspaceName": "dcore",
-        "current": "1.6.0",
-        "latest": "1.6.0",
-        "selected": "1.6.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2359,
+      "at": 708,
       "phase": "Checking security advisories",
       "detail": "rusqlite 0.37.0 → 0.40.2",
       "done": 0,
@@ -1513,7 +1459,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2359,
+      "at": 708,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -1551,7 +1497,53 @@
     },
     {
       "type": "progress",
-      "at": 2359,
+      "at": 873,
+      "phase": "Checking license",
+      "detail": "hyper 1.6.0 → 1.11.1",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 873,
+      "candidate": {
+        "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
+        "name": "hyper",
+        "ecosystem": "cargo",
+        "manifestPath": "libs/dcore/Cargo.toml",
+        "workspace": "libs/dcore",
+        "workspaceName": "dcore",
+        "current": "1.6.0",
+        "latest": "1.6.0",
+        "selected": "1.6.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 873,
       "phase": "Checking license",
       "detail": "rusqlite 0.37.0 → 0.40.2",
       "done": 0,
@@ -1559,7 +1551,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2359,
+      "at": 873,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -1597,7 +1589,7 @@
     },
     {
       "type": "progress",
-      "at": 17488,
+      "at": 3097,
       "phase": "Comparing the public API surface",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1605,7 +1597,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 17489,
+      "at": 3097,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1643,7 +1635,7 @@
     },
     {
       "type": "progress",
-      "at": 17491,
+      "at": 3103,
       "phase": "Reading release notes and changelog",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1651,7 +1643,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 17491,
+      "at": 3103,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1689,7 +1681,7 @@
     },
     {
       "type": "progress",
-      "at": 17491,
+      "at": 3103,
       "phase": "Comparing the public API surface",
       "detail": "hyper 1.6.0 → 1.11.1 · 3 evidence sources",
       "done": 0,
@@ -1697,7 +1689,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 17491,
+      "at": 3103,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1735,7 +1727,7 @@
     },
     {
       "type": "progress",
-      "at": 17492,
+      "at": 3107,
       "phase": "Searching your code for 1 breaking change",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1743,7 +1735,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 17492,
+      "at": 3107,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1781,7 +1773,199 @@
     },
     {
       "type": "progress",
-      "at": 17503,
+      "at": 3107,
+      "phase": "Comparing the public API surface",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3107,
+      "candidate": {
+        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
+        "name": "rusqlite",
+        "ecosystem": "cargo",
+        "manifestPath": "tests/sqlite_extension/Cargo.toml",
+        "workspace": "tests/sqlite_extension",
+        "workspaceName": "test_sqlite_extension",
+        "current": "0.37.0",
+        "latest": "0.37.0",
+        "selected": "0.37.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3108,
+      "phase": "Reading release notes and changelog",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3108,
+      "candidate": {
+        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
+        "name": "rusqlite",
+        "ecosystem": "cargo",
+        "manifestPath": "tests/sqlite_extension/Cargo.toml",
+        "workspace": "tests/sqlite_extension",
+        "workspaceName": "test_sqlite_extension",
+        "current": "0.37.0",
+        "latest": "0.37.0",
+        "selected": "0.37.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3108,
+      "phase": "Comparing the public API surface",
+      "detail": "rusqlite 0.37.0 → 0.40.2 · 4 evidence sources",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3108,
+      "candidate": {
+        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
+        "name": "rusqlite",
+        "ecosystem": "cargo",
+        "manifestPath": "tests/sqlite_extension/Cargo.toml",
+        "workspace": "tests/sqlite_extension",
+        "workspaceName": "test_sqlite_extension",
+        "current": "0.37.0",
+        "latest": "0.37.0",
+        "selected": "0.37.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3110,
+      "phase": "Searching your code for 8 breaking changes",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 3110,
+      "candidate": {
+        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
+        "name": "rusqlite",
+        "ecosystem": "cargo",
+        "manifestPath": "tests/sqlite_extension/Cargo.toml",
+        "workspace": "tests/sqlite_extension",
+        "workspaceName": "test_sqlite_extension",
+        "current": "0.37.0",
+        "latest": "0.37.0",
+        "selected": "0.37.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Searching your code for 8 breaking changes",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 21913,
+      "phase": "Indexing your code",
+      "detail": "5739 files indexed · 3 direct dependencies to check",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "progress",
+      "at": 23909,
       "phase": "Weighing what this upgrade is worth",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1789,7 +1973,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 17503,
+      "at": 23909,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1827,7 +2011,53 @@
     },
     {
       "type": "progress",
-      "at": 17979,
+      "at": 24518,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 24518,
+      "candidate": {
+        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
+        "name": "rusqlite",
+        "ecosystem": "cargo",
+        "manifestPath": "tests/sqlite_extension/Cargo.toml",
+        "workspace": "tests/sqlite_extension",
+        "workspaceName": "test_sqlite_extension",
+        "current": "0.37.0",
+        "latest": "0.37.0",
+        "selected": "0.37.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 25200,
       "phase": "Checking maintenance signals",
       "detail": "hyper 1.6.0 → 1.11.1",
       "done": 0,
@@ -1835,7 +2065,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 17980,
+      "at": 25200,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1872,8 +2102,54 @@
       }
     },
     {
+      "type": "progress",
+      "at": 25214,
+      "phase": "Checking maintenance signals",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 0,
+      "total": 2
+    },
+    {
       "type": "candidate-upsert",
-      "at": 17983,
+      "at": 25214,
+      "candidate": {
+        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
+        "name": "rusqlite",
+        "ecosystem": "cargo",
+        "manifestPath": "tests/sqlite_extension/Cargo.toml",
+        "workspace": "tests/sqlite_extension",
+        "workspaceName": "test_sqlite_extension",
+        "current": "0.37.0",
+        "latest": "0.37.0",
+        "selected": "0.37.0",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 25221,
       "candidate": {
         "id": "libs/dcore/Cargo.toml#hyper@1.6.0",
         "name": "hyper",
@@ -1960,291 +2236,15 @@
     },
     {
       "type": "progress",
-      "at": 17983,
+      "at": 25221,
       "phase": "Checked",
       "detail": "hyper 1.6.0 → 1.11.1 · localization incomplete · drift searched the indexed source subset, but the file limit prevented proving the breaking api is unused",
       "done": 1,
       "total": 2
     },
     {
-      "type": "progress",
-      "at": 23274,
-      "phase": "Comparing the public API surface",
-      "detail": "rusqlite 0.37.0 → 0.40.2",
-      "done": 1,
-      "total": 2
-    },
-    {
       "type": "candidate-upsert",
-      "at": 23274,
-      "candidate": {
-        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
-        "name": "rusqlite",
-        "ecosystem": "cargo",
-        "manifestPath": "tests/sqlite_extension/Cargo.toml",
-        "workspace": "tests/sqlite_extension",
-        "workspaceName": "test_sqlite_extension",
-        "current": "0.37.0",
-        "latest": "0.37.0",
-        "selected": "0.37.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 23274,
-      "phase": "Reading release notes and changelog",
-      "detail": "rusqlite 0.37.0 → 0.40.2",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 23274,
-      "candidate": {
-        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
-        "name": "rusqlite",
-        "ecosystem": "cargo",
-        "manifestPath": "tests/sqlite_extension/Cargo.toml",
-        "workspace": "tests/sqlite_extension",
-        "workspaceName": "test_sqlite_extension",
-        "current": "0.37.0",
-        "latest": "0.37.0",
-        "selected": "0.37.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 23274,
-      "phase": "Comparing the public API surface",
-      "detail": "rusqlite 0.37.0 → 0.40.2 · 4 evidence sources",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 23274,
-      "candidate": {
-        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
-        "name": "rusqlite",
-        "ecosystem": "cargo",
-        "manifestPath": "tests/sqlite_extension/Cargo.toml",
-        "workspace": "tests/sqlite_extension",
-        "workspaceName": "test_sqlite_extension",
-        "current": "0.37.0",
-        "latest": "0.37.0",
-        "selected": "0.37.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 23275,
-      "phase": "Searching your code for 8 breaking changes",
-      "detail": "rusqlite 0.37.0 → 0.40.2",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 23275,
-      "candidate": {
-        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
-        "name": "rusqlite",
-        "ecosystem": "cargo",
-        "manifestPath": "tests/sqlite_extension/Cargo.toml",
-        "workspace": "tests/sqlite_extension",
-        "workspaceName": "test_sqlite_extension",
-        "current": "0.37.0",
-        "latest": "0.37.0",
-        "selected": "0.37.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Searching your code for 8 breaking changes",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 23277,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "rusqlite 0.37.0 → 0.40.2",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 23277,
-      "candidate": {
-        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
-        "name": "rusqlite",
-        "ecosystem": "cargo",
-        "manifestPath": "tests/sqlite_extension/Cargo.toml",
-        "workspace": "tests/sqlite_extension",
-        "workspaceName": "test_sqlite_extension",
-        "current": "0.37.0",
-        "latest": "0.37.0",
-        "selected": "0.37.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 23692,
-      "phase": "Checking maintenance signals",
-      "detail": "rusqlite 0.37.0 → 0.40.2",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 23692,
-      "candidate": {
-        "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
-        "name": "rusqlite",
-        "ecosystem": "cargo",
-        "manifestPath": "tests/sqlite_extension/Cargo.toml",
-        "workspace": "tests/sqlite_extension",
-        "workspaceName": "test_sqlite_extension",
-        "current": "0.37.0",
-        "latest": "0.37.0",
-        "selected": "0.37.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 23693,
+      "at": 25221,
       "candidate": {
         "id": "tests/sqlite_extension/Cargo.toml#rusqlite@0.37.0",
         "name": "rusqlite",
@@ -2453,7 +2453,7 @@
     },
     {
       "type": "progress",
-      "at": 23693,
+      "at": 25221,
       "phase": "Checked",
       "detail": "rusqlite 0.37.0 → 0.40.2 · localization incomplete · drift searched the indexed source subset, but the file limit prevented proving the breaking api is unused",
       "done": 2,

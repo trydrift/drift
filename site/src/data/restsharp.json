@@ -6,10 +6,10 @@
   "language": "C#",
   "repo": "https://github.com/restsharp/RestSharp",
   "blurb": "The HTTP client most .NET codebases reach for first.",
-  "capturedAt": "2026-08-30T17:04:55.309Z",
+  "capturedAt": "2026-08-30T17:14:17.915Z",
   "commit": "6a5082169257438cd085f822f050d93256a8e499",
-  "engine": "dde3b9292059f1dc",
-  "durationMs": 899,
+  "engine": "074c07756c903153",
+  "durationMs": 225,
   "packagesChecked": 0,
   "manifests": [
     "Directory.Packages.props",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 878,
+      "at": 188,
       "phase": "Looking for manifests",
       "detail": "restsharp/RestSharp",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 896,
+      "at": 215,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 897,
+      "at": 217,
       "phase": "Reading manifest",
       "detail": "Directory.Packages.props",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 899,
+      "at": 225,
       "phase": "Reading manifest",
       "detail": "docs/package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "progress",
-      "at": 899,
+      "at": 225,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -59,7 +59,7 @@
     },
     {
       "type": "progress",
-      "at": 899,
+      "at": 225,
       "phase": "Checking registries",
       "detail": "0 direct dependencies",
       "done": 0,

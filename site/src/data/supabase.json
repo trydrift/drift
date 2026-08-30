@@ -6,10 +6,10 @@
   "language": "TypeScript",
   "repo": "https://github.com/supabase/supabase-js",
   "blurb": "The official Supabase client for JavaScript and TypeScript.",
-  "capturedAt": "2026-08-30T17:03:58.902Z",
+  "capturedAt": "2026-08-30T17:13:21.090Z",
   "commit": "b3b939a405ae663aea2fabecfa4dfcc6161d155a",
-  "engine": "dde3b9292059f1dc",
-  "durationMs": 1367,
+  "engine": "074c07756c903153",
+  "durationMs": 1253,
   "packagesChecked": 7,
   "manifests": [
     "package.json",
@@ -27,7 +27,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 101,
+      "at": 220,
       "phase": "Looking for manifests",
       "detail": "supabase/supabase-js",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 125,
+      "at": 350,
       "phase": "Reading the workspace",
       "detail": "10 packages · pnpm-workspace",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 131,
+      "at": 356,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "progress",
-      "at": 858,
+      "at": 1167,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/package.json",
       "done": 0,
@@ -59,7 +59,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 858,
+      "at": 1167,
       "candidate": {
         "id": "packages/core/auth-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -97,7 +97,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1167,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/example/react/package.json",
       "done": 0,
@@ -105,7 +105,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1168,
       "phase": "Reading manifest",
       "detail": "packages/core/functions-js/package.json",
       "done": 0,
@@ -113,7 +113,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 859,
+      "at": 1168,
       "candidate": {
         "id": "packages/core/functions-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -151,7 +151,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1168,
       "phase": "Reading manifest",
       "detail": "packages/core/postgrest-js/package.json",
       "done": 0,
@@ -159,7 +159,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 859,
+      "at": 1168,
       "candidate": {
         "id": "packages/core/postgrest-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -197,7 +197,7 @@
     },
     {
       "type": "progress",
-      "at": 859,
+      "at": 1168,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/package.json",
       "done": 0,
@@ -205,7 +205,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1168,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5",
         "name": "@supabase/phoenix",
@@ -243,7 +243,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1168,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -281,7 +281,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1168,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/example/package.json",
       "done": 0,
@@ -289,7 +289,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1169,
       "phase": "Reading manifest",
       "detail": "packages/core/storage-js/package.json",
       "done": 0,
@@ -297,7 +297,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 860,
+      "at": 1169,
       "candidate": {
         "id": "packages/core/storage-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -335,7 +335,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 1169,
       "phase": "Reading manifest",
       "detail": "packages/core/supabase-js/package.json",
       "done": 0,
@@ -343,7 +343,7 @@
     },
     {
       "type": "progress",
-      "at": 861,
+      "at": 1170,
       "phase": "Reading manifest",
       "detail": "packages/shared/tracing/package.json",
       "done": 0,
@@ -351,7 +351,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 861,
+      "at": 1170,
       "candidate": {
         "id": "packages/shared/tracing/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -389,7 +389,7 @@
     },
     {
       "type": "progress",
-      "at": 861,
+      "at": 1170,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -397,7 +397,7 @@
     },
     {
       "type": "progress",
-      "at": 861,
+      "at": 1170,
       "phase": "Checking registries",
       "detail": "7 direct dependencies",
       "done": 0,
@@ -405,7 +405,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 862,
+      "at": 1170,
       "candidate": {
         "id": "packages/core/auth-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -443,7 +443,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 865,
+      "at": 1171,
       "candidate": {
         "id": "packages/core/functions-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -481,7 +481,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 865,
+      "at": 1171,
       "candidate": {
         "id": "packages/core/postgrest-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -519,7 +519,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 865,
+      "at": 1171,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5",
         "name": "@supabase/phoenix",
@@ -557,7 +557,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 865,
+      "at": 1171,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -595,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 865,
+      "at": 1171,
       "candidate": {
         "id": "packages/core/storage-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -633,7 +633,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 865,
+      "at": 1171,
       "candidate": {
         "id": "packages/shared/tracing/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -670,21 +670,13 @@
       }
     },
     {
-      "type": "progress",
-      "at": 1040,
-      "phase": "Indexing your code",
-      "detail": "385 files indexed · 7 direct dependencies to check",
-      "done": 0,
-      "total": 7
-    },
-    {
       "type": "candidate-drop",
-      "at": 1361,
+      "at": 1249,
       "id": "packages/core/auth-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1361,
+      "at": 1249,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 1,
@@ -692,12 +684,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1361,
+      "at": 1249,
       "id": "packages/core/functions-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1361,
+      "at": 1249,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 2,
@@ -705,12 +697,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1361,
+      "at": 1249,
       "id": "packages/core/postgrest-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1361,
+      "at": 1249,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 3,
@@ -718,12 +710,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1361,
+      "at": 1249,
       "id": "packages/core/realtime-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1361,
+      "at": 1249,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 4,
@@ -731,12 +723,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1361,
+      "at": 1249,
       "id": "packages/core/storage-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1361,
+      "at": 1249,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 5,
@@ -744,12 +736,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1361,
+      "at": 1249,
       "id": "packages/shared/tracing/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 1361,
+      "at": 1249,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 6,
@@ -757,12 +749,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1365,
+      "at": 1250,
       "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5"
     },
     {
       "type": "progress",
-      "at": 1365,
+      "at": 1250,
       "phase": "Up to date",
       "detail": "@supabase/phoenix@0.4.5",
       "done": 7,
