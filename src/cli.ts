@@ -2053,10 +2053,23 @@ async function packageVersion(): Promise<string> {
 function invokedAsScript(): boolean {
   const invoked = process.argv[1];
   if (!invoked) return false;
+  // Both sides are canonicalised, not just `argv[1]`. Node resolves a module's
+  // URL through the real path, so on macOS — where `/var` is a symlink to
+  // `/private/var` — realpathing only one side compares `/private/var/...`
+  // against `/var/...` and the CLI silently never runs. That is the general
+  // "are these the same file" question, asked through the filesystem rather
+  // than by pattern-matching a particular directory.
+  return canonicalPath(invoked) === canonicalPath(fileURLToPath(import.meta.url));
+}
+
+function canonicalPath(path: string): string {
+  const absolute = resolve(path);
   try {
-    return realpathSync(invoked) === fileURLToPath(import.meta.url);
+    return realpathSync(absolute);
   } catch {
-    return false;
+    // Deleted mid-run, or an entry point with no real path. The absolute form
+    // is what the comparison used before and is still the best available.
+    return absolute;
   }
 }
 

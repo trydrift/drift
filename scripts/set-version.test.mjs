@@ -85,6 +85,7 @@ test('CLI executes when invoked from a path containing spaces', () => {
     for (const path of [
       'scripts/set-version.mjs',
       'scripts/semver-utils.mjs',
+      'scripts/direct-execution.mjs',
       'package.json',
       'package-lock.json',
       'extension/package.json',

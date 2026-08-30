@@ -48,6 +48,7 @@ import {
   CONFIDENT_SURFACE_WEIGHT,
   type SurfaceAddition,
   type SurfaceUnavailable,
+  type SurfaceUnavailableReason,
   type ToolInstallRequest,
 } from '../evidence/surface/types.js';
 import type { ProseSource } from '../evidence/index.js';
@@ -75,7 +76,7 @@ import {
 } from '../verification/upgrade-probe.js';
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
-import type { CargoDependencyPlacement } from '../detect/ecosystems/types.js';
+import type { CargoDependencyPlacement, DependencyResolution } from '../detect/ecosystems/types.js';
 import { versionSemantics } from '../version-semantics.js';
 import {
   isCompiledPythonRequirements,
@@ -258,6 +259,16 @@ export interface UpgradeCandidate {
    * see `severity.ts`.
    */
   gaps: string[];
+  /**
+   * The same gaps, as codes rather than prose.
+   *
+   * `gaps` is written for a developer to read; nothing downstream should have
+   * to parse English to learn whether an artifact was inspected. Recording
+   * validation in particular needs to tell "the package publishes no
+   * declarations" from "the tarball would not download", and those two
+   * sentences are only reliably distinguishable by their code.
+   */
+  evidenceGaps: EvidenceGap[];
   /** Helper analyzers Drift can install after explicit approval. */
   toolRequests: ToolInstallRequest[];
   /**
@@ -1067,7 +1078,7 @@ export async function scanUpgrades(args: {
     const source = versionSourceLabel(dep.target.manager.ecosystem);
     announce(dep, `Asking ${source} what has been published`);
     const lookupSpan = diagSpan('registry.lookup', { package: dep.name });
-    const lookupKey = JSON.stringify([dep.target.manager.ecosystem, dep.name, dep.current, dep.range ?? null]);
+    const lookupKey = JSON.stringify([dep.target.manager.ecosystem, dep.name, dep.current, dep.range ?? null, dep.resolution ?? null]);
     let lookupPromise = versionLookups.get(lookupKey);
     if (!lookupPromise) {
       lookupPromise = measure('versions', dep.target.manager.ecosystem, () => lookupVersions({
@@ -1075,6 +1086,7 @@ export async function scanUpgrades(args: {
         ecosystem: dep.target.manager.ecosystem,
         current: dep.current,
         range: dep.range,
+        ...(dep.resolution ? { resolution: dep.resolution } : {}),
         ...(githubToken ? { githubToken } : {}),
       }));
       versionLookups.set(lookupKey, lookupPromise);
@@ -2345,6 +2357,7 @@ async function analyzeUpgrade(args: {
       // surface could not be read" is a different claim from "two breaking
       // changes", and the weaker one is the true one.
       gaps: rationale?.gaps ?? [],
+      evidenceGaps: [...surfaceGaps.values()].map((gap) => ({ code: gap.reason, tool: gap.tool })),
       toolRequests: installRequests(surfaceGaps),
       ...(rationale
         ? {
@@ -2389,6 +2402,7 @@ async function analyzeUpgrade(args: {
       risk: 'unknown',
       summary: 'Could not inspect this upgrade',
       gaps: [],
+      evidenceGaps: [],
       toolRequests: [],
       error: (err as Error).message,
     };
@@ -2478,6 +2492,7 @@ function pendingCandidate(args: {
     risk: 'unknown',
     summary: '',
     gaps: [],
+    evidenceGaps: [],
     toolRequests: [],
   };
 }
@@ -2515,6 +2530,13 @@ function versionedCandidate(
 }
 
 /** One direct dependency, and the manifest and manager it came from. */
+/** One reason a piece of evidence could not be obtained, as a code. */
+export interface EvidenceGap {
+  code: SurfaceUnavailableReason;
+  /** The provider that would have produced it. */
+  tool: string;
+}
+
 export interface ScanDependency {
   name: string;
   kind: DependencyKind;
@@ -2523,6 +2545,8 @@ export interface ScanDependency {
   /** The constraint as written in the manifest, e.g. `^1.2.0`. */
   range: string;
   target: EcosystemTarget;
+  /** Set when a workspace `replace` directive, not a registry, decides this. */
+  resolution?: DependencyResolution;
 }
 
 /**
@@ -2574,6 +2598,7 @@ export async function directDependencies(
       name,
       kind: entry.kind,
       ...(entry.cargo ? { cargo: entry.cargo } : {}),
+      ...(entry.resolution ? { resolution: entry.resolution } : {}),
       current,
       range: entry.version ?? current,
       target,

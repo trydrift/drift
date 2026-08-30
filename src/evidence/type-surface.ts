@@ -1,4 +1,5 @@
 import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
+import { fetchNpmArtifact, type NpmArtifactResult } from './npm-artifact.js';
 import { count, measure } from '../util/profile.js';
 import { readComputed, writeComputed } from '../util/artifact-cache.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
@@ -323,7 +324,7 @@ export function clearTypeSurfaceCache(): void {
  * cannot change, so the only way this cache can be wrong is an unbumped parser
  * change, not staleness.
  */
-const SURFACE_PARSER_VERSION = 2;
+const SURFACE_PARSER_VERSION = 3;
 
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
@@ -347,14 +348,36 @@ async function computeTypeSurface(
   count('surface.diskCache.miss');
 
   const manifest = await fetchManifest(packageName, version);
-  const entryPath = await resolveTypesEntry(packageName, version, manifest);
+  let entryPath = await resolveTypesEntry(packageName, version, manifest);
+
+  // Nothing found. Saying "this package publishes no declarations" is an
+  // absence claim and needs positive provenance: something has to have
+  // enumerated what the version actually ships. `fileListing` is that
+  // provenance — jsDelivr's flat listing, or the registry's own tarball when
+  // jsDelivr will not answer. `emoji-regex@10.6.0` ships `index.d.ts` and was
+  // reported as having no declaration surface purely because jsDelivr did not
+  // answer for it.
+  let inspection: 'cdn' | NpmArtifactResult['state'] = 'cdn';
+  if (!entryPath) {
+    const enumerated = await fileListing(packageName, version);
+    if (!enumerated) {
+      const artifact = await fetchNpmArtifact(packageName, version);
+      inspection = artifact.state;
+    }
+  }
+
   // No manifest and no declaration fallback is a fact about the fetch, not
   // about the package: a yanked version, a private registry, a CDN that has not
   // mirrored this release. Saying "publishes no declarations" there would be
   // Drift reporting its own reach as the package's shortcoming. But if
   // DefinitelyTyped can still answer, take that evidence instead of stopping.
-  if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version);
-  if (!entryPath) return null;
+  if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version, inspection);
+  if (!entryPath) {
+    // Neither the CDN nor the artifact enumerated this version, so its
+    // contents were never inspected and absence is unproven.
+    if (inspection !== 'cdn') throw new VersionUnavailableError(packageName, version, inspection);
+    return null;
+  }
 
   const sources = await measure('surface-sources', packageName, () =>
     collectDeclarationSources(packageName, version, entryPath),
@@ -421,6 +444,12 @@ export class VersionUnavailableError extends Error {
   constructor(
     readonly packageName: string,
     readonly version: string,
+    /**
+     * How far inspection got. `artifact-unavailable` and `artifact-corrupt`
+     * are facts about the fetch; neither may be reported as a fact about what
+     * the package publishes.
+     */
+    readonly inspection: 'cdn' | 'ok' | 'artifact-unavailable' | 'artifact-corrupt' = 'cdn',
   ) {
     super(`${packageName}@${version} could not be fetched`);
     this.name = 'VersionUnavailableError';
@@ -438,8 +467,28 @@ interface Manifest {
   peerDependencies?: Record<string, string>;
 }
 
-function fetchManifest(packageName: string, version: string): Promise<Manifest | null> {
-  return fetchJson<Manifest>(`${JSDELIVR_CDN}/${packageName}@${version}/package.json`);
+async function fetchManifest(packageName: string, version: string): Promise<Manifest | null> {
+  const mirrored = await fetchJson<Manifest>(`${JSDELIVR_CDN}/${packageName}@${version}/package.json`);
+  if (mirrored) return mirrored;
+  const artifact = await fetchNpmArtifact(packageName, version);
+  return artifact.state === 'ok' ? ((artifact.artifact.packageJson as Manifest | null) ?? null) : null;
+}
+
+/**
+ * One published file's text: the CDN first, the published tarball after.
+ *
+ * A file the CDN will not serve is not a file the package does not ship, and
+ * every conclusion drawn from its absence would be wrong.
+ */
+async function fetchPublishedFile(
+  packageName: string,
+  version: string,
+  path: string,
+): Promise<string | null> {
+  const mirrored = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, { retries: 0 });
+  if (mirrored !== null) return mirrored;
+  const artifact = await fetchNpmArtifact(packageName, version);
+  return artifact.state === 'ok' ? artifact.artifact.read(path) : null;
 }
 
 export async function diffPackageModuleMetadata(
@@ -453,12 +502,23 @@ export async function diffPackageModuleMetadata(
   ]);
   if (!before || !after) return [];
 
-  const beforeCjs = commonJsCompatibility(packageName, before);
-  const afterCjs = commonJsCompatibility(packageName, after);
+  // Node resolves a `.js` entry's format from the nearest `package.json`, so
+  // the directories an entry lives in are part of the evidence.
+  const [beforeScopes, afterScopes] = await Promise.all([
+    fetchPackageScopes(packageName, from, before),
+    fetchPackageScopes(packageName, to, after),
+  ]);
+
+  const beforeCjs = commonJsCompatibility(packageName, before, beforeScopes);
+  const afterCjs = commonJsCompatibility(packageName, after, afterScopes);
   const changes: SurfaceChange[] = [];
 
+  // A subpath's require condition may disappear and still leave a CommonJS
+  // resolution behind it (a plain `.cjs` string export, say). Only a subpath
+  // with no remaining proven CommonJS path is a break.
   const removedRequireConditions = [...beforeCjs.requireConditions].filter(
-    (condition) => !afterCjs.requireConditions.has(condition) && !afterCjs.commonJsExports.has(condition),
+    (condition) =>
+      !afterCjs.requireConditions.has(condition) && afterCjs.formats.get(condition) !== 'commonjs',
   );
   for (const removed of removedRequireConditions) {
     const affected = specifierForExportPath(packageName, removed);
@@ -482,7 +542,13 @@ export async function diffPackageModuleMetadata(
   }
 
   const rootRequireConditionRemoved = removedRequireConditions.includes('.');
-  if (beforeCjs.hasRootCommonJsEntry && !afterCjs.hasRootCommonJsEntry && !rootRequireConditionRemoved) {
+  const beforeRoot = beforeCjs.formats.get('.') ?? 'unknown';
+  const afterRoot = afterCjs.formats.get('.') ?? 'unknown';
+
+  // `esm`, not `!== 'commonjs'`. Claiming removal requires positive evidence
+  // that the target cannot serve a `require()` consumer; an entry Drift could
+  // not classify is unknown, and unknown is not proof.
+  if (beforeRoot === 'commonjs' && afterRoot === 'esm' && !rootRequireConditionRemoved) {
     changes.push({
       kind: 'commonjs-entry-removed',
       symbol: packageName,
@@ -499,7 +565,7 @@ export async function diffPackageModuleMetadata(
   } else if (
     before.type !== after.type
     && after.type === 'module'
-    && !afterCjs.hasRootCommonJsEntry
+    && afterRoot === 'esm'
     && !rootRequireConditionRemoved
   ) {
     changes.push({
@@ -520,20 +586,106 @@ export async function diffPackageModuleMetadata(
   return dedupeModuleMetadataChanges(changes);
 }
 
+/**
+ * What Drift can prove about the module format behind one resolved entry.
+ *
+ * `unknown` is a first-class answer. Node resolves a `.js` file's format from
+ * the *nearest* `package.json`, not the package root, so a root `"type":
+ * "module"` alone says nothing about `./dist/commonjs/index.js` — the
+ * de-facto dual-package layout puts a `{"type": "commonjs"}` marker in that
+ * directory. Reading `unknown` as `esm` is what produced a high-confidence
+ * "no longer exposes a CommonJS-compatible entry point" for packages that
+ * `require()` perfectly well.
+ */
+type ModuleFormat = 'commonjs' | 'esm' | 'unknown';
+
+/** Nested `package.json` markers: directory (no leading `./`) -> declared type. */
+export type PackageScopes = ReadonlyMap<string, string>;
+
+/**
+ * How many nested `package.json` markers one version is worth looking up.
+ * A dual build has one or two output directories; a package that would need
+ * more than this is left partly unknown rather than paid for.
+ */
+const MAX_NESTED_SCOPES = 6;
+
+/**
+ * Read the nested `package.json` markers for the directories this manifest's
+ * entry points live in.
+ *
+ * A directory that answers nothing simply stays absent, which leaves its
+ * entries `unknown`. A transport failure must never look like a declaration.
+ */
+async function fetchPackageScopes(
+  packageName: string,
+  version: string,
+  manifest: Manifest,
+): Promise<PackageScopes> {
+  const directories = [...entryDirectories(manifest)].sort().slice(0, MAX_NESTED_SCOPES);
+  const scopes = new Map<string, string>();
+  await Promise.all(
+    directories.map(async (directory) => {
+      const text = await fetchPublishedFile(packageName, version, `${directory}/package.json`);
+      if (!text) return;
+      try {
+        const nested: unknown = JSON.parse(text);
+        const type = (nested as { type?: unknown } | null)?.type;
+        if (typeof type === 'string') scopes.set(directory, type);
+      } catch {
+        // A marker Drift cannot parse leaves the directory unknown, which is
+        // the honest answer and never becomes a removal claim.
+      }
+    }),
+  );
+  return scopes;
+}
+
+/** Every non-root directory an entry point of this manifest resolves into. */
+function entryDirectories(manifest: Manifest): Set<string> {
+  const out = new Set<string>();
+  const add = (entry: unknown): void => {
+    if (typeof entry !== 'string') return;
+    const directory = entryDirectory(entry);
+    // A wildcard directory is not a real path and cannot be fetched.
+    if (directory && !directory.includes('*')) out.add(directory);
+  };
+  const walk = (value: unknown): void => {
+    if (typeof value === 'string') return add(value);
+    if (Array.isArray(value)) return value.forEach(walk);
+    if (value && typeof value === 'object') Object.values(value).forEach(walk);
+  };
+  walk(manifest.exports);
+  add(manifest.main);
+  add(manifest.module);
+  return out;
+}
+
 interface CommonJsCompatibility {
-  hasRootCommonJsEntry: boolean;
+  /** Export paths carrying an explicit `require` condition. */
   requireConditions: Set<string>;
+  /** Export path -> what a `require()` of it resolves to, as far as Drift knows. */
+  formats: Map<string, ModuleFormat>;
+  /** Export paths Drift can prove resolve to CommonJS. */
   commonJsExports: Set<string>;
   entrySummary: string;
 }
 
-function commonJsCompatibility(packageName: string, manifest: Manifest): CommonJsCompatibility {
+function commonJsCompatibility(
+  packageName: string,
+  manifest: Manifest,
+  scopes: PackageScopes = new Map(),
+): CommonJsCompatibility {
   const requireConditions = requireConditionsIn(manifest.exports);
-  const commonJsExports = commonJsExportsIn(manifest.exports, manifest);
-  const hasRootCommonJsEntry =
-    manifest.exports !== undefined
-      ? commonJsExports.has('.')
-      : entryLooksCommonJs(manifest.main, manifest) || entryLooksCommonJs('./index.js', manifest);
+  const formats = new Map<string, ModuleFormat>();
+  if (manifest.exports !== undefined) {
+    collectExportFormats(manifest.exports, '.', manifest, scopes, formats);
+  } else {
+    const main = entryFormat(manifest.main, manifest, scopes);
+    formats.set('.', main === 'unknown' ? entryFormat('./index.js', manifest, scopes) : main);
+  }
+  const commonJsExports = new Set(
+    [...formats].filter(([, format]) => format === 'commonjs').map(([path]) => path),
+  );
 
   const entrySummary = [
     `type: ${manifest.type ?? '(absent)'}`,
@@ -549,7 +701,7 @@ function commonJsCompatibility(packageName: string, manifest: Manifest): CommonJ
     .filter(Boolean)
     .join('\n') || '(no CommonJS-compatible entry point detected)';
 
-  return { hasRootCommonJsEntry, requireConditions, commonJsExports, entrySummary };
+  return { requireConditions, formats, commonJsExports, entrySummary };
 }
 
 function requireConditionsIn(exportsField: unknown): Set<string> {
@@ -573,26 +725,31 @@ function visitExports(value: unknown, path: string, out: Set<string>): void {
   }
 }
 
-function commonJsExportsIn(exportsField: unknown, manifest: Manifest): Set<string> {
-  const out = new Set<string>();
-  visitCommonJsExports(exportsField, '.', manifest, out);
-  return out;
-}
-
-function visitCommonJsExports(value: unknown, path: string, manifest: Manifest, out: Set<string>): void {
-  if (exportValueLooksCommonJs(value, manifest)) out.add(path);
-  if (Array.isArray(value)) {
-    for (const nested of value) visitCommonJsExports(nested, path, manifest, out);
+/**
+ * Record the format of every export path. `exportValueFormat` already folds
+ * arrays and condition objects, so recursion here is only for subpath maps.
+ */
+function collectExportFormats(
+  value: unknown,
+  path: string,
+  manifest: Manifest,
+  scopes: PackageScopes,
+  out: Map<string, ModuleFormat>,
+): void {
+  const subpaths = subpathEntries(value);
+  if (!subpaths.length) {
+    out.set(path, exportValueFormat(value, manifest, scopes));
     return;
   }
-  if (!value || typeof value !== 'object') return;
+  for (const [key, nested] of subpaths) collectExportFormats(nested, key, manifest, scopes, out);
+}
 
+/** The `.`/`./x` entries of a subpath map, looking through array alternatives. */
+function subpathEntries(value: unknown): [string, unknown][] {
+  if (Array.isArray(value)) return value.flatMap((nested) => subpathEntries(nested));
+  if (!value || typeof value !== 'object') return [];
   const entries = Object.entries(value as Record<string, unknown>);
-  const isSubpathMap = entries.some(([key]) => key === '.' || key.startsWith('./'));
-  if (!isSubpathMap) return;
-  for (const [key, nested] of entries) {
-    if (key === '.' || key.startsWith('./')) visitCommonJsExports(nested, key, manifest, out);
-  }
+  return entries.filter(([key]) => key === '.' || key.startsWith('./'));
 }
 
 function specifierForExportPath(packageName: string, exportPath: string): string {
@@ -604,24 +761,63 @@ function isExportPattern(exportPath: string): boolean {
   return exportPath.includes('*');
 }
 
-function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
-  if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
-  if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
-  if (!value || typeof value !== 'object') return false;
+function exportValueFormat(value: unknown, manifest: Manifest, scopes: PackageScopes): ModuleFormat {
+  if (typeof value === 'string') return entryFormat(value, manifest, scopes);
+  if (Array.isArray(value)) {
+    // Array alternatives: Node takes the first that resolves, so any branch
+    // that proves a CommonJS path is enough.
+    const formats = value.map((nested) => exportValueFormat(nested, manifest, scopes));
+    if (formats.includes('commonjs')) return 'commonjs';
+    return formats.includes('unknown') || formats.length === 0 ? 'unknown' : 'esm';
+  }
+  if (!value || typeof value !== 'object') return 'unknown';
 
   const record = value as Record<string, unknown>;
-  if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
-  if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
-  if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
-  return false;
+  if ('require' in record) {
+    // An explicit `require` condition is what Node loads for `require()`. It
+    // is positive evidence that a CommonJS resolution path exists, whatever
+    // the root `type` says — only an explicitly ESM target contradicts it.
+    const target = exportValueFormat(record.require, manifest, scopes);
+    return target === 'esm' ? 'esm' : 'commonjs';
+  }
+  const node = 'node' in record ? exportValueFormat(record.node, manifest, scopes) : null;
+  if (node === 'commonjs') return 'commonjs';
+  if ('default' in record) return exportValueFormat(record.default, manifest, scopes);
+  return node ?? 'unknown';
 }
 
-function entryLooksCommonJs(entry: string | undefined, manifest: Manifest): boolean {
-  if (!entry) return false;
-  if (/\.cjs$/i.test(entry)) return true;
-  if (/\.mjs$/i.test(entry)) return false;
-  if (/\.[jt]sx?$/i.test(entry)) return manifest.type !== 'module';
-  return manifest.type !== 'module';
+function entryFormat(entry: string | undefined, manifest: Manifest, scopes: PackageScopes): ModuleFormat {
+  if (!entry) return 'unknown';
+  if (/\.(cjs|cts)$/i.test(entry)) return 'commonjs';
+  if (/\.(mjs|mts)$/i.test(entry)) return 'esm';
+
+  const scope = nearestScope(entry, scopes);
+  if (scope) return scope === 'module' ? 'esm' : 'commonjs';
+
+  // No nested marker is known. At the package root the root `type` is the
+  // nearest scope and therefore authoritative; below it, a directory Drift
+  // has not inspected may declare its own, so the format is unknown.
+  return entryDirectory(entry) === '' ? (manifest.type === 'module' ? 'esm' : 'commonjs') : 'unknown';
+}
+
+/** The directory part of an entry path, normalised and without a leading `./`. */
+function entryDirectory(entry: string): string {
+  const normalized = entry.replace(/^\.\//, '').replace(/^\//, '');
+  const slash = normalized.lastIndexOf('/');
+  return slash === -1 ? '' : normalized.slice(0, slash);
+}
+
+/** The declared `type` of the nearest inspected package scope above `entry`. */
+function nearestScope(entry: string, scopes: PackageScopes): string | undefined {
+  if (scopes.size === 0) return undefined;
+  let directory = entryDirectory(entry);
+  for (;;) {
+    const declared = scopes.get(directory);
+    if (declared) return declared;
+    if (directory === '') return undefined;
+    const slash = directory.lastIndexOf('/');
+    directory = slash === -1 ? '' : directory.slice(0, slash);
+  }
 }
 
 function packageTypeSummary(manifest: Manifest): string {
@@ -675,8 +871,13 @@ function fileListing(packageName: string, version: string): Promise<ReadonlySet<
     `${JSDELIVR_DATA}/${packageName}@${version}?structure=flat`,
     { immutable: true, retries: 0 },
   )
-    .then((body) => {
-      if (!body?.files) return null;
+    .then(async (body) => {
+      // jsDelivr is a fast path, not the authority on what npm published.
+      // When it will not answer, the registry's own tarball still will.
+      if (!body?.files) {
+        const artifact = await fetchNpmArtifact(packageName, version);
+        return artifact.state === 'ok' ? artifact.artifact.files : null;
+      }
       // jsDelivr names every file from the package root with a leading slash;
       // every path Drift asks about is relative, so the slash comes off here
       // rather than at each of the call sites.
@@ -1106,18 +1307,7 @@ async function resolveTypesEntry(
   // have probed them. Asked of the listing as one question, so the common case
   // costs no requests at all beyond the listing itself; a version with no
   // listing falls back to the same sequential probing as before.
-  const wanted: string[] = [];
-  if (pkg) {
-    const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
-    // A `types` field routinely points at a directory or an extensionless
-    // path (`"types": "dist/source"`) rather than a `.d.ts` file. Fetching it
-    // verbatim 404s and silently costs us the strongest evidence we have, so
-    // try the conventional expansions before giving up.
-    if (declared) wanted.push(...expandTypesEntry(normalizePath(declared)));
-    // A JS entry point often has a sibling declaration file.
-    if (pkg.main) wanted.push(normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts'));
-  }
-  wanted.push(...conventionalTypeEntries(packageName));
+  const wanted = typesEntryCandidates(packageName, pkg);
 
   const published = await firstPublished(packageName, version, wanted);
   if (published !== undefined) {
@@ -1136,6 +1326,28 @@ async function resolveTypesEntry(
   if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
 
   return null;
+}
+
+/**
+ * Every path a declaration entry point could be at, most likely first.
+ *
+ * Shared by the CDN-backed resolution and the tarball fallback, so both ask
+ * exactly the same question of whatever file list they hold.
+ */
+export function typesEntryCandidates(packageName: string, pkg: Manifest | null): string[] {
+  const wanted: string[] = [];
+  if (pkg) {
+    const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
+    // A `types` field routinely points at a directory or an extensionless
+    // path (`"types": "dist/source"`) rather than a `.d.ts` file. Fetching it
+    // verbatim 404s and silently costs us the strongest evidence we have, so
+    // try the conventional expansions before giving up.
+    if (declared) wanted.push(...expandTypesEntry(normalizePath(declared)));
+    // A JS entry point often has a sibling declaration file.
+    if (pkg.main) wanted.push(normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts'));
+  }
+  wanted.push(...conventionalTypeEntries(packageName));
+  return wanted;
 }
 
 /**
@@ -1227,7 +1439,7 @@ async function collectDeclarationSources(
 ): Promise<DeclarationSource[]> {
   if (entryPath.startsWith('@types:')) {
     const dtName = entryPath.slice('@types:'.length);
-    const content = await fetchText(`${JSDELIVR_CDN}/${dtName}@latest/index.d.ts`);
+    const content = await fetchPublishedFile(dtName, 'latest', 'index.d.ts');
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
@@ -1244,9 +1456,7 @@ async function collectDeclarationSources(
   const resolveGroup = async (candidates: readonly string[]): Promise<DeclarationSource | null> => {
     const published = listing ? (candidates.find((path) => listing.has(path)) ?? null) : undefined;
     for (const path of published === undefined ? candidates : published ? [published] : []) {
-      const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
-        retries: 0,
-      });
+      const content = await fetchPublishedFile(packageName, version, path);
       if (content) return { path, content };
     }
     return null;
@@ -1363,7 +1573,7 @@ function normalizePath(path: string): string {
 async function exists(packageName: string, version: string, path: string): Promise<boolean> {
   const published = await firstPublished(packageName, version, [path]);
   if (published !== undefined) return published !== null;
-  const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, { retries: 0 });
+  const content = await fetchPublishedFile(packageName, version, path);
   return content !== null;
 }
 

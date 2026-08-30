@@ -58,6 +58,7 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     latest: '2.13.0',
     versions: ['2.13.0'],
     status: 'ready',
+    evidenceGaps: [],
     evidenceCount: 1,
     breakingCount: 1,
     impactCount: 1,

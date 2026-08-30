@@ -1,9 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isAvailable } from '../../util/exec.js';
-import { fetchArchive } from '../../util/http.js';
+import { fetchArchive, fetchText } from '../../util/http.js';
 import type { SurfaceChange } from '../type-surface.js';
 import { ensureHelperArtifact } from './helper-artifact.js';
+import { diffPomContracts, parsePomContract, type PomContract } from './maven-pom.js';
 import {
   unavailable,
   type SurfaceProvider,
@@ -50,6 +51,43 @@ export const javaSurface: SurfaceProvider = {
         TOOL,
         'unsupported-ecosystem',
         `\`${request.name}\` is not a \`groupId:artifactId\` coordinate, so Drift could not locate it on Maven Central.`,
+      );
+    }
+
+    // What kind of artifact this coordinate publishes, before deciding what
+    // public surface it ought to have. A parent POM or a BOM has no JAR by
+    // design, and reporting the missing JAR would say Drift looked for the
+    // wrong thing rather than that the package cannot be inspected.
+    // Only the target's POM is read up front — one small request that decides
+    // which comparison applies. The previous version's POM is fetched only in
+    // the branch that needs it, so an ordinary JAR upgrade pays nothing extra
+    // beyond this one lookup.
+    const afterPom = await fetchPomContract(coordinate, request.to);
+    if (afterPom?.role === 'pom') {
+      const beforePom = await fetchPomContract(coordinate, request.from);
+      if (!beforePom || beforePom.role !== 'pom') {
+        return unavailable(
+          TOOL,
+          'artifact-role-unsupported',
+          `${request.name} ${request.to} is packaged as a POM while ${request.from} was not, so there is no comparable artifact between them.`,
+        );
+      }
+      return {
+        available: true,
+        changes: diffPomContracts(beforePom, afterPom),
+        tool: POM_TOOL,
+        // A POM contract is a real, published, machine-readable artifact, but
+        // it says nothing about class-level compatibility, so it does not carry
+        // a classfile diff's weight.
+        weight: 0.85,
+        locator: `${request.name} ${request.from} → ${request.to} (POM dependency and plugin management)`,
+      };
+    }
+    if (afterPom && afterPom.role === 'other') {
+      return unavailable(
+        TOOL,
+        'artifact-role-unsupported',
+        `${request.name} is published with \`<packaging>${afterPom.packaging}</packaging>\`, which Drift has no API comparison for. This is the artifact's role, not a missing JAR.`,
       );
     }
 
@@ -156,6 +194,21 @@ export function parseCoordinate(name: string): Coordinate | null {
   const [groupId, artifactId] = name.split(':');
   if (!groupId || !artifactId) return null;
   return { groupId, artifactId };
+}
+
+const POM_TOOL = 'maven pom contract';
+
+/**
+ * The POM for one exact version, or null when Maven Central would not serve it.
+ *
+ * A POM that cannot be fetched leaves the role unknown, which falls through to
+ * the ordinary JAR path — the behaviour before roles existed.
+ */
+async function fetchPomContract(coordinate: Coordinate, version: string): Promise<PomContract | null> {
+  const path = coordinate.groupId.replace(/\./g, '/');
+  const url = `${CENTRAL}/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}.pom`;
+  const xml = await fetchText(url, { retries: 0 });
+  return xml && xml.trim() ? parsePomContract(xml) : null;
 }
 
 /** Maven Central's layout is entirely derivable, so no search API is needed. */

@@ -83,8 +83,8 @@ This does. Three things decide it, and the tier is how many of them hold:
 | Swift | Partial | Partial | No | Partial | Partial | No | Partial | Yes | Yes |
 | CocoaPods | Yes | Partial | No | Partial | Yes | Yes | No | Yes | Yes |
 | OCaml | Yes | Partial | No | Partial | Partial | Yes | Partial | Yes | Yes |
-| C / C++ (Conan) | Partial | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
-| C / C++ (vcpkg) | Partial | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| C / C++ (Conan) | Partial | Partial | Partial | Partial | Partial | Yes | Partial | Yes | Yes |
+| C / C++ (vcpkg) | Partial | Partial | Partial | Partial | Partial | Yes | Partial | Yes | Yes |
 | Arduino / PlatformIO | Yes | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
 
 ## JavaScript / TypeScript
@@ -269,6 +269,7 @@ This does. Three things decide it, and the tier is how many of them hold:
 - **Evidence — Partial.** Versions from the ConanCenter recipe index, and releases and changelogs from the upstream project the recipe builds — not from the recipe itself. ConanCenter publishes no deprecation signal, and OSV has no Conan ecosystem.
 - **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
 - **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible.
+- **Find upgrades — Partial.** ConanCenter enumerates a recipe's versions, but Conan lets each recipe pick its own version scheme, so Drift has no single ordering to say which is newest. A version change written in the manifest is analysed in full; discovering one is reported as unchecked rather than as up to date.
 - **Verify — Partial.** Runs `conan build`, which is the compiler — in C and C++ an incompatible header change is a build failure rather than a runtime surprise. *Requires Conan.*
 
 ## C / C++ (vcpkg)
@@ -283,6 +284,7 @@ This does. Three things decide it, and the tier is how many of them hold:
 - **Evidence — Partial.** Versions from the vcpkg versions database, and releases and changelogs from the port's upstream project. vcpkg publishes no deprecation signal, and OSV has no vcpkg ecosystem.
 - **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
 - **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible.
+- **Find upgrades — Partial.** The vcpkg versions database enumerates a port's versions, but a port may use any version scheme, so Drift has no single ordering to say which is newest. A version change written in the manifest is analysed in full; discovering one is reported as unchecked rather than as up to date.
 - **Verify — Partial.** Runs the project's CMake build, which is where an incompatible header change surfaces. *Requires CMake.*
 
 ## Arduino / PlatformIO

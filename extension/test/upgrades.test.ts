@@ -119,6 +119,7 @@ describe('the command an upgrade will run', () => {
     impactConfidence: 'high',
     risk: 'none',
     gaps: [],
+    evidenceGaps: [],
     toolRequests: [],
     summary: '',
     ...over,

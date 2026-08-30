@@ -4,6 +4,7 @@ import { readArchive, type ArchiveEntry } from '../util/archive.js';
 import { fetchArchive as fetchCachedArchive, fetchJson, fetchText } from '../util/http.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { fetchCocoaPodsSpec } from '../evidence/cocoapods-spec.js';
+import { fetchPackagistReleases, packagistReleaseFor } from '../evidence/packagist.js';
 
 /**
  * What a package is called *inside* your source code.
@@ -292,34 +293,20 @@ const nugetModules: Resolver = async (name, version, { timeoutMs }) => {
  * install, no autoloader generation: one request.
  */
 const composerModules: Resolver = async (name, version, { timeoutMs }) => {
-  const metadata = await fetchJson<{
-    packages?: Record<string, { version?: string; autoload?: PhpAutoload | null }[]>;
-  }>(`https://repo.packagist.org/p2/${name.toLowerCase()}.json`, { timeoutMs });
-
-  const releases = metadata?.packages?.[name.toLowerCase()];
-  if (!releases?.length) return undefined;
-
   // Packagist serves this endpoint "minified" (`composer/2.0`): the first
   // entry is complete and every later one carries only the fields that changed
   // from the entry before it. Reading a matched release directly therefore
   // finds an object with no `autoload` at all for almost every version — which
   // is exactly how this resolver silently returned nothing for PHP until the
-  // format was read properly. Fields are merged forward, and an explicit
-  // `null` means the field was removed rather than unchanged.
-  const wanted = version.replace(/^v/, '');
-  let autoload: PhpAutoload | undefined;
-  let found = false;
-  for (const entry of releases) {
-    if (entry.autoload !== undefined) autoload = entry.autoload ?? undefined;
-    if ((entry.version ?? '').replace(/^v/, '') === wanted) {
-      found = true;
-      break;
-    }
-  }
+  // format was read properly. `fetchPackagistReleases` is the one reader of
+  // that format; the registry provider uses the same one.
+  const releases = await fetchPackagistReleases(name, { timeoutMs });
+  if (!releases?.length) return undefined;
+
   // A version Packagist has never heard of — a private fork, a dev branch, a
-  // typo. The newest release's map is a better answer than the oldest one the
-  // walk happened to end on, and a PSR-4 root almost never moves.
-  if (!found) autoload = releases[0]!.autoload ?? undefined;
+  // typo. The newest release's map is a better answer than none, and a PSR-4
+  // root almost never moves.
+  const autoload = (packagistReleaseFor(releases, version) ?? releases[0]!).autoload ?? undefined;
 
   const namespaces = new Set<string>();
   for (const section of [autoload?.['psr-4'], autoload?.['psr-0']]) {
@@ -337,10 +324,6 @@ const composerModules: Resolver = async (name, version, { timeoutMs }) => {
     : undefined;
 };
 
-interface PhpAutoload {
-  'psr-4'?: Record<string, unknown>;
-  'psr-0'?: Record<string, unknown>;
-}
 
 /* ---------------- Hex ---------------- */
 

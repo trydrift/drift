@@ -3,6 +3,13 @@ import { diffSurfaces, type SurfaceApi } from '../type-surface.js';
 import { readAssembly, type AssemblyType } from './ecma335.js';
 import { fetchArchive } from '../../util/http.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceRequest } from './types.js';
+import {
+  classifyNuGetRoles,
+  describeRole,
+  diffContractFiles,
+  nugetContractFiles,
+  type PackageRole,
+} from './package-roles.js';
 
 /**
  * .NET API diffing, from the assemblies NuGet actually publishes.
@@ -19,6 +26,7 @@ import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceReq
  */
 
 const TOOL = 'assembly metadata';
+const ROLE_TOOL = 'nupkg file contract';
 const WEIGHT = 1.0;
 
 export const nugetSurface: SurfaceProvider = {
@@ -31,9 +39,46 @@ export const nugetSurface: SurfaceProvider = {
     const afterPromise = surfaceOf(request, request.to);
     afterPromise.catch(() => undefined);
     const before = await beforePromise;
-    if (!before.ok) return before.failure;
+    if (!before.ok && 'failure' in before) return before.failure;
     const after = await afterPromise;
-    if (!after.ok) return after.failure;
+    if (!after.ok && 'failure' in after) return after.failure;
+
+    if (!before.ok || !after.ok) {
+      const roles = !after.ok && 'roles' in after ? after.roles : null;
+      if (!roles) {
+        return unavailable(
+          TOOL,
+          'artifact-role-unsupported',
+          `${request.name} publishes a managed assembly at one of these versions and not the other, so there is no comparable artifact between them.`,
+        );
+      }
+      const named = [...roles].map(describeRole).join(' and ');
+      const contract =
+        !before.ok && 'contract' in before && 'contract' in after
+          ? diffContractFiles(
+              before.contract,
+              after.contract,
+              (path) => `${path} is no longer shipped, so a project consuming it through this package loses it`,
+            )
+          : [];
+      // A role Drift cannot compare semantically is stated as the role it is,
+      // never as a runtime assembly that unexpectedly went missing.
+      if (contract.length === 0) {
+        return unavailable(
+          TOOL,
+          'artifact-role-unsupported',
+          `${request.name} is ${named}; it ships no managed assembly by design, and Drift has no API comparison for that role.`,
+        );
+      }
+      return {
+        available: true,
+        changes: contract,
+        tool: ROLE_TOOL,
+        // A file-layout contract is real but shallow evidence.
+        weight: 0.7,
+        locator: `${request.name} ${request.from} → ${request.to} (${named} file contract)`,
+      };
+    }
 
     return {
       available: true,
@@ -47,6 +92,8 @@ export const nugetSurface: SurfaceProvider = {
 
 type Attempt =
   | { ok: true; api: SurfaceApi; framework: string }
+  /** No managed assembly, because of what kind of package this is. */
+  | { ok: false; roles: Set<PackageRole>; contract: string[] }
   | { ok: false; failure: SurfaceOutcome };
 
 async function surfaceOf(request: SurfaceRequest, version: string): Promise<Attempt> {
@@ -84,16 +131,14 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
     };
   }
 
-  const chosen = chooseAssembly(entries.map((entry) => entry.path));
+  const paths = entries.map((entry) => entry.path);
+  const chosen = chooseAssembly(paths);
   if (!chosen) {
-    return {
-      ok: false,
-      failure: unavailable(
-        TOOL,
-        'no-public-surface',
-        `${request.name} ${version} publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare.`,
-      ),
-    };
+    // No `lib/`/`ref/` assembly. Which of the two facts that is depends on the
+    // package's role: a test SDK, an analyzer, or a meta-package was never
+    // going to ship one, and saying its runtime DLL went missing would be
+    // false. The role's own file contract is compared instead.
+    return { ok: false, roles: classifyNuGetRoles(paths), contract: nugetContractFiles(paths) };
   }
 
   const entry = entries.find((candidate) => candidate.path === chosen.path)!;

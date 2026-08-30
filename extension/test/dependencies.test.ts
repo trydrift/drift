@@ -31,7 +31,8 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     impactConfidence: 'high',
     risk: 'medium',
     summary: 'React changed an API this repo uses.',
-    gaps: [],
+    evidenceGaps: [],
+  gaps: [],
     toolRequests: [],
     ...over,
   };

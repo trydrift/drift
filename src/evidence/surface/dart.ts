@@ -2,6 +2,7 @@ import { readArchive, type ArchiveEntry } from '../../util/archive.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceEntry } from '../type-surface.js';
 import { fetchArchive } from '../../util/http.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceRequest } from './types.js';
+import { classifyPubPackage, describeRole, diffPubContracts, type PubContract } from './package-roles.js';
 
 /**
  * Dart API diffing, from the source pub.dev actually publishes.
@@ -27,6 +28,7 @@ import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceReq
  */
 
 const TOOL = 'pub source';
+const ROLE_TOOL = 'pubspec contract';
 const WEIGHT = 0.8;
 
 export const pubSurface: SurfaceProvider = {
@@ -44,6 +46,29 @@ export const pubSurface: SurfaceProvider = {
     if (!after.ok) return after.failure;
 
     if (before.api.size === 0 && after.api.size === 0) {
+      // No Dart API to compare. Whether that is a gap depends on what kind of
+      // package this is: `cupertino_icons` is a font bundle and was never
+      // going to have one, and reporting its Dart API as missing would be
+      // false. Its declared contract is compared instead.
+      const role = after.contract.role;
+      if (role !== 'library') {
+        const changes = diffPubContracts(before.contract, after.contract);
+        if (changes.length > 0) {
+          return {
+            available: true,
+            changes,
+            tool: ROLE_TOOL,
+            // A declared asset/executable contract is real but shallow.
+            weight: 0.7,
+            locator: `${request.name} ${request.from} → ${request.to} (${describeRole(role)} contract)`,
+          };
+        }
+        return unavailable(
+          TOOL,
+          'artifact-role-unsupported',
+          `${request.name} is ${describeRole(role)}; it publishes no Dart API by design, and its declared contract is unchanged between ${request.from} and ${request.to}.`,
+        );
+      }
       return unavailable(
         TOOL,
         'no-public-surface',
@@ -61,7 +86,9 @@ export const pubSurface: SurfaceProvider = {
   },
 };
 
-type Attempt = { ok: true; api: SurfaceApi } | { ok: false; failure: SurfaceOutcome };
+type Attempt =
+  | { ok: true; api: SurfaceApi; contract: PubContract }
+  | { ok: false; failure: SurfaceOutcome };
 
 async function surfaceOf(request: SurfaceRequest, version: string): Promise<Attempt> {
   const url = `https://pub.dev/api/archives/${encodeURIComponent(request.name)}-${encodeURIComponent(version)}.tar.gz`;
@@ -96,7 +123,22 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
     };
   }
 
-  return { ok: true, api: publicApiOf(entries) };
+  const api = publicApiOf(entries);
+  // A pub archive is unpacked into the package directory, so the pubspec is at
+  // the root — with the same leading-segment caveat `publicApiOf` explains.
+  const rooted = entries.some((entry) => entry.path.startsWith('lib/'));
+  const paths = entries.map((entry) => (rooted ? entry.path : entry.path.replace(/^[^/]+\//, '')));
+  const pubspecEntry = entries.find(
+    (entry, index) => paths[index] === 'pubspec.yaml',
+  );
+  let pubspec: string | null = null;
+  try {
+    pubspec = pubspecEntry ? pubspecEntry.read().toString('utf8') : null;
+  } catch {
+    pubspec = null;
+  }
+
+  return { ok: true, api, contract: classifyPubPackage(paths, pubspec, api.size > 0) };
 }
 
 /**

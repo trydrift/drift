@@ -571,6 +571,11 @@ function slimCandidate(candidate) {
     impactFiles: candidate.impactFiles,
     evidenceCount: candidate.evidenceCount,
     gaps: candidate.gaps.slice(0, 3),
+    // The same gaps as codes. Semantic recording validation must be able to
+    // tell "the package publishes no declarations" from "the tarball would
+    // not download" without reading English.
+    evidenceGaps: candidate.evidenceGaps ?? [],
+    kind: candidate.kind ?? null,
     // Findings that were actually localized come first, then the slice.
     //
     // Taking the first four in plan order looked fine and was not: a package
@@ -596,6 +601,9 @@ function slimCandidate(candidate) {
         remediation: change.remediation,
         confidence: change.confidence,
         runtime: change.runtime ?? null,
+        // Structured module-system metadata, so a claim about CommonJS can be
+        // checked against the finding's own evidence rather than its prose.
+        moduleSystem: change.moduleSystem ?? null,
         // The single customer-facing number, computed from the same
         // assessment the extension and the Markdown report read. `null` for
         // the rare finding with no assessment at all, so the page can fall

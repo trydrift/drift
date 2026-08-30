@@ -37,7 +37,22 @@ type ComparableVersion =
   | { kind: 'ruby'; value: readonly RubyPart[] }
   | { kind: 'maven'; value: MavenComparableVersion }
   | { kind: 'nuget'; value: NugetVersion }
-  | { kind: 'opam'; value: string };
+  | { kind: 'opam'; value: string }
+  /**
+   * An identity Drift can recognise but cannot order.
+   *
+   * Conan and vcpkg let a recipe author pick the version scheme: `9.1.0`,
+   * `cci.20210324`, `release-2026` and `2023-01-25#1` are all ordinary, and
+   * there is no one ordering that is correct across them. Refusing to *parse*
+   * them conflated two different facts — Drift knows exactly which artifact
+   * `fmt/10.2.1` is, it just cannot say whether it is newer than `fmt/9.1.0`
+   * — and the second fact was silently deciding the first, so every C/C++
+   * change was skipped before the header differ could run.
+   *
+   * Equal raw strings are the same release. Different raw strings are
+   * different releases in an unknown order.
+   */
+  | { kind: 'opaque' };
 
 type RubyPart = number | string;
 
@@ -171,9 +186,22 @@ export function parsePublishedVersion(raw: string, ecosystem: Ecosystem): Parsed
     };
   }
 
-  // Conan and vcpkg permit package-authored/version-scheme-specific ordering.
-  // Preserving the spelling is possible, but manufacturing a global ordering
-  // is not. Failing parsing closes discovery/range/bump operations safely.
+  if (ecosystem === 'conan' || ecosystem === 'vcpkg') {
+    // An exact literal identity, and nothing that is really a constraint. A
+    // range, a wildcard, or anything carrying a comparison operator has no
+    // single artifact behind it and still fails closed.
+    if (!/^[A-Za-z0-9][A-Za-z0-9._+#@-]*$/.test(identity)) return null;
+    return {
+      raw: identity,
+      ecosystem,
+      // Prerelease classification is part of an ordering scheme Drift does not
+      // have here; claiming one would be the same mistake in miniature.
+      prerelease: false,
+      comparable: { kind: 'opaque' },
+      release: null,
+    };
+  }
+
   return null;
 }
 
@@ -192,6 +220,9 @@ export function compareParsedVersions(a: ParsedPublishedVersion, b: ParsedPublis
       return compareNuget(a.comparable.value, (b.comparable as typeof a.comparable).value);
     case 'opam':
       return compareOpam(a.comparable.value, (b.comparable as typeof a.comparable).value);
+    case 'opaque':
+      // Equality is provable from the identity itself. Order is not.
+      return a.raw === b.raw ? 0 : null;
   }
 }
 
@@ -322,6 +353,11 @@ function satisfiesRange(version: ParsedPublishedVersion, rawRange: string): bool
     return cmp === null ? null : cmp >= 0;
   }
   if (version.comparable.kind === 'opam') return satisfiesOpam(version, range);
+  if (version.comparable.kind === 'opaque') {
+    // Only exact equality is decidable without an ordering. Anything else is
+    // unknown, which is what a caller must be told rather than `false`.
+    return range === version.raw ? true : null;
+  }
   return null;
 }
 

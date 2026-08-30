@@ -14,8 +14,9 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { isExactSemVer } from './semver-utils.mjs';
+import { isDirectExecution } from './direct-execution.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -66,12 +67,7 @@ function updateJsonFile(path, update, version) {
   writeFileSync(path, update(source, version));
 }
 
-function isDirectExecution() {
-  if (!process.argv[1]) return false;
-  return resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
-}
-
-if (isDirectExecution()) {
+if (isDirectExecution(import.meta.url)) {
   const version = process.argv[2];
   if (!version) {
     console.error('Usage: node scripts/set-version.mjs <version>');

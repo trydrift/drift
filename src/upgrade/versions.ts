@@ -54,6 +54,15 @@ export interface VersionLookupRequest {
   range: string;
   /** Raises the GitHub rate limit for the tag-derived ecosystems. */
   githubToken?: string;
+  /**
+   * Where this dependency actually resolves from, when it is not the registry.
+   *
+   * A Go module redirected to a directory by a `replace` directive is
+   * controlled by the workspace, not by a registry release, and asking a
+   * registry what is newer than its `v0.0.0` placeholder produces an upgrade
+   * that cannot be applied.
+   */
+  resolution?: { kind: 'local-replace'; target: string };
 }
 
 /**
@@ -145,6 +154,16 @@ export async function lookupVersions(request: VersionLookupRequest): Promise<Ver
 async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
   const { name, ecosystem, current, range } = request;
   const source = versionSourceLabel(ecosystem);
+
+  // A dependency the workspace answers for itself. Its declared version is a
+  // placeholder, not an outdated release, and the registry has no say in it.
+  if (request.resolution?.kind === 'local-replace') {
+    return {
+      outcome: 'unchecked',
+      reason: `${name} is replaced by ${request.resolution.target} in this workspace, so its version is controlled locally rather than by ${source}.`,
+    };
+  }
+
   const comparisonCurrent = publishedVersion(current, ecosystem);
 
   // Everything below compares against `current`. If that is not a version
@@ -154,6 +173,18 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
     return {
       outcome: 'unchecked',
       reason: `${name} is installed at “${current}”, which Drift cannot compare against published versions.`,
+    };
+  }
+
+  // An identity Drift recognises but cannot order. Comparing published
+  // versions would be arbitrary, and "nothing is newer" would read as a clean
+  // bill of health for a question that was never answered. Explicitly
+  // supplied changes still reach analysis — see `parsePublishedVersion` — but
+  // *discovering* an upgrade needs an ordering.
+  if (comparisonCurrent.comparable.kind === 'opaque') {
+    return {
+      outcome: 'unchecked',
+      reason: `${name} is installed at “${current}”, and ${source} defines no single ordering for ${ecosystem} versions, so Drift cannot say whether a newer release exists.`,
     };
   }
 

@@ -2,6 +2,7 @@ import type { Ecosystem } from '../types.js';
 import { fetchJson, fetchText } from '../util/http.js';
 import { arduinoLibrary } from './arduino-index.js';
 import { fetchCocoaPodsSpec, githubRepoFromSpec } from './cocoapods-spec.js';
+import { fetchPackagistReleases, packagistReleaseFor } from './packagist.js';
 import {
   fetchOpamMetadata,
   fetchOpamPackageVersions,
@@ -20,6 +21,16 @@ export interface RegistryInfo {
   /** Deprecation notice for the *target* version, when the registry has one. */
   deprecated: string | null;
   description: string | null;
+  /**
+   * Metadata the registry states outright, rather than metadata Drift inferred.
+   *
+   * A declared changelog URL is stronger evidence than any filename guess, and
+   * throwing it away after using it only as a repository hint is how packages
+   * that publish a changelog ended up reported as having none.
+   */
+  repositoryUrl?: string | null;
+  changelogUrl?: string | null;
+  documentationUrl?: string | null;
 }
 
 /**
@@ -50,7 +61,7 @@ export async function fetchRegistryInfo(
     case 'nuget':
       return fetchNuGet(name);
     case 'packagist':
-      return fetchPackagist(name);
+      return fetchPackagist(name, targetVersion);
     case 'hex':
       return fetchHex(name);
     case 'pub':
@@ -137,23 +148,22 @@ interface NuGetCatalogEntry {
   deprecation?: { message?: string };
 }
 
-async function fetchPackagist(name: string): Promise<RegistryInfo | null> {
-  const data = await fetchJson<{
-    packages?: Record<string, PackagistVersion[]>;
-  }>(`https://repo.packagist.org/p2/${name}.json`);
-
-  const releases = data?.packages?.[name];
+async function fetchPackagist(name: string, targetVersion: string | null): Promise<RegistryInfo | null> {
+  const releases = await fetchPackagistReleases(name);
   if (!releases || releases.length === 0) return null;
 
-  // p2 returns newest first.
-  const latest = releases[0]!;
+  // Effective metadata for the version actually being analysed, falling back
+  // to the newest release. p2 serves newest first, and inheritance has already
+  // been expanded, so neither one can be missing a field the response supplied.
+  const selected =
+    (targetVersion ? packagistReleaseFor(releases, targetVersion) : null) ?? releases[0]!;
 
   // Packagist spells deprecation as `abandoned`, whose value is either `true`
   // or the name of the package that replaced it — and the replacement is the
   // single most useful thing to tell someone, so it is not flattened away.
-  const abandoned = latest.abandoned;
+  const abandoned = selected.abandoned;
   const deprecated =
-    abandoned === undefined || abandoned === false
+    abandoned === null || abandoned === false
       ? null
       : typeof abandoned === 'string'
         ? `This package is abandoned; the author suggests using ${abandoned} instead.`
@@ -162,21 +172,14 @@ async function fetchPackagist(name: string): Promise<RegistryInfo | null> {
   return {
     name,
     ecosystem: 'packagist',
-    githubRepo: parseGitHubRepo(latest.source?.url ?? null) ?? parseGitHubRepo(latest.homepage ?? null),
-    homepage: latest.homepage ?? `https://packagist.org/packages/${name}`,
-    versions: releases.map((release) => release.version).filter((v): v is string => Boolean(v)),
+    githubRepo: parseGitHubRepo(selected.sourceUrl) ?? parseGitHubRepo(selected.homepage),
+    homepage: selected.homepage ?? `https://packagist.org/packages/${name}`,
+    versions: releases.map((release) => release.version),
     deprecated,
-    description: latest.description ?? null,
+    description: selected.description,
   };
 }
 
-interface PackagistVersion {
-  version?: string;
-  description?: string;
-  homepage?: string;
-  source?: { url?: string };
-  abandoned?: boolean | string;
-}
 
 async function fetchHex(name: string): Promise<RegistryInfo | null> {
   const data = await fetchJson<{
@@ -933,6 +936,7 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     homepage_uri?: string;
     source_code_uri?: string;
     changelog_uri?: string;
+    documentation_uri?: string;
   }>(`https://rubygems.org/api/v1/gems/${encodeURIComponent(name)}.json`);
   if (!data) return null;
 
@@ -951,6 +955,11 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     versions: (versions ?? []).map((v) => v.number),
     deprecated: null,
     description: data.info ?? null,
+    // RubyGems lets a gem state these directly. They are kept as themselves,
+    // not collapsed into a repository hint and discarded.
+    repositoryUrl: data.source_code_uri ?? null,
+    changelogUrl: data.changelog_uri ?? null,
+    documentationUrl: data.documentation_uri ?? null,
   };
 }
 

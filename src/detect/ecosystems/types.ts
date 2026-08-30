@@ -7,6 +7,13 @@ export interface CargoDependencyPlacement {
   target?: string;
 }
 
+/** A dependency resolved from somewhere other than its registry. */
+export interface DependencyResolution {
+  kind: 'local-replace';
+  /** The path or module the `replace` directive redirects to. */
+  target: string;
+}
+
 export interface ParsedDependency {
   /** Version or range exactly as written in the manifest. */
   version: string | null;
@@ -19,6 +26,16 @@ export interface ParsedDependency {
    * participates in version ordering.
    */
   platform?: string;
+  /**
+   * Where this dependency actually comes from, when it is not the registry.
+   *
+   * Kubernetes' staging modules require `k8s.io/api v0.0.0` and then redirect
+   * it to `../api` with a `replace` directive: the version is a placeholder
+   * for a module that lives in the workspace, not an outdated release. Sending
+   * it through ordinary latest-version selection proposed upgrading a
+   * directory to v0.37.0.
+   */
+  resolution?: DependencyResolution;
 }
 
 /** Package name -> parsed entry. */

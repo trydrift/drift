@@ -1,5 +1,5 @@
 import type { Ecosystem } from '../types.js';
-import { fetchText } from '../util/http.js';
+import { fetchJson, fetchText } from '../util/http.js';
 import { compareParsedVersions, parsePublishedVersion } from '../version-semantics.js';
 
 /** One version's worth of changelog prose. */
@@ -65,8 +65,91 @@ export interface FetchedDocument {
 export async function fetchChangelog(
   githubRepo: string,
   branches: readonly string[] = ['main', 'master'],
+  options: { declaredUrl?: string | null } = {},
 ): Promise<FetchedDocument | null> {
-  return probe(githubRepo, CHANGELOG_FILENAMES, branches);
+  // A registry-declared changelog URL is a statement by the package author.
+  // It outranks every guess Drift could make about a filename.
+  if (options.declaredUrl) {
+    const declared = await fetchDeclaredChangelog(options.declaredUrl);
+    if (declared) return declared;
+  }
+  const probed = await probe(githubRepo, CHANGELOG_FILENAMES, branches);
+  if (probed) return probed;
+  // Every conventional spelling missed. Rather than growing the list forever —
+  // Sidekiq ships `Changes.md`, which is `CHANGES.md` in every way but case —
+  // ask the repository what it actually contains, once.
+  return listedChangelog(githubRepo, branches);
+}
+
+/**
+ * Fetch a changelog the registry named outright.
+ *
+ * A GitHub blob URL is rewritten to raw content; anything else is fetched as
+ * given. `null` means the declared document could not be read — which is a
+ * fact about reachability, never proof that no changelog exists.
+ */
+export async function fetchDeclaredChangelog(declaredUrl: string): Promise<FetchedDocument | null> {
+  const url = declaredUrl.trim();
+  if (!/^https?:\/\//i.test(url)) return null;
+
+  const blob = /^https?:\/\/github\.com\/([\w.-]+\/[\w.-]+)\/(?:blob|raw)\/([^/]+)\/(.+)$/i.exec(url);
+  const raw = blob ? `https://raw.githubusercontent.com/${blob[1]}/${blob[2]}/${blob[3]}` : url;
+
+  // A declared URL pointing at a rendered release page (GitHub Releases, a
+  // docs site) is not a document this parser can read as changelog prose, and
+  // the release-notes provider already covers that ground.
+  if (/^https?:\/\/github\.com\/[\w.-]+\/[\w.-]+\/releases/i.test(url)) return null;
+
+  const content = await fetchText(raw, { retries: 0 });
+  if (!content || !content.trim()) return null;
+
+  return {
+    path: blob ? blob[3]! : url,
+    url,
+    content,
+    branch: blob ? blob[2]! : 'HEAD',
+  };
+}
+
+/**
+ * The repository's own root listing, matched case-insensitively.
+ *
+ * Only reached when every conventional filename missed, so the extra
+ * unauthenticated API call is paid exactly where the guessing failed rather
+ * than on every package.
+ */
+async function listedChangelog(
+  githubRepo: string,
+  branches: readonly string[],
+): Promise<FetchedDocument | null> {
+  const listing = await fetchJson<{ name?: string; type?: string }[]>(
+    `https://api.github.com/repos/${githubRepo}/contents/`,
+    { retries: 0 },
+  );
+  if (!Array.isArray(listing)) return null;
+
+  const wanted = new Set(CHANGELOG_FILENAMES.filter((name) => !name.includes('/')).map(lower));
+  const matches = listing
+    .filter((entry) => entry.type !== 'dir' && typeof entry.name === 'string')
+    .map((entry) => entry.name!)
+    .filter((name) => wanted.has(lower(name)))
+    // Keep the same priority the probe list encodes, so two runs agree.
+    .sort((a, b) => changelogRank(a) - changelogRank(b));
+
+  for (const name of matches) {
+    const found = await probe(githubRepo, [name], branches);
+    if (found) return found;
+  }
+  return null;
+}
+
+function lower(name: string): string {
+  return name.toLowerCase();
+}
+
+function changelogRank(name: string): number {
+  const at = CHANGELOG_FILENAMES.findIndex((candidate) => lower(candidate) === lower(name));
+  return at === -1 ? CHANGELOG_FILENAMES.length : at;
 }
 
 export async function fetchMigrationGuide(
@@ -203,11 +286,11 @@ export async function fetchChangelogDocuments(
   from: string,
   to: string,
   ecosystem: Ecosystem = 'npm',
-  options: { branches?: readonly string[]; maxDocuments?: number } = {},
+  options: { branches?: readonly string[]; maxDocuments?: number; declaredUrl?: string | null } = {},
 ): Promise<FetchedDocument[]> {
-  const { branches = ['main', 'master'], maxDocuments = 12 } = options;
+  const { branches = ['main', 'master'], maxDocuments = 12, declaredUrl = null } = options;
 
-  const root = await fetchChangelog(githubRepo, branches);
+  const root = await fetchChangelog(githubRepo, branches, { declaredUrl });
   if (!root) return [];
 
   if (sectionsBetween(parseChangelogSections(root.content, ecosystem), from, to, ecosystem).length > 0) return [root];
