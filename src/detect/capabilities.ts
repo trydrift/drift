@@ -239,7 +239,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, DeclaredCapability> = {
     ecosystem: 'pypi',
     localizationBasis: 'published',
     label: 'Python',
-    files: ['pyproject.toml', 'requirements.txt', 'setup.py', 'poetry.lock', 'uv.lock', 'Pipfile'],
+    files: ['pyproject.toml', 'requirements.in', 'requirements.txt', 'setup.py', 'poetry.lock', 'uv.lock', 'Pipfile'],
     managers: ['pip', 'Poetry', 'uv'],
     support: {
       detect: full(),

@@ -19,6 +19,7 @@ import {
   type LocalCheck,
 } from './checks.js';
 import { detectChecks } from '../detect/checks.js';
+import { isPythonRequirementsFile } from '../detect/python-requirements.js';
 
 /**
  * Testing an upgrade before anyone is told about it.
@@ -736,7 +737,7 @@ async function cacheKeyFor(
   const fs = options.fs ?? nodeWorkspaceFs();
   const base = dir ? `${worktreePath}/${dir}` : worktreePath;
   const entries = await fs.readDirectory(base).catch(() => []);
-  const interesting = entries.filter((name) => MANIFEST_PATTERN.test(name)).sort();
+  const interesting = entries.filter((name) => MANIFEST_PATTERN.test(name) || isPythonRequirementsFile(name)).sort();
   if (interesting.length === 0) return null;
 
   const files: { path: string; content: string }[] = [];
@@ -767,7 +768,7 @@ async function cacheKeyFor(
  * misses is a cache hit it should not have had.
  */
 const MANIFEST_PATTERN =
-  /^(package\.json|package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|pyproject\.toml|setup\.py|setup\.cfg|requirements[^/]*\.txt|poetry\.lock|uv\.lock|Pipfile(\.lock)?|go\.mod|go\.sum|Cargo\.(toml|lock)|Gemfile(\.lock)?|[^/]*\.gemspec|pom\.xml|build\.gradle(\.kts)?|gradle\.lockfile|build\.sbt|composer\.(json|lock)|mix\.(exs|lock)|pubspec\.(yaml|lock)|Package\.(swift|resolved)|Podfile(\.lock)?|[^/]*\.opam|conanfile\.(txt|py)|conan\.lock|vcpkg\.json|platformio\.ini|library\.properties|.*\.csproj|.*\.fsproj|packages\.lock\.json)$/i;
+  /^(package\.json|package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|pyproject\.toml|setup\.py|setup\.cfg|poetry\.lock|uv\.lock|Pipfile(\.lock)?|go\.mod|go\.sum|Cargo\.(toml|lock)|Gemfile(\.lock)?|[^/]*\.gemspec|pom\.xml|build\.gradle(\.kts)?|gradle\.lockfile|build\.sbt|composer\.(json|lock)|mix\.(exs|lock)|pubspec\.(yaml|lock)|Package\.(swift|resolved)|Podfile(\.lock)?|[^/]*\.opam|conanfile\.(txt|py)|conan\.lock|vcpkg\.json|platformio\.ini|library\.properties|.*\.csproj|.*\.fsproj|packages\.lock\.json)$/i;
 
 /**
  * A checkout being prepared ahead of the packages that will need it.

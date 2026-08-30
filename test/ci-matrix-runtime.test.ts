@@ -127,6 +127,30 @@ describe('static GitHub Actions matrices resolve to concrete runtime declaration
     assert.deepEqual(unresolved, []);
   });
 
+  test('Scrapy-style nested include metadata does not invalidate the referenced key', () => {
+    const content = [
+      'jobs:',
+      '  test:',
+      '    strategy:',
+      '      matrix:',
+      '        python-version: ["3.10", "3.11"]',
+      '        include:',
+      '          - python-version: "3.14"',
+      '            env:',
+      '              TOXENV: py',
+      '            coverage:',
+      '              enabled: true',
+      '    steps:',
+      '      - uses: actions/setup-python@v5',
+      '        with:',
+      '          python-version: ${{ matrix.python-version }}',
+    ].join('\n');
+
+    const { resolved, unresolved } = discover(content, 'python');
+    assert.deepEqual(resolved.map((r) => r.requirement).sort(), ['3.10', '3.11', '3.14']);
+    assert.deepEqual(unresolved, []);
+  });
+
   test('a static exclude that leaves the value reachable keeps it in the domain', () => {
     const content = [
       'jobs:',

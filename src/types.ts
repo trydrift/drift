@@ -332,7 +332,11 @@ export type RuntimeCompatibilityReason =
   /** Localization did not run or failed before this requirement could be checked. */
   | 'not-analyzed'
   /** A declaration or the upstream range itself could not be parsed. */
-  | 'unparseable';
+  | 'unparseable'
+  /** One or more authoritative runtime configuration files could not be indexed. */
+  | 'config-incomplete'
+  /** At least one authoritative runtime configuration file could not be indexed. */
+  | 'config-incomplete';
 
 export type ModuleSystem = 'commonjs' | 'esm' | 'dual';
 export type ModuleIncompatibleUsage = 'require' | 'static-import' | 'dynamic-import' | 're-export';
@@ -529,6 +533,7 @@ export interface BreakingChangeDisposition {
     | 'runtime-unknown'
     | 'runtime-compatible'
     | 'not-localized'
+    | 'localization-incomplete'
     | 'no-local-impact';
   /** All explanatory locations, including review-only runtime declarations. */
   sites: ImpactSite[];
@@ -748,6 +753,10 @@ export interface RemediationPlan {
    * same default `buildPlan` applies to its input.
    */
   localizationRan?: boolean;
+  /** Whether a completed localization covered every eligible source file. */
+  localizationComplete?: boolean;
+  /** Whether every discovered authoritative runtime configuration file was indexed. */
+  runtimeConfigComplete?: boolean;
   commits: CommitUnit[];
   /** Real dependency graph over commit units. */
   planEdges: PlanEdge[];

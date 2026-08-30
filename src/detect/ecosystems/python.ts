@@ -1,6 +1,7 @@
 import type { DependencyKind } from '../../types.js';
 import { basename, type DependencyMap, type ManifestParser } from './types.js';
 import { findTable, parseTomlArray, parseTomlVersionValue, scanTomlTables } from './toml.js';
+import { isCompiledPythonRequirements, isPythonRequirementsFile } from '../python-requirements.js';
 
 const LOCKFILES = new Set(['poetry.lock', 'pipfile.lock', 'uv.lock', 'requirements.lock']);
 
@@ -16,8 +17,7 @@ export const pythonParser: ManifestParser = {
       base === 'setup.py' ||
       base === 'pipfile' ||
       LOCKFILES.has(base) ||
-      /^requirements[\w.-]*\.txt$/.test(base) ||
-      /^constraints[\w.-]*\.txt$/.test(base)
+      isPythonRequirementsFile(base)
     );
   },
 
@@ -48,6 +48,8 @@ export function parseRequirementLine(line: string): { name: string; version: str
 
   // Drop environment markers.
   s = s.split(';')[0]!.trim();
+  // Compilers may put provenance on the requirement line itself.
+  s = s.replace(/\s+#.*$/, '').trim();
 
   // `name @ https://...` direct references have no comparable version.
   if (/\s@\s/.test(s)) {
@@ -70,9 +72,30 @@ export function normalizePyName(name: string): string {
 
 function parseRequirements(content: string): DependencyMap {
   const out: DependencyMap = new Map();
-  for (const line of content.split('\n')) {
+  const lines = content.split('\n');
+  const compiled = isCompiledPythonRequirements(content);
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]!;
     const parsed = parseRequirementLine(line);
-    if (parsed) out.set(parsed.name, { version: parsed.version, kind: 'runtime' });
+    if (!parsed) continue;
+
+    let provenance = line;
+    for (let cursor = index + 1; cursor < lines.length; cursor++) {
+      const next = lines[cursor]!;
+      if (!/^\s*#/.test(next)) break;
+      provenance += `\n${next}`;
+      index = cursor;
+    }
+
+    // Compilers identify source declarations with `# via -r requirements.in`.
+    // Every other pin is part of the resolved graph, including pins whose
+    // provenance is absent or ambiguous; uncertainty must not promote them.
+    const directFromInput = /#\s*via\s+(?:-r|--requirement)\s+\S+\.in\b/i.test(provenance);
+    out.set(parsed.name, {
+      version: parsed.version,
+      kind: compiled && !directFromInput ? 'transitive' : 'runtime',
+    });
   }
   return out;
 }

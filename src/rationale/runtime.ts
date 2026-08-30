@@ -1252,8 +1252,16 @@ function resolveJobMatrixKey(
       const pairs: { k: string; value: string; line: number }[] = [];
       for (const p of entry.items) {
         const pk = isScalar(p.key) ? String(p.key.value) : null;
+        if (pk === null) return { ok: false };
         const lit = literal(p.value);
-        if (pk === null || !lit) return { ok: false };
+        if (!lit) {
+          // A nested augmentation such as `env: { TOXENV: py }` neither
+          // changes a base combination nor the projected runtime key. It is
+          // irrelevant to this projection. A dynamic target/base key can
+          // change reachability and must still fail closed.
+          if (pk === key || baseKeySet.has(pk)) return { ok: false };
+          continue;
+        }
         pairs.push({ k: pk, value: lit.value, line: lit.line });
       }
       let merged = false;

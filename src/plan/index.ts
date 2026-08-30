@@ -65,6 +65,10 @@ export interface BuildPlanInput {
    * the distinction between searched-and-clean and never-searched.
    */
   localizationRan?: boolean;
+  /** True when the source cap did not truncate localization coverage. */
+  localizationComplete?: boolean;
+  /** True when every authoritative runtime configuration file was readable and within limits. */
+  runtimeConfigComplete?: boolean;
   /** Checks that ran against this plan. Empty means nothing was verified. */
   verification?: readonly VerificationOutcome[];
   /** Surfaces the earlier stages looked at, and how that went. */
@@ -110,6 +114,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     impactSites,
     input.runtimeAnalyses ?? input.rationale?.flatMap((entry) => entry.runtimeAnalyses ?? []) ?? [],
     input.localizationRan ?? true,
+    input.localizationComplete ?? true,
   );
 
   const graph = planCommitGraph({
@@ -146,6 +151,8 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     impactSites: [...impactSites],
     dispositions,
     localizationRan: input.localizationRan ?? true,
+    localizationComplete: input.localizationComplete ?? true,
+    runtimeConfigComplete: input.runtimeConfigComplete ?? true,
     commits,
     planEdges: graph.edges,
     upgradeCohorts: graph.cohorts,
@@ -170,6 +177,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
 function assessAll(input: BuildPlanInput): BreakingChange[] {
   const { evidence, breakingChanges, impactSites } = input;
   const localizationRan = input.localizationRan ?? true;
+  const localizationComplete = input.localizationComplete ?? true;
 
   return breakingChanges.map((change) => {
     const sites = impactSites.filter((site) => site.breakingChangeId === change.id);
@@ -198,6 +206,7 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
       evidence,
       sites,
       localizationRan,
+      localizationComplete,
       runtimeState,
       outcomes,
       checkedSurfaces: input.checkedSurfaces ?? [],
@@ -223,6 +232,20 @@ function collectGaps(
   const { changes, evidence, impactSites, config } = input;
   const gaps: AnalysisGap[] = [];
   const localizationRan = input.localizationRan ?? true;
+
+  if (localizationRan && input.localizationComplete === false && breakingChanges.length > 0) {
+    gaps.push({
+      stage: 'localize',
+      surface: 'repository source',
+      reason:
+        input.runtimeConfigComplete === false
+          ? 'Source localization was incomplete, and at least one authoritative runtime configuration file could not be indexed. Zero local API sites is not an exhaustive absence claim.'
+          : 'Source localization reached its file limit. Runtime configuration was indexed completely, but zero local API sites is not an exhaustive absence claim.',
+      severity: 'blocking',
+      automaticExecution: 'blocks',
+      remediation: 'Raise the source indexing limit or narrow the scan to the relevant workspace.',
+    });
+  }
 
   if (!localizationRan && breakingChanges.length > 0) {
     gaps.push({
@@ -432,7 +455,7 @@ export function assessRisk(
 
   for (const change of changes) {
     if (change.bump === 'major') raise('medium');
-    if (isDowngrade(change.from, change.to)) raise('high');
+    if (isDowngrade(change.from, change.to, change.ecosystem)) raise('high');
   }
 
   // Test files being touched is a warning sign worth escalating: the fix may

@@ -183,7 +183,7 @@ export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string
   // silently drop it while claiming to name everything worth reviewing.
   const needsReview = candidates.filter((c) => {
     const severity = severityOf(c);
-    return severity === 'affected' || severity === 'verification-failed' || severity === 'unchecked';
+    return severity === 'affected' || severity === 'verification-failed' || severity === 'review-required' || severity === 'runtime-unresolved' || severity === 'localization-incomplete' || severity === 'evidence-missing';
   });
 
   const rows = candidates.map((candidate) => {

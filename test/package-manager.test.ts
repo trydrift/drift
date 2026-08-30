@@ -44,6 +44,8 @@ describe('package manager detection', () => {
     assert.deepEqual(ids(['pyproject.toml', 'poetry.lock']), ['poetry']);
     assert.deepEqual(ids(['pyproject.toml', 'uv.lock']), ['uv']);
     assert.deepEqual(ids(['requirements.txt']), ['pip']);
+    assert.deepEqual(ids(['requirements.in', 'requirements.txt']), ['pip']);
+    assert.deepEqual(ids(['requirements-docs.in']), ['pip']);
     assert.deepEqual(ids(['go.mod', 'go.sum']), ['go']);
     assert.deepEqual(ids(['Cargo.toml', 'Cargo.lock']), ['cargo']);
     assert.deepEqual(ids(['Gemfile', 'Gemfile.lock']), ['bundler']);
@@ -195,6 +197,12 @@ describe('manifest rewriting', () => {
     assert.equal(rewrite('pip', 'left_pad==1.0.0\n'), 'left_pad==2.0.0\n');
     assert.equal(rewrite('pip', 'left-pad[extra]==1.0.0\n'), 'left-pad[extra]==2.0.0\n');
     assert.equal(rewrite('pip', 'other-pkg==1.0.0\n'), 'other-pkg==1.0.0\n');
+  });
+
+  test('uses requirements syntax for input and constraints files too', () => {
+    for (const path of ['requirements.in', 'requirements-docs.in', 'constraints.in', 'constraints-dev.txt']) {
+      assert.equal(rewrite('pip', 'left-pad>=1.0\n', path), 'left-pad==2.0.0\n');
+    }
   });
 
   test('pins a pyproject.toml PEP 621 dependency entry to an exact version', () => {

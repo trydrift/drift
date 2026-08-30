@@ -13,8 +13,11 @@
 export type UpgradeSeverity =
   | 'affected'
   | 'verification-failed'
+  | 'review-required'
+  | 'runtime-unresolved'
+  | 'localization-incomplete'
+  | 'evidence-missing'
   | 'upstream-only'
-  | 'unchecked'
   | 'clean'
   | 'error'
   /** Nothing has been checked yet. Not a verdict — the absence of one. */
@@ -104,6 +107,18 @@ export interface SeverityInput {
    * unaffected* — never *found them and failed to find a local site*.
    */
   runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+  runtimeAnalyses?: readonly {
+    state: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+    reason: string;
+    statement?: string;
+  }[];
+  /** Source-localization completeness; config completeness is tracked separately. */
+  sourceCoverage?: {
+    sourceTruncated: boolean;
+    localizationRan?: boolean;
+    localizationComplete?: boolean;
+    runtimeConfigComplete?: boolean;
+  };
 }
 
 /**
@@ -116,9 +131,9 @@ export interface SeverityInput {
  * `not-run` (nothing installed yet, Quick Scan only), `clean` and `passed`
  * (Deep Verification confirmed it), or `affected` and `skipped` (a location
  * was found statically, and separately an attempt to install and check it
- * did not finish). `unchecked` severity is unaffected by this — it means no
- * *static* evidence was reachable at all, which is a different gap than
- * whether the toolchain ran.
+ * did not finish). Static uncertainty verdicts are unaffected by this: they
+ * describe review-only evidence, runtime uncertainty, or missing upstream
+ * evidence, all separate from whether the toolchain ran.
  */
 export type VerificationState = 'not-run' | 'skipped' | 'passed' | 'failed';
 
@@ -132,7 +147,7 @@ export function verificationState(candidate: SeverityInput): VerificationState {
 /**
  * The verdict.
  *
- * `unchecked` exists because the alternative is a lie Drift told once and must
+ * Explicit uncertainty states exist because the alternative is a lie Drift told once and must
  * never tell again: zod 3 → 4 and typescript 5 → 7 were both reported as *no
  * breaking changes found* when the truth was that nothing had been found at
  * all — the `.d.ts` surface would not resolve, no changelog was reachable, and
@@ -190,7 +205,11 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // evidence. It cannot be `affected` (nothing here is safe to auto-edit) and
   // it must never fall through to `upstream-only` or `clean`, both of which
   // tell the developer this repository is unaffected.
-  if (candidate.impactCount > 0) return 'unchecked';
+  const runtimeSiteCount = runtimeUnresolved ? candidate.runtimeDeclarationSiteCount : 0;
+  const reviewSiteCount = runtimeSiteCount === undefined
+    ? (runtimeUnresolved ? 0 : candidate.impactCount)
+    : Math.max(0, candidate.impactCount - runtimeSiteCount);
+  if (reviewSiteCount > 0) return 'review-required';
 
   // Checked *before* `breakingCount`, and before the recommendation/gap
   // ladder below, because every verdict past this point tells the developer
@@ -202,18 +221,23 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // it produced no site: a declared range that admits rejected versions has
   // not been shown to be safe either.
   if (candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial') {
-    return 'unchecked';
+    return 'runtime-unresolved';
   }
+
+  if (
+    candidate.breakingCount > 0 &&
+    (candidate.sourceCoverage?.localizationComplete === false || candidate.sourceCoverage?.sourceTruncated)
+  ) return 'localization-incomplete';
 
   if (candidate.breakingCount > 0) return 'upstream-only';
 
   // The assessment ran and concluded that nothing could be read. That is the
   // authoritative form of this verdict, and it is reached only when no source
   // answered at all.
-  if (candidate.recommendation === 'insufficient-evidence') return 'unchecked';
+  if (candidate.recommendation === 'insufficient-evidence') return 'evidence-missing';
   if (candidate.recommendation) return 'clean';
 
-  if (candidate.gaps && candidate.gaps.length > 0) return 'unchecked';
+  if (candidate.gaps && candidate.gaps.length > 0) return 'evidence-missing';
   return 'clean';
 }
 
@@ -229,7 +253,7 @@ export function describeSeverity(candidate: SeverityInput): string {
   // Appended to a prediction that Deep Verification has not (yet, or not
   // successfully) confirmed, so a Quick Scan result never reads the same as
   // one the project's own toolchain has actually stood behind. Never applied
-  // to `verification-failed`/`unchecked`, which already say something
+  // to explicit failure/uncertainty verdicts, which already say something
   // stronger and more specific about why nothing here can be called safe.
   const deepNote =
     state === 'not-run'
@@ -237,6 +261,7 @@ export function describeSeverity(candidate: SeverityInput): string {
       : state === 'skipped'
         ? ' — deep verification did not complete'
         : '';
+  const runtimeUncertainty = runtimeUncertaintyText(candidate);
 
   switch (severityOf(candidate)) {
     case 'pending':
@@ -278,10 +303,7 @@ export function describeSeverity(candidate: SeverityInput): string {
       // than left to the generic `deepNote`, which only speaks to whether
       // verification ran, not to what it found.
       const measured = state === 'failed' ? ' — and its own checks fail with this installed, measured not predicted' : deepNote;
-      const runtimeReview = (candidate.runtimeDeclarationSiteCount ?? 0) > 0 &&
-        (candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial')
-        ? ` · ${candidate.runtimeDeclarationSiteCount} runtime declaration${candidate.runtimeDeclarationSiteCount === 1 ? '' : 's'} to review`
-        : '';
+      const runtimeReview = runtimeUncertainty ? ` · ${runtimeUncertainty}` : '';
       return `${verb} your code · ${actionable} ${siteNoun}${actionable === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${runtimeReview}${unconfirmed}${measured}`;
     }
     case 'verification-failed': {
@@ -298,26 +320,24 @@ export function describeSeverity(candidate: SeverityInput): string {
         ? `Verified safe · ${base}, and your own checks pass`
         : `Safe for your code · ${base}${deepNote}`;
     }
-    case 'unchecked': {
-      // Two different facts share this severity. One is "nothing was reachable
-      // to check against". The other is "something local was found, but it is
-      // not confirmed enough to act on" — a low-confidence API match, or a
-      // runtime declaration under an unresolved compatibility result. The
-      // second must not read as the first, and neither may read as safe.
-      const reviewOnly =
-        (candidate.actionableImpactCount ?? 0) === 0 && candidate.impactCount > 0;
-      if (reviewOnly) {
-        const n = candidate.impactCount;
-        // Hedged the same way `affected`'s `verb` is: a low- or
-        // medium-confidence match is real enough to flag but not certain
-        // enough to say flatly, and the two must read the same way here as
-        // they do there.
-        return candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
-          ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — Review required; check before upgrading`
-          : `Review required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — check before upgrading`;
-      }
-      return 'Not verified · Drift found nothing it could check this version against';
+    case 'review-required': {
+      const runtimeSites = candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial'
+        ? candidate.runtimeDeclarationSiteCount ?? 0
+        : 0;
+      const n = Math.max(1, candidate.impactCount - runtimeSites);
+      const detail = runtimeUncertainty ? ` · ${runtimeUncertainty}` : '';
+      return candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
+        ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — Review required; check before upgrading${detail}`
+        : `Review Required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm${detail}`;
     }
+    case 'runtime-unresolved':
+      return runtimeUncertainty
+        ? `Runtime Unknown · ${runtimeUncertainty}`
+        : 'Runtime Unknown · Drift could not resolve this repository’s runtime compatibility';
+    case 'localization-incomplete':
+      return 'Localization Incomplete · Drift searched the indexed source subset, but the file limit prevented proving the breaking API is unused';
+    case 'evidence-missing':
+      return 'Evidence Missing · Drift could not obtain enough upstream evidence to decide';
     case 'clean': {
       // "Safe for your code" and "you should take this" are different things,
       // and an upgrade that closes a known advisory deserves the stronger word.
@@ -341,20 +361,31 @@ export function describeSeverity(candidate: SeverityInput): string {
  * finding: they are not an emergency, but leaving them at the bottom of the
  * list next to the genuinely safe ones is how one gets installed by accident.
  */
-export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
-  const rank = {
+export function severityRank(severity: UpgradeSeverity): number {
+  const rank: Record<UpgradeSeverity, number> = {
     affected: 0,
     'verification-failed': 1,
     error: 2,
-    'upstream-only': 3,
-    unchecked: 4,
+    'review-required': 3,
+    'runtime-unresolved': 4,
+    'localization-incomplete': 5,
+    'evidence-missing': 6,
+    'upstream-only': 7,
     // Above `clean` deliberately: a package nobody has looked at yet is not a
     // package that has been cleared, and sorting it under the safe ones is how
     // it would be read as one.
-    pending: 5,
-    clean: 6,
-  } as const;
-  return rank[severityOf(a)] - rank[severityOf(b)];
+    pending: 8,
+    clean: 9,
+  };
+  return rank[severity];
+}
+
+export function compareUpgradeSeverities(a: UpgradeSeverity, b: UpgradeSeverity): number {
+  return severityRank(a) - severityRank(b);
+}
+
+export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
+  return compareUpgradeSeverities(severityOf(a), severityOf(b));
 }
 
 /**
@@ -376,8 +407,8 @@ export function scanTitle(
   /**
    * Dependencies whose *version lookup* never returned — a registry Drift
    * could not reach, or an ecosystem with no version API. These never became
-   * candidates at all, so counting only the candidates' own `unchecked`
-   * severity would title a run "all up to date" while four dependencies went
+   * candidates at all, so counting only candidate verdicts would title a run
+   * "all up to date" while four dependencies went
    * unlooked-at. See `UpgradeScanResult.unchecked`.
    */
   unlooked = 0,
@@ -397,7 +428,9 @@ export function scanTitle(
   // reason this upgrade affects the repo — a title that only counted
   // `affected` would report "all safe" over a build Drift just watched fail.
   const verificationFailed = candidates.filter((c) => severityOf(c) === 'verification-failed').length;
-  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
+  const uncertain = candidates.filter((candidate) =>
+    ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
+  ).length + unlooked;
   const total = candidates.length;
 
   const urgent = affected + verificationFailed;
@@ -405,6 +438,18 @@ export function scanTitle(
   // Kept distinct from "all safe" for the same reason the verdict is: a run
   // that could not check something did not find it safe, and a title that
   // says otherwise is the claim Drift exists to stop making.
-  if (unchecked > 0) return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, ${unchecked} unverified`;
+  if (uncertain > 0) return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, ${uncertain} require review`;
   return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, all safe`;
+}
+
+function runtimeUncertaintyText(candidate: SeverityInput): string | undefined {
+  if (candidate.runtimeCompatibility !== 'unknown' && candidate.runtimeCompatibility !== 'partial') return undefined;
+  const analysis = candidate.runtimeAnalyses?.find((entry) => entry.state === 'unknown' || entry.state === 'partial');
+  if (analysis?.statement) return analysis.statement;
+  if (analysis?.reason === 'config-incomplete') {
+    return 'Drift could not index every authoritative runtime configuration file';
+  }
+  const sites = candidate.runtimeDeclarationSiteCount ?? 0;
+  if (sites > 0) return `${sites} runtime declaration${sites === 1 ? '' : 's'} to review`;
+  return 'Drift could not resolve this repository’s runtime compatibility';
 }

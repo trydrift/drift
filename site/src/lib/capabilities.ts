@@ -108,6 +108,7 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
     "localizationBasis": "published",
     "files": [
       "pyproject.toml",
+      "requirements.in",
       "requirements.txt",
       "setup.py",
       "poetry.lock",

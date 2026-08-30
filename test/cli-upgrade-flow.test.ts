@@ -220,7 +220,7 @@ describe('CLI safe bulk upgrade routing', () => {
 describe('CLI safe bulk upgrade selection', () => {
   const candidateWithSeverity = (
     name: string,
-    severity: 'clean' | 'upstream-only' | 'affected' | 'verification-failed' | 'unchecked' | 'error',
+    severity: 'clean' | 'upstream-only' | 'affected' | 'verification-failed' | 'evidence-missing' | 'error',
     manifestPath = 'package.json',
     packageManager = 'npm',
   ) => ({
@@ -230,7 +230,7 @@ describe('CLI safe bulk upgrade selection', () => {
     breakingCount: severity === 'upstream-only' || severity === 'affected' ? 1 : 0,
     impactCount: severity === 'affected' ? 1 : 0,
     impactFiles: severity === 'affected' ? 1 : 0,
-    gaps: severity === 'unchecked' ? ['no evidence'] : [],
+    gaps: severity === 'evidence-missing' ? ['no evidence'] : [],
     verification: severity === 'verification-failed' ? { status: 'failed' } : undefined,
   }) as never;
 
@@ -240,7 +240,7 @@ describe('CLI safe bulk upgrade selection', () => {
       candidateWithSeverity('upstream', 'upstream-only'),
       candidateWithSeverity('affected', 'affected'),
       candidateWithSeverity('failed', 'verification-failed'),
-      candidateWithSeverity('unchecked', 'unchecked'),
+      candidateWithSeverity('missing', 'evidence-missing'),
       candidateWithSeverity('error', 'error'),
     ];
 

@@ -1,6 +1,8 @@
 import semver from 'semver';
 import type { Ecosystem } from '../types.js';
 import { normalizeVersion } from '../detect/version.js';
+import { compareParsedVersions, parsePublishedVersion } from '../version-semantics.js';
+import type { ParsedPublishedVersion } from '../version-semantics.js';
 import type { RegistryInfo, RepositoryStatus, VersionInfo } from '../evidence/registry.js';
 import type { MaintenanceAssessment, MaintenanceFact } from './types.js';
 import type { RuntimeDeclaration } from './runtime.js';
@@ -105,12 +107,14 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     });
   }
 
-  const latestStable = highestStable(registry?.versions ?? []);
+  const latestStable = highestStable(registry?.versions ?? [], input.ecosystem);
   if (latestStable) {
-    const target = normalizeVersion(input.to);
-    if (target && semver.eq(latestStable, target)) {
+    const target = parsePublishedVersion(input.to, input.ecosystem);
+    const latest = parsePublishedVersion(latestStable, input.ecosystem);
+    const comparison = target && latest ? compareParsedVersions(latest, target) : null;
+    if (comparison === 0) {
       facts.push({ statement: `${input.to} is the latest stable release.` });
-    } else if (target && semver.gt(latestStable, target)) {
+    } else if (comparison !== null && comparison > 0) {
       facts.push({
         statement: `${input.to} is not the latest release; ${latestStable} is also available.`,
       });
@@ -193,10 +197,12 @@ function describeReleaseLine(
   input: MaintenanceInput,
   latestStable: string | null,
 ): MaintenanceFact | null {
-  const current = normalizeVersion(input.from);
-  if (!current || !latestStable) return null;
+  const current = parsePublishedVersion(input.from, input.ecosystem);
+  const latest = latestStable ? parsePublishedVersion(latestStable, input.ecosystem) : null;
+  if (!current?.release || !latest?.release) return null;
+  if (input.ecosystem === 'maven' || input.ecosystem === 'opam') return null;
 
-  const behind = semver.major(latestStable) - semver.major(current);
+  const behind = (latest.release[0] ?? 0) - (current.release[0] ?? 0);
   if (behind < 1) return null;
 
   return {
@@ -204,12 +210,12 @@ function describeReleaseLine(
   };
 }
 
-function highestStable(versions: readonly string[]): string | null {
+function highestStable(versions: readonly string[], ecosystem: Ecosystem): string | null {
   const stable = versions
-    .map((raw) => normalizeVersion(raw))
-    .filter((v): v is string => v !== null && !semver.prerelease(v))
-    .sort(semver.rcompare);
-  return stable[0] ?? null;
+    .map((raw) => parsePublishedVersion(raw, ecosystem))
+    .filter((version): version is ParsedPublishedVersion => version !== null && !version.prerelease)
+    .sort((a, b) => -(compareParsedVersions(a, b) ?? 0));
+  return stable[0]?.raw ?? null;
 }
 
 /**

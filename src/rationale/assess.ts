@@ -69,6 +69,8 @@ export interface AssessmentInput {
   runtimeAnalyses?: readonly RuntimeRequirementAnalysis[];
   /** Whether repository localization actually completed. */
   localizationRan?: boolean;
+  /** Whether localization covered the full eligible source set. */
+  localizationComplete?: boolean;
 }
 
 /**
@@ -111,6 +113,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     impactSites,
     completeAnalyses,
     input.localizationRan ?? true,
+    input.localizationComplete ?? true,
   );
   const actionableIds = new Set(
     dispositions.filter((disposition) => disposition.state === 'actionable').map((disposition) => disposition.changeId),

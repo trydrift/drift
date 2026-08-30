@@ -27,7 +27,7 @@
  */
 
 import type { UpgradeCandidate, UncheckedDependency } from '../upgrade/scan.js';
-import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from '../upgrade/severity.js';
+import { compareUpgradeSeverities, describeSeverity, severityOf, type UpgradeSeverity } from '../upgrade/severity.js';
 import type { StatusLine } from '../util/status-line.js';
 import {
   displayWidth,
@@ -90,11 +90,29 @@ const FACADE: Record<UpgradeSeverity, Facade> = {
     heading: 'Safe',
     gloss: 'Breaking changes upstream, none of them on any API this repository uses.',
   },
-  unchecked: {
+  'review-required': {
     glyph: 'unknown',
     style: 'cyan',
-    heading: 'Unchecked',
-    gloss: 'Drift found nothing it could check these against. Not the same as safe.',
+    heading: 'Review Required',
+    gloss: 'Drift found local evidence that is not strong enough for an automatic edit.',
+  },
+  'runtime-unresolved': {
+    glyph: 'unknown',
+    style: 'cyan',
+    heading: 'Runtime Unknown',
+    gloss: 'Repository runtime compatibility could not be resolved.',
+  },
+  'localization-incomplete': {
+    glyph: 'unknown',
+    style: 'cyan',
+    heading: 'Localization Incomplete',
+    gloss: 'Only an indexed subset of source was searched, so absence of local use was not proved.',
+  },
+  'evidence-missing': {
+    glyph: 'unknown',
+    style: 'cyan',
+    heading: 'Evidence Missing',
+    gloss: 'Upstream evidence was unavailable or incomplete. Not the same as safe.',
   },
   pending: {
     glyph: 'pending',
@@ -123,35 +141,7 @@ const FACADE: Record<UpgradeSeverity, Facade> = {
  */
 const GROUP_ORDER: readonly UpgradeSeverity[] = (
   Object.keys(FACADE) as UpgradeSeverity[]
-).sort((a, b) => compareSeverity(exemplarOf(a), exemplarOf(b)));
-
-/**
- * The smallest candidate `severityOf` would rank as `severity`.
- *
- * A way to ask `compareSeverity` about a severity directly: it takes candidates
- * because that is what every other caller has, and the ranking it applies is
- * private to it — which is the point, since a second copy of that table here is
- * precisely the drift being removed.
- */
-function exemplarOf(severity: UpgradeSeverity): Parameters<typeof compareSeverity>[0] {
-  const base = { status: 'ready', breakingCount: 0, impactCount: 0, impactFiles: 0, gaps: [] as string[] };
-  switch (severity) {
-    case 'affected':
-      return { ...base, impactCount: 1 };
-    case 'verification-failed':
-      return { ...base, verification: { status: 'failed' } };
-    case 'error':
-      return { ...base, status: 'error' };
-    case 'upstream-only':
-      return { ...base, breakingCount: 1 };
-    case 'unchecked':
-      return { ...base, gaps: ['nothing to compare against'] };
-    case 'pending':
-      return { ...base, status: 'pending' };
-    case 'clean':
-      return { ...base, recommendation: 'safe-to-upgrade' };
-  }
-}
+).sort(compareUpgradeSeverities);
 
 export interface OutdatedView {
   /** The banner naming what is being scanned. */
@@ -370,7 +360,22 @@ function detailedEntry(
     line(`    ${change.kind}`);
     line(`    ${confidenceDisplay(change).text}`);
     line(`    ${wrap(change.summary, width - 4, '    ')}`);
+    const disposition = candidate.plan?.dispositions?.find((entry) => entry.changeId === change.id);
+    if (disposition && (disposition.state === 'review-only' || disposition.state === 'unknown')) {
+      line(c('cyan', `    ${disposition.state}: ${disposition.reason}`));
+    }
     line();
+  }
+
+  const unresolvedRuntime = candidate.runtimeAnalyses?.filter(
+    (analysis) => analysis.state === 'unknown' || analysis.state === 'partial',
+  ) ?? [];
+  for (const analysis of unresolvedRuntime) {
+    line(c('cyan', `    Runtime ${analysis.runtime}: ${analysis.statement ?? analysis.reason}`));
+  }
+
+  for (const gap of candidate.plan?.gaps ?? []) {
+    line(c('cyan', `    Gap · ${gap.surface}: ${gap.reason}`));
   }
 
   // What was actually run, and what it said. A prediction and a measurement
