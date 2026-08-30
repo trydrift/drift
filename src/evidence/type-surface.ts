@@ -610,9 +610,28 @@ function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
   if (!value || typeof value !== 'object') return false;
 
   const record = value as Record<string, unknown>;
-  if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
+  if ('require' in record) return exportRequireValueLooksCommonJs(record.require);
   if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
   if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
+  return false;
+}
+
+/**
+ * A target selected through an explicit `exports.require` condition is part of
+ * the package's CommonJS contract. Ambiguous `.js` files must not be
+ * reinterpreted using the root package `type`: dual-package build layouts can
+ * place a nearer `type: commonjs` marker beside that target. An explicit ESM
+ * extension remains contradictory evidence.
+ */
+function exportRequireValueLooksCommonJs(value: unknown): boolean {
+  if (typeof value === 'string') return !/\.mjs$/i.test(value);
+  if (Array.isArray(value)) return value.some(exportRequireValueLooksCommonJs);
+  if (!value || typeof value !== 'object') return false;
+
+  const record = value as Record<string, unknown>;
+  if ('require' in record) return exportRequireValueLooksCommonJs(record.require);
+  if ('node' in record && exportRequireValueLooksCommonJs(record.node)) return true;
+  if ('default' in record) return exportRequireValueLooksCommonJs(record.default);
   return false;
 }
 
