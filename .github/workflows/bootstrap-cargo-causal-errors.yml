@@ -1,0 +1,141 @@
+name: Bootstrap Cargo causal-error fix
+
+on:
+  push:
+    branches: [fix/cargo-causal-errors]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: fix/cargo-causal-errors
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply focused fix and regression tests
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          rust = Path('src/evidence/surface/rust.ts')
+          s = rust.read_text()
+          old_call = '${firstLine(result.stderr)}'
+          if s.count(old_call) != 1:
+              raise SystemExit(f'expected exactly one firstLine call, found {s.count(old_call)}')
+          s = s.replace(old_call, '${summarizeCargoFailure(result.stderr)}')
+
+          old_fn = """function firstLine(text: string): string {
+            return text.split('\\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
+          }"""
+          new_fn = r"""export function summarizeCargoFailure(stderr: string): string {
+            const lines = stderr
+              .split('\n')
+              .map((line) => line.trim())
+              .filter((line) => line.length > 0);
+            if (lines.length === 0) return 'no diagnostic output';
+
+            // Cargo mixes status/progress output with the actual cause. Prefer
+            // a causal diagnostic wherever one exists instead of reporting the
+            // first line (which is commonly just `Updating crates.io index`).
+            const causalPatterns = [
+              /^error(?:\[E\d+\])?:/i,
+              /failed to select a version/i,
+              /no matching package/i,
+              /could not compile/i,
+              /requires rustc\b/i,
+              /failed to run custom build command/i,
+              /linking with .* failed/i,
+              /error: linker/i,
+              /does not have (?:the )?feature/i,
+              /unknown feature/i,
+            ];
+            for (const pattern of causalPatterns) {
+              const causal = lines.find((line) => pattern.test(line));
+              if (causal) return causal;
+            }
+
+            const progressOnly = /^(?:Updating|Downloading|Downloaded|Compiling|Checking|Finished|Blocking waiting for)\b/i;
+            return lines.find((line) => !progressOnly.test(line)) ?? lines[0]!;
+          }"""
+          if old_fn not in s:
+              raise SystemExit('firstLine function body no longer matches expected main')
+          s = s.replace(old_fn, new_fn)
+          rust.write_text(s)
+
+          test = Path('test/rust-surface-contention.test.ts')
+          t = test.read_text()
+          old_import = "import { acquireCargoSlot, isCargoLockContention } from '../dist/evidence/surface/rust.js';"
+          new_import = "import { acquireCargoSlot, isCargoLockContention, summarizeCargoFailure } from '../dist/evidence/surface/rust.js';"
+          if old_import not in t:
+              raise SystemExit('rust test import no longer matches expected main')
+          t = t.replace(old_import, new_import, 1)
+          marker = "describe('cargo probe scheduling', () => {"
+          if marker not in t:
+              raise SystemExit('cargo scheduling marker missing')
+          block = r"""
+describe('summarizeCargoFailure', () => {
+  const cases: Array<[string, string, string]> = [
+    [
+      'compile error after progress',
+      'Updating crates.io index\nCompiling locked-tripwire v0.1.1002\nerror[E0432]: unresolved import `foo`\n',
+      'error[E0432]: unresolved import `foo`',
+    ],
+    [
+      'MSRV failure',
+      'Updating crates.io index\npackage `locked-tripwire@0.1.1002` requires rustc 1.85 or newer\n',
+      'package `locked-tripwire@0.1.1002` requires rustc 1.85 or newer',
+    ],
+    [
+      'resolution failure',
+      'Updating crates.io index\nerror: failed to select a version for the requirement `foo = "^9"`\n',
+      'error: failed to select a version for the requirement `foo = "^9"`',
+    ],
+    [
+      'linker failure',
+      'Compiling foo v1.0.0\nerror: linking with `cc` failed: exit status: 1\n',
+      'error: linking with `cc` failed: exit status: 1',
+    ],
+  ];
+
+  for (const [name, stderr, expected] of cases) {
+    test(name, () => assert.equal(summarizeCargoFailure(stderr), expected));
+  }
+
+  test('keeps a lock-only diagnostic when no later cause exists', () => {
+    assert.equal(
+      summarizeCargoFailure('Blocking waiting for file lock on package cache\n'),
+      'Blocking waiting for file lock on package cache',
+    );
+  });
+
+  test('uses an explicit fallback for empty stderr', () => {
+    assert.equal(summarizeCargoFailure('   \n'), 'no diagnostic output');
+  });
+});
+
+"""
+          t = t.replace(marker, block + marker, 1)
+          test.write_text(t)
+          PY
+      - run: npm test
+      - run: npm run build:action
+      - run: npm run verify:action-bundle
+      - name: Commit implementation and remove bootstrap workflow
+        shell: bash
+        run: |
+          rm .github/workflows/bootstrap-cargo-causal-errors.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'fix(rust): report causal cargo surface failures'
+          git push origin HEAD:fix/cargo-causal-errors
