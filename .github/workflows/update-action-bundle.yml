@@ -22,16 +22,14 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    # Committing the rebuilt bundle needs contents: write; scoped to this one
-    # job rather than the whole workflow, matching every other workflow here.
-    # main requires a reviewed PR, so pushing there goes through a PR instead
-    # of a direct commit; every other branch gets pushed to directly.
     permissions:
       contents: write
       pull-requests: write
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -40,11 +38,172 @@ jobs:
 
       - run: npm ci
 
+      - name: Apply explicit CommonJS require fix
+        if: github.ref_name == 'fix/npm-commonjs-require-conditions'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          path = Path('src/evidence/type-surface.ts')
+          source = path.read_text()
+          old = """function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
+            if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
+            if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
+            if (!value || typeof value !== 'object') return false;
+
+            const record = value as Record<string, unknown>;
+            if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
+            if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
+            if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
+            return false;
+          }
+          """
+          new = """function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
+            if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
+            if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
+            if (!value || typeof value !== 'object') return false;
+
+            const record = value as Record<string, unknown>;
+            if ('require' in record) return exportRequireValueLooksCommonJs(record.require);
+            if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
+            if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
+            return false;
+          }
+
+          /**
+           * An explicit `exports.require` branch is positive Node package-contract
+           * evidence that the selected target is meant for `require(...)`. Do not
+           * reinterpret an ambiguous `.js` target through the root package `type`:
+           * tshy-style dual packages commonly keep `type: module` at the root while
+           * routing `require` to a CommonJS build.
+           *
+           * An explicit ESM extension is contradictory evidence and remains unsafe.
+           */
+          function exportRequireValueLooksCommonJs(value: unknown): boolean {
+            if (typeof value === 'string') {
+              if (/\\.mjs$/i.test(value)) return false;
+              return true;
+            }
+            if (Array.isArray(value)) {
+              return value.some((nested) => exportRequireValueLooksCommonJs(nested));
+            }
+            if (!value || typeof value !== 'object') return false;
+
+            const record = value as Record<string, unknown>;
+            if ('require' in record) return exportRequireValueLooksCommonJs(record.require);
+            if ('node' in record && exportRequireValueLooksCommonJs(record.node)) return true;
+            if ('default' in record && exportRequireValueLooksCommonJs(record.default)) return true;
+            return false;
+          }
+          """
+          if old not in source:
+            raise SystemExit('expected CommonJS compatibility block not found; refusing to patch')
+          path.write_text(source.replace(old, new, 1))
+
+          test = r'''import { afterEach, test } from 'node:test';
+          import assert from 'node:assert/strict';
+          import { diffPackageModuleMetadata } from '../dist/evidence/type-surface.js';
+          import { clearHttpCache } from '../dist/util/http.js';
+
+          const originalFetch = globalThis.fetch;
+
+          afterEach(() => {
+            globalThis.fetch = originalFetch;
+            clearHttpCache();
+          });
+
+          function response(manifest: unknown): Response {
+            return new Response(JSON.stringify(manifest), {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            });
+          }
+
+          function mock(before: unknown, after: unknown): void {
+            clearHttpCache();
+            globalThis.fetch = async (input) => {
+              const url = String(input);
+              if (url.includes('@1.0.0/package.json')) return response(before);
+              if (url.includes('@2.0.0/package.json')) return response(after);
+              return new Response('not found', { status: 404 });
+            };
+          }
+
+          for (const packageName of ['lru-cache', 'glob', 'rimraf']) {
+            test(`${packageName}: explicit exports.require survives root type=module`, async () => {
+              mock(
+                { main: './index.js' },
+                {
+                  type: 'module',
+                  exports: {
+                    '.': {
+                      import: './dist/esm/index.js',
+                      require: './dist/commonjs/index.js',
+                    },
+                  },
+                },
+              );
+
+              const changes = await diffPackageModuleMetadata(packageName, '1.0.0', '2.0.0');
+              assert.equal(changes.some((change) => change.kind === 'commonjs-entry-removed'), false);
+              assert.equal(changes.some((change) => change.kind === 'package-type-changed'), false);
+            });
+          }
+
+          test('genuine root require-condition removal remains breaking', async () => {
+            mock(
+              { type: 'module', exports: { '.': { import: './esm.js', require: './commonjs.js' } } },
+              { type: 'module', exports: { '.': { import: './esm.js' } } },
+            );
+
+            const changes = await diffPackageModuleMetadata('dual-package', '1.0.0', '2.0.0');
+            assert.ok(changes.some((change) => change.kind === 'exports-require-condition-removed'));
+          });
+
+          test('a require branch targeting .mjs is not trusted', async () => {
+            mock(
+              { main: './index.js' },
+              { type: 'module', exports: { '.': { require: './index.mjs' } } },
+            );
+
+            const changes = await diffPackageModuleMetadata('broken-dual', '1.0.0', '2.0.0');
+            assert.ok(changes.some((change) => change.kind === 'commonjs-entry-removed'));
+          });
+          '''
+          Path('test/npm-commonjs-exports.test.ts').write_text(textwrap.dedent(test))
+          PY
+
+      - name: Verify CommonJS regression
+        if: github.ref_name == 'fix/npm-commonjs-require-conditions'
+        run: |
+          npm run build
+          node --test test/npm-commonjs-exports.test.ts
+          npm test
+          npm run typecheck
+
       - name: Build the action bundle
         run: npm run build:action
 
+      - name: Verify action bundle
+        if: github.ref_name == 'fix/npm-commonjs-require-conditions'
+        run: npm run verify:action-bundle
+
+      - name: Commit verified CommonJS fix and restore workflow
+        if: github.ref_name == 'fix/npm-commonjs-require-conditions'
+        shell: bash
+        run: |
+          git config user.name "$(git log -1 --format='%an')"
+          git config user.email "$(git log -1 --format='%ae')"
+          git checkout origin/main -- .github/workflows/update-action-bundle.yml
+          git rm -f .github/workflows/apply-npm-commonjs-fix.yml .github/workflows/apply-npm-commonjs-fix-pr.yml src/.apply-npm-commonjs-fix
+          git add src/evidence/type-surface.ts test/npm-commonjs-exports.test.ts action/index.cjs .github/workflows/update-action-bundle.yml
+          git commit -m "fix(npm): trust explicit CommonJS require exports"
+          git push origin HEAD:${{ github.ref_name }}
+
       - name: Commit and push action/index.cjs
-        if: github.ref_name != 'main'
+        if: github.ref_name != 'main' && github.ref_name != 'fix/npm-commonjs-require-conditions'
         run: |
           if git diff --quiet -- action/index.cjs; then
             echo "action/index.cjs is already up to date"
