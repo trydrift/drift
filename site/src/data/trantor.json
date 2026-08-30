@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-08-29T17:49:29.444Z",
+  "capturedAt": "2026-08-30T17:05:12.641Z",
   "commit": "3163f6ad964bb91a0ac877912a3ecf31de50a401",
-  "engine": "425d2bf99ac66f81",
-  "durationMs": 155,
+  "engine": "dde3b9292059f1dc",
+  "durationMs": 164,
   "packagesChecked": 0,
   "manifests": [
     "conanfile.txt"
@@ -18,7 +18,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 148,
+      "at": 155,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
@@ -26,7 +26,7 @@
     },
     {
       "type": "progress",
-      "at": 154,
+      "at": 163,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
@@ -34,7 +34,7 @@
     },
     {
       "type": "progress",
-      "at": 155,
+      "at": 164,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -42,7 +42,7 @@
     },
     {
       "type": "progress",
-      "at": 155,
+      "at": 164,
       "phase": "Checking registries",
       "detail": "0 direct dependencies",
       "done": 0,

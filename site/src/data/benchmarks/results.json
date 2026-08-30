@@ -1,6 +1,6 @@
 {
   "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
-  "generatedAt": "2026-08-24T17:08:03.602Z",
+  "generatedAt": "2026-08-27T22:37:47.568Z",
   "datasets": [
     {
       "runId": "roseau-accuracy",
@@ -26,9 +26,9 @@
           "category-accuracy"
         ]
       },
-      "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
+      "driftCommit": "3d7939b671b05db95b4014ca55d1155b0f307d5e",
       "driftTreeDirty": false,
-      "runDate": "2026-08-24T16:17:51.028Z",
+      "runDate": "2026-08-27T21:50:09.891Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- roseau",
@@ -128,7 +128,7 @@
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"21.0.12\" 2026-07-21 LTS",
+          "version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS",
           "neededFor": "any Java case"
         },
         {
@@ -187,9 +187,9 @@
           "category-accuracy"
         ]
       },
-      "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
+      "driftCommit": "3d7939b671b05db95b4014ca55d1155b0f307d5e",
       "driftTreeDirty": false,
-      "runDate": "2026-08-24T16:17:53.371Z",
+      "runDate": "2026-08-27T21:50:17.664Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- kong",
@@ -497,7 +497,7 @@
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"17.0.20\" 2026-07-21",
+          "version": "openjdk version \"17.0.20.1\" 2026-08-18",
           "neededFor": "any Java case"
         },
         {
@@ -556,9 +556,9 @@
           "category-accuracy"
         ]
       },
-      "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
+      "driftCommit": "3d7939b671b05db95b4014ca55d1155b0f307d5e",
       "driftTreeDirty": false,
-      "runDate": "2026-08-24T16:18:01.791Z",
+      "runDate": "2026-08-27T21:50:20.742Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- kong",
@@ -584,22 +584,22 @@
       },
       "confusion": {
         "tp": 131,
-        "fp": 30,
-        "tn": 16138,
+        "fp": 31,
+        "tn": 16137,
         "fn": 34
       },
       "classification": {
         "precision": {
           "numerator": 131,
-          "denominator": 161,
-          "value": 0.8136645962732919
+          "denominator": 162,
+          "value": 0.808641975308642
         },
         "recall": {
           "numerator": 131,
           "denominator": 165,
           "value": 0.793939393939394
         },
-        "f1": 0.8036809815950922
+        "f1": 0.8012232415902141
       },
       "baseline": {
         "name": "conventional-commits marker",
@@ -691,7 +691,7 @@
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"17.0.20\" 2026-07-21",
+          "version": "openjdk version \"17.0.20.1\" 2026-08-18",
           "neededFor": "any Java case"
         },
         {
@@ -749,9 +749,9 @@
           "false-safe-count"
         ]
       },
-      "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
+      "driftCommit": "3d7939b671b05db95b4014ca55d1155b0f307d5e",
       "driftTreeDirty": false,
-      "runDate": "2026-08-24T17:08:03.602Z",
+      "runDate": "2026-08-27T22:37:47.568Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- swe-bump",
@@ -777,19 +777,19 @@
           "value": 1
         },
         "affected-repository identification rate": {
-          "numerator": 49,
+          "numerator": 42,
           "denominator": 61,
-          "value": 0.8032786885245902
+          "value": 0.6885245901639344
         },
         "consumer localization rate": {
-          "numerator": 39,
+          "numerator": 38,
           "denominator": 61,
-          "value": 0.639344262295082
+          "value": 0.6229508196721312
         },
         "false-safe verdicts": {
-          "numerator": 9,
+          "numerator": 6,
           "denominator": 61,
-          "value": 0.14754098360655737
+          "value": 0.09836065573770492
         }
       },
       "confusion": null,
@@ -820,14 +820,14 @@
             "value": 1
           },
           "affected-repository identification rate": {
-            "numerator": 49,
+            "numerator": 42,
             "denominator": 61,
-            "value": 0.8032786885245902
+            "value": 0.6885245901639344
           },
           "consumer localization rate": {
-            "numerator": 39,
+            "numerator": 38,
             "denominator": 61,
-            "value": 0.639344262295082
+            "value": 0.6229508196721312
           }
         },
         "versionToIsRange: true": {
@@ -837,14 +837,14 @@
             "value": 1
           },
           "affected-repository identification rate": {
-            "numerator": 46,
+            "numerator": 39,
             "denominator": 58,
-            "value": 0.7931034482758621
+            "value": 0.6724137931034483
           },
           "consumer localization rate": {
-            "numerator": 36,
+            "numerator": 35,
             "denominator": 58,
-            "value": 0.6206896551724138
+            "value": 0.603448275862069
           }
         },
         "versionToIsRange: false": {
@@ -872,18 +872,18 @@
           "iterations": 2000
         },
         "affected-repository identification rate": {
-          "low": 0.6885245901639344,
-          "high": 0.9016393442622951,
+          "low": 0.5737704918032787,
+          "high": 0.8032786885245902,
           "iterations": 2000
         },
         "consumer localization rate": {
-          "low": 0.5245901639344263,
-          "high": 0.7704918032786885,
+          "low": 0.5081967213114754,
+          "high": 0.7377049180327869,
           "iterations": 2000
         },
         "false-safe verdicts": {
-          "low": 0.06557377049180328,
-          "high": 0.2459016393442623,
+          "low": 0.03278688524590164,
+          "high": 0.18032786885245902,
           "iterations": 2000
         }
       },
@@ -909,7 +909,7 @@
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"17.0.20\" 2026-07-21",
+          "version": "openjdk version \"17.0.20.1\" 2026-08-18",
           "neededFor": "any Java case"
         },
         {
@@ -967,9 +967,9 @@
           "false-safe-count"
         ]
       },
-      "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
+      "driftCommit": "3d7939b671b05db95b4014ca55d1155b0f307d5e",
       "driftTreeDirty": false,
-      "runDate": "2026-08-24T16:56:25.088Z",
+      "runDate": "2026-08-27T22:28:59.629Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- bump --limit 40 --seed 20260819",
@@ -1144,7 +1144,7 @@
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"21.0.12\" 2026-07-21 LTS",
+          "version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS",
           "neededFor": "any Java case"
         },
         {
@@ -1202,9 +1202,9 @@
           "false-safe-count"
         ]
       },
-      "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
+      "driftCommit": "3d7939b671b05db95b4014ca55d1155b0f307d5e",
       "driftTreeDirty": false,
-      "runDate": "2026-08-24T16:26:22.141Z",
+      "runDate": "2026-08-27T21:56:03.376Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- timemachine",
@@ -1230,19 +1230,19 @@
           "value": 0.7101449275362319
         },
         "affected-repository identification rate": {
-          "numerator": 46,
+          "numerator": 35,
           "denominator": 69,
-          "value": 0.6666666666666666
+          "value": 0.5072463768115942
         },
         "consumer localization rate": {
-          "numerator": 46,
+          "numerator": 40,
           "denominator": 69,
-          "value": 0.6666666666666666
+          "value": 0.5797101449275363
         },
         "false-safe verdicts": {
-          "numerator": 1,
+          "numerator": 0,
           "denominator": 69,
-          "value": 0.014492753623188406
+          "value": 0
         }
       },
       "confusion": null,
@@ -1273,14 +1273,14 @@
             "value": 0.7272727272727273
           },
           "affected-repository identification rate": {
-            "numerator": 30,
+            "numerator": 21,
             "denominator": 44,
-            "value": 0.6818181818181818
+            "value": 0.4772727272727273
           },
           "consumer localization rate": {
-            "numerator": 30,
+            "numerator": 24,
             "denominator": 44,
-            "value": 0.6818181818181818
+            "value": 0.5454545454545454
           }
         },
         "label: migration-failure-medium": {
@@ -1290,9 +1290,9 @@
             "value": 0.6521739130434783
           },
           "affected-repository identification rate": {
-            "numerator": 14,
+            "numerator": 12,
             "denominator": 23,
-            "value": 0.6086956521739131
+            "value": 0.5217391304347826
           },
           "consumer localization rate": {
             "numerator": 14,
@@ -1325,18 +1325,18 @@
           "iterations": 2000
         },
         "affected-repository identification rate": {
-          "low": 0.5507246376811594,
-          "high": 0.7681159420289855,
+          "low": 0.391304347826087,
+          "high": 0.6231884057971014,
           "iterations": 2000
         },
         "consumer localization rate": {
-          "low": 0.5507246376811594,
-          "high": 0.7681159420289855,
+          "low": 0.463768115942029,
+          "high": 0.6956521739130435,
           "iterations": 2000
         },
         "false-safe verdicts": {
           "low": 0,
-          "high": 0.043478260869565216,
+          "high": 0,
           "iterations": 2000
         }
       },
@@ -1362,7 +1362,7 @@
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"17.0.20\" 2026-07-21",
+          "version": "openjdk version \"17.0.20.1\" 2026-08-18",
           "neededFor": "any Java case"
         },
         {
