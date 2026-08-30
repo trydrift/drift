@@ -97,6 +97,10 @@ describe('a confident removal rests on evidence that could establish it', () => 
     rejects(removal([{ source: 'changelog' }]), /an absence claim needs a computed artifact comparison/);
   });
 
+  test('no evidence cannot carry a high-confidence removal', () => {
+    rejects(removal([]), /an absence claim needs a computed artifact comparison/);
+  });
+
   test('a computed comparison can', () => {
     accepts(removal([{ source: 'type-surface-diff' }]));
     accepts(removal([{ source: 'changelog' }, { source: 'type-surface-diff' }]));
