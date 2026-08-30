@@ -2,14 +2,14 @@ name: Bootstrap Cargo causal-error fix
 
 on:
   push:
-    branches: [fix/cargo-causal-errors]
+    branches: ['fix/cargo-causal-errors']
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
