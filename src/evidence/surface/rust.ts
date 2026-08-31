@@ -88,6 +88,51 @@ export function isCargoLockContention(stderr: string): boolean {
   );
 }
 
+const CARGO_PROGRESS_LINE = /^(?:Updating|Downloading|Downloaded|Compiling|Compiled|Checking|Blocking)\b/i;
+
+/**
+ * Pick the causal part of Cargo stderr instead of its first status line.
+ *
+ * Cargo writes both progress and diagnostics to stderr. A failure commonly
+ * starts with `Updating crates.io index` and only explains itself several
+ * lines later, so displaying the first non-empty line turns a useful failure
+ * into meaningless progress output. Prefer specific causes over generic
+ * summary lines, while retaining a truthful fallback for unfamiliar tools.
+ */
+export function summarizeCargoFailure(stderr: string): string {
+  const lines = stderr
+    .replace(/\u001b\[[0-9;]*m/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const score = (line: string): number => {
+    if (/error\[E\d+\]/i.test(line)) return 100;
+    if (/requires rustc\b/i.test(line)) return 95;
+    if (/failed to select a version|no matching package/i.test(line)) return 90;
+    if (/failed to run custom build command|failed custom build/i.test(line)) return 85;
+    if (/linking with .* failed|linker .* (?:failed|not found)|cannot find -l/i.test(line)) return 80;
+    if (/missing (?:required )?feature|feature .* (?:is not enabled|does not exist|not found)/i.test(line)) return 75;
+    if (/could not compile/i.test(line)) return 70;
+    if (/^error:/i.test(line)) return 60;
+    return 0;
+  };
+
+  let best: { line: string; score: number; index: number } | null = null;
+  for (const [index, line] of lines.entries()) {
+    const candidateScore = score(line);
+    if (candidateScore > (best?.score ?? 0)) best = { line, score: candidateScore, index };
+  }
+  if (best) {
+    const related = lines
+      .slice(best.index + 1)
+      .find((line) => !CARGO_PROGRESS_LINE.test(line) && score(line) > 0 && line !== best.line);
+    return related ? `${best.line}\n${related}` : best.line;
+  }
+
+  return lines.find((line) => !CARGO_PROGRESS_LINE.test(line)) ?? lines[0] ?? 'unknown Cargo failure';
+}
+
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -379,7 +424,7 @@ async function surfaceOf(
             missing ? 'version-unavailable' : 'toolchain-failed',
             missing
               ? `crates.io has no ${request.name} ${version}; it may have been yanked, or the crate may be private.`
-              : `\`cargo public-api\` failed on ${request.name} ${version}: ${firstLine(result.stderr)}`,
+              : `\`cargo public-api\` failed on ${request.name} ${version}: ${summarizeCargoFailure(result.stderr)}`,
           ),
     };
   }
@@ -497,10 +542,6 @@ function ownerOf(path: string): string | null {
 
 function escapeToml(value: string): string {
   return value.replace(/["\\]/g, '');
-}
-
-function firstLine(text: string): string {
-  return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
 }
 
 async function commandWorks(
