@@ -1,6 +1,8 @@
 import { readArchive, type ArchiveEntry } from '../../util/archive.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceEntry } from '../type-surface.js';
 import { fetchArchive } from '../../util/http.js';
+import { createHash } from 'node:crypto';
+import { parse as parseYaml } from 'yaml';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceRequest } from './types.js';
 
 /**
@@ -43,7 +45,17 @@ export const pubSurface: SurfaceProvider = {
     const after = await afterPromise;
     if (!after.ok) return after.failure;
 
-    if (before.api.size === 0 && after.api.size === 0) {
+    if (before.role !== 'code' || after.role !== 'code') {
+      return {
+        available: true,
+        changes: diffPubContracts(before, after),
+        tool: 'pub package contract',
+        weight: 0.8,
+        locator: `${request.name} ${request.from} → ${request.to} (published Pub roles: ${before.role} → ${after.role})`,
+      };
+    }
+
+    if (before.api!.size === 0 && after.api!.size === 0) {
       return unavailable(
         TOOL,
         'no-public-surface',
@@ -53,7 +65,7 @@ export const pubSurface: SurfaceProvider = {
 
     return {
       available: true,
-      changes: diffSurfaces(before.api, after.api),
+      changes: diffSurfaces(before.api!, after.api!),
       tool: TOOL,
       weight: WEIGHT,
       locator: `${request.name} ${request.from} → ${request.to} (published lib/)`,
@@ -61,7 +73,11 @@ export const pubSurface: SurfaceProvider = {
   },
 };
 
-type Attempt = { ok: true; api: SurfaceApi } | { ok: false; failure: SurfaceOutcome };
+export type PubPackageRole = 'code' | 'asset' | 'tooling' | 'unsupported';
+
+type Attempt =
+  | { ok: true; role: PubPackageRole; contract: Map<string, string>; api?: SurfaceApi }
+  | { ok: false; failure: SurfaceOutcome };
 
 async function surfaceOf(request: SurfaceRequest, version: string): Promise<Attempt> {
   const url = `https://pub.dev/api/archives/${encodeURIComponent(request.name)}-${encodeURIComponent(version)}.tar.gz`;
@@ -77,7 +93,7 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
         ok: false,
         failure: unavailable(
           TOOL,
-          'version-unavailable',
+          downloaded.status === 404 ? 'version-unavailable' : 'artifact-unavailable',
           downloaded.status === 404
             ? `pub.dev has no archive for ${request.name} ${version}. It may be retracted, or published to a private pub server.`
             : `pub.dev returned ${downloaded.status} for ${request.name} ${version}.`,
@@ -90,13 +106,157 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
       ok: false,
       failure: unavailable(
         TOOL,
-        'toolchain-failed',
+        'artifact-unavailable',
         `Could not read ${request.name} ${version} from pub.dev: ${(err as Error).message}`,
       ),
     };
   }
 
-  return { ok: true, api: publicApiOf(entries) };
+  const role = classifyPubPackage(entries);
+  if (role === 'unsupported') {
+    return {
+      ok: false,
+      failure: unavailable(
+        'pub package contract',
+        'artifact-type-unsupported',
+        `${request.name} ${version} contains no Dart library, declared asset/font contract, or executable tooling Drift can classify.`,
+      ),
+    };
+  }
+  return role === 'code'
+    ? { ok: true, role, contract: new Map(), api: publicApiOf(entries) }
+    : { ok: true, role, contract: pubRoleContract(entries, role) };
+}
+
+export function classifyPubPackage(entries: readonly ArchiveEntry[]): PubPackageRole {
+  const paths = normalizedPubEntries(entries).map(({ path }) => path);
+  if (paths.some((path) => /^lib\/.+\.dart$/i.test(path))) return 'code';
+
+  const pubspec = readPubspec(entries);
+  const executables = isRecord(pubspec?.executables) && Object.keys(pubspec.executables).length > 0;
+  if (executables || paths.some((path) => /^bin\/.+\.dart$/i.test(path))) return 'tooling';
+
+  const flutter = isRecord(pubspec?.flutter) ? pubspec.flutter : undefined;
+  const assets = Array.isArray(flutter?.assets) && flutter.assets.length > 0;
+  const fonts = Array.isArray(flutter?.fonts) && flutter.fonts.length > 0;
+  return assets || fonts ? 'asset' : 'unsupported';
+}
+
+function pubRoleContract(
+  entries: readonly ArchiveEntry[],
+  role: Exclude<PubPackageRole, 'code' | 'unsupported'>,
+): Map<string, string> {
+  const normalized = normalizedPubEntries(entries);
+  const contract = new Map<string, string>();
+  const pubspec = readPubspec(entries);
+
+  if (role === 'tooling') {
+    if (isRecord(pubspec?.executables)) {
+      for (const [name, target] of Object.entries(pubspec.executables).sort(([a], [b]) => a.localeCompare(b))) {
+        contract.set(`executable:${name}`, typeof target === 'string' ? target : '');
+      }
+    }
+    addHashedFiles(contract, normalized.filter(({ path }) => /^bin\/.+\.dart$/i.test(path)));
+    return contract;
+  }
+
+  const flutter = isRecord(pubspec?.flutter) ? pubspec.flutter : undefined;
+  const declarations = [
+    ...(Array.isArray(flutter?.assets) ? flutter.assets : []),
+    ...(Array.isArray(flutter?.fonts) ? flutter.fonts : []),
+  ];
+  contract.set('pubspec:flutter-assets-and-fonts', stableJson(declarations));
+
+  const prefixes = assetPaths(declarations);
+  addHashedFiles(
+    contract,
+    normalized.filter(({ path }) => prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))),
+  );
+  return contract;
+}
+
+function diffPubContracts(before: Extract<Attempt, { ok: true }>, after: Extract<Attempt, { ok: true }>) {
+  const changes: import('../type-surface.js').SurfaceChange[] = [];
+  if (before.role !== after.role) {
+    changes.push({
+      kind: 'signature-changed',
+      symbol: 'pub:package-role',
+      detail: `The Pub package role changed from ${before.role} to ${after.role}.`,
+      before: before.role,
+      after: after.role,
+    });
+  }
+  for (const [name, oldValue] of before.contract) {
+    const symbol = `pub:${before.role}:${name}`;
+    if (!after.contract.has(name)) {
+      changes.push({
+        kind: 'export-removed',
+        symbol,
+        detail: `The ${before.role} contract entry ${name} was removed from the Pub package.`,
+        before: oldValue,
+      });
+    } else if (after.contract.get(name) !== oldValue) {
+      changes.push({
+        kind: 'signature-changed',
+        symbol,
+        detail: `The ${before.role} contract entry ${name} changed in the Pub package.`,
+        before: oldValue,
+        after: after.contract.get(name),
+      });
+    }
+  }
+  return changes;
+}
+
+function normalizedPubEntries(entries: readonly ArchiveEntry[]): Array<{ path: string; entry: ArchiveEntry }> {
+  const rooted = entries.some((entry) => /^(?:lib|bin|assets?)\//i.test(entry.path) || /^pubspec\.ya?ml$/i.test(entry.path));
+  return entries.map((entry) => ({
+    path: (rooted ? entry.path : entry.path.replace(/^[^/]+\//, '')).replaceAll('\\', '/').replace(/\/$/, ''),
+    entry,
+  }));
+}
+
+function readPubspec(entries: readonly ArchiveEntry[]): Record<string, unknown> | undefined {
+  const candidate = normalizedPubEntries(entries).find(({ path }) => /^pubspec\.ya?ml$/i.test(path));
+  if (!candidate) return undefined;
+  try {
+    const parsed: unknown = parseYaml(candidate.entry.read().toString('utf8'));
+    return isRecord(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function assetPaths(values: readonly unknown[]): string[] {
+  const out = new Set<string>();
+  for (const value of values) {
+    if (typeof value === 'string') out.add(value.replace(/^\.\//, '').replace(/\/$/, ''));
+    if (!isRecord(value)) continue;
+    const fonts = Array.isArray(value.fonts) ? value.fonts : [];
+    for (const font of fonts) {
+      if (isRecord(font) && typeof font.asset === 'string') out.add(font.asset.replace(/^\.\//, ''));
+    }
+  }
+  return [...out].filter(Boolean);
+}
+
+function addHashedFiles(
+  contract: Map<string, string>,
+  files: readonly { path: string; entry: ArchiveEntry }[],
+): void {
+  for (const { path, entry } of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
+    contract.set(`file:${path}`, createHash('sha256').update(entry.read()).digest('hex'));
+  }
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (isRecord(value)) return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(',')}}`;
+  return JSON.stringify(value) ?? 'null';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
