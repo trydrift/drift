@@ -12,9 +12,9 @@
  * are deliberately separate actions — commit the result yourself, review it,
  * then tag.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { isExactSemVer } from './semver-utils.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -68,7 +68,11 @@ function updateJsonFile(path, update, version) {
 
 function isDirectExecution() {
   if (!process.argv[1]) return false;
-  return resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
 }
 
 if (isDirectExecution()) {

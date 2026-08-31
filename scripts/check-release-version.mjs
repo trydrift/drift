@@ -16,9 +16,9 @@
  * Never normalizes or edits a version — a mismatch is reported and the
  * process exits non-zero. Fixing it is `scripts/set-version.mjs`.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import semver from 'semver';
 import { isExactSemVer } from './semver-utils.mjs';
 
@@ -121,7 +121,11 @@ function parseTag(argv) {
 
 function isDirectExecution() {
   if (!process.argv[1]) return false;
-  return resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
 }
 
 // Only runs the CLI when this file is executed directly, not when imported by tests.
