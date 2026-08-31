@@ -6,10 +6,10 @@
   "language": "Python",
   "repo": "https://github.com/scrapy/scrapy",
   "blurb": "The web crawling framework that most Python scrapers are built on.",
-  "capturedAt": "2026-08-30T17:13:26.615Z",
+  "capturedAt": "2026-08-31T21:35:39.645Z",
   "commit": "53eb8d60bcd0160633f6513478f958ed5a457363",
-  "engine": "074c07756c903153",
-  "durationMs": 7109,
+  "engine": "ba3f25092997d871",
+  "durationMs": 2877,
   "packagesChecked": 8,
   "manifests": [
     "pyproject.toml",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 201,
+      "at": 39,
       "phase": "Looking for manifests",
       "detail": "scrapy/scrapy",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 243,
+      "at": 47,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 251,
+      "at": 48,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 261,
+      "at": 52,
       "phase": "Reading manifest",
       "detail": "docs/requirements.in",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 268,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -63,6 +63,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -77,6 +82,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -89,7 +95,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 269,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -101,6 +107,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -115,6 +126,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -127,7 +139,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 269,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0",
         "name": "scrapy-spider-metadata",
@@ -139,6 +151,11 @@
         "latest": "0.2.0",
         "selected": "0.2.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -153,6 +170,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -165,7 +183,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 269,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#sphinx@9.1.0",
         "name": "sphinx",
@@ -177,6 +195,11 @@
         "latest": "9.1.0",
         "selected": "9.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -191,6 +214,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -203,7 +227,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 269,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#sphinx-notfound-page@1.1.0",
         "name": "sphinx-notfound-page",
@@ -215,6 +239,11 @@
         "latest": "1.1.0",
         "selected": "1.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -229,6 +258,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -241,7 +271,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 269,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#sphinx-reredirects@1.1.0",
         "name": "sphinx-reredirects",
@@ -253,6 +283,11 @@
         "latest": "1.1.0",
         "selected": "1.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -267,6 +302,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -279,7 +315,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 270,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0",
         "name": "sphinx-rtd-theme",
@@ -291,6 +327,11 @@
         "latest": "3.1.0",
         "selected": "3.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -305,6 +346,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -317,7 +359,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 270,
+      "at": 53,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0",
         "name": "sphinx-rtd-dark-mode",
@@ -329,6 +371,11 @@
         "latest": "1.3.0",
         "selected": "1.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -343,6 +390,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -355,7 +403,7 @@
     },
     {
       "type": "progress",
-      "at": 270,
+      "at": 53,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -363,7 +411,7 @@
     },
     {
       "type": "progress",
-      "at": 273,
+      "at": 53,
       "phase": "Checking registries",
       "detail": "8 direct dependencies",
       "done": 0,
@@ -371,7 +419,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 275,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -383,6 +431,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -397,6 +450,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -409,7 +463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 279,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -421,6 +475,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -435,6 +494,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -447,7 +507,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 279,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0",
         "name": "scrapy-spider-metadata",
@@ -459,6 +519,11 @@
         "latest": "0.2.0",
         "selected": "0.2.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -473,6 +538,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -485,7 +551,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 280,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#sphinx@9.1.0",
         "name": "sphinx",
@@ -497,6 +563,11 @@
         "latest": "9.1.0",
         "selected": "9.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -511,6 +582,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -523,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 280,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#sphinx-notfound-page@1.1.0",
         "name": "sphinx-notfound-page",
@@ -535,6 +607,11 @@
         "latest": "1.1.0",
         "selected": "1.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -549,6 +626,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -561,7 +639,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 281,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#sphinx-reredirects@1.1.0",
         "name": "sphinx-reredirects",
@@ -573,6 +651,11 @@
         "latest": "1.1.0",
         "selected": "1.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -587,6 +670,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -599,7 +683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 281,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0",
         "name": "sphinx-rtd-theme",
@@ -611,6 +695,11 @@
         "latest": "3.1.0",
         "selected": "3.1.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -625,6 +714,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -637,7 +727,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 281,
+      "at": 54,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0",
         "name": "sphinx-rtd-dark-mode",
@@ -649,6 +739,11 @@
         "latest": "1.3.0",
         "selected": "1.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Asking PyPI what has been published",
         "risk": "unknown",
@@ -663,6 +758,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -675,20 +771,59 @@
     },
     {
       "type": "candidate-drop",
-      "at": 308,
+      "at": 144,
       "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0"
     },
     {
       "type": "progress",
-      "at": 308,
+      "at": 144,
       "phase": "Up to date",
       "detail": "scrapy-spider-metadata@0.2.0",
       "done": 1,
       "total": 8
     },
     {
+      "type": "candidate-drop",
+      "at": 160,
+      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
+    },
+    {
+      "type": "progress",
+      "at": 160,
+      "phase": "Up to date",
+      "detail": "sphinx-rtd-dark-mode@1.3.0",
+      "done": 2,
+      "total": 8
+    },
+    {
+      "type": "candidate-drop",
+      "at": 160,
+      "id": "docs/requirements.in#sphinx-reredirects@1.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 160,
+      "phase": "Up to date",
+      "detail": "sphinx-reredirects@1.1.0",
+      "done": 3,
+      "total": 8
+    },
+    {
+      "type": "candidate-drop",
+      "at": 165,
+      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 165,
+      "phase": "Up to date",
+      "detail": "sphinx-notfound-page@1.1.0",
+      "done": 4,
+      "total": 8
+    },
+    {
       "type": "candidate-upsert",
-      "at": 312,
+      "at": 193,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -700,6 +835,14 @@
         "latest": "4.4.1",
         "selected": "4.4.1",
         "safeLatest": null,
+        "publishedVersions": [
+          "4.4.1",
+          "4.4.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -714,6 +857,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -726,59 +870,20 @@
     },
     {
       "type": "progress",
-      "at": 312,
+      "at": 193,
       "phase": "Outdated",
       "detail": "h2 4.3.0 → 4.4.1",
-      "done": 2,
-      "total": 8
-    },
-    {
-      "type": "candidate-drop",
-      "at": 320,
-      "id": "docs/requirements.in#sphinx@9.1.0"
-    },
-    {
-      "type": "progress",
-      "at": 320,
-      "phase": "Up to date",
-      "detail": "sphinx@9.1.0",
-      "done": 3,
-      "total": 8
-    },
-    {
-      "type": "candidate-drop",
-      "at": 321,
-      "id": "docs/requirements.in#sphinx-reredirects@1.1.0"
-    },
-    {
-      "type": "progress",
-      "at": 321,
-      "phase": "Up to date",
-      "detail": "sphinx-reredirects@1.1.0",
-      "done": 4,
-      "total": 8
-    },
-    {
-      "type": "candidate-drop",
-      "at": 321,
-      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
-    },
-    {
-      "type": "progress",
-      "at": 321,
-      "phase": "Up to date",
-      "detail": "sphinx-rtd-dark-mode@1.3.0",
       "done": 5,
       "total": 8
     },
     {
       "type": "candidate-drop",
-      "at": 323,
+      "at": 210,
       "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0"
     },
     {
       "type": "progress",
-      "at": 323,
+      "at": 210,
       "phase": "Up to date",
       "detail": "sphinx-rtd-theme@3.1.0",
       "done": 6,
@@ -786,20 +891,20 @@
     },
     {
       "type": "candidate-drop",
-      "at": 324,
-      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
+      "at": 258,
+      "id": "docs/requirements.in#sphinx@9.1.0"
     },
     {
       "type": "progress",
-      "at": 324,
+      "at": 258,
       "phase": "Up to date",
-      "detail": "sphinx-notfound-page@1.1.0",
+      "detail": "sphinx@9.1.0",
       "done": 7,
       "total": 8
     },
     {
       "type": "candidate-upsert",
-      "at": 368,
+      "at": 714,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -811,6 +916,18 @@
         "latest": "2.13.5",
         "selected": "2.13.5",
         "safeLatest": null,
+        "publishedVersions": [
+          "2.13.5",
+          "2.13.4",
+          "2.13.3",
+          "2.13.2",
+          "2.13.1",
+          "2.13.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Waiting to be checked",
         "risk": "unknown",
@@ -825,6 +942,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -837,7 +955,7 @@
     },
     {
       "type": "progress",
-      "at": 368,
+      "at": 714,
       "phase": "Outdated",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 8,
@@ -845,7 +963,7 @@
     },
     {
       "type": "progress",
-      "at": 439,
+      "at": 716,
       "phase": "Reading release notes and changelog",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -853,7 +971,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 439,
+      "at": 716,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -865,6 +983,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Reading release notes and changelog",
         "risk": "unknown",
@@ -879,6 +1002,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -891,7 +1015,7 @@
     },
     {
       "type": "progress",
-      "at": 441,
+      "at": 717,
       "phase": "Checking package metadata",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -899,7 +1023,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 441,
+      "at": 717,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -911,6 +1035,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Checking package metadata",
         "risk": "unknown",
@@ -925,6 +1054,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -937,7 +1067,7 @@
     },
     {
       "type": "progress",
-      "at": 442,
+      "at": 718,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -945,7 +1075,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 442,
+      "at": 718,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -957,6 +1087,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Reading release notes and changelog",
         "risk": "unknown",
@@ -971,6 +1106,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -983,7 +1119,7 @@
     },
     {
       "type": "progress",
-      "at": 442,
+      "at": 718,
       "phase": "Checking package metadata",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -991,7 +1127,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 442,
+      "at": 718,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1003,6 +1139,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Checking package metadata",
         "risk": "unknown",
@@ -1017,6 +1158,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1029,7 +1171,7 @@
     },
     {
       "type": "progress",
-      "at": 460,
+      "at": 719,
       "phase": "Checking repository status",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1037,7 +1179,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 460,
+      "at": 719,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1049,6 +1191,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Checking repository status",
         "risk": "unknown",
@@ -1063,6 +1210,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1075,7 +1223,7 @@
     },
     {
       "type": "progress",
-      "at": 461,
+      "at": 719,
       "phase": "Checking repository status",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1083,7 +1231,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 461,
+      "at": 719,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1095,6 +1243,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Checking repository status",
         "risk": "unknown",
@@ -1109,6 +1262,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1121,99 +1275,7 @@
     },
     {
       "type": "progress",
-      "at": 492,
-      "phase": "Checking security advisories",
-      "detail": "h2 4.3.0 → 4.4.1",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 492,
-      "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 494,
-      "phase": "Checking security advisories",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 494,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2481,
+      "at": 761,
       "phase": "Indexing your code",
       "detail": "494 files indexed · 8 direct dependencies to check",
       "done": 0,
@@ -1221,61 +1283,15 @@
     },
     {
       "type": "progress",
-      "at": 2818,
-      "phase": "Checking license",
-      "detail": "h2 4.3.0 → 4.4.1",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2819,
-      "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2820,
-      "phase": "Checking license",
+      "at": 1254,
+      "phase": "Checking security advisories",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
       "total": 2
     },
     {
       "type": "candidate-upsert",
-      "at": 2820,
+      "at": 1254,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1287,6 +1303,63 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1254,
+      "phase": "Checking license",
+      "detail": "pydantic 2.12.5 → 2.13.5",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1254,
+      "candidate": {
+        "id": "docs/requirements.in#pydantic@2.12.5",
+        "name": "pydantic",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "2.12.5",
+        "latest": "2.12.5",
+        "selected": "2.12.5",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Checking license",
         "risk": "unknown",
@@ -1301,6 +1374,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1313,15 +1387,15 @@
     },
     {
       "type": "progress",
-      "at": 3568,
-      "phase": "Comparing the public API surface",
+      "at": 1323,
+      "phase": "Checking security advisories",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
       "total": 2
     },
     {
       "type": "candidate-upsert",
-      "at": 3568,
+      "at": 1323,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1333,6 +1407,115 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1323,
+      "phase": "Checking license",
+      "detail": "h2 4.3.0 → 4.4.1",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1323,
+      "candidate": {
+        "id": "docs/requirements.in#h2@4.3.0",
+        "name": "h2",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "4.3.0",
+        "latest": "4.3.0",
+        "selected": "4.3.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2408,
+      "phase": "Comparing the public API surface",
+      "detail": "h2 4.3.0 → 4.4.1",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2408,
+      "candidate": {
+        "id": "docs/requirements.in#h2@4.3.0",
+        "name": "h2",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "4.3.0",
+        "latest": "4.3.0",
+        "selected": "4.3.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Comparing the public API surface",
         "risk": "unknown",
@@ -1347,6 +1530,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1359,7 +1543,7 @@
     },
     {
       "type": "progress",
-      "at": 3570,
+      "at": 2409,
       "phase": "Reading release notes and changelog",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1367,7 +1551,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3570,
+      "at": 2409,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1379,6 +1563,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Reading release notes and changelog",
         "risk": "unknown",
@@ -1393,6 +1582,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1405,7 +1595,7 @@
     },
     {
       "type": "progress",
-      "at": 3570,
+      "at": 2409,
       "phase": "Comparing the public API surface",
       "detail": "h2 4.3.0 → 4.4.1 · 2 evidence sources",
       "done": 0,
@@ -1413,7 +1603,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3570,
+      "at": 2409,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1425,6 +1615,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Comparing the public API surface",
         "risk": "unknown",
@@ -1439,6 +1634,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1451,7 +1647,7 @@
     },
     {
       "type": "progress",
-      "at": 3577,
+      "at": 2409,
       "phase": "Searching your code for 1 breaking change",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1459,7 +1655,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3577,
+      "at": 2409,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1471,6 +1667,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Searching your code for 1 breaking change",
         "risk": "unknown",
@@ -1485,6 +1686,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1497,7 +1699,7 @@
     },
     {
       "type": "progress",
-      "at": 3669,
+      "at": 2446,
       "phase": "Weighing what this upgrade is worth",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1505,7 +1707,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3669,
+      "at": 2446,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1517,6 +1719,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Weighing what this upgrade is worth",
         "risk": "unknown",
@@ -1531,6 +1738,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1543,7 +1751,7 @@
     },
     {
       "type": "progress",
-      "at": 3719,
+      "at": 2491,
       "phase": "Checking maintenance signals",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1551,7 +1759,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3719,
+      "at": 2491,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1563,6 +1771,11 @@
         "latest": "4.3.0",
         "selected": "4.3.0",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Checking maintenance signals",
         "risk": "unknown",
@@ -1577,6 +1790,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1589,7 +1803,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3730,
+      "at": 2492,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1601,6 +1815,14 @@
         "latest": "4.4.1",
         "selected": "4.4.1",
         "safeLatest": null,
+        "publishedVersions": [
+          "4.4.1",
+          "4.4.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "ready",
         "phase": null,
         "risk": "none",
@@ -1634,6 +1856,11 @@
           "runtimeConfigsDiscovered": 9,
           "runtimeConfigsIndexed": 9,
           "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": true,
+          "inspection": "succeeded",
+          "tool": "python ast"
         },
         "runtimeChanges": [
           {
@@ -1691,7 +1918,7 @@
     },
     {
       "type": "progress",
-      "at": 3730,
+      "at": 2492,
       "phase": "Checked",
       "detail": "h2 4.3.0 → 4.4.1 · safe for your code · 1 upstream change, none used here — not deeply verified",
       "done": 1,
@@ -1699,7 +1926,7 @@
     },
     {
       "type": "progress",
-      "at": 6936,
+      "at": 2811,
       "phase": "Comparing the public API surface",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -1707,7 +1934,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 6937,
+      "at": 2811,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1719,6 +1946,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Comparing the public API surface",
         "risk": "unknown",
@@ -1733,6 +1965,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1745,7 +1978,7 @@
     },
     {
       "type": "progress",
-      "at": 6951,
+      "at": 2814,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -1753,7 +1986,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 6951,
+      "at": 2814,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1765,6 +1998,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Reading release notes and changelog",
         "risk": "unknown",
@@ -1779,6 +2017,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1791,7 +2030,7 @@
     },
     {
       "type": "progress",
-      "at": 6951,
+      "at": 2814,
       "phase": "Comparing the public API surface",
       "detail": "pydantic 2.12.5 → 2.13.5 · 7 evidence sources",
       "done": 1,
@@ -1799,7 +2038,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 6951,
+      "at": 2814,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1811,6 +2050,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Comparing the public API surface",
         "risk": "unknown",
@@ -1825,6 +2069,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1837,7 +2082,7 @@
     },
     {
       "type": "progress",
-      "at": 6980,
+      "at": 2817,
       "phase": "Searching your code for 14 breaking changes",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -1845,7 +2090,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 6980,
+      "at": 2817,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1857,6 +2102,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Searching your code for 14 breaking changes",
         "risk": "unknown",
@@ -1871,6 +2121,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1883,7 +2134,7 @@
     },
     {
       "type": "progress",
-      "at": 7033,
+      "at": 2826,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -1891,7 +2142,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 7033,
+      "at": 2826,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1903,6 +2154,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Weighing what this upgrade is worth",
         "risk": "unknown",
@@ -1917,6 +2173,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1929,7 +2186,7 @@
     },
     {
       "type": "progress",
-      "at": 7078,
+      "at": 2869,
       "phase": "Checking maintenance signals",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -1937,7 +2194,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 7078,
+      "at": 2869,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1949,6 +2206,11 @@
         "latest": "2.12.5",
         "selected": "2.12.5",
         "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "pending",
         "phase": "Checking maintenance signals",
         "risk": "unknown",
@@ -1963,6 +2225,7 @@
         "actionableImpactFiles": 0,
         "runtimeDeclarationSiteCount": 0,
         "sourceCoverage": null,
+        "surfaceAssessment": null,
         "runtimeChanges": [],
         "dispositions": [],
         "breakingCount": 0,
@@ -1975,7 +2238,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 7108,
+      "at": 2876,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1987,6 +2250,18 @@
         "latest": "2.13.5",
         "selected": "2.13.5",
         "safeLatest": null,
+        "publishedVersions": [
+          "2.13.5",
+          "2.13.4",
+          "2.13.3",
+          "2.13.2",
+          "2.13.1",
+          "2.13.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
         "status": "ready",
         "phase": null,
         "risk": "none",
@@ -2009,6 +2284,11 @@
           "runtimeConfigsDiscovered": 9,
           "runtimeConfigsIndexed": 9,
           "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": true,
+          "inspection": "succeeded",
+          "tool": "python ast"
         },
         "runtimeChanges": [],
         "dispositions": [
@@ -2236,7 +2516,7 @@
     },
     {
       "type": "progress",
-      "at": 7108,
+      "at": 2876,
       "phase": "Checked",
       "detail": "pydantic 2.12.5 → 2.13.5 · safe for your code · 14 upstream changes, none used here — not deeply verified",
       "done": 2,
@@ -2255,6 +2535,18 @@
       "latest": "2.13.5",
       "selected": "2.13.5",
       "safeLatest": null,
+      "publishedVersions": [
+        "2.13.5",
+        "2.13.4",
+        "2.13.3",
+        "2.13.2",
+        "2.13.1",
+        "2.13.0"
+      ],
+      "provenance": {
+        "kind": "runtime",
+        "source": "manifest"
+      },
       "status": "ready",
       "phase": null,
       "risk": "none",
@@ -2277,6 +2569,11 @@
         "runtimeConfigsDiscovered": 9,
         "runtimeConfigsIndexed": 9,
         "runtimeConfigComplete": true
+      },
+      "surfaceAssessment": {
+        "available": true,
+        "inspection": "succeeded",
+        "tool": "python ast"
       },
       "runtimeChanges": [],
       "dispositions": [
@@ -2512,6 +2809,14 @@
       "latest": "4.4.1",
       "selected": "4.4.1",
       "safeLatest": null,
+      "publishedVersions": [
+        "4.4.1",
+        "4.4.0"
+      ],
+      "provenance": {
+        "kind": "runtime",
+        "source": "manifest"
+      },
       "status": "ready",
       "phase": null,
       "risk": "none",
@@ -2545,6 +2850,11 @@
         "runtimeConfigsDiscovered": 9,
         "runtimeConfigsIndexed": 9,
         "runtimeConfigComplete": true
+      },
+      "surfaceAssessment": {
+        "available": true,
+        "inspection": "succeeded",
+        "tool": "python ast"
       },
       "runtimeChanges": [
         {

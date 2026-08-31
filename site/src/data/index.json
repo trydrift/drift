@@ -7,7 +7,7 @@
     "repo": "https://github.com/supabase/supabase-js",
     "blurb": "The official Supabase client for JavaScript and TypeScript.",
     "commit": "b3b939a405ae663aea2fabecfa4dfcc6161d155a",
-    "capturedAt": "2026-08-30T17:13:21.090Z",
+    "capturedAt": "2026-08-31T21:35:36.956Z",
     "packagesChecked": 7,
     "candidates": 0
   },
@@ -19,21 +19,21 @@
     "repo": "https://github.com/scrapy/scrapy",
     "blurb": "The web crawling framework that most Python scrapers are built on.",
     "commit": "53eb8d60bcd0160633f6513478f958ed5a457363",
-    "capturedAt": "2026-08-30T17:13:26.615Z",
+    "capturedAt": "2026-08-31T21:35:39.645Z",
     "packagesChecked": 8,
     "candidates": 2
   },
   {
-    "id": "gitlab",
-    "label": "gitlab",
+    "id": "lobsters",
+    "label": "Lobsters",
     "ecosystem": "rubygems",
     "language": "Ruby",
-    "repo": "https://github.com/gitlabhq/gitlabhq",
-    "blurb": "GitLab's Rails monolith — one of the largest Ruby codebases in the open.",
-    "commit": "407fbe53157336c62fd5626b87a9aad1aff80a7d",
-    "capturedAt": "2026-08-30T17:16:08.759Z",
-    "packagesChecked": 631,
-    "candidates": 348
+    "repo": "https://github.com/lobsters/lobsters",
+    "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
+    "commit": "2f385d149e67f5ff78643dcf6d3cab0b24c0117c",
+    "capturedAt": "2026-08-31T21:35:41.068Z",
+    "packagesChecked": 37,
+    "candidates": 19
   },
   {
     "id": "kubernetes",
@@ -42,10 +42,10 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "e72c2715ade37738aa5c029e8de5285cbe1c9441",
-    "capturedAt": "2026-08-30T17:16:33.487Z",
+    "commit": "4327fee8d315798d46a63e6f8e7f42d0b9d2a98f",
+    "capturedAt": "2026-08-31T21:38:37.219Z",
     "packagesChecked": 545,
-    "candidates": 248
+    "candidates": 250
   },
   {
     "id": "deno",
@@ -54,8 +54,8 @@
     "language": "Rust",
     "repo": "https://github.com/denoland/deno",
     "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
-    "commit": "1aa88c0388ba56970ec1bc7e8196bf688cb22ac9",
-    "capturedAt": "2026-08-30T17:13:47.373Z",
+    "commit": "1558ece7da3f6d035e8c6ddb912dd67d6c338800",
+    "capturedAt": "2026-08-31T21:38:18.589Z",
     "packagesChecked": 3,
     "candidates": 2
   },
@@ -66,10 +66,10 @@
     "language": "Java",
     "repo": "https://github.com/elastic/elasticsearch-java",
     "blurb": "Elasticsearch's official Java API client.",
-    "commit": "8be02330d48758e2708a00f18cc87587df2a2520",
-    "capturedAt": "2026-08-30T17:14:17.603Z",
+    "commit": "b4806af22690c434568036ed254f9eee3369f963",
+    "capturedAt": "2026-08-31T21:36:59.354Z",
     "packagesChecked": 19,
-    "candidates": 13
+    "candidates": 11
   },
   {
     "id": "esphome",
@@ -78,22 +78,22 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "b9eda644cd0219e560933b5151c0912f4c648278",
-    "capturedAt": "2026-08-30T17:15:49.364Z",
+    "commit": "ca44db107cc63cb7104b554b6f56d94d27b2c83a",
+    "capturedAt": "2026-08-31T21:35:52.057Z",
     "packagesChecked": 24,
     "candidates": 8
   },
   {
-    "id": "restsharp",
-    "label": "RestSharp",
+    "id": "solrnet",
+    "label": "SolrNet",
     "ecosystem": "nuget",
     "language": "C#",
-    "repo": "https://github.com/restsharp/RestSharp",
-    "blurb": "The HTTP client most .NET codebases reach for first.",
-    "commit": "6a5082169257438cd085f822f050d93256a8e499",
-    "capturedAt": "2026-08-30T17:14:17.915Z",
-    "packagesChecked": 0,
-    "candidates": 0
+    "repo": "https://github.com/SolrNet/SolrNet",
+    "blurb": "The established .NET client for Apache Solr, with exact installed versions in a committed NuGet lockfile.",
+    "commit": "8e7c9e654ba105743765202a691cb3baa5b29349",
+    "capturedAt": "2026-08-31T21:35:58.289Z",
+    "packagesChecked": 77,
+    "candidates": 64
   },
   {
     "id": "guzzle",
@@ -103,7 +103,7 @@
     "repo": "https://github.com/guzzle/guzzle",
     "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
     "commit": "7b7b04a0f5a548bfe9ced4b56f5661deee229ac3",
-    "capturedAt": "2026-08-30T17:14:18.632Z",
+    "capturedAt": "2026-08-31T21:36:01.351Z",
     "packagesChecked": 4,
     "candidates": 3
   },
@@ -114,22 +114,22 @@
     "language": "Elixir",
     "repo": "https://github.com/phoenixframework/phoenix",
     "blurb": "The web framework nearly every production Elixir application is built on.",
-    "commit": "aefcc57b9fc22d4590afb00b97ee287a456b1863",
-    "capturedAt": "2026-08-30T17:14:31.821Z",
+    "commit": "8b26148624d63050920ad2c9ac711f4d043028f6",
+    "capturedAt": "2026-08-31T21:36:05.656Z",
     "packagesChecked": 43,
     "candidates": 16
   },
   {
-    "id": "dio",
-    "label": "dio",
+    "id": "starter-flutter",
+    "label": "Flutter Firebase Starter",
     "ecosystem": "pub",
     "language": "Dart",
-    "repo": "https://github.com/cfug/dio",
-    "blurb": "Dart's most-used HTTP client, in the package that declares its dependencies.",
-    "commit": "6c1033ef0adbb53892192b8406e49af214909dfe",
-    "capturedAt": "2026-08-30T17:14:33.624Z",
-    "packagesChecked": 0,
-    "candidates": 0
+    "repo": "https://github.com/bizz84/starter_architecture_flutter_firebase",
+    "blurb": "A production-shaped Flutter application with exact hosted packages in its committed Pub lockfile.",
+    "commit": "c5b1940cbd6b2647a39394a9f4e516ad2c332131",
+    "capturedAt": "2026-08-31T21:36:17.029Z",
+    "packagesChecked": 20,
+    "candidates": 19
   },
   {
     "id": "tca",
@@ -139,7 +139,7 @@
     "repo": "https://github.com/pointfreeco/swift-composable-architecture",
     "blurb": "The state-management library much of the Swift app ecosystem builds on.",
     "commit": "377da4061db10d26337a71bb279c506bb951f50f",
-    "capturedAt": "2026-08-30T17:15:01.238Z",
+    "capturedAt": "2026-08-31T21:36:35.967Z",
     "packagesChecked": 16,
     "candidates": 11
   },
@@ -151,7 +151,7 @@
     "repo": "https://github.com/layoutBox/FlexLayout",
     "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
     "commit": "320a19f1e842f335f0d636dd810e07498eae9f0b",
-    "capturedAt": "2026-08-30T17:15:09.423Z",
+    "capturedAt": "2026-08-31T21:36:39.397Z",
     "packagesChecked": 5,
     "candidates": 3
   },
@@ -174,9 +174,9 @@
     "language": "C++",
     "repo": "https://github.com/an-tao/trantor",
     "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-    "commit": "3163f6ad964bb91a0ac877912a3ecf31de50a401",
-    "capturedAt": "2026-08-30T17:15:12.465Z",
-    "packagesChecked": 0,
+    "commit": "60f9c1e29a8186714c48080d085110e77caa51d2",
+    "capturedAt": "2026-08-31T21:36:59.537Z",
+    "packagesChecked": 3,
     "candidates": 0
   },
   {
