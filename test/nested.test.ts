@@ -70,6 +70,19 @@ describe('undeclared sibling manifests', () => {
     assert.deepEqual(dirs, ['extension', 'tools/cli']);
     assert.equal(found.find((p) => p.dir === 'tools/cli')?.ecosystem, 'cargo');
   });
+
+  test('finds nested manifests identified by a manager filename pattern', async () => {
+    const fs = tree({
+      'Directory.Packages.props': '<Project />',
+      'src/App/App.csproj': '<Project />',
+      'src/App/packages.lock.json': '{}',
+    });
+
+    const found = await discoverNestedProjects('', fs);
+    assert.deepEqual(found, [
+      { dir: 'src/App', ecosystem: 'nuget', manifestPath: 'src/App/App.csproj', hasOwnGit: false },
+    ]);
+  });
 });
 
 describe('nested git boundaries', () => {

@@ -71,7 +71,7 @@
 
 import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile, readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
@@ -174,12 +174,12 @@ const TARGETS = [
     dir: '',
   },
   {
-    id: 'gitlab',
-    label: 'gitlab',
+    id: 'lobsters',
+    label: 'Lobsters',
     ecosystem: 'rubygems',
     language: 'Ruby',
-    repo: 'https://github.com/gitlabhq/gitlabhq',
-    blurb: "GitLab's Rails monolith — one of the largest Ruby codebases in the open.",
+    repo: 'https://github.com/lobsters/lobsters',
+    blurb: 'The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.',
     dir: '',
   },
   {
@@ -237,12 +237,12 @@ const TARGETS = [
   // says so with the same tier badge the capability matrix computes, rather
   // than quietly omitting the ecosystem and letting a visitor assume.
   {
-    id: 'restsharp',
-    label: 'RestSharp',
+    id: 'solrnet',
+    label: 'SolrNet',
     ecosystem: 'nuget',
     language: 'C#',
-    repo: 'https://github.com/restsharp/RestSharp',
-    blurb: 'The HTTP client most .NET codebases reach for first.',
+    repo: 'https://github.com/SolrNet/SolrNet',
+    blurb: 'The established .NET client for Apache Solr, with exact installed versions in a committed NuGet lockfile.',
     dir: '',
   },
   {
@@ -264,13 +264,13 @@ const TARGETS = [
     dir: '',
   },
   {
-    id: 'dio',
-    label: 'dio',
+    id: 'starter-flutter',
+    label: 'Flutter Firebase Starter',
     ecosystem: 'pub',
     language: 'Dart',
-    repo: 'https://github.com/cfug/dio',
-    blurb: "Dart's most-used HTTP client, in the package that declares its dependencies.",
-    dir: 'dio',
+    repo: 'https://github.com/bizz84/starter_architecture_flutter_firebase',
+    blurb: 'A production-shaped Flutter application with exact hosted packages in its committed Pub lockfile.',
+    dir: '',
   },
   {
     // Vapor was the first choice and produced an honest, boring recording:
@@ -835,7 +835,7 @@ const failures = [];
  * A scan can wedge — a package manager that ignores the signal sent to it, a
  * socket that never closes, a deadlock between the probe's own workers — and
  * when it does, nothing downstream is defensive about it. The whole capture
- * hung on `gitlab`, and because the last worker never settled, Node drained the
+ * hung on a very large Rails monorepo, and because the last worker never settled, Node drained the
  * event loop and exited on an unsettled top-level await, taking with it fifteen
  * recordings that had already finished, including a Kubernetes scan that had
  * cost an hour of runner time.
@@ -896,6 +896,18 @@ async function worker() {
 
 await Promise.all(Array.from({ length: Math.min(jobs, queue.length) }, worker));
 process.stderr.write(`\nall captures finished in ${((Date.now() - startedAt) / 1000).toFixed(1)}s\n`);
+
+// A target can be replaced when its repository stops carrying exact installed
+// identities or becomes too large to record reliably. Do not leave the old
+// JSON behind: the corpus validator intentionally reads every recording file,
+// and an orphan would keep publishing stale claims even though the index and
+// replay UI no longer name it.
+const targetIds = new Set(TARGETS.map((target) => target.id));
+for (const entry of await readdir(outDir)) {
+  if (!entry.endsWith('.json') || entry === 'index.json') continue;
+  const id = entry.slice(0, -'.json'.length);
+  if (!targetIds.has(id)) await rm(join(outDir, entry));
+}
 
 // An index of what was actually captured, so the site never lists a demo whose
 // recording failed — a broken tab is worse than an absent one.

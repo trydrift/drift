@@ -2,15 +2,15 @@ import { normalizeRecording, type Recording } from "./recordings";
 
 import supabase from "@/data/supabase.json";
 import scrapy from "@/data/scrapy.json";
-import gitlab from "@/data/gitlab.json";
+import lobsters from "@/data/lobsters.json";
 import kubernetes from "@/data/kubernetes.json";
 import deno from "@/data/deno.json";
 import elasticsearch from "@/data/elasticsearch.json";
 import esphome from "@/data/esphome.json";
-import restsharp from "@/data/restsharp.json";
+import solrnet from "@/data/solrnet.json";
 import guzzle from "@/data/guzzle.json";
 import phoenix from "@/data/phoenix.json";
-import dio from "@/data/dio.json";
+import starterFlutter from "@/data/starter-flutter.json";
 import tca from "@/data/tca.json";
 import flexlayout from "@/data/flexlayout.json";
 import cohttp from "@/data/cohttp.json";
@@ -38,15 +38,15 @@ export function loadRecordings(): Recording[] {
   return [
     supabase,
     scrapy,
-    gitlab,
+    lobsters,
     kubernetes,
     deno,
     elasticsearch,
     esphome,
     phoenix,
-    restsharp,
+    solrnet,
     guzzle,
-    dio,
+    starterFlutter,
     trantor,
     obsBackgroundRemoval,
     flexlayout,

@@ -40,6 +40,19 @@ for (const manager of PACKAGE_MANAGERS) {
   }
 }
 
+/** Fixed names and manager-specific filename patterns (notably `*.csproj`). */
+function manifestEcosystem(entry: string): Ecosystem | null {
+  const fixed = MANIFEST_ECOSYSTEM.get(entry);
+  if (fixed) return fixed;
+  for (const manager of PACKAGE_MANAGERS) {
+    const pattern = manager.manifestPattern;
+    if (!pattern) continue;
+    pattern.lastIndex = 0;
+    if (pattern.test(entry)) return manager.ecosystem;
+  }
+  return null;
+}
+
 /**
  * Walk `root` for manifests outside any declared workspace member.
  *
@@ -68,11 +81,12 @@ export async function discoverNestedProjects(
     let hasOwnGit = false;
     if (dir !== '' && !excluded.has(dir)) {
       hasOwnGit = entries.includes('.git');
-      const manifest = entries.find((entry) => ALL_MANIFESTS.has(entry));
-      if (manifest && (hasOwnGit || !isFixtureOwned(dir))) {
+      const manifest = entries.find((entry) => ALL_MANIFESTS.has(entry)) ?? entries.find((entry) => manifestEcosystem(entry));
+      const ecosystem = manifest ? manifestEcosystem(manifest) : null;
+      if (manifest && ecosystem && (hasOwnGit || !isFixtureOwned(dir))) {
         found.push({
           dir,
-          ecosystem: MANIFEST_ECOSYSTEM.get(manifest)!,
+          ecosystem,
           manifestPath: join(dir, manifest),
           hasOwnGit,
         });
