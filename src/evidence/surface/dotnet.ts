@@ -1,5 +1,6 @@
 import { readArchive } from '../../util/archive.js';
-import { diffSurfaces, type SurfaceApi } from '../type-surface.js';
+import { createHash } from 'node:crypto';
+import { diffSurfaces, type SurfaceApi, type SurfaceChange } from '../type-surface.js';
 import { readAssembly, type AssemblyType } from './ecma335.js';
 import { fetchArchive } from '../../util/http.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceRequest } from './types.js';
@@ -35,9 +36,19 @@ export const nugetSurface: SurfaceProvider = {
     const after = await afterPromise;
     if (!after.ok) return after.failure;
 
+    if (before.role !== 'managed-library' || after.role !== 'managed-library') {
+      return {
+        available: true,
+        changes: diffNugetContracts(before, after),
+        tool: 'NuGet package contract',
+        weight: 0.9,
+        locator: `${request.name} ${request.from} → ${request.to} (NuGet package roles: ${before.role} → ${after.role})`,
+      };
+    }
+
     return {
       available: true,
-      changes: diffSurfaces(before.api, after.api),
+      changes: diffSurfaces(before.api!, after.api!),
       tool: TOOL,
       weight: WEIGHT,
       locator: `${request.name} ${request.from} → ${request.to} (${before.framework} assembly metadata)`,
@@ -46,8 +57,16 @@ export const nugetSurface: SurfaceProvider = {
 };
 
 type Attempt =
-  | { ok: true; api: SurfaceApi; framework: string }
+  | { ok: true; role: NugetPackageRole; contract: Map<string, string>; api?: SurfaceApi; framework: string }
   | { ok: false; failure: SurfaceOutcome };
+
+export type NugetPackageRole =
+  | 'managed-library'
+  | 'analyzer'
+  | 'msbuild'
+  | 'tool'
+  | 'meta-package'
+  | 'unsupported';
 
 async function surfaceOf(request: SurfaceRequest, version: string): Promise<Attempt> {
   const id = request.name.toLowerCase();
@@ -65,7 +84,7 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
         ok: false,
         failure: unavailable(
           TOOL,
-          'version-unavailable',
+          downloaded.status === 404 ? 'version-unavailable' : 'artifact-unavailable',
           downloaded.status === 404
             ? `NuGet has no package for ${request.name} ${version}. It may be unlisted, delisted, or published to a private feed.`
             : `NuGet returned ${downloaded.status} for ${request.name} ${version}.`,
@@ -84,14 +103,29 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
     };
   }
 
+  const role = classifyNugetPackage(entries);
+  if (role !== 'managed-library') {
+    if (role === 'unsupported') {
+      return {
+        ok: false,
+        failure: unavailable(
+          'NuGet package contract',
+          'artifact-type-unsupported',
+          `${request.name} ${version} contains no managed library, analyzer, MSBuild, tool, or dependency-only contract Drift can classify.`,
+        ),
+      };
+    }
+    return { ok: true, role, contract: nugetRoleContract(entries, role), framework: role };
+  }
+
   const chosen = chooseAssembly(entries.map((entry) => entry.path));
   if (!chosen) {
     return {
       ok: false,
       failure: unavailable(
         TOOL,
-        'no-public-surface',
-        `${request.name} ${version} publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare.`,
+        'parse-failed',
+        `${request.name} ${version} was classified as a managed library, but no readable assembly could be selected under lib/ or ref/.`,
       ),
     };
   }
@@ -109,7 +143,80 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
     };
   }
 
-  return { ok: true, api: toSurface(types), framework: chosen.framework };
+  return { ok: true, role, contract: new Map(), api: toSurface(types), framework: chosen.framework };
+}
+
+export function classifyNugetPackage(entries: readonly { path: string; read(): Buffer }[]): NugetPackageRole {
+  const paths = entries.map((entry) => entry.path.replaceAll('\\', '/').toLowerCase());
+  if (chooseAssembly(paths)) return 'managed-library';
+  if (paths.some((path) => path.startsWith('analyzers/'))) return 'analyzer';
+  if (paths.some((path) => path.startsWith('build/') || path.startsWith('buildtransitive/'))) return 'msbuild';
+  if (paths.some((path) => path.startsWith('tools/'))) return 'tool';
+  const nuspec = entries.find((entry) => entry.path.toLowerCase().endsWith('.nuspec'));
+  if (nuspec && /<(?:dependency|group)\b/i.test(nuspec.read().toString('utf8'))) return 'meta-package';
+  return 'unsupported';
+}
+
+function nugetRoleContract(
+  entries: readonly { path: string; read(): Buffer }[],
+  role: Exclude<NugetPackageRole, 'managed-library' | 'unsupported'>,
+): Map<string, string> {
+  const contract = new Map<string, string>();
+  if (role === 'meta-package') {
+    const nuspec = entries.find((entry) => entry.path.toLowerCase().endsWith('.nuspec'));
+    if (!nuspec) return contract;
+    const xml = nuspec.read().toString('utf8');
+    for (const match of xml.matchAll(/<dependency\b([^>]*)\/?\s*>/gi)) {
+      const attrs = Object.fromEntries([...match[1]!.matchAll(/([\w.-]+)\s*=\s*["']([^"']*)["']/g)].map((m) => [m[1]!.toLowerCase(), m[2]!]));
+      if (attrs.id) contract.set(`dependency:${attrs.id}`, [attrs.version, attrs.include, attrs.exclude].filter(Boolean).join('|'));
+    }
+    return contract;
+  }
+
+  const prefixes = role === 'analyzer'
+    ? ['analyzers/']
+    : role === 'msbuild'
+      ? ['build/', 'buildtransitive/']
+      : ['tools/'];
+  for (const entry of entries) {
+    const normalized = entry.path.replaceAll('\\', '/').toLowerCase();
+    if (!prefixes.some((prefix) => normalized.startsWith(prefix))) continue;
+    contract.set(normalized, createHash('sha256').update(entry.read()).digest('hex'));
+  }
+  return contract;
+}
+
+function diffNugetContracts(before: Extract<Attempt, { ok: true }>, after: Extract<Attempt, { ok: true }>): SurfaceChange[] {
+  const changes: SurfaceChange[] = [];
+  if (before.role !== after.role) {
+    changes.push({
+      kind: 'signature-changed',
+      symbol: 'nuget:package-role',
+      detail: `The NuGet package role changed from ${before.role} to ${after.role}.`,
+      before: before.role,
+      after: after.role,
+    });
+  }
+  for (const [name, oldValue] of before.contract) {
+    const symbol = `nuget:${before.role}:${name}`;
+    if (!after.contract.has(name)) {
+      changes.push({
+        kind: 'export-removed',
+        symbol,
+        detail: `The ${before.role} contract entry ${name} was removed from the NuGet package.`,
+        before: oldValue,
+      });
+    } else if (after.contract.get(name) !== oldValue) {
+      changes.push({
+        kind: 'signature-changed',
+        symbol,
+        detail: `The ${before.role} contract entry ${name} changed in the NuGet package.`,
+        before: oldValue,
+        after: after.contract.get(name),
+      });
+    }
+  }
+  return changes;
 }
 
 /**
