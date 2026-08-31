@@ -419,13 +419,19 @@ async function surfaceOf(
             NIGHTLY_REMEDY,
             NIGHTLY_INSTALL,
           )
-        : unavailable(
-            TOOL,
-            missing ? 'version-unavailable' : 'toolchain-failed',
-            missing
-              ? `crates.io has no ${request.name} ${version}; it may have been yanked, or the crate may be private.`
-              : `\`cargo public-api\` failed on ${request.name} ${version}: ${summarizeCargoFailure(result.stderr)}`,
-          ),
+        : {
+            ...unavailable(
+              TOOL,
+              missing ? 'version-unavailable' : 'toolchain-failed',
+              missing
+                ? `crates.io has no ${request.name} ${version}; it may have been yanked, or the crate may be private.`
+                : `\`cargo public-api\` failed on ${request.name} ${version}: ${summarizeCargoFailure(result.stderr)}`,
+            ),
+            diagnostic: {
+              causalErrorPresent: /(?:^|\n)\s*(?:error(?:\[[^\]]+\])?:|failed to select a version|no matching package|could not compile|requires rustc|failed custom build|linking with .+ failed|missing feature)/im.test(result.stderr),
+              summary: summarizeCargoFailure(result.stderr),
+            },
+          },
     };
   }
 

@@ -206,6 +206,8 @@ export interface UpgradeCandidate {
   impactConfidence: 'high' | 'medium' | 'low' | 'none';
   /** Completeness facts for absence-of-local-usage claims. */
   sourceCoverage?: WalkCoverage;
+  /** Structured provider outcome used by recording accuracy validation. */
+  surfaceAssessment?: RecordedSurfaceAssessment;
   /**
    * What Drift established about this repository's runtime relative to this
    * upgrade's runtime requirements, or absent when it announced none.
@@ -440,7 +442,36 @@ interface UpstreamEvidenceBundle {
   additions: Map<string, { additions: SurfaceAddition[]; locator: string }>;
   surfaceGaps: Map<string, SurfaceUnavailable>;
   surfaceCompared: Set<string>;
+  surfaceAssessments: Map<string, RecordedSurfaceAssessment>;
   prose: Map<string, ProseSource[]>;
+}
+
+type RecordedSurfaceAssessment =
+  | { available: true; inspection: 'succeeded'; tool: string; packageRole?: string }
+  | {
+      available: false;
+      reason: SurfaceUnavailable['reason'];
+      inspection: 'succeeded' | 'failed' | 'not-applicable';
+      tool: string;
+      detail: string;
+      packageRole?: string;
+      diagnostic?: SurfaceUnavailable['diagnostic'];
+    };
+
+function recordedSurfaceGap(gap: SurfaceUnavailable): RecordedSurfaceAssessment {
+  return {
+    available: false,
+    reason: gap.reason,
+    inspection: gap.reason === 'no-public-surface'
+      ? 'succeeded'
+      : gap.reason === 'artifact-type-unsupported'
+        ? 'not-applicable'
+        : 'failed',
+    tool: gap.tool,
+    detail: gap.detail,
+    ...(gap.packageRole ? { packageRole: gap.packageRole } : {}),
+    ...(gap.diagnostic ? { diagnostic: gap.diagnostic } : {}),
+  };
 }
 
 /**
@@ -1325,6 +1356,7 @@ export async function scanUpgrades(args: {
       const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
       const surfaceGaps = new Map<string, SurfaceUnavailable>();
       const surfaceCompared = new Set<string>();
+      const surfaceAssessments = new Map<string, RecordedSurfaceAssessment>();
       const prose = new Map<string, ProseSource[]>();
       publishUpstreamProgress(key, 'Reading release notes and changelog', detail);
       const started = diagWithSpan(
@@ -1336,15 +1368,25 @@ export async function scanUpgrades(args: {
             onSurfaceComputed: (change, diff) => {
               const k = dependencyEcosystemKey(change);
               if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
+              surfaceAssessments.set(k, {
+                available: true,
+                inspection: 'succeeded',
+                tool: diff.tool,
+                ...(diff.packageRole ? { packageRole: diff.packageRole } : {}),
+              });
               additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
               publishUpstreamProgress(key, 'Comparing the public API surface', detail);
             },
-            onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
+            onUnavailableSurface: (change, reason) => {
+              const k = dependencyEcosystemKey(change);
+              surfaceGaps.set(k, reason);
+              surfaceAssessments.set(k, recordedSurfaceGap(reason));
+            },
             onProseConsulted: (change, source) => {
               const k = dependencyEcosystemKey(change);
               prose.set(k, [...(prose.get(k) ?? []), source]);
             },
-          }).then((evidence) => ({ evidence, additions, surfaceGaps, surfaceCompared, prose })),
+          }).then((evidence) => ({ evidence, additions, surfaceGaps, surfaceCompared, surfaceAssessments, prose })),
       );
       upstreamEvidenceCache.set(key, started);
       evidencePromise = started;
@@ -2190,6 +2232,7 @@ async function analyzeUpgrade(args: {
     const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
     const surfaceGaps = new Map<string, SurfaceUnavailable>();
     const surfaceCompared = new Set<string>();
+    const surfaceAssessments = new Map<string, RecordedSurfaceAssessment>();
     const prose = new Map<string, ProseSource[]>();
 
     const evidence = args.prepared?.evidence?.evidence.map((record) =>
@@ -2209,10 +2252,19 @@ async function analyzeUpgrade(args: {
         // `judgeConfidence` gives any dependency it believes had a real
         // computed API diff — see `CONFIDENT_SURFACE_WEIGHT`.
         if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(key);
+        surfaceAssessments.set(key, {
+          available: true,
+          inspection: 'succeeded',
+          tool: diff.tool,
+          ...(diff.packageRole ? { packageRole: diff.packageRole } : {}),
+        });
         additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
       },
-      onUnavailableSurface: (unavailableChange, reason) =>
-        surfaceGaps.set(dependencyEcosystemKey(unavailableChange), reason),
+      onUnavailableSurface: (unavailableChange, reason) => {
+        const key = dependencyEcosystemKey(unavailableChange);
+        surfaceGaps.set(key, reason);
+        surfaceAssessments.set(key, recordedSurfaceGap(reason));
+      },
       onProseConsulted: (proseChange, source) => {
         const key = dependencyEcosystemKey(proseChange);
         prose.set(key, [...(prose.get(key) ?? []), source]);
@@ -2225,6 +2277,7 @@ async function analyzeUpgrade(args: {
       additions.clear(); const addition = prep.additions.get(sharedKey); if (addition) additions.set(canonicalKey, addition);
       surfaceGaps.clear(); const gap = prep.surfaceGaps.get(sharedKey); if (gap) surfaceGaps.set(canonicalKey, gap);
       if (prep.surfaceCompared.has(sharedKey)) surfaceCompared.add(canonicalKey);
+      surfaceAssessments.clear(); const assessment = prep.surfaceAssessments.get(sharedKey); if (assessment) surfaceAssessments.set(canonicalKey, assessment);
       prose.clear(); const consulted = prep.prose.get(sharedKey); if (consulted) prose.set(canonicalKey, consulted);
     }
 
@@ -2325,6 +2378,7 @@ async function analyzeUpgrade(args: {
       ...(rationale ? { rationale: [rationale] } : {}),
     });
 
+    const surfaceAssessment = surfaceAssessments.get(dependencyEcosystemKey(change));
     return {
       ...base,
       status: breakingChanges.length > 0 ? 'ready' : 'clean',
@@ -2339,6 +2393,7 @@ async function analyzeUpgrade(args: {
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
       impactConfidence: strongestImpactConfidence(impactSites),
       sourceCoverage: files.coverage,
+      ...(surfaceAssessment ? { surfaceAssessment } : {}),
       risk: plan.risk,
       summary: summarize(breakingChanges.length, breakingChanges, impactSites, args.dep.name, rationale),
       // Kept even when there are findings: "two breaking changes, and the type

@@ -43,6 +43,7 @@ export const nugetSurface: SurfaceProvider = {
         tool: 'NuGet package contract',
         weight: 0.9,
         locator: `${request.name} ${request.from} → ${request.to} (NuGet package roles: ${before.role} → ${after.role})`,
+        packageRole: after.role,
       };
     }
 
@@ -52,6 +53,7 @@ export const nugetSurface: SurfaceProvider = {
       tool: TOOL,
       weight: WEIGHT,
       locator: `${request.name} ${request.from} → ${request.to} (${before.framework} assembly metadata)`,
+      packageRole: 'managed-library',
     };
   },
 };
@@ -108,11 +110,14 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
     if (role === 'unsupported') {
       return {
         ok: false,
-        failure: unavailable(
-          'NuGet package contract',
-          'artifact-type-unsupported',
-          `${request.name} ${version} contains no managed library, analyzer, MSBuild, tool, or dependency-only contract Drift can classify.`,
-        ),
+        failure: {
+          ...unavailable(
+            'NuGet package contract',
+            'artifact-type-unsupported',
+            `${request.name} ${version} contains no managed library, analyzer, MSBuild, tool, or dependency-only contract Drift can classify.`,
+          ),
+          packageRole: role,
+        },
       };
     }
     return { ok: true, role, contract: nugetRoleContract(entries, role), framework: role };

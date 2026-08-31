@@ -214,6 +214,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     decisions: actionableDecisions.length,
     actionable: actionableChanges.length > 0,
     runtimeUnresolved,
+    localizationUnresolved: dispositions.some((disposition) => disposition.reason === 'localization-incomplete'),
   });
   const confidence = judgeConfidence(input);
 
@@ -248,7 +249,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
  */
 function decide(
   input: AssessmentInput,
-  counts: { affected: number; decisions: number; actionable: boolean; runtimeUnresolved: boolean },
+  counts: { affected: number; decisions: number; actionable: boolean; runtimeUnresolved: boolean; localizationUnresolved: boolean },
 ): Recommendation {
   const { security, maintenance, license } = input;
 
@@ -280,6 +281,7 @@ function decide(
   // `insufficient-evidence` — none of which may be said over an unresolved
   // compatibility condition that applies to the whole package.
   if (counts.runtimeUnresolved) return 'upgrade-after-review';
+  if (counts.localizationUnresolved) return 'upgrade-after-review';
 
   const securityFavors = security.checked && security.resolved.length > 0;
   const maintenanceFavors = maintenance.facts.some((fact) => fact.polarity === 'favors');

@@ -54,6 +54,10 @@ export interface SurfaceUnavailable {
   install?: ToolInstallRequest;
   /** The tool that was tried, or would have been. */
   tool: string;
+  /** Artifact role established before choosing a surface provider. */
+  packageRole?: string;
+  /** Structured tool diagnostic retained for recording validation. */
+  diagnostic?: { causalErrorPresent: boolean; summary: string };
 }
 
 export interface ToolInstallRequest {
@@ -95,6 +99,8 @@ export interface SurfaceDiff {
   weight: number;
   /** Human-readable citation of what was compared. */
   locator: string;
+  /** Artifact role established before the role-specific comparison. */
+  packageRole?: string;
 }
 
 export type SurfaceOutcome = SurfaceDiff | SurfaceUnavailable;

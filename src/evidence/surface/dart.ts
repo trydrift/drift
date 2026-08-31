@@ -52,6 +52,7 @@ export const pubSurface: SurfaceProvider = {
         tool: 'pub package contract',
         weight: 0.8,
         locator: `${request.name} ${request.from} → ${request.to} (published Pub roles: ${before.role} → ${after.role})`,
+        packageRole: after.role,
       };
     }
 
@@ -69,6 +70,7 @@ export const pubSurface: SurfaceProvider = {
       tool: TOOL,
       weight: WEIGHT,
       locator: `${request.name} ${request.from} → ${request.to} (published lib/)`,
+      packageRole: 'code',
     };
   },
 };
@@ -116,11 +118,14 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
   if (role === 'unsupported') {
     return {
       ok: false,
-      failure: unavailable(
-        'pub package contract',
-        'artifact-type-unsupported',
-        `${request.name} ${version} contains no Dart library, declared asset/font contract, or executable tooling Drift can classify.`,
-      ),
+      failure: {
+        ...unavailable(
+          'pub package contract',
+          'artifact-type-unsupported',
+          `${request.name} ${version} contains no Dart library, declared asset/font contract, or executable tooling Drift can classify.`,
+        ),
+        packageRole: role,
+      },
     };
   }
   return role === 'code'

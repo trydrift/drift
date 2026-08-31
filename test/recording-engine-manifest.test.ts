@@ -111,6 +111,10 @@ describe('recording freshness: what must carry the current engine fingerprint', 
 
   test('a current recording that violates a current-engine semantic invariant is rejected', () => {
     const bad = clone();
+    for (const entry of bad.candidates) {
+      entry.publishedVersions = [entry.selected];
+      entry.provenance = { kind: 'runtime', source: 'manifest' };
+    }
     // `unknown` runtime compatibility may never be recorded as `upstream-only`.
     const candidate = bad.candidates.find((entry) => (entry.runtimeAnalyses?.length ?? 0) > 0);
     assert.ok(candidate, 'fixture must contain a runtime-analyzed candidate');

@@ -87,6 +87,120 @@ export function validateAuditInvariants(recording, name, freshnessRequired, expe
   for (const candidate of recording.candidates) {
     validateCompatibilityEvidence(candidate, name);
     validateRuntimeCompatibilityState(candidate, name);
+    validatePublishedIdentity(candidate, name);
+    validateDependencyProvenance(candidate, name);
+    validateSurfaceAssessment(candidate, name);
+    validateVerdictConsistency(candidate, name);
+    validateLocalizationCompleteness(candidate, name);
+  }
+  validateRuntimeRepetition(recording, name);
+}
+
+function validatePublishedIdentity(candidate, recordingName) {
+  if (!Array.isArray(candidate.publishedVersions) || candidate.publishedVersions.length === 0) {
+    throw new Error(`${recordingName}: ${candidate.name} has no authoritative published-version identities`);
+  }
+  if (candidate.publishedVersions.includes(candidate.selected)) return;
+  const selected = String(candidate.selected ?? '');
+  const lostPrerelease = candidate.publishedVersions.find((raw) =>
+    /-/.test(raw) && raw.replace(/-.+$/, '') === selected,
+  );
+  if (lostPrerelease) {
+    throw new Error(`${recordingName}: ${candidate.name} lost prerelease identity ${lostPrerelease} as ${selected}`);
+  }
+  throw new Error(`${recordingName}: ${candidate.name} selected ${selected} is not an exact published identity`);
+}
+
+function validateDependencyProvenance(candidate, recordingName) {
+  const provenance = candidate.provenance;
+  if (!provenance || !['manifest', 'lockfile'].includes(provenance.source)) {
+    throw new Error(`${recordingName}: ${candidate.name} has no machine-readable dependency provenance`);
+  }
+  if (provenance.kind === 'transitive' && provenance.source !== 'lockfile') {
+    throw new Error(`${recordingName}: ${candidate.name} is transitive but is recorded as manifest-direct`);
+  }
+  if (candidate.manifestPath && /(?:^|\/)(?:vendor|node_modules|Pods|\.dart_tool)(?:\/|$)/.test(candidate.manifestPath) && provenance.source === 'manifest' && provenance.generated === true) {
+    throw new Error(`${recordingName}: ${candidate.name} came from a generated dependency tree but is recorded as direct`);
+  }
+}
+
+function validateSurfaceAssessment(candidate, recordingName) {
+  const assessment = candidate.surfaceAssessment;
+  if (!assessment) return;
+  if (assessment.reason === 'no-public-surface' && assessment.inspection !== 'succeeded') {
+    throw new Error(`${recordingName}: ${candidate.name} claims no public surface without a successful artifact inspection`);
+  }
+  if (['artifact-unavailable', 'toolchain-failed', 'version-unavailable', 'parse-failed'].includes(assessment.reason) && assessment.inspection === 'succeeded') {
+    throw new Error(`${recordingName}: ${candidate.name} turns a provider failure into successful artifact inspection`);
+  }
+  if (assessment.reason === 'artifact-type-unsupported' && assessment.inspection !== 'not-applicable') {
+    throw new Error(`${recordingName}: ${candidate.name} has an unsupported artifact role without a not-applicable result`);
+  }
+
+  const expectedTool = {
+    pom: /POM contract/i,
+    parent: /POM contract/i,
+    analyzer: /NuGet package contract/i,
+    msbuild: /NuGet package contract/i,
+    tool: /NuGet package contract|pub package contract/i,
+    'meta-package': /NuGet package contract/i,
+    asset: /pub package contract/i,
+    tooling: /pub package contract/i,
+  }[assessment.packageRole];
+  if (expectedTool && !expectedTool.test(String(assessment.tool ?? ''))) {
+    throw new Error(`${recordingName}: ${candidate.name} role ${assessment.packageRole} is labeled as ${assessment.tool}`);
+  }
+
+  const diagnostic = assessment.diagnostic;
+  if (diagnostic?.causalErrorPresent && progressOnly(diagnostic.summary)) {
+    throw new Error(`${recordingName}: ${candidate.name} stores progress output instead of the causal tool failure`);
+  }
+}
+
+function progressOnly(summary) {
+  const lines = String(summary ?? '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  return lines.length === 0 || lines.every((line) => /^(?:Updating|Downloading|Downloaded|Compiling|Compiled|Checking|Blocking)\b/i.test(line));
+}
+
+function validateVerdictConsistency(candidate, recordingName) {
+  const dispositions = candidate.dispositions ?? [];
+  if (dispositions.some((item) => item.state === 'review-only') && candidate.severity === 'evidence-missing') {
+    throw new Error(`${recordingName}: ${candidate.name} has review-only local sites but is labeled evidence-missing`);
+  }
+  if (candidate.severity === 'localization-incomplete' && candidate.recommendation === 'safe-to-upgrade') {
+    throw new Error(`${recordingName}: ${candidate.name} is safe-to-upgrade despite incomplete localization`);
+  }
+  if (['unknown', 'partial'].includes(candidate.runtimeCompatibility) && candidate.severity === 'evidence-missing') {
+    throw new Error(`${recordingName}: ${candidate.name} collapses runtime uncertainty into missing upstream evidence`);
+  }
+}
+
+function validateLocalizationCompleteness(candidate, recordingName) {
+  const coverage = candidate.sourceCoverage;
+  if (!coverage || coverage.localizationComplete !== false) return;
+  if ((candidate.dispositions ?? []).some((item) => item.reason === 'no-local-impact')) {
+    throw new Error(`${recordingName}: ${candidate.name} claims exhaustive absence with truncated source indexing`);
+  }
+}
+
+function validateRuntimeRepetition(recording, recordingName) {
+  const byFingerprint = new Map();
+  for (const candidate of recording.candidates) {
+    for (const change of candidate.breaking ?? []) {
+      if (change.kind !== 'runtime-requirement') continue;
+      for (const site of change.sites ?? []) {
+        if (site.runtimeVerdict !== 'unknown') continue;
+        const key = [change.runtime?.runtime, site.file, site.line, String(site.excerpt ?? '').replace(/\s+/g, ' ').trim()].join('|');
+        const packages = byFingerprint.get(key) ?? new Set();
+        packages.add(candidate.name);
+        byFingerprint.set(key, packages);
+      }
+    }
+  }
+  for (const [fingerprint, packages] of byFingerprint) {
+    if (packages.size >= 4) {
+      throw new Error(`${recordingName}: suspicious unresolved runtime fingerprint repeats across ${packages.size} unrelated packages (${fingerprint})`);
+    }
   }
 }
 

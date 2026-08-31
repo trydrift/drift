@@ -644,6 +644,21 @@ describe('the upgrade assessment', () => {
     assert.equal(assessUpgrade(input()).recommendation, 'safe-to-upgrade');
   });
 
+  test('an unlocalized upstream finding cannot be called safe when indexing was truncated', () => {
+    const finding = {
+      id: 'bc1', dependency: 'pkg', kind: 'removed-export', summary: 'removed',
+      remediation: 'review', symbols: ['old'], confidence: 'high', citations: [],
+    };
+    assert.equal(
+      assessUpgrade(input({
+        breakingChanges: [finding],
+        localizationRan: true,
+        localizationComplete: false,
+      })).recommendation,
+      'upgrade-after-review',
+    );
+  });
+
   test('resolving a vulnerability makes it recommended', () => {
     const result = assessUpgrade(
       input({ security: { ...clean, resolved: [vuln('GHSA-1', 'high')], direction: 'improves' } }),

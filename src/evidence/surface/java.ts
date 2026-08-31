@@ -74,15 +74,19 @@ export const javaSurface: SurfaceProvider = {
         tool: POM_TOOL,
         weight: 0.9,
         locator: `${request.name} ${request.from} → ${request.to} (POM contract; ${beforeRole} → ${afterRole})`,
+        packageRole: afterRole,
       };
     }
 
     if (beforeRole !== 'library' || afterRole !== 'library') {
-      return unavailable(
-        POM_TOOL,
-        'artifact-type-unsupported',
-        `${request.name} is packaged as ${afterPom.contract.packaging}, not as a Java library jar. Drift identified the Maven role but does not yet claim a classfile API comparison for it.`,
-      );
+      return {
+        ...unavailable(
+          POM_TOOL,
+          'artifact-type-unsupported',
+          `${request.name} is packaged as ${afterPom.contract.packaging}, not as a Java library jar. Drift identified the Maven role but does not yet claim a classfile API comparison for it.`,
+        ),
+        packageRole: afterRole,
+      };
     }
 
     // Java is an external runtime prerequisite. Drift provisions japicmp on top
@@ -175,6 +179,7 @@ export const javaSurface: SurfaceProvider = {
       tool: TOOL,
       weight: 1.0,
       locator: `${request.name} ${request.from} → ${request.to} (classfiles)`,
+      packageRole: 'jar',
     };
   },
 };

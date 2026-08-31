@@ -520,6 +520,8 @@ function slimCandidate(candidate) {
     latest: candidate.latest,
     selected: candidate.selected,
     safeLatest: candidate.safeLatest ?? null,
+    publishedVersions: candidate.versions,
+    provenance: { kind: candidate.kind, source: 'manifest' },
     status: candidate.status,
     phase: candidate.phase ?? null,
     risk: candidate.risk,
@@ -555,6 +557,7 @@ function slimCandidate(candidate) {
     actionableImpactFiles: candidate.actionableImpactFiles ?? 0,
     runtimeDeclarationSiteCount: candidate.runtimeDeclarationSiteCount ?? 0,
     sourceCoverage: candidate.sourceCoverage ?? null,
+    surfaceAssessment: candidate.surfaceAssessment ?? null,
     runtimeChanges: (candidate.plan?.breakingChanges ?? [])
       .filter((change) => change.kind === 'runtime-requirement' && change.runtime)
       .map((change) => ({ id: change.id, runtime: change.runtime.runtime })),
