@@ -119,6 +119,7 @@ describe('semantic recording invariants', () => {
 
   test('rejects verdict and localization contradictions', () => {
     const item = candidate();
+    item.breakingCount = 1;
     item.severity = 'localization-incomplete';
     item.sourceCoverage.localizationComplete = false;
     item.sourceCoverage.sourceTruncated = true;
@@ -127,6 +128,21 @@ describe('semantic recording invariants', () => {
 
     item.recommendation = 'upgrade-after-review';
     assert.throws(() => validate(recording([item])), /exhaustive absence with truncated source indexing/);
+  });
+
+  test('accepts incomplete source indexing for a resolved runtime-only finding', () => {
+    const item = candidate();
+    item.breakingCount = 1;
+    item.sourceCoverage.localizationComplete = false;
+    item.sourceCoverage.sourceTruncated = true;
+    item.runtimeCompatibility = 'compatible';
+    item.runtimeChanges = [{ id: 'runtime', runtime: 'go' }];
+    item.runtimeAnalyses = [{
+      changeId: 'runtime', runtime: 'go', state: 'compatible', reason: 'satisfies',
+      siteCount: 1, declarationCount: 1, unresolvedCount: 0, statement: 'Go is compatible.',
+    }];
+    item.dispositions = [{ changeId: 'runtime', state: 'unaffected', reason: 'runtime-compatible', siteCount: 1, actionableSiteCount: 0 }];
+    assert.doesNotThrow(() => validate(recording([item])));
   });
 
   test('flags repeated unresolved runtime fingerprints only at a suspicious corpus threshold', () => {

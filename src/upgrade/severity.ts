@@ -224,8 +224,14 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
     return 'runtime-unresolved';
   }
 
+  // Source indexing completeness governs API-site absence. Runtime
+  // requirements are resolved against runtime configuration instead; a fully
+  // compatible runtime-only finding does not become uncertain merely because
+  // unrelated source files exceeded the indexing budget.
+  const runtimeBreakingCount = candidate.runtimeAnalyses?.length ?? 0;
+  const apiBreakingCount = Math.max(0, candidate.breakingCount - runtimeBreakingCount);
   if (
-    candidate.breakingCount > 0 &&
+    apiBreakingCount > 0 &&
     (candidate.sourceCoverage?.localizationComplete === false || candidate.sourceCoverage?.sourceTruncated)
   ) return 'localization-incomplete';
 

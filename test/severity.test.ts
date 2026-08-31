@@ -74,6 +74,18 @@ describe('a failed verification outranks a clean-looking result', () => {
     assert.equal(severityOf(candidate), 'clean');
   });
 
+  test('source truncation does not contradict a resolved runtime-only finding', () => {
+    const candidate = {
+      ...base,
+      breakingCount: 1,
+      recommendation: 'safe-to-upgrade',
+      runtimeCompatibility: 'compatible' as const,
+      runtimeAnalyses: [{ state: 'compatible' as const, reason: 'declared-compatible' }],
+      sourceCoverage: { sourceTruncated: true, localizationComplete: false },
+    };
+    assert.equal(severityOf(candidate), 'upstream-only');
+  });
+
   test('a positive site outranks incomplete localization', () => {
     const candidate = {
       ...base,

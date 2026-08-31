@@ -167,7 +167,12 @@ function validateVerdictConsistency(candidate, recordingName) {
   if (dispositions.some((item) => item.state === 'review-only') && candidate.severity === 'evidence-missing') {
     throw new Error(`${recordingName}: ${candidate.name} has review-only local sites but is labeled evidence-missing`);
   }
-  if (candidate.severity === 'localization-incomplete' && candidate.recommendation === 'safe-to-upgrade') {
+  const apiBreakingCount = Math.max(0, (candidate.breakingCount ?? 0) - (candidate.runtimeChanges ?? []).length);
+  if (
+    apiBreakingCount > 0 &&
+    candidate.sourceCoverage?.localizationComplete === false &&
+    candidate.recommendation === 'safe-to-upgrade'
+  ) {
     throw new Error(`${recordingName}: ${candidate.name} is safe-to-upgrade despite incomplete localization`);
   }
   if (['unknown', 'partial'].includes(candidate.runtimeCompatibility) && candidate.severity === 'evidence-missing') {
