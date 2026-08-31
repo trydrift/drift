@@ -99,5 +99,8 @@ describe('canonical ecosystem version semantics', () => {
   test('fails closed for package-authored schemes without one safe ordering', () => {
     assert.equal(parsePublishedVersion('release-2026', 'conan'), null);
     assert.equal(parsePublishedVersion('date#1', 'vcpkg'), null);
+    assert.equal(comparePackageVersions('release-2026', 'release-2026', 'conan'), 0);
+    assert.equal(comparePackageVersions('release-2026', 'release-2027', 'conan'), null);
+    assert.equal(comparePackageVersions('date#1', 'date#2', 'vcpkg'), null);
   });
 });

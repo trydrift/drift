@@ -288,6 +288,57 @@ end`;
   });
 });
 
+describe('opaque C/C++ version identities', () => {
+  test('a Conan fmt exact upgrade survives triage without invented ordering', () => {
+    const changes = detectChanges([{
+      path: 'conanfile.txt',
+      before: '[requires]\nfmt/9.1.0\n',
+      after: '[requires]\nfmt/10.2.1\n',
+    }]);
+    assert.equal(changes[0]?.from, '9.1.0');
+    assert.equal(changes[0]?.to, '10.2.1');
+    assert.equal(changes[0]?.bump, 'unknown');
+    assert.equal(triage(changes, DEFAULT_CONFIG).actionable.length, 1);
+  });
+
+  test('a vcpkg exact override survives triage without invented ordering', () => {
+    const manifest = (version: string) => JSON.stringify({
+      dependencies: ['fmt'],
+      overrides: [{ name: 'fmt', 'version-string': version }],
+    });
+    const changes = detectChanges([{
+      path: 'vcpkg.json',
+      before: manifest('9.1.0'),
+      after: manifest('10.2.1'),
+    }]);
+    assert.equal(changes[0]?.from, '9.1.0');
+    assert.equal(changes[0]?.to, '10.2.1');
+    assert.equal(changes[0]?.bump, 'unknown');
+    assert.equal(triage(changes, DEFAULT_CONFIG).actionable.length, 1);
+  });
+
+  test('Conan ranges and vcpkg floors remain non-exact', () => {
+    const conan = detectChanges([{
+      path: 'conanfile.txt',
+      before: '[requires]\nfmt/[>=9 <10]\n',
+      after: '[requires]\nfmt/[>=10 <11]\n',
+    }]);
+    assert.equal(conan[0]?.from, null);
+    assert.equal(conan[0]?.to, null);
+
+    const vcpkg = detectChanges([{
+      path: 'vcpkg.json',
+      before: JSON.stringify({ dependencies: [{ name: 'fmt', 'version>=': '9.1.0' }] }),
+      after: JSON.stringify({ dependencies: [{ name: 'fmt', 'version>=': '10.2.1' }] }),
+    }]);
+    // A vcpkg `version>=` parser value is a floor rather than an exact target;
+    // it must not be promoted merely because the token itself looks literal.
+    assert.equal(vcpkg[0]?.rawFrom, '>=9.1.0');
+    assert.equal(vcpkg[0]?.from, null);
+    assert.equal(vcpkg[0]?.to, null);
+  });
+});
+
 describe('triage', () => {
   const change = {
     name: 'express',

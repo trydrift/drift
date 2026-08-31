@@ -535,7 +535,7 @@ class App(ConanFile):
     const deps = parse('vcpkg.json', manifest('a'.repeat(40)));
     // An override is the last word on a port's version.
     assert.equal(deps.get('fmt')?.version, '10.2.1');
-    assert.equal(deps.get('zlib')?.version, '1.3.0');
+    assert.equal(deps.get('zlib')?.version, '>=1.3.0');
     assert.equal(deps.get('vcpkg-cmake')?.kind, 'dev');
 
     const changes = detectChanges([

@@ -196,6 +196,11 @@ export function compareParsedVersions(a: ParsedPublishedVersion, b: ParsedPublis
 }
 
 export function comparePackageVersions(a: string, b: string, ecosystem: Ecosystem): number | null {
+  if (isOpaqueVersionEcosystem(ecosystem)) {
+    const left = opaqueVersionIdentity(a);
+    const right = opaqueVersionIdentity(b);
+    return left && right && left === right ? 0 : null;
+  }
   const semantics = versionSemantics(ecosystem);
   const left = semantics.parse(a);
   const right = semantics.parse(b);
@@ -354,6 +359,7 @@ function satisfiesInterval(
 
 function exactVersionFromRange(range: string, ecosystem: Ecosystem): string | null {
   const value = range.trim();
+  if (isOpaqueVersionEcosystem(ecosystem)) return opaqueVersionIdentity(value);
   if (ecosystem === 'npm') return semver.valid(value) ? value : null;
   if (ecosystem === 'cargo') {
     const match = /^=\s*(v?\d+(?:\.\d+){2}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/.exec(value);
@@ -373,6 +379,23 @@ function exactVersionFromRange(range: string, ecosystem: Ecosystem): string | nu
   }
   if (parsePublishedVersion(value, ecosystem)) return value;
   return null;
+}
+
+/**
+ * Conan and vcpkg version schemes are package-authored, so an exact spelling
+ * is an identity but never an ordering claim. Range syntax is rejected here;
+ * literal identities survive detection and can be handed unchanged to the
+ * artifact provider, while comparison and bump classification remain unknown.
+ */
+function opaqueVersionIdentity(raw: string): string | null {
+  const identity = raw.trim();
+  if (!identity || /\s/.test(identity)) return null;
+  if (/[\[\]<>~=^*,|&]/.test(identity)) return null;
+  return identity;
+}
+
+function isOpaqueVersionEcosystem(ecosystem: Ecosystem): boolean {
+  return ecosystem === 'conan' || ecosystem === 'vcpkg';
 }
 
 function comparisonAnchor(range: string, ecosystem: Ecosystem): ParsedPublishedVersion | null {
