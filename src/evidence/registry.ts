@@ -7,6 +7,7 @@ import {
   fetchOpamPackageVersions,
   githubRepoFromOpam,
 } from './opam-repository.js';
+import { exactPackagistRelease, expandPackagistP2 } from './packagist-p2.js';
 
 /** Normalised registry facts Drift needs, across every ecosystem. */
 export interface RegistryInfo {
@@ -50,7 +51,7 @@ export async function fetchRegistryInfo(
     case 'nuget':
       return fetchNuGet(name);
     case 'packagist':
-      return fetchPackagist(name);
+      return fetchPackagist(name, targetVersion);
     case 'hex':
       return fetchHex(name);
     case 'pub':
@@ -137,21 +138,24 @@ interface NuGetCatalogEntry {
   deprecation?: { message?: string };
 }
 
-async function fetchPackagist(name: string): Promise<RegistryInfo | null> {
+async function fetchPackagist(name: string, targetVersion: string | null): Promise<RegistryInfo | null> {
   const data = await fetchJson<{
     packages?: Record<string, PackagistVersion[]>;
   }>(`https://repo.packagist.org/p2/${name}.json`);
 
-  const releases = data?.packages?.[name];
-  if (!releases || releases.length === 0) return null;
+  const compact = data?.packages?.[name];
+  if (!compact || compact.length === 0) return null;
+  const releases = expandPackagistP2(compact);
 
-  // p2 returns newest first.
-  const latest = releases[0]!;
+  // Target-version facts must come from that exact registry identity. Version
+  // discovery passes null and intentionally receives the newest release.
+  const selected = targetVersion ? exactPackagistRelease(releases, targetVersion) : releases[0];
+  if (!selected) return null;
 
   // Packagist spells deprecation as `abandoned`, whose value is either `true`
   // or the name of the package that replaced it — and the replacement is the
   // single most useful thing to tell someone, so it is not flattened away.
-  const abandoned = latest.abandoned;
+  const abandoned = selected.abandoned;
   const deprecated =
     abandoned === undefined || abandoned === false
       ? null
@@ -162,11 +166,11 @@ async function fetchPackagist(name: string): Promise<RegistryInfo | null> {
   return {
     name,
     ecosystem: 'packagist',
-    githubRepo: parseGitHubRepo(latest.source?.url ?? null) ?? parseGitHubRepo(latest.homepage ?? null),
-    homepage: latest.homepage ?? `https://packagist.org/packages/${name}`,
+    githubRepo: parseGitHubRepo(selected.source?.url ?? null) ?? parseGitHubRepo(selected.homepage ?? null),
+    homepage: selected.homepage ?? `https://packagist.org/packages/${name}`,
     versions: releases.map((release) => release.version).filter((v): v is string => Boolean(v)),
     deprecated,
-    description: latest.description ?? null,
+    description: selected.description ?? null,
   };
 }
 
