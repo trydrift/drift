@@ -21,7 +21,9 @@ import {
  */
 
 const TOOL = 'japicmp';
+const POM_TOOL = 'Maven POM contract';
 const CENTRAL = 'https://repo1.maven.org/maven2';
+const MAX_POM_BYTES = 5 * 1024 * 1024;
 
 /**
  * The japicmp version Drift provisions. Pinned, not "latest": a recording is a
@@ -50,6 +52,36 @@ export const javaSurface: SurfaceProvider = {
         TOOL,
         'unsupported-ecosystem',
         `\`${request.name}\` is not a \`groupId:artifactId\` coordinate, so Drift could not locate it on Maven Central.`,
+      );
+    }
+
+    // The exact POM declares what kind of artifact this coordinate is. Read it
+    // before requiring Java or assuming a jar exists: parent POMs and BOMs are
+    // contracts in their own right, not failed classfile libraries.
+    const [beforePom, afterPom] = await Promise.all([
+      downloadPom(coordinate, request.from),
+      downloadPom(coordinate, request.to),
+    ]);
+    if (!beforePom.ok) return beforePom.failure;
+    if (!afterPom.ok) return afterPom.failure;
+
+    const beforeRole = classifyMavenPackaging(beforePom.contract.packaging);
+    const afterRole = classifyMavenPackaging(afterPom.contract.packaging);
+    if (beforeRole === 'pom' || afterRole === 'pom') {
+      return {
+        available: true,
+        changes: diffPomContracts(beforePom.contract, afterPom.contract),
+        tool: POM_TOOL,
+        weight: 0.9,
+        locator: `${request.name} ${request.from} → ${request.to} (POM contract; ${beforeRole} → ${afterRole})`,
+      };
+    }
+
+    if (beforeRole !== 'library' || afterRole !== 'library') {
+      return unavailable(
+        POM_TOOL,
+        'artifact-type-unsupported',
+        `${request.name} is packaged as ${afterPom.contract.packaging}, not as a Java library jar. Drift identified the Maven role but does not yet claim a classfile API comparison for it.`,
       );
     }
 
@@ -162,6 +194,178 @@ export function parseCoordinate(name: string): Coordinate | null {
 export function jarUrl(coordinate: Coordinate, version: string): string {
   const path = coordinate.groupId.replace(/\./g, '/');
   return `${CENTRAL}/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}.jar`;
+}
+
+export function pomUrl(coordinate: Coordinate, version: string): string {
+  const path = coordinate.groupId.replace(/\./g, '/');
+  return `${CENTRAL}/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}.pom`;
+}
+
+export type MavenArtifactRole = 'library' | 'pom' | 'maven-plugin' | 'unsupported';
+
+export function classifyMavenPackaging(packaging: string | undefined): MavenArtifactRole {
+  const normalized = (packaging ?? 'jar').trim().toLowerCase();
+  if (normalized === 'jar' || normalized === 'bundle') return 'library';
+  if (normalized === 'pom') return 'pom';
+  if (normalized === 'maven-plugin') return 'maven-plugin';
+  return 'unsupported';
+}
+
+export interface PomContract {
+  packaging: string;
+  parent: string | null;
+  properties: Map<string, string>;
+  dependencyManagement: Map<string, string>;
+  pluginManagement: Map<string, string>;
+}
+
+type PomAttempt = { ok: true; contract: PomContract } | { ok: false; failure: SurfaceOutcome };
+
+async function downloadPom(coordinate: Coordinate, version: string): Promise<PomAttempt> {
+  const url = pomUrl(coordinate, version);
+  const downloaded = await fetchArchive(url, { timeoutMs: 60_000, maxBytes: MAX_POM_BYTES });
+  if (!downloaded.ok) {
+    return {
+      ok: false,
+      failure: unavailable(
+        POM_TOOL,
+        downloaded.status === 404 ? 'version-unavailable' : 'artifact-unavailable',
+        downloaded.status === 404
+          ? `Maven Central has no POM for ${coordinate.groupId}:${coordinate.artifactId}:${version}.`
+          : `The exact Maven POM at ${url} could not be downloaded (HTTP ${downloaded.status || 'unavailable'}).`,
+      ),
+    };
+  }
+  try {
+    return { ok: true, contract: parsePomContract(downloaded.bytes.toString('utf8')) };
+  } catch (error) {
+    return {
+      ok: false,
+      failure: unavailable(POM_TOOL, 'parse-failed', `The exact Maven POM at ${url} could not be parsed: ${(error as Error).message}`),
+    };
+  }
+}
+
+export function parsePomContract(xml: string): PomContract {
+  if (!/<project(?:\s|>)/i.test(xml)) throw new Error('missing project element');
+  const clean = xml.replace(/<!--[\s\S]*?-->/g, '');
+  const packaging = tag(clean, 'packaging') ?? 'jar';
+  const parentBlock = block(clean, 'parent');
+  const parent = parentBlock
+    ? [tag(parentBlock, 'groupId'), tag(parentBlock, 'artifactId'), tag(parentBlock, 'version')]
+        .map((value) => value ?? '')
+        .join(':')
+    : null;
+  return {
+    packaging,
+    parent,
+    properties: childValues(block(clean, 'properties')),
+    dependencyManagement: dependencyContracts(block(clean, 'dependencyManagement')),
+    pluginManagement: pluginContracts(block(clean, 'pluginManagement')),
+  };
+}
+
+export function diffPomContracts(before: PomContract, after: PomContract): SurfaceChange[] {
+  const changes: SurfaceChange[] = [];
+  if (before.packaging !== after.packaging) {
+    changes.push({
+      kind: 'signature-changed',
+      symbol: 'pom:packaging',
+      detail: `The Maven artifact role changed from ${before.packaging} to ${after.packaging}.`,
+      before: before.packaging,
+      after: after.packaging,
+    });
+  }
+  if (before.parent !== after.parent) {
+    changes.push({
+      kind: 'signature-changed',
+      symbol: 'pom:parent',
+      detail: 'The inherited Maven parent coordinates changed.',
+      before: before.parent ?? '(none)',
+      after: after.parent ?? '(none)',
+    });
+  }
+  comparePomMap('property', before.properties, after.properties, changes);
+  comparePomMap('dependencyManagement', before.dependencyManagement, after.dependencyManagement, changes);
+  comparePomMap('pluginManagement', before.pluginManagement, after.pluginManagement, changes);
+  return changes;
+}
+
+function comparePomMap(
+  section: string,
+  before: ReadonlyMap<string, string>,
+  after: ReadonlyMap<string, string>,
+  changes: SurfaceChange[],
+): void {
+  for (const [name, oldValue] of before) {
+    const symbol = `pom:${section}:${name}`;
+    if (!after.has(name)) {
+      changes.push({
+        kind: 'export-removed',
+        symbol,
+        detail: `The ${section} entry ${name} was removed from the published POM contract.`,
+        before: oldValue,
+      });
+    } else if (after.get(name) !== oldValue) {
+      changes.push({
+        kind: 'signature-changed',
+        symbol,
+        detail: `The ${section} entry ${name} changed in the published POM contract.`,
+        before: oldValue,
+        after: after.get(name),
+      });
+    }
+  }
+}
+
+function tag(xml: string, name: string): string | null {
+  const match = new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i').exec(xml);
+  return match?.[1]?.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() || null;
+}
+
+function block(xml: string | null, name: string): string | null {
+  if (!xml) return null;
+  return new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i').exec(xml)?.[1] ?? null;
+}
+
+function childValues(xml: string | null): Map<string, string> {
+  const out = new Map<string, string>();
+  if (!xml) return out;
+  const pattern = /<([A-Za-z_][\w.-]*)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/g;
+  for (const match of xml.matchAll(pattern)) {
+    const value = match[2]!.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (value) out.set(match[1]!, value);
+  }
+  return out;
+}
+
+function dependencyContracts(xml: string | null): Map<string, string> {
+  const out = new Map<string, string>();
+  if (!xml) return out;
+  for (const match of xml.matchAll(/<dependency(?:\s[^>]*)?>([\s\S]*?)<\/dependency>/g)) {
+    const body = match[1]!;
+    const key = `${tag(body, 'groupId') ?? ''}:${tag(body, 'artifactId') ?? ''}`;
+    if (key === ':') continue;
+    const exclusions = [...body.matchAll(/<exclusion(?:\s[^>]*)?>([\s\S]*?)<\/exclusion>/g)]
+      .map((entry) => `${tag(entry[1]!, 'groupId') ?? ''}:${tag(entry[1]!, 'artifactId') ?? ''}`)
+      .sort();
+    out.set(key, [tag(body, 'version'), tag(body, 'type'), tag(body, 'scope'), tag(body, 'classifier'), ...exclusions]
+      .filter(Boolean).join('|'));
+  }
+  return out;
+}
+
+function pluginContracts(xml: string | null): Map<string, string> {
+  const out = new Map<string, string>();
+  if (!xml) return out;
+  for (const match of xml.matchAll(/<plugin(?:\s[^>]*)?>([\s\S]*?)<\/plugin>/g)) {
+    const body = match[1]!;
+    const key = `${tag(body, 'groupId') ?? 'org.apache.maven.plugins'}:${tag(body, 'artifactId') ?? ''}`;
+    if (key.endsWith(':')) continue;
+    out.set(key, [tag(body, 'version'), block(body, 'configuration')?.replace(/\s+/g, ' ').trim()]
+      .filter(Boolean).join('|'));
+  }
+  return out;
 }
 
 type JarAttempt = { ok: true; path: string } | { ok: false; failure: SurfaceOutcome };

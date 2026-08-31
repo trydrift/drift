@@ -144,6 +144,10 @@ describe('javaSurface error separation', () => {
   };
 
   test('Java missing is tool-missing, with a prose remedy and no auto-install offer', async () => {
+    globalThis.fetch = (async (input) =>
+      String(input).endsWith('.pom')
+        ? new Response('<project><packaging>jar</packaging></project>')
+        : new Response('', { status: 404 })) as typeof fetch;
     const workdir = await mkdtemp(join(tmpdir(), 'drift-java-none-'));
     const outcome = await javaSurface.compute({
       ...baseRequest,
@@ -166,6 +170,7 @@ describe('javaSurface error separation', () => {
   test('a helper checksum failure is a distinct toolchain-failed message', async () => {
     globalThis.fetch = (async (input: string | URL | Request) => {
       const url = String(input);
+      if (url.endsWith('.pom')) return new Response('<project><packaging>jar</packaging></project>');
       if (url.includes('/japicmp/')) return new Response(Buffer.from('corrupt'), { status: 200 });
       return new Response('', { status: 404 });
     }) as typeof fetch;
@@ -189,7 +194,10 @@ describe('javaSurface error separation', () => {
   });
 
   test('a helper acquisition failure never blames Java when Java is present', async () => {
-    globalThis.fetch = (async () => new Response('', { status: 503 })) as typeof fetch;
+    globalThis.fetch = (async (input) =>
+      String(input).endsWith('.pom')
+        ? new Response('<project><packaging>jar</packaging></project>')
+        : new Response('', { status: 503 })) as typeof fetch;
 
     const workdir = await mkdtemp(join(tmpdir(), 'drift-java-dl-'));
     const outcome = await javaSurface.compute({

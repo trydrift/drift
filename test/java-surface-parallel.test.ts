@@ -58,6 +58,7 @@ describe('Maven before/after jar preparation', () => {
     globalThis.fetch = (async (input: string | URL | Request) => {
       const url = String(input);
       if (!url.startsWith('https://repo1.maven.org/')) return new Response('not found', { status: 404 });
+      if (url.endsWith('.pom')) return new Response('<project><packaging>jar</packaging></project>');
 
       inFlight.add(url);
       if (inFlight.size >= 2) bothSeenInFlightTogether = true;
@@ -104,6 +105,7 @@ describe('Maven before/after jar preparation', () => {
     const afterHeld = new Promise<void>((resolve) => { releaseAfter = resolve; });
     globalThis.fetch = (async (input: string | URL | Request) => {
       const url = String(input);
+      if (url.endsWith('.pom')) return new Response('<project><packaging>jar</packaging></project>');
       if (url.includes('1.0.0')) {
         startedBefore = true;
         return new Response('missing', { status: 404 });
