@@ -21,6 +21,10 @@ export interface RegistryInfo {
   /** Deprecation notice for the *target* version, when the registry has one. */
   deprecated: string | null;
   description: string | null;
+  /** Registry-authoritative changelog location, preferred over filename guesses. */
+  changelogUrl?: string | null;
+  /** Registry-authoritative API/reference documentation location. */
+  documentationUrl?: string | null;
 }
 
 /**
@@ -937,6 +941,7 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     homepage_uri?: string;
     source_code_uri?: string;
     changelog_uri?: string;
+    documentation_uri?: string;
   }>(`https://rubygems.org/api/v1/gems/${encodeURIComponent(name)}.json`);
   if (!data) return null;
 
@@ -955,6 +960,8 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     versions: (versions ?? []).map((v) => v.number),
     deprecated: null,
     description: data.info ?? null,
+    changelogUrl: data.changelog_uri ?? null,
+    documentationUrl: data.documentation_uri ?? null,
   };
 }
 

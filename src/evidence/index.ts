@@ -7,6 +7,7 @@ import { stableId } from '../util/id.js';
 import { isDowngrade, isZeroVerBreaking } from '../detect/version.js';
 import {
   extractBreakingPassages,
+  fetchDeclaredChangelogDocuments,
   fetchChangelogDocuments,
   fetchMigrationGuides,
   parseChangelogSections,
@@ -263,8 +264,22 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   // Plural: a project large enough to split its changelog by version has one
   // document per release, and the index that lists them is not itself prose.
   const changelogsPending =
-    githubRepo && config.evidence.changelog
-      ? fetchChangelogDocuments(githubRepo, change.from, change.to, change.ecosystem)
+    config.evidence.changelog && (registry?.changelogUrl || githubRepo)
+      ? (async () => {
+          if (registry?.changelogUrl) {
+            const declared = await fetchDeclaredChangelogDocuments(
+              registry.changelogUrl,
+              githubRepo ?? null,
+              change.from!,
+              change.to!,
+              change.ecosystem,
+            );
+            if (declared.length > 0) return declared;
+          }
+          return githubRepo
+            ? fetchChangelogDocuments(githubRepo, change.from!, change.to!, change.ecosystem)
+            : [];
+        })()
       : null;
   // Migration guides are the artefact LADU relies on exclusively. Drift
   // treats one as strong corroboration rather than the sole input, so a
@@ -279,8 +294,8 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   const surface = surfacePending ? await surfacePending : null;
   if (surface) out.push(surface);
 
-  if (!githubRepo) {
-    logger.debug(`No source repository resolved for ${change.name}; prose evidence unavailable`);
+  if (!githubRepo && !changelogsPending) {
+    logger.debug(`No source repository or declared changelog resolved for ${change.name}; prose evidence unavailable`);
     return tag(out);
   }
 

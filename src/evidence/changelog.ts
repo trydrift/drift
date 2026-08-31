@@ -16,6 +16,7 @@ const CHANGELOG_FILENAMES = [
   'CHANGELOG.markdown',
   'CHANGELOG',
   'CHANGES.md',
+  'Changes.md',
   'HISTORY.md',
   'NEWS.md',
   'RELEASES.md',
@@ -209,6 +210,41 @@ export async function fetchChangelogDocuments(
 
   const root = await fetchChangelog(githubRepo, branches);
   if (!root) return [];
+
+  return documentsFromRoot(root, githubRepo, from, to, ecosystem, maxDocuments);
+}
+
+/** Fetch a registry-declared changelog before attempting repository guesses. */
+export async function fetchDeclaredChangelogDocuments(
+  url: string,
+  githubRepo: string | null,
+  from: string,
+  to: string,
+  ecosystem: Ecosystem = 'npm',
+  maxDocuments = 12,
+): Promise<FetchedDocument[]> {
+  const github = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/blob\/([^/]+)\/(.+)$/i.exec(url);
+  const fetchUrl = github
+    ? `https://raw.githubusercontent.com/${github[1]}/${github[2]}/${github[3]}`
+    : url;
+  const content = await fetchText(fetchUrl, { retries: 0 });
+  if (!content || !content.trim()) return [];
+  let path = decodeURIComponent(new URL(url).pathname.split('/').pop() || 'changelog');
+  let branch = github?.[2] ?? 'main';
+  const repo = github?.[1] ?? githubRepo;
+  if (github?.[3]) path = github[3];
+  const root = { path, url, content, branch };
+  return repo ? documentsFromRoot(root, repo, from, to, ecosystem, maxDocuments) : [root];
+}
+
+async function documentsFromRoot(
+  root: FetchedDocument,
+  githubRepo: string,
+  from: string,
+  to: string,
+  ecosystem: Ecosystem,
+  maxDocuments: number,
+): Promise<FetchedDocument[]> {
 
   if (sectionsBetween(parseChangelogSections(root.content, ecosystem), from, to, ecosystem).length > 0) return [root];
 
