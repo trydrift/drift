@@ -772,7 +772,7 @@
     "highlight.js": "^11.11.1",
     "semver": "^7.6.3",
     "yaml": "^2.7.0",
-    "zod": "^4.4.3"
+    "zod": "^4.5.1"
   },
   "repository": {
     "type": "git",
