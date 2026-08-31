@@ -30,6 +30,7 @@ import {
   diffPackageModuleMetadata,
   entryPointMoved,
   fetchTypeSurface,
+  ArtifactUnavailableError,
   VersionUnavailableError,
   type SurfaceChange,
 } from './type-surface.js';
@@ -520,6 +521,28 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       ctx.onUnavailableSurface?.(change, unavailable('TypeScript declarations', 'toolchain-failed', detail));
       return null;
     }
+    if (surface.artifactUnavailable) {
+      const detail = `${surface.artifactUnavailable} could not be obtained and inspected from either jsDelivr or the exact npm registry tarball. This is an artifact availability failure, not proof that the package publishes no declarations.`;
+      ctx.onUnavailableSurface?.(
+        change,
+        unavailable(
+          'TypeScript declarations',
+          'artifact-unavailable',
+          detail,
+        ),
+      );
+      if (moduleMetadataChanges.length > 0) {
+        return surfaceRecord(change, {
+          changes: moduleMetadataChanges,
+          weight: WEIGHTS['type-surface-diff'],
+          locator: `${change.name}@${from}:package.json → ${change.name}@${to}:package.json`,
+          url: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+          beforeUrl: jsdelivrDeclarationUrl(change.name, from, 'package.json'),
+          afterUrl: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+        });
+      }
+      return null;
+    }
     if (surface.unreachable) {
       ctx.onUnavailableSurface?.(
         change,
@@ -709,6 +732,8 @@ async function diffTypeSurfaces(
   beforeEntryPath: string;
   afterEntryPath: string;
   unreachable?: string;
+  /** Exact npm artifact retrieval or safe inspection failed. */
+  artifactUnavailable?: string;
   /**
    * Both sides resolved to DefinitelyTyped.
    *
@@ -777,6 +802,15 @@ async function diffTypeSurfaces(
         beforeEntryPath: '',
         afterEntryPath: '',
         unreachable: `${err.packageName}@${err.version}`,
+      };
+    }
+    if (err instanceof ArtifactUnavailableError) {
+      return {
+        changes: [],
+        comparable: false,
+        beforeEntryPath: '',
+        afterEntryPath: '',
+        artifactUnavailable: `${err.packageName}@${err.version}`,
       };
     }
     return {

@@ -23,6 +23,8 @@ export type SurfaceUnavailableReason =
   | 'tool-missing'
   /** The tool ran and failed — a build error, a private crate, a bad network. */
   | 'toolchain-failed'
+  /** The published artifact could not be downloaded or safely inspected. */
+  | 'artifact-unavailable'
   /** The tool succeeded and there was nothing to read: no stubs, no rustdoc. */
   | 'no-public-surface'
   /** One of the two versions could not be fetched (yanked, deleted, private). */

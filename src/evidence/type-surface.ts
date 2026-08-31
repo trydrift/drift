@@ -1,6 +1,7 @@
-import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
+import { fetchArchive, fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
 import { count, measure } from '../util/profile.js';
 import { readComputed, writeComputed } from '../util/artifact-cache.js';
+import { readArchive, type ArchiveEntry } from '../util/archive.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
@@ -174,6 +175,10 @@ export interface SurfaceChange {
 
 const JSDELIVR_DATA = 'https://data.jsdelivr.com/v1/packages/npm';
 const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/npm';
+const NPM_REGISTRY = 'https://registry.npmjs.org';
+const MAX_NPM_TARBALL_BYTES = 50 * 1024 * 1024;
+const MAX_NPM_UNPACKED_BYTES = 200 * 1024 * 1024;
+const MAX_NPM_DECLARATION_BYTES = 20 * 1024 * 1024;
 
 export interface TypeSurface {
   api: SurfaceApi;
@@ -308,6 +313,7 @@ export function recursivePublicFollowCount(): number {
 export function clearTypeSurfaceCache(): void {
   surfaces.clear();
   listings.clear();
+  npmArtifacts.clear();
   recursivePublicFollows = 0;
 }
 
@@ -346,19 +352,38 @@ async function computeTypeSurface(
   }
   count('surface.diskCache.miss');
 
-  const manifest = await fetchManifest(packageName, version);
-  const entryPath = await resolveTypesEntry(packageName, version, manifest);
-  // No manifest and no declaration fallback is a fact about the fetch, not
-  // about the package: a yanked version, a private registry, a CDN that has not
-  // mirrored this release. Saying "publishes no declarations" there would be
-  // Drift reporting its own reach as the package's shortcoming. But if
-  // DefinitelyTyped can still answer, take that evidence instead of stopping.
-  if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version);
-  if (!entryPath) return null;
+  let manifest = await fetchManifest(packageName, version);
+  let entryPath = await resolveOwnTypesEntry(packageName, version, manifest);
+  let sources = entryPath
+    ? await measure('surface-sources', packageName, () =>
+        collectDeclarationSources(packageName, version, entryPath!),
+      )
+    : [];
 
-  const sources = await measure('surface-sources', packageName, () =>
-    collectDeclarationSources(packageName, version, entryPath),
-  );
+  // jsDelivr is the low-latency path, not the authority. If it cannot produce
+  // a declaration surface, inspect the exact immutable artifact named by the
+  // npm registry. A successful archive inspection can prove absence; a failed
+  // download or malformed archive cannot.
+  if (!entryPath || sources.length === 0) {
+    const artifact = await fetchNpmArtifact(packageName, version);
+    if (!artifact) throw new ArtifactUnavailableError(packageName, version);
+    manifest = artifact.manifest;
+    entryPath = resolveOwnTypesEntryFromListing(packageName, manifest, artifact.files);
+    if (entryPath) {
+      sources = await measure('surface-sources', packageName, () =>
+        collectDeclarationSources(packageName, version, entryPath!, artifact),
+      );
+      if (sources.length === 0) throw new ArtifactUnavailableError(packageName, version);
+    }
+  }
+
+  if (!entryPath) {
+    entryPath = await resolveDefinitelyTypedEntry(packageName);
+    if (!entryPath) return null;
+    sources = await measure('surface-sources', packageName, () =>
+      collectDeclarationSources(packageName, version, entryPath!),
+    );
+  }
   count('surface.declarationFiles', sources.length);
   if (sources.length === 0) return null;
 
@@ -427,7 +452,19 @@ export class VersionUnavailableError extends Error {
   }
 }
 
+/** The exact npm artifact could not be obtained and inspected authoritatively. */
+export class ArtifactUnavailableError extends Error {
+  constructor(
+    readonly packageName: string,
+    readonly version: string,
+  ) {
+    super(`${packageName}@${version} artifact could not be inspected`);
+    this.name = 'ArtifactUnavailableError';
+  }
+}
+
 interface Manifest {
+  version?: string;
   types?: string;
   typings?: string;
   type?: string;
@@ -665,6 +702,88 @@ function dedupeModuleMetadataChanges(changes: SurfaceChange[]): SurfaceChange[] 
 
 /** One flat file listing per package version, for this process's lifetime. */
 const listings = new Map<string, Promise<ReadonlySet<string> | null>>();
+const npmArtifacts = new Map<string, Promise<NpmArtifact | null>>();
+
+interface NpmArtifact {
+  manifest: Manifest;
+  /** Safe package-root paths only; archive wrapper `package/` is removed. */
+  files: ReadonlyMap<string, ArchiveEntry>;
+}
+
+interface NpmVersionMetadata {
+  version?: string;
+  dist?: { tarball?: string };
+}
+
+/** Read one exact npm release artifact without extracting or executing it. */
+function fetchNpmArtifact(packageName: string, version: string): Promise<NpmArtifact | null> {
+  const key = `${packageName}@${version}`;
+  const cached = npmArtifacts.get(key);
+  if (cached) return cached;
+
+  const encodedName = encodeURIComponent(packageName).replaceAll('%40', '@');
+  const pending = (async (): Promise<NpmArtifact | null> => {
+    const metadata = await fetchJson<NpmVersionMetadata>(
+      `${NPM_REGISTRY}/${encodedName}/${encodeURIComponent(version)}`,
+      { immutable: true },
+    );
+    if (!metadata?.dist?.tarball || metadata.version !== version) return null;
+
+    const downloaded = await fetchArchive(metadata.dist.tarball, {
+      maxBytes: MAX_NPM_TARBALL_BYTES,
+      timeoutMs: 60_000,
+      retries: 2,
+    });
+    if (!downloaded.ok) return null;
+
+    let entries: ArchiveEntry[];
+    try {
+      entries = readArchive(downloaded.bytes, { maxDecompressedBytes: MAX_NPM_UNPACKED_BYTES });
+    } catch {
+      return null;
+    }
+    if (entries.length === 0) return null;
+
+    const totalSize = entries.reduce((sum, entry) => sum + Math.max(0, entry.size), 0);
+    if (!Number.isSafeInteger(totalSize) || totalSize > MAX_NPM_UNPACKED_BYTES) return null;
+
+    const files = new Map<string, ArchiveEntry>();
+    for (const entry of entries) {
+      const safe = safeNpmArchivePath(entry.path);
+      if (safe === null) return null;
+      if (!safe || files.has(safe)) continue;
+      files.set(safe, entry);
+    }
+
+    const packageJson = files.get('package.json');
+    if (!packageJson || packageJson.size > 1024 * 1024) return null;
+    let manifest: Manifest;
+    try {
+      manifest = JSON.parse(packageJson.read().toString('utf8')) as Manifest;
+    } catch {
+      return null;
+    }
+    if (manifest.version !== version) return null;
+    return { manifest, files };
+  })();
+
+  npmArtifacts.set(key, pending);
+  pending.then((artifact) => {
+    if (!artifact) npmArtifacts.delete(key);
+  }, () => npmArtifacts.delete(key));
+  return pending;
+}
+
+/** Reject absolute/traversing archive names before exposing package-root paths. */
+function safeNpmArchivePath(raw: string): string | null {
+  const path = raw.replaceAll('\\', '/');
+  if (!path || path.includes('\0') || path.startsWith('/') || /^[A-Za-z]:\//.test(path)) return null;
+  const segments = path.split('/');
+  if (segments.some((segment) => segment === '..')) return null;
+  while (segments[0] === '.' || segments[0] === '') segments.shift();
+  if (segments[0] === 'package') segments.shift();
+  return segments.join('/');
+}
 
 /**
  * Every file a published version contains, as one request.
@@ -1116,7 +1235,7 @@ export function subpathsOf(exportsField: unknown): string[] {
  * only there), then conventional fallbacks, then DefinitelyTyped. A package
  * with no declarations simply yields no evidence from this source.
  */
-async function resolveTypesEntry(
+async function resolveOwnTypesEntry(
   packageName: string,
   version: string,
   pkg: Manifest | null,
@@ -1125,6 +1244,29 @@ async function resolveTypesEntry(
   // have probed them. Asked of the listing as one question, so the common case
   // costs no requests at all beyond the listing itself; a version with no
   // listing falls back to the same sequential probing as before.
+  const wanted = typeEntryCandidates(packageName, pkg);
+
+  const published = await firstPublished(packageName, version, wanted);
+  if (published !== undefined) {
+    if (published) return published;
+  } else {
+    for (const candidate of wanted) {
+      if (await exists(packageName, version, candidate)) return candidate;
+    }
+  }
+
+  return null;
+}
+
+function resolveOwnTypesEntryFromListing(
+  packageName: string,
+  pkg: Manifest,
+  files: ReadonlyMap<string, ArchiveEntry>,
+): string | null {
+  return typeEntryCandidates(packageName, pkg).find((candidate) => files.has(candidate)) ?? null;
+}
+
+function typeEntryCandidates(packageName: string, pkg: Manifest | null): string[] {
   const wanted: string[] = [];
   if (pkg) {
     const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
@@ -1137,16 +1279,10 @@ async function resolveTypesEntry(
     if (pkg.main) wanted.push(normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts'));
   }
   wanted.push(...conventionalTypeEntries(packageName));
+  return [...new Set(wanted)];
+}
 
-  const published = await firstPublished(packageName, version, wanted);
-  if (published !== undefined) {
-    if (published) return published;
-  } else {
-    for (const candidate of wanted) {
-      if (await exists(packageName, version, candidate)) return candidate;
-    }
-  }
-
+async function resolveDefinitelyTypedEntry(packageName: string): Promise<string | null> {
   // DefinitelyTyped ships types for the same *major* line, so this is only a
   // sound comparison when both sides resolve; mismatches yield no evidence.
   const dtName = packageName.startsWith('@')
@@ -1243,6 +1379,7 @@ async function collectDeclarationSources(
   packageName: string,
   version: string,
   entryPath: string,
+  artifact?: NpmArtifact,
 ): Promise<DeclarationSource[]> {
   if (entryPath.startsWith('@types:')) {
     const dtName = entryPath.slice('@types:'.length);
@@ -1250,7 +1387,10 @@ async function collectDeclarationSources(
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
-  const listing = await fileListing(packageName, version);
+  const listing = artifact
+    ? new Set(artifact.files.keys()) as ReadonlySet<string>
+    : await fileListing(packageName, version);
+  let declarationBytes = 0;
 
   // Each re-export expands to five candidate paths rather than two, so the
   // queue holds candidate *groups* and stops at the first that resolves. With
@@ -1263,9 +1403,19 @@ async function collectDeclarationSources(
   const resolveGroup = async (candidates: readonly string[]): Promise<DeclarationSource | null> => {
     const published = listing ? (candidates.find((path) => listing.has(path)) ?? null) : undefined;
     for (const path of published === undefined ? candidates : published ? [published] : []) {
-      const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
-        retries: 0,
-      });
+      let content: string | null;
+      if (artifact) {
+        const entry = artifact.files.get(path);
+        if (!entry || entry.size > MAX_NPM_DECLARATION_BYTES - declarationBytes) return null;
+        const bytes = entry.read();
+        declarationBytes += bytes.length;
+        if (declarationBytes > MAX_NPM_DECLARATION_BYTES) return null;
+        content = bytes.toString('utf8');
+      } else {
+        content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
+          retries: 0,
+        });
+      }
       if (content) return { path, content };
     }
     return null;
