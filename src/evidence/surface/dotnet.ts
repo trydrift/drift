@@ -99,7 +99,7 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
       ok: false,
       failure: unavailable(
         TOOL,
-        'toolchain-failed',
+        'artifact-unavailable',
         `Could not read ${request.name} ${version} from NuGet: ${(err as Error).message}`,
       ),
     };

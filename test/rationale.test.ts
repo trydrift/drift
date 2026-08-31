@@ -1272,13 +1272,14 @@ describe('assembling the rationale', () => {
     // `finalizeRationale` (workspace-sensitive: maintenance onward) — see
     // `src/rationale/index.ts`. License moved earlier because it depends only
     // on package-level facts, not on this repository's own runtime.
-    assert.deepEqual(phases, [
+    assert.deepEqual(phases.filter((phase) => !/rate limited, retrying/.test(phase)), [
       'Checking package metadata',
       'Checking repository status',
       'Checking security advisories',
       'Checking license',
       'Checking maintenance signals',
     ]);
+    assert.equal(phases.every((phase) => phase.startsWith('Checking ')), true, 'retry progress remains a named stage');
   });
 });
 

@@ -523,7 +523,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, DeclaredCapability> = {
       ),
       surface: partial(C_SURFACE_NOTE),
       'static-analysis': partial(C_LOCALIZE_NOTE),
-      'upgrade-discovery': full(),
+      'upgrade-discovery': partial(
+        'Conan version schemes are package-defined, so Drift can analyze exact version changes but does not invent an ordering to select a newer release automatically.',
+      ),
       verify: partial(
         'Runs `conan build`, which is the compiler — in C and C++ an incompatible header change is a build failure rather than a runtime surprise.',
         'Conan',
@@ -552,7 +554,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, DeclaredCapability> = {
       ),
       surface: partial(C_SURFACE_NOTE),
       'static-analysis': partial(C_LOCALIZE_NOTE),
-      'upgrade-discovery': full(),
+      'upgrade-discovery': partial(
+        'vcpkg versions are port-defined and baseline resolution can change every dependency, so Drift analyzes exact overrides but does not invent an ordering or resolve baseline moves automatically.',
+      ),
       verify: partial('Runs the project\'s CMake build, which is where an incompatible header change surfaces.', 'CMake'),
       fix: full(),
       'pull-request': full(),

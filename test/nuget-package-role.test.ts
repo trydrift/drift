@@ -129,4 +129,15 @@ describe('NuGet package roles', () => {
     assert.equal(outcome.reason, 'artifact-type-unsupported');
     assert.doesNotMatch(outcome.detail, /missing managed assembly|no managed assembly/i);
   });
+
+  test('a failed package download is artifact-unavailable, not an assembly claim', async () => {
+    globalThis.fetch = (async () => {
+      throw new Error('network unavailable');
+    }) as typeof fetch;
+    const outcome = await nugetSurface.compute(request());
+    assert.equal(outcome.available, false);
+    if (outcome.available) return;
+    assert.equal(outcome.reason, 'artifact-unavailable');
+    assert.doesNotMatch(outcome.detail, /missing (managed )?assembly/i);
+  });
 });
