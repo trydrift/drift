@@ -644,6 +644,19 @@ describe('the upgrade assessment', () => {
     assert.equal(assessUpgrade(input()).recommendation, 'safe-to-upgrade');
   });
 
+  test('a role-specific package contract change requires review without pretending it is a code API', () => {
+    const result = assessUpgrade(input({
+      breakingChanges: [{
+        id: 'bc-pom', dependency: 'parent', kind: 'signature-change', summary: 'parent changed',
+        remediation: 'review the POM', symbols: ['pom:parent'], confidence: 'high', citations: [],
+      }],
+    }));
+    assert.equal(result.recommendation, 'upgrade-after-review');
+    assert.match(result.reasons.join(' '), /published Maven POM contract change/);
+    assert.doesNotMatch(result.reasons.join(' '), /upstream API breaking|none of which this repository uses/);
+    assert.match(result.confidenceBasis, /computed Maven POM contract diff/);
+  });
+
   test('an unlocalized upstream finding cannot be called safe when indexing was truncated', () => {
     const finding = {
       id: 'bc1', dependency: 'pkg', kind: 'removed-export', summary: 'removed',

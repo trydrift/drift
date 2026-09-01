@@ -8,6 +8,7 @@ import {
 } from '../dist/evidence/surface/java.js';
 import { clearHttpCache } from '../dist/util/http.js';
 import { createLogger } from '../dist/util/logger.js';
+import { remediationForFinding } from '../dist/analyze/rules.js';
 
 const realFetch = globalThis.fetch;
 const logger = createLogger('error');
@@ -80,6 +81,10 @@ describe('Maven artifact roles', () => {
     assert.ok(changes.some((change) => change.symbol === 'pom:dependencyManagement:org.example:core'));
     assert.ok(changes.some((change) => change.symbol === 'pom:pluginManagement:org.apache.maven.plugins:maven-compiler-plugin'));
     assert.ok(changes.every((change) => /POM|Maven artifact role|Maven parent/.test(change.detail)));
+    assert.match(
+      remediationForFinding({ code: 'signature-changed', symbol: 'pom:parent', detail: 'changed' }, 'parent'),
+      /Maven POM contract.*not an ordinary call-site signature change/,
+    );
   });
 
   test('a Spring Boot parent POM never asks for Java, japicmp, or a jar', async () => {

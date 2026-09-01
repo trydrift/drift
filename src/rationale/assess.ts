@@ -125,6 +125,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   const apiReviewSites = apiSites.filter((site) => !actionableSiteIds.has(`${site.breakingChangeId}:${site.file}:${site.line}`));
   const actionableDecisions = actionableChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
   const actionableMechanical = actionableChanges.length - actionableDecisions.length;
+  const roleContract = roleContractForChanges(input.breakingChanges);
 
   /* Facts first, in the order a reader needs them. */
 
@@ -152,7 +153,9 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
   const apiActionableSites = apiSites.filter((site) => actionableSiteIds.has(`${site.breakingChangeId}:${site.file}:${site.line}`));
   if (apiActionableSites.length > 0) {
     reasons.push(
-      `${apiActionableSites.length} ${plural(apiActionableSites.length, 'place', 'places')} in ${new Set(apiActionableSites.map((site) => site.file)).size} ${plural(new Set(apiActionableSites.map((site) => site.file)).size, 'file', 'files')} use${apiActionableSites.length === 1 ? 's' : ''} an API this upgrade changes.`,
+      roleContract
+        ? `${apiActionableSites.length} ${plural(apiActionableSites.length, 'place', 'places')} in ${new Set(apiActionableSites.map((site) => site.file)).size} ${plural(new Set(apiActionableSites.map((site) => site.file)).size, 'file', 'files')} match${apiActionableSites.length === 1 ? 'es' : ''} ${roleContract} entries this upgrade changes.`
+        : `${apiActionableSites.length} ${plural(apiActionableSites.length, 'place', 'places')} in ${new Set(apiActionableSites.map((site) => site.file)).size} ${plural(new Set(apiActionableSites.map((site) => site.file)).size, 'file', 'files')} use${apiActionableSites.length === 1 ? 's' : ''} an API this upgrade changes.`,
     );
   }
   if (apiReviewSites.length > 0) {
@@ -191,9 +194,10 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     // established. With a runtime requirement left `unknown` or `partial`,
     // the true sentence is the analysis statement pushed above — Drift did
     // not find a local use *and* did not establish there isn't one.
-    reasons.push(
-      `${input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length} upstream API breaking ${plural(input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length, 'change', 'changes')}, none of which this repository uses.`,
-    );
+    const count = input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length;
+    reasons.push(roleContract
+      ? `${count} published ${roleContract} ${plural(count, 'change', 'changes')} require review; these are package-role contract changes, not ordinary code API changes with call sites.`
+      : `${count} upstream API breaking ${plural(count, 'change', 'changes')}, none of which this repository uses.`);
   }
 
   for (const fact of maintenance.facts) {
@@ -215,6 +219,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     actionable: actionableChanges.length > 0,
     runtimeUnresolved,
     localizationUnresolved: dispositions.some((disposition) => disposition.reason === 'localization-incomplete'),
+    roleContractChanged: roleContract !== null,
   });
   const confidence = judgeConfidence(input);
 
@@ -249,7 +254,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
  */
 function decide(
   input: AssessmentInput,
-  counts: { affected: number; decisions: number; actionable: boolean; runtimeUnresolved: boolean; localizationUnresolved: boolean },
+  counts: { affected: number; decisions: number; actionable: boolean; runtimeUnresolved: boolean; localizationUnresolved: boolean; roleContractChanged: boolean },
 ): Recommendation {
   const { security, maintenance, license } = input;
 
@@ -282,6 +287,11 @@ function decide(
   // compatibility condition that applies to the whole package.
   if (counts.runtimeUnresolved) return 'upgrade-after-review';
   if (counts.localizationUnresolved) return 'upgrade-after-review';
+  // Package-role contracts (parent POMs, NuGet tooling/meta-packages, and Pub
+  // assets/tooling) are consumed by manifests and build systems, not ordinary
+  // source call sites. A clean source localization therefore cannot turn a
+  // real contract change into "Safe to upgrade".
+  if (counts.roleContractChanged) return 'upgrade-after-review';
 
   const securityFavors = security.checked && security.resolved.length > 0;
   const maintenanceFavors = maintenance.facts.some((fact) => fact.polarity === 'favors');
@@ -358,7 +368,10 @@ function judgeConfidence(input: AssessmentInput): { level: EvidenceConfidence; b
   const prose = Math.max(proseEvidence(input).length, input.proseRead ?? 0);
 
   const sources: string[] = [];
-  if (input.surfaceCompared) sources.push('the computed API diff');
+  if (input.surfaceCompared) {
+    const roleContract = roleContractForChanges(input.breakingChanges);
+    sources.push(roleContract ? `the computed ${roleContract} diff` : 'the computed API diff');
+  }
   if (prose > 0) sources.push(prose === 1 ? 'release notes' : 'release notes and changelog');
   if (input.security.checked) sources.push('the OSV advisory database');
 
@@ -376,6 +389,17 @@ function judgeConfidence(input: AssessmentInput): { level: EvidenceConfidence; b
     input.surfaceCompared || sources.length >= 2 ? 'high' : 'medium';
 
   return { level, basis: `${capitalize(joinList(sources))} agree.` };
+}
+
+function roleContractForChanges(changes: readonly BreakingChange[]): string | null {
+  const structural = changes.filter((change) => change.kind !== 'runtime-requirement');
+  if (structural.length === 0) return null;
+  const symbols = structural.flatMap((change) => change.symbols);
+  if (symbols.length === 0) return null;
+  if (symbols.every((symbol) => symbol.startsWith('pom:'))) return 'Maven POM contract';
+  if (symbols.every((symbol) => symbol.startsWith('nuget:'))) return 'NuGet package contract';
+  if (symbols.every((symbol) => symbol.startsWith('pub:'))) return 'Pub package contract';
+  return null;
 }
 
 function joinList(items: readonly string[]): string {

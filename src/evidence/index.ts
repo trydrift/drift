@@ -640,6 +640,7 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     changes: outcome.changes,
     weight: outcome.weight,
     locator: `${outcome.locator} · computed by ${outcome.tool}`,
+    ...(outcome.packageRole ? { packageRole: outcome.packageRole } : {}),
   });
 }
 
@@ -672,6 +673,7 @@ function surfaceRecord(
     url?: string;
     beforeUrl?: string;
     afterUrl?: string;
+    packageRole?: string;
   },
 ): Evidence {
   const sources =
@@ -692,7 +694,7 @@ function surfaceRecord(
     dependency: change.name,
     url: args.url,
     locator: args.locator,
-    title: `${args.changes.length} API surface change(s) in ${change.name}`,
+    title: `${args.changes.length} ${surfaceContractLabel(args.packageRole)} change(s) in ${change.name}`,
     content: `${sources}${formatSurfaceChanges(args.changes)}`,
     findings: args.changes.map((c) => ({
       code: c.kind,
@@ -720,6 +722,23 @@ function surfaceRecord(
     })),
     weight: args.weight,
   };
+}
+
+function surfaceContractLabel(packageRole: string | undefined): string {
+  switch (packageRole) {
+    case 'pom':
+      return 'Maven POM contract';
+    case 'analyzer':
+    case 'msbuild':
+    case 'tool':
+    case 'meta-package':
+      return 'NuGet package contract';
+    case 'asset':
+    case 'tooling':
+      return 'Pub package contract';
+    default:
+      return 'API surface';
+  }
 }
 
 /**
