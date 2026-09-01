@@ -1,11 +1,12 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import semver from 'semver';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
+import { cleanupTemporaryDirectory } from '../cleanup.ts';
 import type { Selectable } from '../selection.ts';
 import {
   DriftConfigSchema,
@@ -273,7 +274,7 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
       exactVersionPair,
     };
   } finally {
-    await rm(work, { recursive: true, force: true });
+    await cleanupTemporaryDirectory(work);
   }
 }
 

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
+import { cleanupTemporaryDirectory } from '../cleanup.ts';
 import type { Selectable } from '../selection.ts';
 import { computeSurfaceDiff } from '../../../../dist/evidence/surface/index.js';
 import { clearHttpCache } from '../../../../dist/util/http.js';
@@ -381,7 +382,7 @@ export async function runRoseauDiff(
     return { byCase, unmatched, unavailable: null, toolLocator: outcome.locator ?? outcome.tool };
   } finally {
     uninstall();
-    await rm(workdir, { recursive: true, force: true });
+    await cleanupTemporaryDirectory(workdir);
   }
 }
 
