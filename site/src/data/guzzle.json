@@ -6,10 +6,10 @@
   "language": "PHP",
   "repo": "https://github.com/guzzle/guzzle",
   "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
-  "capturedAt": "2026-09-01T04:55:17.887Z",
+  "capturedAt": "2026-09-01T05:05:22.950Z",
   "commit": "7b7b04a0f5a548bfe9ced4b56f5661deee229ac3",
-  "engine": "73f151224ad89ad3",
-  "durationMs": 5568,
+  "engine": "7974dec382bc53f8",
+  "durationMs": 1035,
   "packagesChecked": 4,
   "manifests": [
     "composer.json",
@@ -21,7 +21,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 275,
+      "at": 19,
       "phase": "Looking for manifests",
       "detail": "guzzle/guzzle",
       "done": 0,
@@ -29,7 +29,7 @@
     },
     {
       "type": "progress",
-      "at": 302,
+      "at": 21,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -37,7 +37,7 @@
     },
     {
       "type": "progress",
-      "at": 302,
+      "at": 21,
       "phase": "Reading manifest",
       "detail": "composer.json",
       "done": 0,
@@ -45,7 +45,7 @@
     },
     {
       "type": "progress",
-      "at": 303,
+      "at": 21,
       "phase": "Reading manifest",
       "detail": "vendor-bin/composer-normalize/composer.json",
       "done": 0,
@@ -53,7 +53,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 304,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -97,7 +97,7 @@
     },
     {
       "type": "progress",
-      "at": 304,
+      "at": 22,
       "phase": "Reading manifest",
       "detail": "vendor-bin/php-cs-fixer/composer.json",
       "done": 0,
@@ -105,7 +105,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 304,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -149,7 +149,7 @@
     },
     {
       "type": "progress",
-      "at": 304,
+      "at": 22,
       "phase": "Reading manifest",
       "detail": "vendor-bin/phpstan/composer.json",
       "done": 0,
@@ -157,7 +157,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 304,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -201,7 +201,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 304,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -245,7 +245,7 @@
     },
     {
       "type": "progress",
-      "at": 304,
+      "at": 22,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -253,7 +253,7 @@
     },
     {
       "type": "progress",
-      "at": 304,
+      "at": 22,
       "phase": "Checking registries",
       "detail": "4 direct dependencies",
       "done": 0,
@@ -261,7 +261,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 304,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -305,7 +305,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 304,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -349,7 +349,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 305,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -393,7 +393,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 305,
+      "at": 22,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -436,8 +436,16 @@
       }
     },
     {
+      "type": "progress",
+      "at": 42,
+      "phase": "Indexing your code",
+      "detail": "140 files indexed · 4 direct dependencies to check",
+      "done": 0,
+      "total": 4
+    },
+    {
       "type": "candidate-upsert",
-      "at": 1723,
+      "at": 112,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -483,7 +491,7 @@
     },
     {
       "type": "progress",
-      "at": 1723,
+      "at": 112,
       "phase": "Outdated",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
@@ -491,12 +499,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 1769,
+      "at": 116,
       "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0"
     },
     {
       "type": "progress",
-      "at": 1769,
+      "at": 116,
       "phase": "Up to date",
       "detail": "ergebnis/composer-normalize@2.52.0",
       "done": 2,
@@ -504,74 +512,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2098,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
-        "name": "phpstan/phpstan",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.1.55",
-        "latest": "2.2.12",
-        "selected": "2.2.12",
-        "safeLatest": null,
-        "publishedVersions": [
-          "2.2.12",
-          "2.2.11",
-          "2.2.10",
-          "2.2.9",
-          "2.2.8",
-          "2.2.7",
-          "2.2.6",
-          "2.2.5",
-          "2.2.4",
-          "2.2.3",
-          "2.2.2",
-          "2.2.1",
-          "2.2.0",
-          "2.1.56"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2098,
-      "phase": "Outdated",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2258,
+      "at": 126,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -634,15 +575,82 @@
     },
     {
       "type": "progress",
-      "at": 2258,
+      "at": 126,
       "phase": "Outdated",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 131,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
+        "name": "phpstan/phpstan",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.1.55",
+        "latest": "2.2.12",
+        "selected": "2.2.12",
+        "safeLatest": null,
+        "publishedVersions": [
+          "2.2.12",
+          "2.2.11",
+          "2.2.10",
+          "2.2.9",
+          "2.2.8",
+          "2.2.7",
+          "2.2.6",
+          "2.2.5",
+          "2.2.4",
+          "2.2.3",
+          "2.2.2",
+          "2.2.1",
+          "2.2.0",
+          "2.1.56"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 131,
+      "phase": "Outdated",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 4,
       "total": 4
     },
     {
       "type": "progress",
-      "at": 2258,
+      "at": 132,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
       "done": 0,
@@ -650,7 +658,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2258,
+      "at": 132,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -694,7 +702,7 @@
     },
     {
       "type": "progress",
-      "at": 2259,
+      "at": 132,
       "phase": "Checking package metadata",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
       "done": 0,
@@ -702,7 +710,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2259,
+      "at": 132,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -746,7 +754,7 @@
     },
     {
       "type": "progress",
-      "at": 2259,
+      "at": 132,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -754,7 +762,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2259,
+      "at": 132,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -798,7 +806,7 @@
     },
     {
       "type": "progress",
-      "at": 2259,
+      "at": 132,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -806,7 +814,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2259,
+      "at": 132,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -850,7 +858,7 @@
     },
     {
       "type": "progress",
-      "at": 2268,
+      "at": 132,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -858,7 +866,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2268,
+      "at": 132,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -902,7 +910,7 @@
     },
     {
       "type": "progress",
-      "at": 2268,
+      "at": 132,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -910,7 +918,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2268,
+      "at": 132,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -954,7 +962,7 @@
     },
     {
       "type": "progress",
-      "at": 2277,
+      "at": 134,
       "phase": "Checking repository status",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
       "done": 0,
@@ -962,7 +970,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2277,
+      "at": 134,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1006,7 +1014,7 @@
     },
     {
       "type": "progress",
-      "at": 2278,
+      "at": 134,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -1014,7 +1022,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2278,
+      "at": 134,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1058,7 +1066,7 @@
     },
     {
       "type": "progress",
-      "at": 2278,
+      "at": 134,
       "phase": "Checking security advisories",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -1066,7 +1074,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2278,
+      "at": 134,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1110,7 +1118,7 @@
     },
     {
       "type": "progress",
-      "at": 2278,
+      "at": 134,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1118,7 +1126,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2278,
+      "at": 134,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1162,7 +1170,7 @@
     },
     {
       "type": "progress",
-      "at": 3166,
+      "at": 323,
       "phase": "Checking license",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -1170,7 +1178,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3166,
+      "at": 323,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1214,7 +1222,7 @@
     },
     {
       "type": "progress",
-      "at": 3166,
+      "at": 323,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -1222,7 +1230,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3166,
+      "at": 323,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1266,7 +1274,7 @@
     },
     {
       "type": "progress",
-      "at": 3166,
+      "at": 323,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12 · 1 evidence source",
       "done": 0,
@@ -1274,7 +1282,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3166,
+      "at": 323,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1318,7 +1326,7 @@
     },
     {
       "type": "progress",
-      "at": 3166,
+      "at": 323,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -1326,7 +1334,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3166,
+      "at": 323,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1370,223 +1378,7 @@
     },
     {
       "type": "progress",
-      "at": 4419,
-      "phase": "Checking security advisories",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4419,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4419,
-      "phase": "Checking license",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4419,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4420,
-      "phase": "Checking security advisories",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4420,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4420,
-      "phase": "Checking license",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4420,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4805,
-      "phase": "Indexing your code",
-      "detail": "140 files indexed · 4 direct dependencies to check",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "progress",
-      "at": 4978,
+      "at": 323,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -1594,7 +1386,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4978,
+      "at": 323,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1638,7 +1430,7 @@
     },
     {
       "type": "progress",
-      "at": 5008,
+      "at": 328,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12",
       "done": 0,
@@ -1646,7 +1438,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5008,
+      "at": 328,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1690,7 +1482,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5016,
+      "at": 330,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1766,7 +1558,7 @@
     },
     {
       "type": "progress",
-      "at": 5016,
+      "at": 330,
       "phase": "Checked",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.12 · evidence missing · drift could not obtain enough upstream evidence to decide",
       "done": 1,
@@ -1774,15 +1566,15 @@
     },
     {
       "type": "progress",
-      "at": 5269,
-      "phase": "Reading release notes and changelog",
+      "at": 361,
+      "phase": "Checking security advisories",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5269,
+      "at": 361,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1800,7 +1592,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Reading release notes and changelog",
+        "phase": "Checking security advisories",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1826,67 +1618,15 @@
     },
     {
       "type": "progress",
-      "at": 5269,
-      "phase": "Comparing the public API surface",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 5269,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 5269,
-      "phase": "No breaking changes to look for",
+      "at": 361,
+      "phase": "Checking license",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5269,
+      "at": 361,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1904,7 +1644,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "No breaking changes to look for",
+        "phase": "Checking license",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1930,25 +1670,25 @@
     },
     {
       "type": "progress",
-      "at": 5269,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "at": 366,
+      "phase": "Checking security advisories",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5269,
+      "at": 366,
       "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
         "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
         "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1956,7 +1696,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
+        "phase": "Checking security advisories",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1982,25 +1722,25 @@
     },
     {
       "type": "progress",
-      "at": 5304,
-      "phase": "Checking maintenance signals",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "at": 366,
+      "phase": "Checking license",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5304,
+      "at": 366,
       "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
         "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
         "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -2008,7 +1748,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Checking maintenance signals",
+        "phase": "Checking license",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -2033,87 +1773,16 @@
       }
     },
     {
-      "type": "candidate-upsert",
-      "at": 5304,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.5",
-        "selected": "2.0.5",
-        "safeLatest": null,
-        "publishedVersions": [
-          "2.0.5"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.0.5 release notes](https://github.com/phpstan/phpstan-deprecation-rules/releases/tag/2.0.5)) for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "recommendation": "safe-to-upgrade",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "clean",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": {
-          "localizationRan": true,
-          "localizationComplete": true,
-          "sourceFilesDiscovered": 137,
-          "sourceFilesIndexed": 137,
-          "sourceTruncated": false,
-          "runtimeConfigsDiscovered": 3,
-          "runtimeConfigsIndexed": 3,
-          "runtimeConfigComplete": true
-        },
-        "surfaceAssessment": {
-          "available": false,
-          "reason": "unsupported-ecosystem",
-          "inspection": "failed",
-          "tool": "none",
-          "detail": "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone."
-        },
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.0.5 release notes](https://github.com/phpstan/phpstan-deprecation-rules/releases/tag/2.0.5)) for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-        ],
-        "breaking": []
-      }
-    },
-    {
       "type": "progress",
-      "at": 5304,
-      "phase": "Checked",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "progress",
-      "at": 5531,
+      "at": 1020,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5531,
+      "at": 1020,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2157,15 +1826,15 @@
     },
     {
       "type": "progress",
-      "at": 5531,
+      "at": 1020,
       "phase": "Comparing the public API surface",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24 · 1 evidence source",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5531,
+      "at": 1020,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2209,15 +1878,15 @@
     },
     {
       "type": "progress",
-      "at": 5531,
+      "at": 1020,
       "phase": "No breaking changes to look for",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5531,
+      "at": 1020,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2261,15 +1930,15 @@
     },
     {
       "type": "progress",
-      "at": 5531,
+      "at": 1020,
       "phase": "Weighing what this upgrade is worth",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5531,
+      "at": 1020,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2313,15 +1982,15 @@
     },
     {
       "type": "progress",
-      "at": 5556,
+      "at": 1028,
       "phase": "Checking maintenance signals",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5556,
+      "at": 1028,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2365,7 +2034,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5565,
+      "at": 1029,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2445,9 +2114,340 @@
     },
     {
       "type": "progress",
-      "at": 5565,
+      "at": 1029,
       "phase": "Checked",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "progress",
+      "at": 1030,
+      "phase": "Reading release notes and changelog",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1030,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1030,
+      "phase": "Comparing the public API surface",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1030,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1030,
+      "phase": "No breaking changes to look for",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1030,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1030,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1030,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1035,
+      "phase": "Checking maintenance signals",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1035,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1035,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.5",
+        "selected": "2.0.5",
+        "safeLatest": null,
+        "publishedVersions": [
+          "2.0.5"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.0.5 release notes](https://github.com/phpstan/phpstan-deprecation-rules/releases/tag/2.0.5)) for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "recommendation": "safe-to-upgrade",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "clean",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": {
+          "localizationRan": true,
+          "localizationComplete": true,
+          "sourceFilesDiscovered": 137,
+          "sourceFilesIndexed": 137,
+          "sourceTruncated": false,
+          "runtimeConfigsDiscovered": 3,
+          "runtimeConfigsIndexed": 3,
+          "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": false,
+          "reason": "unsupported-ecosystem",
+          "inspection": "failed",
+          "tool": "none",
+          "detail": "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone."
+        },
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.0.5 release notes](https://github.com/phpstan/phpstan-deprecation-rules/releases/tag/2.0.5)) for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1035,
+      "phase": "Checked",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
       "total": 3
     }
