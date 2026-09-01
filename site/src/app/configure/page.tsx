@@ -62,25 +62,20 @@ export default function Configure() {
             <span className="text-faint">//</span> configure
           </p>
           <h1 className={`${instrumentSerif.className} mt-3 max-w-2xl text-3xl text-landing sm:text-4xl`}>
-            Build your <code className="font-mono text-2xl text-brand-text sm:text-3xl">drift.yml</code>
+            Set up Drift without writing YAML
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Every option starts at Drift&rsquo;s own default, so leaving it all alone gets you the
-            zero-config install from the{" "}
-            <Link href="/#action" className="text-brand-text underline decoration-dotted underline-offset-2">
-              main page
-            </Link>
-            . Change what you need, then copy or download the result into{" "}
-            <code className="font-mono text-[12.5px] text-brand-text">.github/</code> — see the{" "}
+          <p className="mt-3 max-w-xl text-base leading-7 text-muted">
+            The form starts with Drift&rsquo;s defaults. Change what your repository needs, then copy
+            or download the files into <code className="font-mono text-[13px] text-brand-text">.github/</code>. The{" "}
             <a
               href={`${GITHUB}/blob/main/docs/configuration.md`}
               target="_blank"
               rel="noreferrer"
               className="text-brand-text underline decoration-dotted underline-offset-2"
             >
-              full configuration reference
+              configuration reference
             </a>{" "}
-            for fields not covered below.
+            covers the advanced options.
           </p>
 
           <ConfigureForm workflowTemplate={WORKFLOW_TEMPLATE} outdatedTemplate={OUTDATED_WORKFLOW_TEMPLATE} />

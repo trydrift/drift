@@ -13,8 +13,6 @@ import { loadBenchmarks } from "@/lib/benchmarks";
 import { buildNarrative } from "@/lib/benchmark-narrative";
 import {
   MAVEN_BREAKING_CHANGE_STUDY,
-  OUTDATED_SOFTWARE_COST_STUDY,
-  VULNERABLE_DEPENDENCIES_STUDY,
 } from "@/lib/external-citations";
 
 /**
@@ -35,7 +33,6 @@ const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=drift.d
 
 export default function Home() {
   const recordings = loadRecordings();
-  const languages = [...new Set(recordings.map((r) => r.language))];
   const proof = summarizeRecordings(recordings);
   const narrative = buildNarrative(loadBenchmarks());
   const unaffectedShare = 100 - MAVEN_BREAKING_CHANGE_STUDY.clientBreakRateValue;
@@ -49,16 +46,15 @@ export default function Home() {
         <nav className="ml-auto flex items-center gap-1 sm:gap-2">
           <a
             href="#how"
-            className="rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
           >
-            How It Works
+            How it works
           </a>
-          <Link href={FEATURE_BOARD} className="rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground">Features</Link>
           <Link
             href="/support/"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
           >
-            Ecosystems
+            Support
           </Link>
           <Link
             href="/benchmarks/"
@@ -66,24 +62,6 @@ export default function Home() {
           >
             Benchmarks
           </Link>
-          <a
-            href="#action"
-            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
-          >
-            Action
-          </a>
-          <Link
-            href="/configure/"
-            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
-          >
-            Configure
-          </Link>
-          <a
-            href="mailto:trydrift@outlook.com"
-            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
-          >
-            Talk to us
-          </a>
           <a
             href={GITHUB}
             target="_blank"
@@ -98,90 +76,75 @@ export default function Home() {
 
       <main className="relative z-10 mx-auto max-w-5xl px-5 pb-24 sm:px-8">
         {/* ── Hero ────────────────────────────────────────────────────── */}
-        <section className="pt-8 sm:pt-16">
+        <section className="mx-auto max-w-4xl pt-10 text-center sm:pt-20">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-            <span className="text-faint">//</span> evidence, not guesswork
+            Dependency updates, checked against your code
           </p>
           <h1
-            className={`${instrumentSerif.className} mt-4 max-w-3xl text-4xl leading-[1.05] text-landing sm:text-5xl md:text-6xl`}
+            className={`${instrumentSerif.className} mx-auto mt-4 max-w-4xl text-4xl leading-[1.04] text-landing sm:text-6xl md:text-7xl`}
           >
-            Your dependency bot finds updates.
-            <br />
-            Drift finds the ones that break your code.
+            Your dependency updated.
+            <br className="hidden sm:block" /> Did it break your code?
           </h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-muted sm:text-base">
-            API diffs → exact call sites → reviewable fixes. Every finding linked to evidence.
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted sm:text-lg">
+            Drift checks the update against the code that uses it. You get the changed API,
+            exact call sites, and a fix you can review.
           </p>
 
-          {/* Compact entry points, not a paragraph per surface — VS Code and
-              the demo are the two actions, side by side; everything else
-              (benchmarks, the Action, the repo) is a link, not a button. */}
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
               href={MARKETPLACE}
               target="_blank"
               rel="noreferrer"
               className="rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-200"
             >
-              Install for VS Code
+              Install the VS Code extension
             </a>
             <a
               href="#demo"
               className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
-              Watch a Real Analysis
+              Watch a real run
             </a>
           </div>
 
-          <p className="mt-3">
-            <Link
-              href="/benchmarks/"
-              className="text-sm font-medium text-brand-text underline decoration-dotted underline-offset-2"
-            >
-              See the benchmarks
-            </Link>
-          </p>
-          <p className="mt-3"><Link href={FEATURE_BOARD} className="inline-flex rounded-full border border-brand/40 bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand-text">Vote on what Drift builds next →</Link></p>
-
-          <p className="mt-4 font-mono text-xs text-muted">
+          <p className="mt-5 font-mono text-xs text-muted">
             <CopyCommand text="npm install -g @usedrift/cli">
               <span className="text-faint">$</span> npm install -g @usedrift/cli
             </CopyCommand>
           </p>
 
-          <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-faint">
-            <span>{languages.join(" · ")}</span>
-            <a
-              href={GITHUB}
-              target="_blank"
-              rel="noreferrer"
-              className="text-brand-text underline decoration-dotted underline-offset-2"
-            >
-              View on GitHub
-            </a>
-            <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">
-              GitHub Action
+          <p className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-faint">
+            <span>{proof.ecosystems} package ecosystems</span>
+            <span aria-hidden>·</span>
+            <span>{proof.recordings} recorded analyses</span>
+            <span aria-hidden>·</span>
+            <a href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
+              Public benchmarks
             </a>
           </p>
         </section>
 
         {/* ── Problem scale ───────────────────────────────────────────── */}
         {/*
-          Why an update bot's "it's semver-compliant" isn't the same claim as
-          "it's safe" — four sourced figures, no introductory paragraph. The
-          Maven study is the primary source (large, peer-reviewed, and about
-          breaking updates specifically); the cost and vulnerability figures
-          are named, US-wide/industry studies, not Drift's own claims — every
-          card labels its scope inline and in the tooltip. Drift's own
-          measured accuracy lives in its own section later, not mixed in with
-          these.
+          One peer-reviewed study makes the problem concrete. Drift's own
+          benchmark stays in the product-proof section so the two kinds of
+          evidence do not blur together.
         */}
-        <section className="pt-14 sm:pt-20">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-            <span className="text-faint">//</span> problem scale
-          </p>
+        <section className="pt-16 sm:pt-24">
+          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Why this exists</p>
+              <h2 className={`${instrumentSerif.className} mt-2 text-2xl text-landing sm:text-3xl`}>
+                A green update PR can still break your build.
+              </h2>
+              <p className="mt-3 max-w-md text-sm leading-6 text-muted">
+                Version rules describe what maintainers intended. Drift checks what they shipped,
+                then looks for that change in your repository.
+              </p>
+            </div>
 
-          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
             <StatCard
               value={MAVEN_BREAKING_CHANGE_STUDY.clientBreakRate}
               description="of dependency updates broke client code"
@@ -196,20 +159,7 @@ export default function Home() {
               title={`${MAVEN_BREAKING_CHANGE_STUDY.title} ${MAVEN_BREAKING_CHANGE_STUDY.scope}`}
               url={MAVEN_BREAKING_CHANGE_STUDY.url}
             />
-            <StatCard
-              value={OUTDATED_SOFTWARE_COST_STUDY.value}
-              description={OUTDATED_SOFTWARE_COST_STUDY.description}
-              sourceLine={OUTDATED_SOFTWARE_COST_STUDY.sourceLine}
-              title={`${OUTDATED_SOFTWARE_COST_STUDY.title} ${OUTDATED_SOFTWARE_COST_STUDY.scope}`}
-              url={OUTDATED_SOFTWARE_COST_STUDY.url}
-            />
-            <StatCard
-              value={VULNERABLE_DEPENDENCIES_STUDY.value}
-              description={VULNERABLE_DEPENDENCIES_STUDY.description}
-              sourceLine={VULNERABLE_DEPENDENCIES_STUDY.sourceLine}
-              title={`${VULNERABLE_DEPENDENCIES_STUDY.title} ${VULNERABLE_DEPENDENCIES_STUDY.scope}`}
-              url={VULNERABLE_DEPENDENCIES_STUDY.url}
-            />
+            </div>
           </div>
 
           {/* The same 11.58% as a shape instead of a sentence. */}
@@ -240,10 +190,15 @@ export default function Home() {
           manager — a one-line label says what the panels are.
         */}
         <section id="demo" className="scroll-mt-8 pt-16 sm:pt-24">
-          <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-            See Drift analyze a real repository
-          </h2>
-          <p className="mt-2 font-mono text-[11px] text-faint">Recorded from a real Drift run · linked commit</p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Real output</p>
+              <h2 className={`${instrumentSerif.className} mt-2 text-2xl text-landing sm:text-3xl`}>
+                A real repository. A real dependency change.
+              </h2>
+            </div>
+            <p className="font-mono text-[11px] text-faint">Recorded run · linked commit</p>
+          </div>
 
           <div className="mt-6">
             <Demo recordings={recordings} />
@@ -251,25 +206,22 @@ export default function Home() {
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-start">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">
-                Totals across every recording above
-              </h3>
+              <h3 className="text-sm font-semibold text-foreground">What the recordings found</h3>
               <VerdictStack proof={proof} />
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Measured on public benchmarks</h3>
+              <h3 className="text-sm font-semibold text-foreground">How Drift performs on public data</h3>
               <Link
                 href="/benchmarks/"
                 className="group mt-3 block overflow-hidden rounded-lg border border-border bg-surface/75 px-5 py-4 transition-colors hover:bg-surface-hover"
               >
                 <p className="font-mono text-3xl text-landing tabular">{narrative.roseau.recallPercent}</p>
                 <p className="mt-1.5 max-w-xl text-[13px] leading-snug text-muted">
-                  recall on {narrative.roseau.available} hand-labelled real Java API changes (
-                  {narrative.roseau.precisionPercent} precision).
+                  recall on {narrative.roseau.available} hand-labelled Java API changes, with {narrative.roseau.precisionPercent} precision.
                 </p>
                 <p className="mt-2.5 text-[11px] uppercase tracking-[0.14em] text-faint group-hover:text-brand-text">
-                  Public benchmark → methodology + every miss →
+                  Read the method and every miss →
                 </p>
               </Link>
             </div>
@@ -307,70 +259,46 @@ export default function Home() {
 
         {/* ── Vision ──────────────────────────────────────────────────── */}
         {/*
-          Enterprise direction, not a speculative features list. Every card
-          is labelled by what it is — Vision — so nothing here reads as a
-          capability Drift has today. The progression line underneath is the
-          whole argument: public dependencies, then private ones, then the
-          organization's dependency graph as a whole.
+          The roadmap belongs to users. Invite requests and votes instead of
+          selling work that has not shipped.
         */}
         <section className="pt-16 sm:pt-24">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-              Where Drift is going
+              What should Drift build next?
             </h2>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Vision</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Public roadmap</p>
           </div>
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-faint">
-            <span>Public dependencies today</span>
-            <span aria-hidden>→</span>
-            <span>Private dependencies</span>
-            <span aria-hidden>→</span>
-            <span>Organization-wide dependency graph</span>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+            Drift is early. Tell us what is missing, vote on ideas, or follow what has shipped.
           </p>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <VisionCard
-              title="Generate the migration, not just detect it"
-              detail="Derive migration guidance and changelog-quality upgrade instructions from API diffs, release artifacts, and tests when maintainers don't provide adequate docs."
-            />
-            <VisionCard
-              title="Understand private APIs too"
-              detail="Extend evidence and compatibility analysis to internal packages, private registries, and org-owned APIs — code that never appears in a public registry."
-            />
-            <VisionCard
-              title="Reason across repositories"
-              detail="Build org-level dependency context. When a shared API changes, find every affected repository and produce a migration plan for each."
-            />
+          <div className="mt-5">
+            <Link href={FEATURE_BOARD} className="inline-flex rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover">
+              Open the feature board →
+            </Link>
           </div>
         </section>
 
         {/* ── Final CTA ───────────────────────────────────────────────── */}
-        <section className="mt-16 rounded-2xl border border-border bg-surface/60 px-6 py-8 sm:mt-24 sm:px-10 sm:py-10">
-          <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-            Find which dependency updates actually need work.
+        <section className="mt-16 rounded-2xl bg-[#0b2f22] px-6 py-10 text-center shadow-[0_20px_70px_hsl(157_72%_20%/0.2)] sm:mt-24 sm:px-10 sm:py-14">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-200/70">Try it on your next update</p>
+          <h2 className={`${instrumentSerif.className} mx-auto mt-3 max-w-2xl text-3xl text-emerald-50 sm:text-4xl`}>
+            Stop reading every changelog just to find the one change that matters.
           </h2>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex justify-center">
             <a
               href={MARKETPLACE}
               target="_blank"
               rel="noreferrer"
               className="rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-200"
             >
-              Install for VS Code
+              Install the VS Code extension
             </a>
-            <a
-              href={`${GITHUB}#try-it-with-zero-permissions`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
-            >
-              GitHub Action
-            </a>
-            <Link href={FEATURE_BOARD} className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover">Feature requests</Link>
           </div>
-          <p className="mt-4 font-mono text-xs text-muted">
+          <p className="mt-5 font-mono text-xs text-emerald-100/70">
             <CopyCommand text="npm install -g @usedrift/cli">
-              <span className="text-faint">$</span> npm install -g @usedrift/cli
+              <span className="text-emerald-100/40">$</span> npm install -g @usedrift/cli
             </CopyCommand>
           </p>
         </section>
@@ -515,15 +443,6 @@ function VerdictStack({ proof }: { proof: ProofSummary }) {
         {proof.sites} exact call sites, linked to files and lines. Missing evidence is shown as a
         gap, not softened into a pass.
       </p>
-    </div>
-  );
-}
-
-function VisionCard({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface/70 p-4">
-      <h3 className="text-[13px] font-semibold text-foreground">{title}</h3>
-      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{detail}</p>
     </div>
   );
 }

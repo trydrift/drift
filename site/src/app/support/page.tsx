@@ -58,12 +58,11 @@ export default function Support() {
             <span className="text-faint">//</span> ecosystem support
           </p>
           <h1 className={`${instrumentSerif.className} mt-3 max-w-2xl text-3xl text-landing sm:text-4xl`}>
-            Every ecosystem, and how far Drift actually gets in each
+            What Drift can check in your stack
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            That depth varies by ecosystem. The grade is computed &mdash; not hand-typed &mdash;
-            from whether Drift can diff the real API, resolve module names from the package
-            itself, and run the ecosystem&rsquo;s own build and tests.
+          <p className="mt-3 max-w-xl text-base leading-7 text-muted">
+            Support is not equally deep everywhere. Pick an ecosystem to see which checks run,
+            what evidence Drift can collect, and where the gaps are.
           </p>
 
           <div className="mt-7">
