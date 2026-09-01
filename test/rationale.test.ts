@@ -909,6 +909,14 @@ describe('the upgrade assessment', () => {
     );
     assert.equal(withProse.confidence, 'high');
     assert.match(withProse.confidenceBasis, /computed API diff.*release notes.*OSV/);
+
+    const withOneSource = assessUpgrade(
+      input({
+        security: { ...clean, checked: false },
+        proseRead: 0,
+      }),
+    );
+    assert.equal(withOneSource.confidenceBasis, 'The computed API diff is the available evidence.');
   });
 
   test('every reason is a sentence, so a reader can disagree with a specific one', () => {

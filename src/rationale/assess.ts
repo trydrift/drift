@@ -388,7 +388,12 @@ function judgeConfidence(input: AssessmentInput): { level: EvidenceConfidence; b
   const level: EvidenceConfidence =
     input.surfaceCompared || sources.length >= 2 ? 'high' : 'medium';
 
-  return { level, basis: `${capitalize(joinList(sources))} agree.` };
+  return {
+    level,
+    basis: sources.length === 1
+      ? `${capitalize(sources[0]!)} is the available evidence.`
+      : `${capitalize(joinList(sources))} agree.`,
+  };
 }
 
 export function roleContractForChanges(changes: readonly BreakingChange[]): string | null {
