@@ -39,7 +39,33 @@
   --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* The first type pass was consistently undersized at real browsing
+     distance. Keep the layout geometry unchanged and raise only the type
+     scale by 20%. */
+  --text-xs: 0.9rem;
+  --text-sm: 1.05rem;
+  --text-base: 1.2rem;
+  --text-lg: 1.35rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.8rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 2.7rem;
+  --text-5xl: 3.6rem;
+  --text-6xl: 4.5rem;
+  --text-7xl: 5.4rem;
 }
+
+/* Arbitrary pixel sizes bypass Tailwind's type tokens, so scale those small
+   labels explicitly as part of the same 20% typography adjustment. */
+[class~="text-[9px]"] { font-size: 10.8px; }
+[class~="text-[10px]"] { font-size: 12px; }
+[class~="text-[10.5px]"] { font-size: 12.6px; }
+[class~="text-[11px]"] { font-size: 13.2px; }
+[class~="text-[11.5px]"] { font-size: 13.8px; }
+[class~="text-[12px]"] { font-size: 14.4px; }
+[class~="text-[12.5px]"] { font-size: 15px; }
+[class~="text-[13px]"] { font-size: 15.6px; }
 
 /* Semantic surfaces reference runtime vars so they swap with the theme class. */
 @theme inline {

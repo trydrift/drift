@@ -324,9 +324,12 @@ export function totalsOf(recording: Recording): Totals {
 
 /** `1699…` -> `2 Nov 2025`, for the "captured on" line under the panel. */
 export function shortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const date = new Date(iso);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Do not use Intl here: its bundled locale data can differ between the
+  // server and browser (notably "Sept" versus "Sep"), which breaks hydration.
+  // The recordings are timestamps, so UTC also keeps the date independent of
+  // the server and visitor time zones.
+  return `${date.getUTCDate()} ${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }

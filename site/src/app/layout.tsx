@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { inter, instrumentSerif } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Drift — prove which dependency changes actually break your code",
+  title: "Drift — did that dependency update break your code?",
   description:
-    "Drift finds what an upgrade would break in your code, and where — with a citation for every claim, and a stated gap wherever it could not check. Watch it analyse real repositories across sixteen package ecosystems.",
+    "Drift checks dependency updates against the code that uses them, shows the evidence, and prepares a fix you can review.",
   openGraph: {
     title: "Drift",
     description:
-      "Prove which dependency changes actually break your code. Real analyses of Supabase, Scrapy, GitLab, Kubernetes, Deno and Elasticsearch.",
+      "Your dependency updated. Drift checks whether it broke your code and shows the evidence.",
     type: "website",
   },
 };
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${instrumentSerif.variable}`}>
       <body className="font-sans antialiased">
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <Script id="theme" strategy="beforeInteractive">
+          {THEME_SCRIPT}
+        </Script>
         {children}
       </body>
     </html>

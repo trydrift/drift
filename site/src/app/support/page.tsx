@@ -29,7 +29,7 @@ export default function Support() {
     <div className="relative min-h-screen">
       <Backdrop />
 
-      <header className="relative z-10 mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8">
+      <header className="relative z-10 mx-auto flex max-w-[1600px] items-center gap-3 px-5 py-5 sm:px-10 lg:px-14">
         <Link href="/" className={`${instrumentSerif.className} text-2xl text-landing`}>
           Drift
         </Link>
@@ -52,18 +52,17 @@ export default function Support() {
         </nav>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-5xl px-5 pb-24 sm:px-8">
+      <main className="relative z-10 mx-auto max-w-[1600px] px-5 pb-24 sm:px-10 lg:px-14">
         <section className="pt-8 sm:pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
             <span className="text-faint">//</span> ecosystem support
           </p>
           <h1 className={`${instrumentSerif.className} mt-3 max-w-2xl text-3xl text-landing sm:text-4xl`}>
-            Every ecosystem, and how far Drift actually gets in each
+            What Drift can check in your stack
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            That depth varies by ecosystem. The grade is computed &mdash; not hand-typed &mdash;
-            from whether Drift can diff the real API, resolve module names from the package
-            itself, and run the ecosystem&rsquo;s own build and tests.
+          <p className="mt-3 max-w-xl text-base leading-7 text-muted">
+            Support is not equally deep everywhere. Pick an ecosystem to see which checks run,
+            what evidence Drift can collect, and where the gaps are.
           </p>
 
           <div className="mt-7">
@@ -86,7 +85,7 @@ export default function Support() {
       </main>
 
       <footer className="relative z-10 border-t border-border bg-background/60">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-5 py-6 text-xs text-faint sm:px-8">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-5 py-6 text-xs text-faint sm:px-10 lg:px-14">
           <span className={`${instrumentSerif.className} text-base text-landing`}>Drift</span>
           <a href={GITHUB} target="_blank" rel="noreferrer" className="transition-colors hover:text-foreground">
             GitHub
