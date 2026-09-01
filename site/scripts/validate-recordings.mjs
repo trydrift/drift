@@ -178,6 +178,11 @@ function validateVerdictConsistency(candidate, recordingName) {
   if (['unknown', 'partial'].includes(candidate.runtimeCompatibility) && candidate.severity === 'evidence-missing') {
     throw new Error(`${recordingName}: ${candidate.name} collapses runtime uncertainty into missing upstream evidence`);
   }
+  const role = candidate.surfaceAssessment?.packageRole;
+  const roleContract = ['pom', 'parent', 'analyzer', 'msbuild', 'tool', 'meta-package', 'asset', 'tooling'].includes(role);
+  if (roleContract && apiBreakingCount > 0 && candidate.recommendation === 'safe-to-upgrade') {
+    throw new Error(`${recordingName}: ${candidate.name} marks a changed ${role} package-role contract safe-to-upgrade`);
+  }
 }
 
 function validateLocalizationCompleteness(candidate, recordingName) {
