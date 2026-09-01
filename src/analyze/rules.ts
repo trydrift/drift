@@ -65,7 +65,7 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
 
   const roleContract = roleContractForSymbol(symbol);
   if (roleContract && (code === 'export-removed' || code === 'member-removed')) {
-    return `The published ${roleContract} entry \`${symbol}\` was removed. Review the consuming manifest, build, asset, or tooling configuration and update it if it relies on this entry; this is not an ordinary source-code API removal.`;
+    return `The published ${roleContract} entry \`${symbol}\` was removed. Review the consuming manifest, build, asset, or tooling configuration and update it if it relies on this entry; assess this package-role contract independently of source call signatures.`;
   }
   if (roleContract && code === 'signature-changed') {
     return `The published ${roleContract} entry \`${symbol}\` changed. Review the consuming manifest, build, asset, or tooling configuration against the new contract; this is not an ordinary call-site signature change.`;

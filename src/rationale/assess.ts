@@ -196,7 +196,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     // not find a local use *and* did not establish there isn't one.
     const count = input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length;
     reasons.push(roleContract
-      ? `${count} published ${roleContract} ${plural(count, 'change', 'changes')} require review; these are package-role contract changes, not ordinary code API changes with call sites.`
+      ? `${count} published ${roleContract} ${plural(count, 'change', 'changes')} require review; these package-role contracts are assessed independently of source call signatures.`
       : `${count} upstream API breaking ${plural(count, 'change', 'changes')}, none of which this repository uses.`);
   }
 

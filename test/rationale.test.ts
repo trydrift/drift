@@ -653,7 +653,7 @@ describe('the upgrade assessment', () => {
     const result = assessUpgrade(input({ breakingChanges }));
     assert.equal(result.recommendation, 'upgrade-after-review');
     assert.match(result.reasons.join(' '), /published Maven POM contract change/);
-    assert.doesNotMatch(result.reasons.join(' '), /upstream API breaking|none of which this repository uses/);
+    assert.doesNotMatch(result.reasons.join(' '), /\bAPI\b|none of which this repository uses/);
     assert.match(result.confidenceBasis, /computed Maven POM contract diff/);
     const summary = summarizeCandidate(1, breakingChanges as never, [], 'parent', {
       assessment: result,
@@ -661,7 +661,7 @@ describe('the upgrade assessment', () => {
       gaps: [],
     } as never);
     assert.match(summary, /published Maven POM contract change requires review/);
-    assert.doesNotMatch(summary, /upstream API breaking|none of which this repository uses/);
+    assert.doesNotMatch(summary, /\bAPI\b|none of which this repository uses/);
   });
 
   test('an unlocalized upstream finding cannot be called safe when indexing was truncated', () => {

@@ -87,7 +87,7 @@ export function summarize(
   if (apiSites.length === 0 && runtimeSites.length === 0 && apiBreakingCount > 0 && !runtimeUnresolved) {
     const roleContract = roleContractForChanges(breakingChanges);
     detail.push(roleContract
-      ? `${apiBreakingCount} published ${roleContract} change${apiBreakingCount === 1 ? '' : 's'} ${apiBreakingCount === 1 ? 'requires' : 'require'} review; ${apiBreakingCount === 1 ? 'this is a package-role contract change' : 'these are package-role contract changes'}, not ${apiBreakingCount === 1 ? 'an ordinary code API change' : 'ordinary code API changes'} with call sites`
+      ? `${apiBreakingCount} published ${roleContract} change${apiBreakingCount === 1 ? '' : 's'} ${apiBreakingCount === 1 ? 'requires' : 'require'} review; ${apiBreakingCount === 1 ? 'this package-role contract is' : 'these package-role contracts are'} assessed independently of source call signatures`
       : `${apiBreakingCount} upstream API breaking change${apiBreakingCount === 1 ? '' : 's'}, none of which this repository uses`);
   }
 
