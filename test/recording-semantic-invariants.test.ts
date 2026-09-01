@@ -117,6 +117,26 @@ describe('semantic recording invariants', () => {
     assert.throws(() => validate(recording([item])), /role pom is labeled/);
   });
 
+  test('rejects a changed package-role contract recorded as an ordinary all-clear', () => {
+    const item = candidate();
+    item.breakingCount = 1;
+    item.severity = 'upstream-only';
+    item.surfaceAssessment = {
+      available: true,
+      inspection: 'succeeded',
+      packageRole: 'pom',
+      tool: 'Maven POM contract',
+    } as never;
+    assert.throws(() => validate(recording([item])), /changed pom package-role contract safe-to-upgrade/);
+
+    item.recommendation = 'upgrade-after-review';
+    item.summary = 'Upgrade after review. 1 upstream API breaking change, none of which this repository uses.';
+    assert.throws(() => validate(recording([item])), /role pom is summarized as an ordinary API/);
+
+    item.summary = 'Upgrade after review. 1 published Maven POM contract change requires review.';
+    assert.doesNotThrow(() => validate(recording([item])));
+  });
+
   test('rejects verdict and localization contradictions', () => {
     const item = candidate();
     item.breakingCount = 1;

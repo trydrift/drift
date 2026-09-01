@@ -150,6 +150,9 @@ function validateSurfaceAssessment(candidate, recordingName) {
   if (expectedTool && !expectedTool.test(String(assessment.tool ?? ''))) {
     throw new Error(`${recordingName}: ${candidate.name} role ${assessment.packageRole} is labeled as ${assessment.tool}`);
   }
+  if (expectedTool && candidate.breakingCount > 0 && /\b(?:upstream )?API\b/i.test(String(candidate.summary ?? ''))) {
+    throw new Error(`${recordingName}: ${candidate.name} role ${assessment.packageRole} is summarized as an ordinary API`);
+  }
 
   const diagnostic = assessment.diagnostic;
   if (diagnostic?.causalErrorPresent && progressOnly(diagnostic.summary)) {
@@ -177,6 +180,11 @@ function validateVerdictConsistency(candidate, recordingName) {
   }
   if (['unknown', 'partial'].includes(candidate.runtimeCompatibility) && candidate.severity === 'evidence-missing') {
     throw new Error(`${recordingName}: ${candidate.name} collapses runtime uncertainty into missing upstream evidence`);
+  }
+  const role = candidate.surfaceAssessment?.packageRole;
+  const roleContract = ['pom', 'parent', 'analyzer', 'msbuild', 'tool', 'meta-package', 'asset', 'tooling'].includes(role);
+  if (roleContract && apiBreakingCount > 0 && candidate.recommendation === 'safe-to-upgrade') {
+    throw new Error(`${recordingName}: ${candidate.name} marks a changed ${role} package-role contract safe-to-upgrade`);
   }
 }
 

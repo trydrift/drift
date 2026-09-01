@@ -9,7 +9,7 @@
  * beside a row that now reads "1 upstream change, none used here". Two numbers
  * for the same fact, one of them stale, is worse than either alone.
  */
-import { RECOMMENDATION_LABEL } from '../rationale/assess.js';
+import { RECOMMENDATION_LABEL, roleContractForChanges } from '../rationale/assess.js';
 import type { UpgradeRationale } from '../rationale/types.js';
 import type { BreakingChange, ImpactSite } from '../types.js';
 
@@ -85,9 +85,10 @@ export function summarize(
 
   const apiBreakingCount = breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length;
   if (apiSites.length === 0 && runtimeSites.length === 0 && apiBreakingCount > 0 && !runtimeUnresolved) {
-    detail.push(
-      `${apiBreakingCount} upstream API breaking change${apiBreakingCount === 1 ? '' : 's'}, none of which this repository uses`,
-    );
+    const roleContract = roleContractForChanges(breakingChanges);
+    detail.push(roleContract
+      ? `${apiBreakingCount} published ${roleContract} change${apiBreakingCount === 1 ? '' : 's'} ${apiBreakingCount === 1 ? 'requires' : 'require'} review; ${apiBreakingCount === 1 ? 'this package-role contract is' : 'these package-role contracts are'} assessed independently of source call signatures`
+      : `${apiBreakingCount} upstream API breaking change${apiBreakingCount === 1 ? '' : 's'}, none of which this repository uses`);
   }
 
   if (security.checked && security.resolved.length > 0) {

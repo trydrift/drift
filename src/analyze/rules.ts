@@ -63,6 +63,14 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
   const spec = specCodeFor(code);
   if (spec) return spec.remediation(finding);
 
+  const roleContract = roleContractForSymbol(symbol);
+  if (roleContract && (code === 'export-removed' || code === 'member-removed')) {
+    return `The published ${roleContract} entry \`${symbol}\` was removed. Review the consuming manifest, build, asset, or tooling configuration and update it if it relies on this entry; assess this package-role contract independently of source call signatures.`;
+  }
+  if (roleContract && code === 'signature-changed') {
+    return `The published ${roleContract} entry \`${symbol}\` changed. Review the consuming manifest, build, asset, or tooling configuration against the new contract; this is not an ordinary call-site signature change.`;
+  }
+
   switch (code) {
     case 'export-removed':
       return `Every use of \`${symbol}\` from \`${dependency}\` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub \`${symbol}\` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.`;
@@ -132,6 +140,13 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
     default:
       return `Review usages of \`${symbol}\` from \`${dependency}\` and update them for the new version.`;
   }
+}
+
+function roleContractForSymbol(symbol: string): string | null {
+  if (symbol.startsWith('pom:')) return 'Maven POM contract';
+  if (symbol.startsWith('nuget:')) return 'NuGet package contract';
+  if (symbol.startsWith('pub:')) return 'Pub package contract';
+  return null;
 }
 
 /**
