@@ -130,6 +130,10 @@ describe('semantic recording invariants', () => {
     assert.throws(() => validate(recording([item])), /changed pom package-role contract safe-to-upgrade/);
 
     item.recommendation = 'upgrade-after-review';
+    item.summary = 'Upgrade after review. 1 upstream API breaking change, none of which this repository uses.';
+    assert.throws(() => validate(recording([item])), /role pom is summarized as an ordinary API/);
+
+    item.summary = 'Upgrade after review. 1 published Maven POM contract change requires review.';
     assert.doesNotThrow(() => validate(recording([item])));
   });
 

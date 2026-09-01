@@ -150,6 +150,9 @@ function validateSurfaceAssessment(candidate, recordingName) {
   if (expectedTool && !expectedTool.test(String(assessment.tool ?? ''))) {
     throw new Error(`${recordingName}: ${candidate.name} role ${assessment.packageRole} is labeled as ${assessment.tool}`);
   }
+  if (expectedTool && candidate.breakingCount > 0 && /\b(?:upstream )?API\b/i.test(String(candidate.summary ?? ''))) {
+    throw new Error(`${recordingName}: ${candidate.name} role ${assessment.packageRole} is summarized as an ordinary API`);
+  }
 
   const diagnostic = assessment.diagnostic;
   if (diagnostic?.causalErrorPresent && progressOnly(diagnostic.summary)) {

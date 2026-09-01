@@ -391,7 +391,7 @@ function judgeConfidence(input: AssessmentInput): { level: EvidenceConfidence; b
   return { level, basis: `${capitalize(joinList(sources))} agree.` };
 }
 
-function roleContractForChanges(changes: readonly BreakingChange[]): string | null {
+export function roleContractForChanges(changes: readonly BreakingChange[]): string | null {
   const structural = changes.filter((change) => change.kind !== 'runtime-requirement');
   if (structural.length === 0) return null;
   // Localization deliberately adds shorter aliases to a canonical contract

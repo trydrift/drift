@@ -17,6 +17,7 @@ import {
   summarizeRelease,
 } from '../dist/rationale/index.js';
 import { renderOne } from '../dist/report/rationale.js';
+import { summarize as summarizeCandidate } from '../dist/upgrade/summary.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
 import { clearHttpCache } from '../dist/util/http.js';
@@ -645,16 +646,22 @@ describe('the upgrade assessment', () => {
   });
 
   test('a role-specific package contract change requires review without pretending it is a code API', () => {
-    const result = assessUpgrade(input({
-      breakingChanges: [{
+    const breakingChanges = [{
         id: 'bc-pom', dependency: 'parent', kind: 'signature-change', summary: 'parent changed',
         remediation: 'review the POM', symbols: ['pom:parent', 'org.example:base'], confidence: 'high', citations: [],
-      }],
-    }));
+      }];
+    const result = assessUpgrade(input({ breakingChanges }));
     assert.equal(result.recommendation, 'upgrade-after-review');
     assert.match(result.reasons.join(' '), /published Maven POM contract change/);
     assert.doesNotMatch(result.reasons.join(' '), /upstream API breaking|none of which this repository uses/);
     assert.match(result.confidenceBasis, /computed Maven POM contract diff/);
+    const summary = summarizeCandidate(1, breakingChanges as never, [], 'parent', {
+      assessment: result,
+      security: clean,
+      gaps: [],
+    } as never);
+    assert.match(summary, /published Maven POM contract change requires review/);
+    assert.doesNotMatch(summary, /upstream API breaking|none of which this repository uses/);
   });
 
   test('an unlocalized upstream finding cannot be called safe when indexing was truncated', () => {
