@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { inter, instrumentSerif } from "@/lib/fonts";
 import "./globals.css";
 
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${instrumentSerif.variable}`}>
       <body className="font-sans antialiased">
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <Script id="theme" strategy="beforeInteractive">
+          {THEME_SCRIPT}
+        </Script>
         {children}
       </body>
     </html>
