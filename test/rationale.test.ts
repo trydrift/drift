@@ -648,7 +648,7 @@ describe('the upgrade assessment', () => {
     const result = assessUpgrade(input({
       breakingChanges: [{
         id: 'bc-pom', dependency: 'parent', kind: 'signature-change', summary: 'parent changed',
-        remediation: 'review the POM', symbols: ['pom:parent'], confidence: 'high', citations: [],
+        remediation: 'review the POM', symbols: ['pom:parent', 'org.example:base'], confidence: 'high', citations: [],
       }],
     }));
     assert.equal(result.recommendation, 'upgrade-after-review');

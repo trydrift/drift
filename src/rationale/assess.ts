@@ -394,11 +394,15 @@ function judgeConfidence(input: AssessmentInput): { level: EvidenceConfidence; b
 function roleContractForChanges(changes: readonly BreakingChange[]): string | null {
   const structural = changes.filter((change) => change.kind !== 'runtime-requirement');
   if (structural.length === 0) return null;
-  const symbols = structural.flatMap((change) => change.symbols);
-  if (symbols.length === 0) return null;
-  if (symbols.every((symbol) => symbol.startsWith('pom:'))) return 'Maven POM contract';
-  if (symbols.every((symbol) => symbol.startsWith('nuget:'))) return 'NuGet package contract';
-  if (symbols.every((symbol) => symbol.startsWith('pub:'))) return 'Pub package contract';
+  // Localization deliberately adds shorter aliases to a canonical contract
+  // symbol (for example `pom:pluginManagement:g:a` also yields `g:a`). The
+  // aliases help find a manifest reference, but do not change what kind of
+  // evidence produced the finding. Classify each finding by the presence of
+  // its canonical prefixed identity, not by requiring every search alias to
+  // retain that prefix.
+  if (structural.every((change) => change.symbols.some((symbol) => symbol.startsWith('pom:')))) return 'Maven POM contract';
+  if (structural.every((change) => change.symbols.some((symbol) => symbol.startsWith('nuget:')))) return 'NuGet package contract';
+  if (structural.every((change) => change.symbols.some((symbol) => symbol.startsWith('pub:')))) return 'Pub package contract';
   return null;
 }
 
