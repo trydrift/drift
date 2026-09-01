@@ -7,7 +7,7 @@
     "repo": "https://github.com/supabase/supabase-js",
     "blurb": "The official Supabase client for JavaScript and TypeScript.",
     "commit": "b3b939a405ae663aea2fabecfa4dfcc6161d155a",
-    "capturedAt": "2026-09-01T11:57:39.794Z",
+    "capturedAt": "2026-09-01T13:44:43.923Z",
     "packagesChecked": 7,
     "candidates": 0
   },
@@ -19,7 +19,7 @@
     "repo": "https://github.com/scrapy/scrapy",
     "blurb": "The web crawling framework that most Python scrapers are built on.",
     "commit": "7133d115c86276cb09dec0048da9c0dcee99a2d0",
-    "capturedAt": "2026-09-01T11:57:41.499Z",
+    "capturedAt": "2026-09-01T13:44:47.159Z",
     "packagesChecked": 8,
     "candidates": 2
   },
@@ -31,7 +31,7 @@
     "repo": "https://github.com/lobsters/lobsters",
     "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
     "commit": "2f385d149e67f5ff78643dcf6d3cab0b24c0117c",
-    "capturedAt": "2026-09-01T11:57:41.800Z",
+    "capturedAt": "2026-09-01T13:44:53.123Z",
     "packagesChecked": 37,
     "candidates": 19
   },
@@ -42,8 +42,8 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "7c4959c7cdc0ed893712c4163f953b4043ea342e",
-    "capturedAt": "2026-09-01T11:59:43.893Z",
+    "commit": "526dda45d8edc2335c8f28b68fc980326e29cc8c",
+    "capturedAt": "2026-09-01T13:46:18.965Z",
     "packagesChecked": 545,
     "candidates": 250
   },
@@ -55,7 +55,7 @@
     "repo": "https://github.com/denoland/deno",
     "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
     "commit": "206e03b687e160ce727000eb2541276e9554517a",
-    "capturedAt": "2026-09-01T11:59:47.575Z",
+    "capturedAt": "2026-09-01T13:45:22.169Z",
     "packagesChecked": 3,
     "candidates": 2
   },
@@ -67,9 +67,9 @@
     "repo": "https://github.com/elastic/elasticsearch-java",
     "blurb": "Elasticsearch's official Java API client.",
     "commit": "45940e450a81f3b858d91b2eea5efff4624a414e",
-    "capturedAt": "2026-09-01T11:58:54.736Z",
+    "capturedAt": "2026-09-01T13:45:10.868Z",
     "packagesChecked": 19,
-    "candidates": 10
+    "candidates": 13
   },
   {
     "id": "esphome",
@@ -78,8 +78,8 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "d6758377d14a8ab63781a4c035162166d4889a12",
-    "capturedAt": "2026-09-01T11:57:51.596Z",
+    "commit": "68ffd5a77324f43345d5bbcab6db1edc9c42e390",
+    "capturedAt": "2026-09-01T13:45:21.372Z",
     "packagesChecked": 24,
     "candidates": 8
   },
@@ -91,7 +91,7 @@
     "repo": "https://github.com/SolrNet/SolrNet",
     "blurb": "The established .NET client for Apache Solr, with exact installed versions in a committed NuGet lockfile.",
     "commit": "8e7c9e654ba105743765202a691cb3baa5b29349",
-    "capturedAt": "2026-09-01T11:57:54.140Z",
+    "capturedAt": "2026-09-01T13:45:18.596Z",
     "packagesChecked": 77,
     "candidates": 64
   },
@@ -103,7 +103,7 @@
     "repo": "https://github.com/guzzle/guzzle",
     "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
     "commit": "7b7b04a0f5a548bfe9ced4b56f5661deee229ac3",
-    "capturedAt": "2026-09-01T11:57:55.263Z",
+    "capturedAt": "2026-09-01T13:45:19.876Z",
     "packagesChecked": 4,
     "candidates": 3
   },
@@ -114,8 +114,8 @@
     "language": "Elixir",
     "repo": "https://github.com/phoenixframework/phoenix",
     "blurb": "The web framework nearly every production Elixir application is built on.",
-    "commit": "4572aa2f8351a770f0dfae91fccc26bdcf4056de",
-    "capturedAt": "2026-09-01T11:57:57.700Z",
+    "commit": "b4056c38995eb7db9f2fd7907488623786a7f37c",
+    "capturedAt": "2026-09-01T13:45:24.514Z",
     "packagesChecked": 43,
     "candidates": 16
   },
@@ -127,9 +127,9 @@
     "repo": "https://github.com/bizz84/starter_architecture_flutter_firebase",
     "blurb": "A production-shaped Flutter application with exact hosted packages in its committed Pub lockfile.",
     "commit": "c5b1940cbd6b2647a39394a9f4e516ad2c332131",
-    "capturedAt": "2026-09-01T11:58:03.686Z",
+    "capturedAt": "2026-09-01T13:45:56.425Z",
     "packagesChecked": 20,
-    "candidates": 19
+    "candidates": 17
   },
   {
     "id": "tca",
@@ -139,7 +139,7 @@
     "repo": "https://github.com/pointfreeco/swift-composable-architecture",
     "blurb": "The state-management library much of the Swift app ecosystem builds on.",
     "commit": "377da4061db10d26337a71bb279c506bb951f50f",
-    "capturedAt": "2026-09-01T11:58:13.011Z",
+    "capturedAt": "2026-09-01T13:45:34.219Z",
     "packagesChecked": 16,
     "candidates": 11
   },
@@ -151,9 +151,9 @@
     "repo": "https://github.com/layoutBox/FlexLayout",
     "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
     "commit": "320a19f1e842f335f0d636dd810e07498eae9f0b",
-    "capturedAt": "2026-09-01T11:58:14.877Z",
+    "capturedAt": "2026-09-01T13:45:58.045Z",
     "packagesChecked": 5,
-    "candidates": 3
+    "candidates": 0
   },
   {
     "id": "cohttp",
@@ -163,7 +163,7 @@
     "repo": "https://github.com/mirage/ocaml-cohttp",
     "blurb": "OCaml's HTTP library, from the MirageOS project.",
     "commit": "7b77cc7f18778967cbe3f64742290f268782fb7d",
-    "capturedAt": "2026-09-01T11:58:15.075Z",
+    "capturedAt": "2026-09-01T13:45:34.336Z",
     "packagesChecked": 1,
     "candidates": 0
   },
@@ -175,7 +175,7 @@
     "repo": "https://github.com/an-tao/trantor",
     "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
     "commit": "60f9c1e29a8186714c48080d085110e77caa51d2",
-    "capturedAt": "2026-09-01T11:58:15.134Z",
+    "capturedAt": "2026-09-01T13:45:34.436Z",
     "packagesChecked": 3,
     "candidates": 0
   },
@@ -186,8 +186,8 @@
     "language": "C++",
     "repo": "https://github.com/royshil/obs-backgroundremoval",
     "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-    "commit": "2a047c3d98a2dad4c6d2ab156ef4260b1f94929a",
-    "capturedAt": "2026-09-01T11:59:36.794Z",
+    "commit": "fe9426276484eb8df7d96176ff4631b343a8e204",
+    "capturedAt": "2026-09-01T13:45:58.014Z",
     "packagesChecked": 6,
     "candidates": 3
   }

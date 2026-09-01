@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-09-01T11:58:15.134Z",
+  "capturedAt": "2026-09-01T13:45:34.436Z",
   "commit": "60f9c1e29a8186714c48080d085110e77caa51d2",
-  "engine": "8d581db1bbe891ee",
-  "durationMs": 58,
+  "engine": "a36a56f0f426c37b",
+  "durationMs": 100,
   "packagesChecked": 3,
   "manifests": [
     "conanfile.txt"
@@ -18,7 +18,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 51,
+      "at": 95,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
@@ -26,7 +26,7 @@
     },
     {
       "type": "progress",
-      "at": 56,
+      "at": 99,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
@@ -34,7 +34,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 57,
+      "at": 100,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -78,7 +78,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 57,
+      "at": 100,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1t",
         "name": "openssl",
@@ -122,7 +122,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 57,
+      "at": 100,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -166,7 +166,7 @@
     },
     {
       "type": "progress",
-      "at": 57,
+      "at": 100,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -174,7 +174,7 @@
     },
     {
       "type": "progress",
-      "at": 57,
+      "at": 100,
       "phase": "Checking registries",
       "detail": "3 direct dependencies",
       "done": 0,
@@ -182,7 +182,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 57,
+      "at": 100,
       "candidate": {
         "id": "conanfile.txt#gtest@1.10.0",
         "name": "gtest",
@@ -226,7 +226,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 57,
+      "at": 100,
       "candidate": {
         "id": "conanfile.txt#openssl@1.1.1t",
         "name": "openssl",
@@ -270,7 +270,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 57,
+      "at": 100,
       "candidate": {
         "id": "conanfile.txt#spdlog@1.12.0",
         "name": "spdlog",
@@ -314,12 +314,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 57,
+      "at": 100,
       "id": "conanfile.txt#gtest@1.10.0"
     },
     {
       "type": "progress",
-      "at": 57,
+      "at": 100,
       "phase": "Could not check",
       "detail": "gtest@1.10.0 · gtest is installed at “1.10.0”, which Drift cannot compare against published versions.",
       "done": 1,
@@ -327,12 +327,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 57,
+      "at": 100,
       "id": "conanfile.txt#openssl@1.1.1t"
     },
     {
       "type": "progress",
-      "at": 57,
+      "at": 100,
       "phase": "Could not check",
       "detail": "openssl@1.1.1t · openssl is installed at “1.1.1t”, which Drift cannot compare against published versions.",
       "done": 2,
@@ -340,12 +340,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 57,
+      "at": 100,
       "id": "conanfile.txt#spdlog@1.12.0"
     },
     {
       "type": "progress",
-      "at": 57,
+      "at": 100,
       "phase": "Could not check",
       "detail": "spdlog@1.12.0 · spdlog is installed at “1.12.0”, which Drift cannot compare against published versions.",
       "done": 3,
