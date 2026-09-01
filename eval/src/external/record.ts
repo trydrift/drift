@@ -138,6 +138,23 @@ export const externalCaseResultSchema = z.object({
     repaired: z.boolean().optional(),
   }),
   /**
+   * Questions this case belongs to but whose truth cannot adjudicate an
+   * answer. This is distinct from an absent outcome: absence means the
+   * dataset never asks the question, while this records that it was asked and
+   * deliberately withheld from scoring, with the reason preserved.
+   */
+  notAdjudicated: z
+    .object({
+      detectedBreaking: z.string().min(1).optional(),
+      categoryCorrect: z.string().min(1).optional(),
+      detectedUpdate: z.string().min(1).optional(),
+      identifiedAffected: z.string().min(1).optional(),
+      localized: z.string().min(1).optional(),
+      falseSafe: z.string().min(1).optional(),
+      repaired: z.string().min(1).optional(),
+    })
+    .optional(),
+  /**
    * The raw binary prediction, for a dataset that has real negatives.
    *
    * Kept separate from `outcomes`, which record *correctness*. A confusion

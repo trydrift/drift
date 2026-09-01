@@ -309,6 +309,27 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
   }
 
   lines.push('## Results', '');
+  if (Object.values(metrics.adjudication).some((coverage) => coverage.notAdjudicated > 0)) {
+    lines.push(
+      '### Adjudication coverage',
+      '',
+      'Unadjudicated cases remain in the corpus and artifacts, but do not enter the metric denominator.',
+      '',
+      '| Question | Adjudicated | Not adjudicated |',
+      '| --- | ---: | ---: |',
+    );
+    for (const [label, coverage] of Object.entries(metrics.adjudication).sort()) {
+      if (coverage.notAdjudicated === 0) continue;
+      lines.push(`| ${label} | ${coverage.adjudicated} | ${coverage.notAdjudicated} |`);
+    }
+    lines.push('', 'Reasons:', '');
+    for (const [label, coverage] of Object.entries(metrics.adjudication).sort()) {
+      for (const [reason, count] of Object.entries(coverage.reasons).sort()) {
+        lines.push(`- ${label}: ${count} — ${reason}`);
+      }
+    }
+    lines.push('');
+  }
   if (Object.keys(metrics.rates).length === 0) {
     lines.push('No rate was computed: no case produced a scored outcome. See the exclusions above.', '');
   } else {

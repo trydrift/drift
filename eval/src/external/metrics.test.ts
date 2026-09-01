@@ -48,6 +48,26 @@ test('a rate over nothing is undefined, never zero', () => {
   assert.equal(formatRate(rate(3, 7)), '3/7 (42.9%)');
 });
 
+test('explicitly unadjudicated cases stay out of an exact-version metric denominator', () => {
+  const reason = 'the corpus supplies a range, not an exact resolved version';
+  const metrics = computeMetrics({
+    dataset: DATASETS['swe-bump']!,
+    available: 3,
+    results: [
+      result({ caseId: 'exact', outcomes: { detectedUpdate: true } }),
+      result({ caseId: 'range-a', notAdjudicated: { detectedUpdate: reason } }),
+      result({ caseId: 'range-b', notAdjudicated: { detectedUpdate: reason } }),
+    ],
+  });
+
+  assert.deepEqual(metrics.rates['dependency-update detection rate'], { numerator: 1, denominator: 1, value: 1 });
+  assert.deepEqual(metrics.adjudication['dependency-update detection rate'], {
+    adjudicated: 1,
+    notAdjudicated: 2,
+    reasons: { [reason]: 2 },
+  });
+});
+
 test('a positive-only corpus yields no precision, no F1 and no false-positive rate', () => {
   const metrics = computeMetrics({
     dataset: DATASETS['swe-bump']!,

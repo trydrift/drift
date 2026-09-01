@@ -154,8 +154,13 @@ export function normalizeName(name: string): string {
 export function repinRequirements(
   text: string,
   resolved: ReadonlyMap<string, string>,
-): { text: string; changed: { name: string; from: string | null; to: string }[] } {
-  const changed: { name: string; from: string | null; to: string }[] = [];
+): {
+  text: string;
+  changed: { name: string; from: string; to: string }[];
+  unresolved: { name: string; requirement: string; to: string }[];
+} {
+  const changed: { name: string; from: string; to: string }[] = [];
+  const unresolved: { name: string; requirement: string; to: string }[] = [];
   const lines = text.split('\n').map((line) => {
     const trimmed = line.trim();
     if (trimmed.length === 0 || trimmed.startsWith('#') || trimmed.startsWith('-')) return line;
@@ -168,12 +173,16 @@ export function repinRequirements(
     if (!target) return line;
 
     const from = match[2] === '==' ? (match[3] ?? null) : null;
+    if (!from) {
+      unresolved.push({ name, requirement: match[0]!, to: target });
+      return line;
+    }
     if (from === target) return line;
     changed.push({ name, from, to: target });
     return `${name}==${target}`;
   });
 
-  return { text: lines.join('\n'), changed };
+  return { text: lines.join('\n'), changed, unresolved };
 }
 
 export interface TimemachinePrediction {
@@ -183,7 +192,8 @@ export interface TimemachinePrediction {
   verdict: string;
   summary: string;
   /** What the harness actually repinned, so the constructed upgrade is inspectable. */
-  repinned: { name: string; from: string | null; to: string }[];
+  repinned: { name: string; from: string; to: string }[];
+  unresolved: { name: string; requirement: string; to: string }[];
   manifestPath: string;
 }
 
@@ -223,15 +233,18 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
 
     const resolved = resolvedVersions(task.dependency_versions);
     let manifestPath: string | null = null;
-    let repinned: { name: string; from: string | null; to: string }[] = [];
+    let repinned: { name: string; from: string; to: string }[] = [];
+    let unresolved: { name: string; requirement: string; to: string }[] = [];
 
     for (const candidate of REQUIREMENTS_CANDIDATES) {
       const existing = await readFile(join(repo, candidate), 'utf8').catch(() => null);
       if (existing === null) continue;
       const rewritten = repinRequirements(existing, resolved);
-      if (rewritten.changed.length === 0) continue;
-      await writeFile(join(repo, candidate), rewritten.text, 'utf8');
+      if (rewritten.changed.length === 0 && rewritten.unresolved.length === 0) continue;
       manifestPath = candidate;
+      unresolved = rewritten.unresolved;
+      if (rewritten.changed.length === 0) break;
+      await writeFile(join(repo, candidate), rewritten.text, 'utf8');
       repinned = rewritten.changed;
       break;
     }
@@ -244,6 +257,19 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
         'reproduction-failed',
         `no requirements file at ${task.commit_hash} declares a package whose resolved version differs, so no dependency update could be constructed for this task`,
       );
+    }
+
+    if (repinned.length === 0) {
+      return {
+        dependencyChanges: [],
+        breakingChanges: [],
+        impactSites: [],
+        verdict: 'insufficient-evidence',
+        summary: 'No exact historical dependency version was available to construct an upgrade.',
+        repinned,
+        unresolved,
+        manifestPath,
+      };
     }
 
     await execFile('git', ['add', '-A'], { cwd: repo });
@@ -284,6 +310,7 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
       verdict: verdictFromPlan(plan),
       summary: result.summary,
       repinned,
+      unresolved,
       manifestPath,
     };
   } finally {
@@ -337,6 +364,7 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
         manifestPairConstruction: 'harness-repinned-declared-requirements',
         manifestPath: prediction?.manifestPath ?? 'unavailable',
         repinnedCount: String(prediction?.repinned.length ?? 0),
+        unresolvedRangeCount: String(prediction?.unresolved.length ?? 0),
       },
     },
     truth: {
@@ -353,15 +381,34 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
   if (!prediction) return { ...base, prediction: {}, outcomes: {}, excluded: input.excluded };
 
   const repinnedNames = new Set(prediction.repinned.map((entry) => normalizeName(entry.name)));
+  const detectedUpdate =
+    repinnedNames.size > 0
+      ? prediction.dependencyChanges.some((change) => repinnedNames.has(normalizeName(change.name)))
+      : undefined;
+  const adjudicated = detectedUpdate !== undefined;
+  const unadjudicatedReason =
+    'the historical requirement is a range and the corpus does not supply its exact resolved before version';
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
-    outcomes: {
-      detectedUpdate: prediction.dependencyChanges.some((change) => repinnedNames.has(normalizeName(change.name))),
-      identifiedAffected: prediction.verdict === 'locally-affected',
-      localized: prediction.impactSites.length > 0,
-      falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
-    },
+    outcomes: adjudicated
+      ? {
+          detectedUpdate,
+          identifiedAffected: prediction.verdict === 'locally-affected',
+          localized: prediction.impactSites.length > 0,
+          falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
+        }
+      : {},
+    ...(!adjudicated
+      ? {
+          notAdjudicated: {
+            detectedUpdate: unadjudicatedReason,
+            identifiedAffected: unadjudicatedReason,
+            localized: unadjudicatedReason,
+            falseSafe: unadjudicatedReason,
+          },
+        }
+      : {}),
     excluded: null,
   };
 }

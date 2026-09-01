@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import semver from 'semver';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
 import type { Selectable } from '../selection.ts';
 import {
@@ -125,6 +126,7 @@ export interface SweBumpPrediction {
    */
   manifestVersionTo: string;
   versionFrom: string | null;
+  exactVersionPair: { from: string; to: string } | null;
 }
 
 /**
@@ -157,6 +159,12 @@ export class SweBumpUnavailable extends Error {
  * has is reported `source-unavailable`, never replaced.
  */
 export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPrediction> {
+  // The target alone is enough to prove this case cannot adjudicate an exact
+  // version question. Do not clone a repository or query registries merely to
+  // produce outcomes that scoring must discard; keep the case and its raw
+  // specifier, explicitly unadjudicated.
+  if (!semver.valid(task.versionTo)) return unresolvedPrediction(task.versionTo, null);
+
   const work = await mkdtemp(join(tmpdir(), `drift-swebump-${task.owner}-`));
   const repo = join(work, 'repo');
 
@@ -207,6 +215,11 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
     }
 
     const versionFrom = section[task.package] ?? null;
+    const exactVersionPair = exactSweBumpVersionPair(versionFrom, task.versionTo);
+    if (!exactVersionPair) {
+      return unresolvedPrediction(task.versionTo, versionFrom);
+    }
+
     section[task.package] = task.versionTo;
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
     await execFile('git', ['add', 'package.json'], { cwd: repo });
@@ -257,10 +270,28 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
       summary: result.summary,
       manifestVersionTo: task.versionTo,
       versionFrom,
+      exactVersionPair,
     };
   } finally {
     await rm(work, { recursive: true, force: true });
   }
+}
+
+export function exactSweBumpVersionPair(from: string | null, to: string): { from: string; to: string } | null {
+  return from && semver.valid(from) && semver.valid(to) ? { from, to } : null;
+}
+
+function unresolvedPrediction(manifestVersionTo: string, versionFrom: string | null): SweBumpPrediction {
+  return {
+    dependencyChanges: [],
+    breakingChanges: [],
+    impactSites: [],
+    verdict: 'insufficient-evidence',
+    summary: 'No authoritative exact before/after version pair was available to analyze.',
+    manifestVersionTo,
+    versionFrom,
+    exactVersionPair: null,
+  };
 }
 
 /**
@@ -305,8 +336,8 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
       commit: task.commit,
       baseCommit: null,
       dependency: task.package,
-      fromVersion: prediction?.versionFrom ?? null,
-      toVersion: task.versionTo,
+      fromVersion: prediction?.exactVersionPair?.from ?? null,
+      toVersion: prediction?.exactVersionPair?.to ?? null,
       packageManager: task.pkgManager,
       requiredRuntime: task.nodeVersion,
       oracleCommand: 'tsc --noEmit',
@@ -317,6 +348,8 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
         // The corpus states a range, not a pin. See the module docstring.
         versionToIsRange: String(/[\^~><*x|\s]/.test(task.versionTo)),
         manifestVersionTo: prediction?.manifestVersionTo ?? 'unavailable',
+        manifestVersionFrom: prediction?.versionFrom ?? 'unavailable',
+        exactVersionAdjudicated: String(Boolean(prediction?.exactVersionPair)),
       },
     },
     truth: {
@@ -336,22 +369,44 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
     return { ...base, prediction: {}, outcomes: {}, excluded: input.excluded };
   }
 
-  const detectedUpdate = prediction.dependencyChanges.some((change) => change.name === task.package);
+  const detectedUpdate = prediction.exactVersionPair
+    ? prediction.dependencyChanges.some(
+        (change) =>
+          change.name === task.package &&
+          change.from === prediction.exactVersionPair!.from &&
+          change.to === prediction.exactVersionPair!.to,
+      )
+    : undefined;
   const identifiedAffected = prediction.verdict === 'locally-affected';
   const localized = prediction.impactSites.length > 0;
+  const adjudicated = detectedUpdate !== undefined;
+  const unadjudicatedReason =
+    'the corpus supplies a manifest range rather than an authoritative exact before/after version pair';
 
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
-    outcomes: {
-      detectedUpdate,
-      identifiedAffected,
-      localized,
-      // The question this corpus is best at answering. Every case really is
-      // broken, so any safe-equivalent verdict is Drift telling a developer
-      // with a broken build that they are fine.
-      falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
-    },
+    outcomes: adjudicated
+      ? {
+          detectedUpdate,
+          identifiedAffected,
+          localized,
+          // The question this corpus is best at answering. Every case really is
+          // broken, so any safe-equivalent verdict is Drift telling a developer
+          // with a broken build that they are fine.
+          falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
+        }
+      : {},
+    ...(!adjudicated
+      ? {
+          notAdjudicated: {
+            detectedUpdate: unadjudicatedReason,
+            identifiedAffected: unadjudicatedReason,
+            localized: unadjudicatedReason,
+            falseSafe: unadjudicatedReason,
+          },
+        }
+      : {}),
     excluded: null,
   };
 }
