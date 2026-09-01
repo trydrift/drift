@@ -225,3 +225,13 @@ html {
   .indeterminate::after { animation: none; width: 100%; opacity: 0.35; }
   html { scroll-behavior: auto; }
 }
+
+/* The feature-board route still uses the legacy max-w-5xl utility. Keep it
+   aligned with the wider desktop shell until that page is reformatted. */
+@media (min-width: 1024px) {
+  /* Match the comfortable density of a 120% browser view in the design
+     itself. Because this changes the rem baseline, type, padding, gaps, and
+     cards grow together without shrinking the available viewport. */
+  html { font-size: 120%; }
+  .max-w-5xl { max-width: 1600px; }
+}
