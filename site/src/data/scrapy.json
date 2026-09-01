@@ -6,10 +6,10 @@
   "language": "Python",
   "repo": "https://github.com/scrapy/scrapy",
   "blurb": "The web crawling framework that most Python scrapers are built on.",
-  "capturedAt": "2026-09-01T05:05:09.375Z",
+  "capturedAt": "2026-09-01T06:02:21.312Z",
   "commit": "53eb8d60bcd0160633f6513478f958ed5a457363",
-  "engine": "7974dec382bc53f8",
-  "durationMs": 1947,
+  "engine": "2afb8f46a291ae76",
+  "durationMs": 3167,
   "packagesChecked": 8,
   "manifests": [
     "pyproject.toml",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 23,
+      "at": 28,
       "phase": "Looking for manifests",
       "detail": "scrapy/scrapy",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 31,
+      "at": 37,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 32,
+      "at": 38,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 35,
+      "at": 42,
       "phase": "Reading manifest",
       "detail": "docs/requirements.in",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -95,7 +95,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -139,7 +139,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0",
         "name": "scrapy-spider-metadata",
@@ -183,7 +183,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#sphinx@9.1.0",
         "name": "sphinx",
@@ -227,7 +227,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#sphinx-notfound-page@1.1.0",
         "name": "sphinx-notfound-page",
@@ -271,7 +271,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#sphinx-reredirects@1.1.0",
         "name": "sphinx-reredirects",
@@ -315,7 +315,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0",
         "name": "sphinx-rtd-theme",
@@ -359,7 +359,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0",
         "name": "sphinx-rtd-dark-mode",
@@ -403,7 +403,7 @@
     },
     {
       "type": "progress",
-      "at": 36,
+      "at": 44,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -411,7 +411,7 @@
     },
     {
       "type": "progress",
-      "at": 36,
+      "at": 44,
       "phase": "Checking registries",
       "detail": "8 direct dependencies",
       "done": 0,
@@ -419,7 +419,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 36,
+      "at": 44,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -463,7 +463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 45,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -507,7 +507,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 45,
       "candidate": {
         "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0",
         "name": "scrapy-spider-metadata",
@@ -551,7 +551,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 45,
       "candidate": {
         "id": "docs/requirements.in#sphinx@9.1.0",
         "name": "sphinx",
@@ -595,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 45,
       "candidate": {
         "id": "docs/requirements.in#sphinx-notfound-page@1.1.0",
         "name": "sphinx-notfound-page",
@@ -639,7 +639,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 46,
       "candidate": {
         "id": "docs/requirements.in#sphinx-reredirects@1.1.0",
         "name": "sphinx-reredirects",
@@ -683,7 +683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 46,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0",
         "name": "sphinx-rtd-theme",
@@ -727,7 +727,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 37,
+      "at": 46,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0",
         "name": "sphinx-rtd-dark-mode",
@@ -771,20 +771,59 @@
     },
     {
       "type": "candidate-drop",
-      "at": 153,
-      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
+      "at": 256,
+      "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0"
     },
     {
       "type": "progress",
-      "at": 153,
+      "at": 256,
       "phase": "Up to date",
-      "detail": "sphinx-notfound-page@1.1.0",
+      "detail": "scrapy-spider-metadata@0.2.0",
       "done": 1,
       "total": 8
     },
     {
+      "type": "candidate-drop",
+      "at": 258,
+      "id": "docs/requirements.in#sphinx-reredirects@1.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 258,
+      "phase": "Up to date",
+      "detail": "sphinx-reredirects@1.1.0",
+      "done": 2,
+      "total": 8
+    },
+    {
+      "type": "candidate-drop",
+      "at": 260,
+      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 260,
+      "phase": "Up to date",
+      "detail": "sphinx-notfound-page@1.1.0",
+      "done": 3,
+      "total": 8
+    },
+    {
+      "type": "candidate-drop",
+      "at": 265,
+      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
+    },
+    {
+      "type": "progress",
+      "at": 265,
+      "phase": "Up to date",
+      "detail": "sphinx-rtd-dark-mode@1.3.0",
+      "done": 4,
+      "total": 8
+    },
+    {
       "type": "candidate-upsert",
-      "at": 172,
+      "at": 297,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -831,80 +870,49 @@
     },
     {
       "type": "progress",
-      "at": 172,
+      "at": 297,
       "phase": "Outdated",
       "detail": "h2 4.3.0 → 4.4.1",
-      "done": 2,
-      "total": 8
-    },
-    {
-      "type": "candidate-drop",
-      "at": 185,
-      "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0"
-    },
-    {
-      "type": "progress",
-      "at": 185,
-      "phase": "Up to date",
-      "detail": "sphinx-rtd-theme@3.1.0",
-      "done": 3,
-      "total": 8
-    },
-    {
-      "type": "candidate-drop",
-      "at": 190,
-      "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0"
-    },
-    {
-      "type": "progress",
-      "at": 190,
-      "phase": "Up to date",
-      "detail": "scrapy-spider-metadata@0.2.0",
-      "done": 4,
-      "total": 8
-    },
-    {
-      "type": "candidate-drop",
-      "at": 190,
-      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
-    },
-    {
-      "type": "progress",
-      "at": 190,
-      "phase": "Up to date",
-      "detail": "sphinx-rtd-dark-mode@1.3.0",
       "done": 5,
       "total": 8
     },
     {
       "type": "candidate-drop",
-      "at": 192,
-      "id": "docs/requirements.in#sphinx-reredirects@1.1.0"
+      "at": 309,
+      "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0"
     },
     {
       "type": "progress",
-      "at": 192,
+      "at": 309,
       "phase": "Up to date",
-      "detail": "sphinx-reredirects@1.1.0",
+      "detail": "sphinx-rtd-theme@3.1.0",
       "done": 6,
       "total": 8
     },
     {
       "type": "candidate-drop",
-      "at": 223,
+      "at": 331,
       "id": "docs/requirements.in#sphinx@9.1.0"
     },
     {
       "type": "progress",
-      "at": 223,
+      "at": 331,
       "phase": "Up to date",
       "detail": "sphinx@9.1.0",
       "done": 7,
       "total": 8
     },
     {
+      "type": "progress",
+      "at": 785,
+      "phase": "Indexing your code",
+      "detail": "494 files indexed · 8 direct dependencies to check",
+      "done": 0,
+      "total": 8
+    },
+    {
       "type": "candidate-upsert",
-      "at": 523,
+      "at": 951,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -955,7 +963,7 @@
     },
     {
       "type": "progress",
-      "at": 523,
+      "at": 951,
       "phase": "Outdated",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 8,
@@ -963,7 +971,7 @@
     },
     {
       "type": "progress",
-      "at": 525,
+      "at": 953,
       "phase": "Reading release notes and changelog",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -971,7 +979,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 525,
+      "at": 953,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1015,7 +1023,7 @@
     },
     {
       "type": "progress",
-      "at": 527,
+      "at": 955,
       "phase": "Checking package metadata",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1023,7 +1031,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 527,
+      "at": 955,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1067,7 +1075,7 @@
     },
     {
       "type": "progress",
-      "at": 527,
+      "at": 955,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1075,7 +1083,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 527,
+      "at": 955,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1119,7 +1127,7 @@
     },
     {
       "type": "progress",
-      "at": 527,
+      "at": 955,
       "phase": "Checking package metadata",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1127,7 +1135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 527,
+      "at": 955,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1171,7 +1179,7 @@
     },
     {
       "type": "progress",
-      "at": 528,
+      "at": 956,
       "phase": "Checking repository status",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1179,7 +1187,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 528,
+      "at": 956,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1223,7 +1231,7 @@
     },
     {
       "type": "progress",
-      "at": 528,
+      "at": 956,
       "phase": "Checking repository status",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1231,7 +1239,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 528,
+      "at": 956,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1275,15 +1283,7 @@
     },
     {
       "type": "progress",
-      "at": 610,
-      "phase": "Indexing your code",
-      "detail": "494 files indexed · 8 direct dependencies to check",
-      "done": 0,
-      "total": 8
-    },
-    {
-      "type": "progress",
-      "at": 1083,
+      "at": 1384,
       "phase": "Checking security advisories",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1291,7 +1291,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1083,
+      "at": 1384,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1335,59 +1335,7 @@
     },
     {
       "type": "progress",
-      "at": 1083,
-      "phase": "Checking license",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1083,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1084,
+      "at": 1385,
       "phase": "Checking security advisories",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1395,7 +1343,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1084,
+      "at": 1385,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1439,7 +1387,7 @@
     },
     {
       "type": "progress",
-      "at": 1084,
+      "at": 1470,
       "phase": "Checking license",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1447,7 +1395,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1084,
+      "at": 1470,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1491,7 +1439,59 @@
     },
     {
       "type": "progress",
-      "at": 1613,
+      "at": 1470,
+      "phase": "Checking license",
+      "detail": "pydantic 2.12.5 → 2.13.5",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1470,
+      "candidate": {
+        "id": "docs/requirements.in#pydantic@2.12.5",
+        "name": "pydantic",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "2.12.5",
+        "latest": "2.12.5",
+        "selected": "2.12.5",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2239,
       "phase": "Comparing the public API surface",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1499,7 +1499,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1613,
+      "at": 2239,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1543,7 +1543,7 @@
     },
     {
       "type": "progress",
-      "at": 1719,
+      "at": 2239,
       "phase": "Reading release notes and changelog",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1551,7 +1551,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1719,
+      "at": 2239,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1595,7 +1595,7 @@
     },
     {
       "type": "progress",
-      "at": 1719,
+      "at": 2239,
       "phase": "Comparing the public API surface",
       "detail": "h2 4.3.0 → 4.4.1 · 2 evidence sources",
       "done": 0,
@@ -1603,7 +1603,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1719,
+      "at": 2239,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1647,7 +1647,7 @@
     },
     {
       "type": "progress",
-      "at": 1724,
+      "at": 2240,
       "phase": "Searching your code for 1 breaking change",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1655,7 +1655,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1724,
+      "at": 2240,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1699,7 +1699,7 @@
     },
     {
       "type": "progress",
-      "at": 1776,
+      "at": 2287,
       "phase": "Weighing what this upgrade is worth",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1707,7 +1707,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1776,
+      "at": 2287,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1751,7 +1751,7 @@
     },
     {
       "type": "progress",
-      "at": 1812,
+      "at": 2335,
       "phase": "Checking maintenance signals",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1759,7 +1759,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1812,
+      "at": 2335,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1803,7 +1803,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1815,
+      "at": 2338,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1918,7 +1918,7 @@
     },
     {
       "type": "progress",
-      "at": 1815,
+      "at": 2338,
       "phase": "Checked",
       "detail": "h2 4.3.0 → 4.4.1 · safe for your code · 1 upstream change, none used here — not deeply verified",
       "done": 1,
@@ -1926,7 +1926,7 @@
     },
     {
       "type": "progress",
-      "at": 1898,
+      "at": 3090,
       "phase": "Comparing the public API surface",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -1934,7 +1934,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1898,
+      "at": 3090,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1978,7 +1978,7 @@
     },
     {
       "type": "progress",
-      "at": 1901,
+      "at": 3094,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -1986,7 +1986,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1901,
+      "at": 3094,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -2030,7 +2030,7 @@
     },
     {
       "type": "progress",
-      "at": 1901,
+      "at": 3094,
       "phase": "Comparing the public API surface",
       "detail": "pydantic 2.12.5 → 2.13.5 · 7 evidence sources",
       "done": 1,
@@ -2038,7 +2038,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1901,
+      "at": 3094,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -2082,7 +2082,7 @@
     },
     {
       "type": "progress",
-      "at": 1903,
+      "at": 3098,
       "phase": "Searching your code for 14 breaking changes",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -2090,7 +2090,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1903,
+      "at": 3098,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -2134,7 +2134,7 @@
     },
     {
       "type": "progress",
-      "at": 1927,
+      "at": 3125,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -2142,7 +2142,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1927,
+      "at": 3125,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -2186,7 +2186,7 @@
     },
     {
       "type": "progress",
-      "at": 1944,
+      "at": 3160,
       "phase": "Checking maintenance signals",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 1,
@@ -2194,7 +2194,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1944,
+      "at": 3160,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -2238,7 +2238,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1947,
+      "at": 3164,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -2516,7 +2516,7 @@
     },
     {
       "type": "progress",
-      "at": 1947,
+      "at": 3164,
       "phase": "Checked",
       "detail": "pydantic 2.12.5 → 2.13.5 · safe for your code · 14 upstream changes, none used here — not deeply verified",
       "done": 2,
