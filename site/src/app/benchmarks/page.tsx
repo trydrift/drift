@@ -44,7 +44,7 @@ export default function Benchmarks() {
     <div className="relative min-h-screen">
       <Backdrop />
 
-      <header className="relative z-10 mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8">
+      <header className="relative z-10 mx-auto flex max-w-[1600px] items-center gap-3 px-5 py-5 sm:px-10 lg:px-14">
         <Link href="/" className={`${instrumentSerif.className} text-2xl text-landing`}>
           Drift
         </Link>
@@ -75,7 +75,7 @@ export default function Benchmarks() {
         </nav>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-5xl px-5 pb-24 sm:px-8">
+      <main className="relative z-10 mx-auto max-w-[1600px] px-5 pb-24 sm:px-10 lg:px-14">
         <section className="pt-8 sm:pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
             <span className="text-faint">//</span> benchmarks

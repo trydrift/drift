@@ -41,7 +41,7 @@ export default function Home() {
     <div className="relative min-h-screen">
       <Backdrop />
 
-      <header className="relative z-10 mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8">
+      <header className="relative z-10 mx-auto flex max-w-[1600px] items-center gap-3 px-5 py-5 sm:px-10 lg:px-14">
         <span className={`${instrumentSerif.className} text-2xl text-landing`}>Drift</span>
         <nav className="ml-auto flex items-center gap-1 sm:gap-2">
           <a
@@ -74,7 +74,7 @@ export default function Home() {
         </nav>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-5xl px-5 pb-24 sm:px-8">
+      <main className="relative z-10 mx-auto max-w-[1600px] px-5 pb-24 sm:px-10 lg:px-14">
         {/* ── Hero ────────────────────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl pt-10 text-center sm:pt-20">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
@@ -305,7 +305,7 @@ export default function Home() {
       </main>
 
       <footer className="relative z-10 border-t border-border bg-background/60">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-5 py-6 text-xs text-faint sm:px-8">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-5 py-6 text-xs text-faint sm:px-10 lg:px-14">
           <span className={`${instrumentSerif.className} text-base text-landing`}>Drift</span>
           <a href={GITHUB} target="_blank" rel="noreferrer" className="transition-colors hover:text-foreground">
             GitHub

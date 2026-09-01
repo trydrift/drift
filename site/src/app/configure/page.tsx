@@ -25,7 +25,7 @@ export default function Configure() {
     <div className="relative min-h-screen">
       <Backdrop />
 
-      <header className="relative z-10 mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8">
+      <header className="relative z-10 mx-auto flex max-w-[1600px] items-center gap-3 px-5 py-5 sm:px-10 lg:px-14">
         <Link href="/" className={`${instrumentSerif.className} text-2xl text-landing`}>
           Drift
         </Link>
@@ -56,7 +56,7 @@ export default function Configure() {
         </nav>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-5xl px-5 pb-24 sm:px-8">
+      <main className="relative z-10 mx-auto max-w-[1600px] px-5 pb-24 sm:px-10 lg:px-14">
         <section className="pt-8 sm:pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
             <span className="text-faint">//</span> configure
@@ -83,7 +83,7 @@ export default function Configure() {
       </main>
 
       <footer className="relative z-10 border-t border-border bg-background/60">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-5 py-6 text-xs text-faint sm:px-8">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-5 py-6 text-xs text-faint sm:px-10 lg:px-14">
           <span className={`${instrumentSerif.className} text-base text-landing`}>Drift</span>
           <a href={GITHUB} target="_blank" rel="noreferrer" className="transition-colors hover:text-foreground">
             GitHub
