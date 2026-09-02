@@ -63,7 +63,7 @@
     "verify:workflow": "npm run build && node scripts/build-workflow.mjs --check"
   },
   "dependencies": {
-    "@graphql-inspector/core": "^7.1.3",
+    "@graphql-inspector/core": "^8.0.0",
     "@octokit/rest": "^22.0.1",
     "@octokit/webhooks": "^14.2.0",
     "graphql": "^16.14.2",
