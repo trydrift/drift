@@ -30,6 +30,7 @@ function prediction(exactVersionPair: SweBumpPrediction['exactVersionPair']): Sw
 
 test('SWE-Bump constructs analysis input only from exact version identities', () => {
   assert.deepEqual(exactSweBumpVersionPair('1.9.4', '2.0.0'), { from: '1.9.4', to: '2.0.0' });
+  assert.deepEqual(exactSweBumpVersionPair('v1.9.4', 'v2.0.0'), { from: '1.9.4', to: '2.0.0' });
   assert.equal(exactSweBumpVersionPair('^1.0.0', '2.0.0'), null);
   assert.equal(exactSweBumpVersionPair('1.9.4', '^2.0.0'), null);
 });
@@ -66,6 +67,25 @@ test('SWE-Bump scores an authoritative exact version pair', () => {
 
   assert.equal(result.outcomes.detectedUpdate, true);
   assert.equal(result.notAdjudicated, undefined);
+  assert.equal(result.provenance.fromVersion, '1.9.4');
+  assert.equal(result.provenance.toVersion, '2.0.0');
+});
+
+test('SWE-Bump scores normalized semver identity rather than manifest spelling', () => {
+  const exactTask = { ...TASK, versionTo: 'v2.0.0' };
+  const exactVersionPair = exactSweBumpVersionPair('v1.9.4', exactTask.versionTo);
+  assert.ok(exactVersionPair);
+
+  const result = scoreSweBump({
+    task: exactTask,
+    prediction: prediction(exactVersionPair),
+    excluded: null,
+    datasetVersion: 'v',
+    sourceHash: 'hash',
+    durationMs: 1,
+  });
+
+  assert.equal(result.outcomes.detectedUpdate, true);
   assert.equal(result.provenance.fromVersion, '1.9.4');
   assert.equal(result.provenance.toVersion, '2.0.0');
 });

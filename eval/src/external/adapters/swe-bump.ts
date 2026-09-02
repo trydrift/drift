@@ -279,7 +279,9 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
 }
 
 export function exactSweBumpVersionPair(from: string | null, to: string): { from: string; to: string } | null {
-  return from && semver.valid(from) && semver.valid(to) ? { from, to } : null;
+  const exactFrom = from ? semver.valid(from) : null;
+  const exactTo = semver.valid(to);
+  return exactFrom && exactTo ? { from: exactFrom, to: exactTo } : null;
 }
 
 function unresolvedPrediction(manifestVersionTo: string, versionFrom: string | null): SweBumpPrediction {
