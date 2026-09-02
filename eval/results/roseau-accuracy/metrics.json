@@ -15,26 +15,33 @@
       "value": 0.96
     }
   },
+  "adjudication": {
+    "breaking-change detection recall": {
+      "adjudicated": 100,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
   "refusals": [],
   "negativeControls": 167,
   "confusion": {
     "tp": 96,
-    "fp": 10,
-    "tn": 157,
+    "fp": 11,
+    "tn": 156,
     "fn": 4
   },
   "classification": {
     "precision": {
       "numerator": 96,
-      "denominator": 106,
-      "value": 0.9056603773584906
+      "denominator": 107,
+      "value": 0.897196261682243
     },
     "recall": {
       "numerator": 96,
       "denominator": 100,
       "value": 0.96
     },
-    "f1": 0.9320388349514563
+    "f1": 0.927536231884058
   },
   "baseline": null,
   "breakdown": {

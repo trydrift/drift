@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
-| Run date | 2026-08-27T22:28:59.629Z |
+| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
+| Run date | 2026-09-02T12:36:28.042Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,10 +42,10 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 14/39 (35.9%) | 20.5–51.3% |
-| consumer localization rate | 7/39 (17.9%) | 5.1–30.8% |
+| affected-repository identification rate | 17/39 (43.6%) | 28.2–59.0% |
+| consumer localization rate | 8/39 (20.5%) | 7.7–33.3% |
 | dependency-update detection rate | 34/39 (87.2%) | 76.9–97.4% |
-| false-safe verdicts | 9/39 (23.1%) | 10.3–35.9% |
+| false-safe verdicts | 11/39 (28.2%) | 15.4–43.6% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,10 +57,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: COMPILATION_FAILURE | 5/12 (41.7%) | 4/12 (33.3%) | 11/12 (91.7%) |
-| label: DEPENDENCY_LOCK_FAILURE | 0/2 (0.0%) | 0/2 (0.0%) | 1/2 (50.0%) |
+| label: COMPILATION_FAILURE | 6/12 (50.0%) | 5/12 (41.7%) | 11/12 (91.7%) |
+| label: DEPENDENCY_LOCK_FAILURE | 1/2 (50.0%) | 0/2 (0.0%) | 1/2 (50.0%) |
 | label: ENFORCER_FAILURE | 2/9 (22.2%) | 0/9 (0.0%) | 7/9 (77.8%) |
-| label: TEST_FAILURE | 7/16 (43.8%) | 3/16 (18.8%) | 15/16 (93.8%) |
+| label: TEST_FAILURE | 8/16 (50.0%) | 3/16 (18.8%) | 15/16 (93.8%) |
 
 ## What is deliberately not reported
 
