@@ -378,6 +378,34 @@ function localizeRuntimeRequirement(
  * endpoint has no import edge, so those fall back to a whole-repo search. The
  * symbols there are URL paths, which are specific enough not to over-match.
  */
+/**
+ * Import roots implied by a set of fully-qualified Java symbols.
+ *
+ * `hudson.model.Run.getLog` yields `hudson.model.Run` (an `import` target) and
+ * `hudson.model` (a wildcard-import target, and what the prefix walk matches).
+ * A symbol whose last uppercase-initial segment is not at least two deep
+ * (`Run`, `getLog`) contributes nothing — there is no package to import.
+ */
+export function javaImportRootsFromSymbols(symbols: readonly string[]): string[] {
+  const roots = new Set<string>();
+  for (const raw of symbols) {
+    const value = raw.trim().replace(/[(<].*$/, '');
+    if (!value.includes('.')) continue;
+    const parts = value.split('.').filter(Boolean);
+    let classIdx = -1;
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (/^[A-Z]/.test(parts[i]!)) {
+        classIdx = i;
+        break;
+      }
+    }
+    if (classIdx < 1) continue; // need at least `package.Class`
+    roots.add(parts.slice(0, classIdx + 1).join('.')); // import a.b.Class;
+    roots.add(parts.slice(0, classIdx).join('.')); // import a.b.*;  + prefix walk
+  }
+  return [...roots].filter(Boolean);
+}
+
 function candidateFiles(
   change: BreakingChange,
   index: RepoIndex,
@@ -390,7 +418,16 @@ function candidateFiles(
     change.kind === 'removed-endpoint' || change.kind === 'changed-endpoint';
   if (isEndpointChange) return { files: index.files, names: [], reach: new Map() };
 
-  const { names, exact } = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
+  const base = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
+  // A Maven coordinate's groupId is not the Java package it ships
+  // (`org.jenkins-ci.plugins` ships `hudson.*`; `com.google.guava` ships
+  // `com.google.common`), so deriving import names from the coordinate finds
+  // no consumer files. japicmp's own symbols *are* fully-qualified Java names,
+  // so their class and package paths are the authoritative import roots.
+  const names = ecosystemsForName.includes('maven')
+    ? [...new Set([...base.names, ...javaImportRootsFromSymbols(change.symbols)])]
+    : base.names;
+  const exact = base.exact;
   const paths = new Set<string>();
 
   for (const name of names) {
@@ -1586,6 +1623,16 @@ function bindingsForOwner(
   const lines = content.split('\n');
   for (const record of imports) {
     if (record.bindings.includes(owner) || record.bindings.includes('*')) bindings.add(owner);
+    // Java binds a class by its simple name: `import a.b.Class;` (specifier
+    // `a.b.Class`) and `import a.b.*;` (specifier `a.b`, `*` binding) both make
+    // `Class` usable for an `owner` of `a.b.Class`. `receiversConstructedFrom`
+    // needs that simple name to match `Class c = new Class()`.
+    const ownerIsDotted = owner.includes('.');
+    const simpleName = owner.split('.').pop();
+    if (ownerIsDotted && simpleName) {
+      if (record.specifier === owner) bindings.add(simpleName);
+      if (record.bindings.includes('*') && owner.startsWith(`${record.specifier}.`)) bindings.add(simpleName);
+    }
     const line = lines[record.line - 1] ?? '';
     const alias = new RegExp(`\\b${escapeRegExp(owner)}\\s+as\\s+([A-Za-z_$][\\w$]*)`).exec(line)?.[1];
     if (alias) bindings.add(alias);
