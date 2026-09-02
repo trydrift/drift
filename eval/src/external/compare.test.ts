@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   caseState,
   compareCases,
+  normalizeComparisonSelection,
   renderComparison,
   validateRunCompatibility,
   type ComparisonSelection,
@@ -10,6 +11,7 @@ import {
 import { DATASETS } from './dataset.ts';
 import type { ExternalCaseResult } from './record.ts';
 import type { RunManifest } from './results.ts';
+import type { Selection } from './selection.ts';
 
 function result(caseId: string, verdict: string, polarity: 'positive' | 'negative' = 'positive'): ExternalCaseResult {
   return {
@@ -58,6 +60,26 @@ test('case comparison rejects old-only and new-only results instead of comparing
   assert.throws(
     () => compareCases([result('old-only', 'clean')], [result('new-only', 'clean')]),
     /result case populations differ; old-only: old-only; new-only: new-only/,
+  );
+});
+
+test('legacy selections resolve their dataset from the manifest before comparison', () => {
+  const manifest = comparisonManifest('bump', 'dataset-version');
+  const legacySelection: Selection = {
+    seed: 1,
+    limit: null,
+    mode: 'all',
+    ids: ['case'],
+    strata: {},
+    available: 1,
+  };
+  const newSelection = comparisonSelection(['case']);
+  const normalizedLegacy = normalizeComparisonSelection(legacySelection, manifest);
+  const results = [result('case', 'clean')];
+
+  assert.equal(normalizedLegacy.dataset, DATASETS['bump']);
+  assert.doesNotThrow(() =>
+    validateRunCompatibility(manifest, manifest, normalizedLegacy, newSelection, results, results),
   );
 });
 

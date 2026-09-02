@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
-import type { Dataset } from './dataset.ts';
+import { datasetOrThrow, type Dataset } from './dataset.ts';
 import type { ExternalCaseResult } from './record.ts';
 import { resultsDir, type RunManifest } from './results.ts';
 import type { Selection } from './selection.ts';
@@ -25,6 +25,20 @@ export interface CaseTransition {
 }
 
 export type ComparisonSelection = Selection & { dataset: Dataset };
+export type RawComparisonSelection = Selection & { dataset?: Dataset };
+
+export function normalizeComparisonSelection(
+  selection: RawComparisonSelection,
+  manifest: RunManifest,
+): ComparisonSelection {
+  return {
+    ...selection,
+    // Legacy selection artifacts predate the embedded dataset descriptor.
+    // Their manifest still records the authoritative dataset id, matching the
+    // backward-compatible rescore path in cli.ts.
+    dataset: selection.dataset ?? datasetOrThrow(manifest.datasetId),
+  };
+}
 
 export function caseState(result: ExternalCaseResult): CaseState {
   if (result.excluded) {
@@ -210,14 +224,16 @@ async function main(argv: readonly string[]): Promise<void> {
       : {};
   const oldDir = resultsDir(oldRun);
   const newDir = resultsDir(newRun);
-  const [oldResults, newResults, oldManifest, newManifest, oldSelection, newSelection] = await Promise.all([
+  const [oldResults, newResults, oldManifest, newManifest, oldRawSelection, newRawSelection] = await Promise.all([
     readCases(oldDir),
     readCases(newDir),
     readFile(join(oldDir, 'manifest.json'), 'utf8').then((text) => JSON.parse(text) as RunManifest),
     readFile(join(newDir, 'manifest.json'), 'utf8').then((text) => JSON.parse(text) as RunManifest),
-    readFile(join(oldDir, 'selection.json'), 'utf8').then((text) => JSON.parse(text) as ComparisonSelection),
-    readFile(join(newDir, 'selection.json'), 'utf8').then((text) => JSON.parse(text) as ComparisonSelection),
+    readFile(join(oldDir, 'selection.json'), 'utf8').then((text) => JSON.parse(text) as RawComparisonSelection),
+    readFile(join(newDir, 'selection.json'), 'utf8').then((text) => JSON.parse(text) as RawComparisonSelection),
   ]);
+  const oldSelection = normalizeComparisonSelection(oldRawSelection, oldManifest);
+  const newSelection = normalizeComparisonSelection(newRawSelection, newManifest);
   validateRunCompatibility(oldManifest, newManifest, oldSelection, newSelection, oldResults, newResults);
   const comparison = renderComparison(newManifest.datasetId, compareCases(oldResults, newResults), adjudications);
   process.stdout.write(comparison.text);
