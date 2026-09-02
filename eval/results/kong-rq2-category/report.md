@@ -15,10 +15,10 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
-| Run date | 2026-08-27T21:50:17.664Z |
-| Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
-| Platform | linux/x64, Node v22.23.2 |
+| Drift commit | `779fc40ac45cac61a240b00700c21df21377d06e` |
+| Run date | 2026-09-02T13:34:11.405Z |
+| Command | `/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
+| Platform | darwin/x64, Node v24.20.0 |
 
 ## Case accounting
 
@@ -115,13 +115,13 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
-| `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
-| `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "17.0.20.1" 2026-08-18 | any Java case |
-| `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
-| `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.12.3 | any Python case |
+| `node` | v24.20.0 | every npm/TypeScript case, and Drift itself |
+| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
+| `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
+| `java` | openjdk version "19" 2022-09-20 | any Java case |
+| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `docker` | Docker version 29.7.2, build a7dcaa6 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
+| `python3` | Python 3.14.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
 | `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 

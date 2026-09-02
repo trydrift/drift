@@ -1,49 +1,49 @@
 {
-  "capturedAt": "2026-08-27T21:50:17.010Z",
-  "platform": "linux",
+  "capturedAt": "2026-09-02T13:34:10.735Z",
+  "platform": "darwin",
   "arch": "x64",
-  "node": "v22.23.2",
+  "node": "v24.20.0",
   "tools": [
     {
       "tool": "node",
       "available": true,
-      "version": "v22.23.2",
+      "version": "v24.20.0",
       "neededFor": "every npm/TypeScript case, and Drift itself"
     },
     {
       "tool": "npm",
       "available": true,
-      "version": "10.9.8",
+      "version": "11.12.1",
       "neededFor": "installing a TypeScript consumer before its build oracle can run"
     },
     {
       "tool": "git",
       "available": true,
-      "version": "git version 2.55.0",
+      "version": "git version 2.39.5 (Apple Git-154)",
       "neededFor": "checking out an original repository at the exact evaluated commit"
     },
     {
       "tool": "java",
       "available": true,
-      "version": "openjdk version \"17.0.20.1\" 2026-08-18",
+      "version": "openjdk version \"19\" 2022-09-20",
       "neededFor": "any Java case"
     },
     {
       "tool": "mvn",
       "available": true,
-      "version": "Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5)",
+      "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
       "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
     },
     {
       "tool": "docker",
       "available": true,
-      "version": "Docker version 28.0.4, build b8034c0",
+      "version": "Docker version 29.7.2, build a7dcaa6",
       "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
     },
     {
       "tool": "python3",
       "available": true,
-      "version": "Python 3.12.3",
+      "version": "Python 3.14.3",
       "neededFor": "any Python case"
     },
     {
