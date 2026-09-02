@@ -204,6 +204,35 @@ describe('prose rules', () => {
     );
   });
 
+  test('a bare BREAKING CHANGE marker with no description is still a detected break', () => {
+    for (const line of ['BREAKING CHANGE', 'BREAKING CHANGE:', 'BREAKING-CHANGE:', 'BREAKING CHANGES:', 'BREAKING CHANGE: none']) {
+      const matches = matchProse(line);
+      assert.ok(
+        matches.some((m) => m.ruleId === 'prose-breaking-change-marker' && m.kind === 'unknown'),
+        `expected a bare-marker match for ${JSON.stringify(line)}`,
+      );
+    }
+  });
+
+  test('the bare-marker rule yields to the footer rule once there is a description', () => {
+    const matches = matchProse('BREAKING CHANGE: the storage format changed');
+    assert.ok(matches.some((m) => m.ruleId === 'prose-breaking-change-footer'));
+    assert.equal(matches.some((m) => m.ruleId === 'prose-breaking-change-marker'), false);
+  });
+
+  test('the plural footer spelling is read', () => {
+    assert.ok(
+      matchProse('BREAKING CHANGES: several endpoints were removed').some(
+        (m) => m.ruleId === 'prose-breaking-change-footer',
+      ),
+    );
+  });
+
+  test('"breaking change" as ordinary prose is still not a marker', () => {
+    assert.deepEqual(matchProse('This is a breaking change for some users.'), []);
+    assert.deepEqual(matchProse('We were careful to avoid any breaking change here.'), []);
+  });
+
   describe('signature changes are named as such, not folded into behaviour-change', () => {
     const readsSignatureChange = (line: string) =>
       matchProse(line).some((m) => m.kind === 'signature-change');

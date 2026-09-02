@@ -592,20 +592,42 @@ const PROSE_RULES: ProseRule[] = [
     /**
      * Conventional Commits' standardised breaking-change footer/trailer.
      *
-     * `BREAKING CHANGE:` (and the equally valid `BREAKING-CHANGE:`) is a
-     * maintainer stating outright, in a format this specific, that the
-     * commit breaks something — a real, widely-used convention independent
-     * of any one project's phrasing, and worth recognising for the marker
-     * alone. A backtick-quoted symbol in the same description is still
-     * caught by whichever rule above already matches that phrasing; this
-     * rule exists for the description that doesn't match any of them, so a
-     * maintainer's explicit declaration is never silently worth nothing.
+     * `BREAKING CHANGE:` (and the equally valid `BREAKING-CHANGE:`, or the
+     * plural `BREAKING CHANGES:`) is a maintainer stating outright, in a
+     * format this specific, that the commit breaks something — a real,
+     * widely-used convention independent of any one project's phrasing, and
+     * worth recognising for the marker alone. A backtick-quoted symbol in the
+     * same description is still caught by whichever rule above already matches
+     * that phrasing; this rule exists for the description that doesn't match
+     * any of them, so a maintainer's explicit declaration is never silently
+     * worth nothing.
      */
     id: 'prose-breaking-change-footer',
     kind: 'behaviour-change',
-    pattern: /^BREAKING[ -]CHANGE:\s*(.{3,160}?)(?:[.;]|$)/i,
+    pattern: /^BREAKING[ -]CHANGES?:\s*(.{3,160}?)(?:[.;]|$)/i,
     symbolGroup: 0,
     summarize: (m) => `Declared as a breaking change: ${m[1]?.trim()}`,
+  },
+  {
+    /**
+     * The same marker with nothing after it — `BREAKING CHANGE`, or the
+     * colon with an empty body. `prose-breaking-change-footer` needs three
+     * characters of description and finds none here, so before this rule a
+     * commit whose whole breaking-change footer was the bare marker read as
+     * not breaking at all. On Kong's RQ2 that accounted for most of the
+     * detection misses (15.3% recall on the bare-marker stratum versus 96.8%
+     * when the message says more).
+     *
+     * The kind is `unknown`, not `behaviour-change`: the maintainer told us
+     * *that* it breaks, not *how*, and `unknown` is the honest kind for
+     * "declared, undescribed". It carries no symbol, so downstream
+     * disposition treats it as review-only rather than an actionable edit.
+     */
+    id: 'prose-breaking-change-marker',
+    kind: 'unknown',
+    pattern: /^BREAKING[ -]CHANGES?\b\s*:?\s*(?:none|n\/a)?\s*$/i,
+    symbolGroup: 0,
+    summarize: () => 'Declared as a breaking change (no detail given)',
   },
 ];
 
