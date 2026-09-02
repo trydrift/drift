@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
+import { cleanupTemporaryDirectory } from '../cleanup.ts';
 import type { Selectable } from '../selection.ts';
 import { computeSurfaceDiff } from '../../../../dist/evidence/surface/index.js';
 import { clearHttpCache } from '../../../../dist/util/http.js';
@@ -73,7 +74,7 @@ const SILENT_LOGGER: Logger = {
   group: (_label, fn) => fn(),
 };
 
-/** The synthetic coordinate the two compiled jars are served under. */
+/** The synthetic coordinate the two compiled jars and their POMs are served under. */
 const GROUP = 'io.drift.bench';
 const ARTIFACT = 'roseau-accuracy';
 const FROM = '1.0.0';
@@ -236,7 +237,10 @@ async function javaSources(dir: string): Promise<string[]> {
 }
 
 /**
- * Serves the two compiled jars to production's own `fetchArchive`.
+ * Serves the two compiled jars and their minimal POMs to production's own
+ * Maven transport. POM-first surface analysis classifies the artifact role
+ * before downloading a JAR, so the synthetic repository must provide both
+ * artifacts for each version just like a real Maven repository does.
  *
  * The same seam the npm capsule adapter uses, for the same reason: the
  * analysis under test must be production's, and only the transport may be
@@ -246,32 +250,56 @@ async function javaSources(dir: string): Promise<string[]> {
  */
 export function installMavenFetchStub(jars: { from: string; to: string }): () => void {
   const original = globalThis.fetch;
-  const wanted = new Map([
-    [`/${GROUP.replace(/\./g, '/')}/${ARTIFACT}/${FROM}/${ARTIFACT}-${FROM}.jar`, jars.from],
-    [`/${GROUP.replace(/\./g, '/')}/${ARTIFACT}/${TO}/${ARTIFACT}-${TO}.jar`, jars.to],
+  const root = `/${GROUP.replace(/\./g, '/')}/${ARTIFACT}`;
+  const wantedJars = new Map([
+    [`${root}/${FROM}/${ARTIFACT}-${FROM}.jar`, jars.from],
+    [`${root}/${TO}/${ARTIFACT}-${TO}.jar`, jars.to],
+  ]);
+  const wantedPoms = new Map([
+    [`${root}/${FROM}/${ARTIFACT}-${FROM}.pom`, FROM],
+    [`${root}/${TO}/${ARTIFACT}-${TO}.pom`, TO],
   ]);
 
   // Typed from `fetch` itself rather than from the DOM lib, for the same
   // reason `npm-fetch-stub.ts` is: this package does not include `lib.dom`.
   globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    for (const [suffix, path] of wanted) {
+    for (const [suffix, path] of wantedJars) {
       if (url.endsWith(suffix)) {
         const bytes = await readFile(path);
         return new Response(new Uint8Array(bytes), { status: 200 });
       }
     }
-    try {
-      if (new URL(url).hostname === 'repo1.maven.org') return new Response(null, { status: 404 });
-    } catch {
-      // Non-absolute or malformed URL: defer to original fetch behavior.
+    for (const [suffix, version] of wantedPoms) {
+      if (url.endsWith(suffix)) {
+        return new Response(syntheticPom(version), {
+          status: 200,
+          headers: { 'content-type': 'application/xml' },
+        });
+      }
     }
+    // Only the synthetic coordinate is ours. Production also downloads its
+    // pinned japicmp helper from Maven Central, and swallowing that request as
+    // an unrelated 404 would make the fixture fail before it compares either
+    // synthetic JAR. Everything else retains the caller's normal transport.
     return original(input, init);
   }) as typeof fetch;
 
   return () => {
     globalThis.fetch = original;
   };
+}
+
+function syntheticPom(version: string): string {
+  return [
+    '<project>',
+    '  <modelVersion>4.0.0</modelVersion>',
+    `  <groupId>${GROUP}</groupId>`,
+    `  <artifactId>${ARTIFACT}</artifactId>`,
+    `  <version>${version}</version>`,
+    '  <packaging>jar</packaging>',
+    '</project>',
+  ].join('\n');
 }
 
 export interface RoseauDiff {
@@ -354,7 +382,7 @@ export async function runRoseauDiff(
     return { byCase, unmatched, unavailable: null, toolLocator: outcome.locator ?? outcome.tool };
   } finally {
     uninstall();
-    await rm(workdir, { recursive: true, force: true });
+    await cleanupTemporaryDirectory(workdir);
   }
 }
 

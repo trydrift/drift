@@ -1,10 +1,11 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
+import { cleanupTemporaryDirectory } from '../cleanup.ts';
 import type { Selectable } from '../selection.ts';
 import {
   DriftConfigSchema,
@@ -154,8 +155,13 @@ export function normalizeName(name: string): string {
 export function repinRequirements(
   text: string,
   resolved: ReadonlyMap<string, string>,
-): { text: string; changed: { name: string; from: string | null; to: string }[] } {
-  const changed: { name: string; from: string | null; to: string }[] = [];
+): {
+  text: string;
+  changed: { name: string; from: string; to: string }[];
+  unresolved: { name: string; requirement: string; to: string }[];
+} {
+  const changed: { name: string; from: string; to: string }[] = [];
+  const unresolved: { name: string; requirement: string; to: string }[] = [];
   const lines = text.split('\n').map((line) => {
     const trimmed = line.trim();
     if (trimmed.length === 0 || trimmed.startsWith('#') || trimmed.startsWith('-')) return line;
@@ -168,12 +174,16 @@ export function repinRequirements(
     if (!target) return line;
 
     const from = match[2] === '==' ? (match[3] ?? null) : null;
+    if (!from) {
+      unresolved.push({ name, requirement: match[0]!, to: target });
+      return line;
+    }
     if (from === target) return line;
     changed.push({ name, from, to: target });
     return `${name}==${target}`;
   });
 
-  return { text: lines.join('\n'), changed };
+  return { text: lines.join('\n'), changed, unresolved };
 }
 
 export interface TimemachinePrediction {
@@ -183,7 +193,8 @@ export interface TimemachinePrediction {
   verdict: string;
   summary: string;
   /** What the harness actually repinned, so the constructed upgrade is inspectable. */
-  repinned: { name: string; from: string | null; to: string }[];
+  repinned: { name: string; from: string; to: string }[];
+  unresolved: { name: string; requirement: string; to: string }[];
   manifestPath: string;
 }
 
@@ -223,15 +234,18 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
 
     const resolved = resolvedVersions(task.dependency_versions);
     let manifestPath: string | null = null;
-    let repinned: { name: string; from: string | null; to: string }[] = [];
+    let repinned: { name: string; from: string; to: string }[] = [];
+    let unresolved: { name: string; requirement: string; to: string }[] = [];
 
     for (const candidate of REQUIREMENTS_CANDIDATES) {
       const existing = await readFile(join(repo, candidate), 'utf8').catch(() => null);
       if (existing === null) continue;
       const rewritten = repinRequirements(existing, resolved);
-      if (rewritten.changed.length === 0) continue;
-      await writeFile(join(repo, candidate), rewritten.text, 'utf8');
+      if (rewritten.changed.length === 0 && rewritten.unresolved.length === 0) continue;
       manifestPath = candidate;
+      unresolved = rewritten.unresolved;
+      if (rewritten.changed.length === 0) break;
+      await writeFile(join(repo, candidate), rewritten.text, 'utf8');
       repinned = rewritten.changed;
       break;
     }
@@ -244,6 +258,19 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
         'reproduction-failed',
         `no requirements file at ${task.commit_hash} declares a package whose resolved version differs, so no dependency update could be constructed for this task`,
       );
+    }
+
+    if (repinned.length === 0) {
+      return {
+        dependencyChanges: [],
+        breakingChanges: [],
+        impactSites: [],
+        verdict: 'insufficient-evidence',
+        summary: 'No exact historical dependency version was available to construct an upgrade.',
+        repinned,
+        unresolved,
+        manifestPath,
+      };
     }
 
     await execFile('git', ['add', '-A'], { cwd: repo });
@@ -284,10 +311,11 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
       verdict: verdictFromPlan(plan),
       summary: result.summary,
       repinned,
+      unresolved,
       manifestPath,
     };
   } finally {
-    await rm(work, { recursive: true, force: true });
+    await cleanupTemporaryDirectory(work);
   }
 }
 
@@ -337,6 +365,7 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
         manifestPairConstruction: 'harness-repinned-declared-requirements',
         manifestPath: prediction?.manifestPath ?? 'unavailable',
         repinnedCount: String(prediction?.repinned.length ?? 0),
+        unresolvedRangeCount: String(prediction?.unresolved.length ?? 0),
       },
     },
     truth: {
@@ -353,15 +382,45 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
   if (!prediction) return { ...base, prediction: {}, outcomes: {}, excluded: input.excluded };
 
   const repinnedNames = new Set(prediction.repinned.map((entry) => normalizeName(entry.name)));
+  const detectionAdjudicated = repinnedNames.size > 0;
+  const detectedUpdate = detectionAdjudicated
+    ? prediction.dependencyChanges.some((change) => repinnedNames.has(normalizeName(change.name)))
+    : undefined;
+  // TimeMachine's positive label belongs to the complete migrated project,
+  // not to any one dependency in it. An exact subset can adjudicate whether
+  // Drift detected those exact updates, but it cannot inherit the corpus's
+  // whole-project failure label while another direct transition remains an
+  // unresolved range.
+  const projectAdjudicated = detectionAdjudicated && prediction.unresolved.length === 0;
+  const exactVersionReason =
+    'the historical requirement is a range and the corpus does not supply its exact resolved before version';
+  const partialMigrationReason =
+    'the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset';
+  const outcomes = {
+    ...(detectionAdjudicated ? { detectedUpdate } : {}),
+    ...(projectAdjudicated
+      ? {
+          identifiedAffected: prediction.verdict === 'locally-affected',
+          localized: prediction.impactSites.length > 0,
+          falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
+        }
+      : {}),
+  };
+  const notAdjudicated = {
+    ...(!detectionAdjudicated ? { detectedUpdate: exactVersionReason } : {}),
+    ...(!projectAdjudicated
+      ? {
+          identifiedAffected: detectionAdjudicated ? partialMigrationReason : exactVersionReason,
+          localized: detectionAdjudicated ? partialMigrationReason : exactVersionReason,
+          falseSafe: detectionAdjudicated ? partialMigrationReason : exactVersionReason,
+        }
+      : {}),
+  };
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
-    outcomes: {
-      detectedUpdate: prediction.dependencyChanges.some((change) => repinnedNames.has(normalizeName(change.name))),
-      identifiedAffected: prediction.verdict === 'locally-affected',
-      localized: prediction.impactSites.length > 0,
-      falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
-    },
+    outcomes,
+    ...(Object.keys(notAdjudicated).length > 0 ? { notAdjudicated } : {}),
     excluded: null,
   };
 }

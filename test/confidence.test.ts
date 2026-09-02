@@ -619,6 +619,32 @@ describe('reporting never turns an absence into an all-clear', () => {
     assert.equal(verdictFor(affected), 'locally-affected');
   });
 
+  for (const [name, symbol] of [
+    ['parent POM coordinates', 'pom:parent'],
+    ['BOM dependency management', 'pom:dependencyManagement:org.example:managed'],
+    ['POM plugin management', 'pom:pluginManagement:org.example:plugin'],
+  ] as const) {
+    test(`${name} cannot become a source-reachability all-clear`, () => {
+      const contract = planWith({
+        localizationRan: true,
+        breakingChanges: [breaking({ symbols: [symbol] })],
+      }).breakingChanges[0]!;
+
+      assert.equal(verdictFor(contract), 'verification-incomplete');
+      assert.notEqual(verdictFor(contract), 'detected-not-locally-reachable');
+    });
+  }
+
+  test('NuGet and Pub package contracts use the same non-source verdict rule', () => {
+    for (const symbol of ['nuget:msbuild:build/props.targets', 'pub:assets:assets/schema.json']) {
+      const contract = planWith({
+        localizationRan: true,
+        breakingChanges: [breaking({ symbols: [symbol] })],
+      }).breakingChanges[0]!;
+      assert.equal(verdictFor(contract), 'verification-incomplete');
+    }
+  });
+
   describe('reduceVerdict', () => {
     // The one-repository-wide-conclusion reduction, moved here from the
     // benchmark harness (`eval/src/adapters/end-to-end.ts`) so production has

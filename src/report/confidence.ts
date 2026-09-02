@@ -2,6 +2,7 @@ import type { BreakingChange, Ecosystem, RemediationPlan } from '../types.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment, ConfidenceBand, ConfidenceScore } from '../confidence/types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
 import { deriveOverallConfidence } from '../confidence/calibrate.js';
+import { roleContractForChanges } from '../rationale/assess.js';
 import { dependencyEcosystemKey } from '../util/id.js';
 
 /**
@@ -71,6 +72,14 @@ export function verdictFor(change: BreakingChange): FindingVerdict {
   }
 
   if (assessment.localImpact.band === 'none') {
+    // Package-role contracts are consumed by manifests and build tooling, not
+    // through ordinary source call sites. A completed source search therefore
+    // cannot establish that a POM/BOM, NuGet tooling package, or Pub
+    // asset/tooling contract is unreachable. Use the same classification as
+    // the recommendation layer so the repository verdict cannot contradict
+    // its existing "Upgrade after review" conclusion.
+    if (roleContractForChanges([change])) return 'verification-incomplete';
+
     // Distinguishing these two is the entire point of `localizationRan`.
     const notSearched = assessment.localImpact.penalties.some(
       (p) => p.code === 'localization-unavailable' || p.code === 'not-locally-checkable',

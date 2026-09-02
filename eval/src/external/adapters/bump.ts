@@ -1,10 +1,11 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
+import { cleanupTemporaryDirectory } from '../cleanup.ts';
 import type { Selectable } from '../selection.ts';
 import {
   DriftConfigSchema,
@@ -145,6 +146,7 @@ export interface BumpPrediction {
   impactSites: { file: string; line: number; matchedSymbol: string }[];
   verdict: string;
   summary: string;
+  checkedSurfaces: { surface: string; dependency?: string; ecosystem?: string; workspace?: string; status: string; detail: string }[];
 }
 
 const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean', 'detected-not-locally-reachable']);
@@ -222,9 +224,10 @@ export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
       impactSites: (plan?.impactSites ?? []).map((site) => ({ file: site.file, line: site.line, matchedSymbol: site.matchedSymbol })),
       verdict: verdictFromPlan(plan),
       summary: result.summary,
+      checkedSurfaces: (plan?.checkedSurfaces ?? []).map((surface) => ({ ...surface })),
     };
   } finally {
-    await rm(work, { recursive: true, force: true });
+    await cleanupTemporaryDirectory(work);
   }
 }
 

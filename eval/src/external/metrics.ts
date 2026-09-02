@@ -72,6 +72,8 @@ export interface DatasetMetrics {
   /** The exact requirement each `environment-unavailable` exclusion was missing. */
   missingRequirements: Record<string, number>;
   rates: Record<string, Rate>;
+  /** Per-question coverage where adapters explicitly recorded unadjudicated cases. */
+  adjudication: Record<string, { adjudicated: number; notAdjudicated: number; reasons: Record<string, number> }>;
   /** Metrics deliberately not computed, with the reason a reader needs. */
   refusals: Refusal[];
   /** Cases the dataset labels as negatives/controls. Zero means precision is undefined here, whatever the ground-truth flags say. */
@@ -179,10 +181,23 @@ export function computeMetrics(input: {
 
   const rates: Record<string, Rate> = {};
   const refusals: Refusal[] = [];
+  const adjudication: DatasetMetrics['adjudication'] = {};
 
-  for (const [key, label] of Object.entries(OUTCOME_METRICS)) {
+  for (const [key, label] of Object.entries({ ...OUTCOME_METRICS, falseSafe: 'false-safe verdicts' })) {
     const asked = scored.filter((result) => result.outcomes[key as keyof typeof result.outcomes] !== undefined);
-    if (asked.length === 0) continue;
+    const withheld = scored.filter((result) => result.notAdjudicated?.[key as keyof NonNullable<ExternalCaseResult['notAdjudicated']>] !== undefined);
+    if (asked.length > 0 || withheld.length > 0) {
+      adjudication[label] = {
+        adjudicated: asked.length,
+        notAdjudicated: withheld.length,
+        reasons: withheld.reduce<Record<string, number>>((counts, result) => {
+          const reason = result.notAdjudicated?.[key as keyof NonNullable<ExternalCaseResult['notAdjudicated']>];
+          if (reason) counts[reason] = (counts[reason] ?? 0) + 1;
+          return counts;
+        }, {}),
+      };
+    }
+    if (key === 'falseSafe' || asked.length === 0) continue;
     const hits = asked.filter((result) => result.outcomes[key as keyof typeof result.outcomes] === true).length;
     rates[label] = rate(hits, asked.length);
   }
@@ -283,6 +298,7 @@ export function computeMetrics(input: {
     excluded,
     missingRequirements,
     rates,
+    adjudication,
     refusals,
     negativeControls,
     confusion,

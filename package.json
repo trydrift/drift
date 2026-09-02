@@ -39,6 +39,7 @@
     "docs:support": "npm run build && node scripts/generate-support-doc.mjs",
     "eval:accuracy:audit": "npm run build && node --experimental-strip-types eval/src/audit.ts",
     "eval:bench": "npm run build && node --experimental-strip-types eval/src/cli/bench.ts",
+    "eval:compare": "node --experimental-strip-types eval/src/external/compare.ts",
     "eval:cases:import": "node --experimental-strip-types eval/src/corpus/import-fixture.ts",
     "eval:cases:reproduce": "node --experimental-strip-types eval/src/cli/reproduce.ts",
     "eval:corpus:mine": "node --experimental-strip-types eval/src/cli/mine.ts",
