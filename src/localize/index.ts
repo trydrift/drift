@@ -389,7 +389,12 @@ function localizeRuntimeRequirement(
 export function javaImportRootsFromSymbols(symbols: readonly string[]): string[] {
   const roots = new Set<string>();
   for (const raw of symbols) {
-    const value = raw.trim().replace(/[(<].*$/, '');
+    // Cut at the first `(` (a method's parameter list) or `<` (a generic
+    // argument). A plain index scan rather than a `.*$` regex, which
+    // backtracks on multi-line input.
+    const trimmed = raw.trim();
+    const cut = trimmed.search(/[(<]/);
+    const value = cut === -1 ? trimmed : trimmed.slice(0, cut);
     if (!value.includes('.')) continue;
     const parts = value.split('.').filter(Boolean);
     let classIdx = -1;
