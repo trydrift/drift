@@ -382,34 +382,45 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
   if (!prediction) return { ...base, prediction: {}, outcomes: {}, excluded: input.excluded };
 
   const repinnedNames = new Set(prediction.repinned.map((entry) => normalizeName(entry.name)));
-  const detectedUpdate =
-    repinnedNames.size > 0
-      ? prediction.dependencyChanges.some((change) => repinnedNames.has(normalizeName(change.name)))
-      : undefined;
-  const adjudicated = detectedUpdate !== undefined;
-  const unadjudicatedReason =
+  const detectionAdjudicated = repinnedNames.size > 0;
+  const detectedUpdate = detectionAdjudicated
+    ? prediction.dependencyChanges.some((change) => repinnedNames.has(normalizeName(change.name)))
+    : undefined;
+  // TimeMachine's positive label belongs to the complete migrated project,
+  // not to any one dependency in it. An exact subset can adjudicate whether
+  // Drift detected those exact updates, but it cannot inherit the corpus's
+  // whole-project failure label while another direct transition remains an
+  // unresolved range.
+  const projectAdjudicated = detectionAdjudicated && prediction.unresolved.length === 0;
+  const exactVersionReason =
     'the historical requirement is a range and the corpus does not supply its exact resolved before version';
-  return {
-    ...base,
-    prediction: { ...prediction } as Record<string, unknown>,
-    outcomes: adjudicated
+  const partialMigrationReason =
+    'the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset';
+  const outcomes = {
+    ...(detectionAdjudicated ? { detectedUpdate } : {}),
+    ...(projectAdjudicated
       ? {
-          detectedUpdate,
           identifiedAffected: prediction.verdict === 'locally-affected',
           localized: prediction.impactSites.length > 0,
           falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
         }
-      : {},
-    ...(!adjudicated
+      : {}),
+  };
+  const notAdjudicated = {
+    ...(!detectionAdjudicated ? { detectedUpdate: exactVersionReason } : {}),
+    ...(!projectAdjudicated
       ? {
-          notAdjudicated: {
-            detectedUpdate: unadjudicatedReason,
-            identifiedAffected: unadjudicatedReason,
-            localized: unadjudicatedReason,
-            falseSafe: unadjudicatedReason,
-          },
+          identifiedAffected: detectionAdjudicated ? partialMigrationReason : exactVersionReason,
+          localized: detectionAdjudicated ? partialMigrationReason : exactVersionReason,
+          falseSafe: detectionAdjudicated ? partialMigrationReason : exactVersionReason,
         }
       : {}),
+  };
+  return {
+    ...base,
+    prediction: { ...prediction } as Record<string, unknown>,
+    outcomes,
+    ...(Object.keys(notAdjudicated).length > 0 ? { notAdjudicated } : {}),
     excluded: null,
   };
 }
