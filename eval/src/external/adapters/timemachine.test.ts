@@ -69,3 +69,30 @@ test('TimeMachine does not apply whole-project failure truth to a partial exact 
   assert.match(result.notAdjudicated?.localized ?? '', /whole-project failure/);
   assert.match(result.notAdjudicated?.falseSafe ?? '', /whole-project failure/);
 });
+
+test('TimeMachine localization never exceeds affected-identification', () => {
+  // Impact sites present, but the verdict is hedged — not `locally-affected`.
+  const prediction: TimemachinePrediction = {
+    dependencyChanges: [{ name: 'urllib3', from: '1.26.18', to: '2.5.0' }],
+    breakingChanges: [],
+    impactSites: [{ file: 'consumer.py', line: 1, matchedSymbol: 'urllib3' }],
+    verdict: 'verification-incomplete',
+    summary: '',
+    repinned: [{ name: 'urllib3', from: '1.26.18', to: '2.5.0' }],
+    unresolved: [],
+    manifestPath: 'requirements.txt',
+  };
+
+  const result = scoreTimemachine({
+    task: TASK,
+    subset: 'verified',
+    prediction,
+    excluded: null,
+    datasetVersion: 'v',
+    sourceHash: 'h',
+    durationMs: 1,
+  });
+
+  assert.equal(result.outcomes.identifiedAffected, false);
+  assert.equal(result.outcomes.localized, false, 'localized cannot be true where affected is false');
+});
