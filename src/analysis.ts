@@ -4,6 +4,7 @@ import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { RepoProvider } from './repo/provider.js';
 import { detectChanges, isManifestPath, triage, type ManifestSnapshot } from './detect/index.js';
+import { resolveManifestRanges } from './detect/resolve-ranges.js';
 import {
   detectWorkspaces,
   labelWorkspaces,
@@ -146,11 +147,17 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     );
   }
 
-  const changes = labelWorkspaces(detectChanges(snapshots), layouts);
+  const detected = labelWorkspaces(detectChanges(snapshots), layouts);
 
-  if (changes.length === 0) {
+  if (detected.length === 0) {
     return empty('Manifests changed, but no dependency versions moved.');
   }
+
+  // A manifest-only bump states a range (`^8`) with no lockfile to pin it, so
+  // `from`/`to` come back null and `triage` would drop it. Resolve those
+  // ranges against the registry first — only for the changes that need it — so
+  // a package.json-only upgrade is analysed like any other.
+  const changes = await resolveManifestRanges(detected, { logger });
 
   logger.info(`Detected ${changes.length} dependency change(s)`);
 
