@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
-| Run date | 2026-08-27T21:56:03.376Z |
+| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
+| Run date | 2026-09-02T12:02:42.673Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -40,12 +40,33 @@ Every exclusion, with its reason:
 
 ## Results
 
+### Adjudication coverage
+
+Unadjudicated cases remain in the corpus and artifacts, but do not enter the metric denominator.
+
+| Question | Adjudicated | Not adjudicated |
+| --- | ---: | ---: |
+| affected-repository identification rate | 26 | 43 |
+| consumer localization rate | 26 | 43 |
+| dependency-update detection rate | 34 | 35 |
+| false-safe verdicts | 26 | 43 |
+
+Reasons:
+
+- affected-repository identification rate: 8 — the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset
+- affected-repository identification rate: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
+- consumer localization rate: 8 — the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset
+- consumer localization rate: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
+- dependency-update detection rate: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
+- false-safe verdicts: 8 — the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset
+- false-safe verdicts: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
+
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 35/69 (50.7%) | 39.1–62.3% |
-| consumer localization rate | 40/69 (58.0%) | 46.4–69.6% |
-| dependency-update detection rate | 49/69 (71.0%) | 59.4–81.2% |
-| false-safe verdicts | 0/69 (0.0%) | 0.0–0.0% |
+| affected-repository identification rate | 17/26 (65.4%) | 46.2–80.8% |
+| consumer localization rate | 18/26 (69.2%) | 50.0–84.6% |
+| dependency-update detection rate | 32/34 (94.1%) | 85.3–100.0% |
+| false-safe verdicts | 0/26 (0.0%) | 0.0–0.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,9 +78,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: migration-failure-easy | 21/44 (47.7%) | 24/44 (54.5%) | 32/44 (72.7%) |
-| label: migration-failure-hard | 2/2 (100.0%) | 2/2 (100.0%) | 2/2 (100.0%) |
-| label: migration-failure-medium | 12/23 (52.2%) | 14/23 (60.9%) | 15/23 (65.2%) |
+| label: migration-failure-easy | 11/20 (55.0%) | 12/20 (60.0%) | 22/24 (91.7%) |
+| label: migration-failure-hard | — | — | 1/1 (100.0%) |
+| label: migration-failure-medium | 6/6 (100.0%) | 6/6 (100.0%) | 9/9 (100.0%) |
 
 ## What is deliberately not reported
 

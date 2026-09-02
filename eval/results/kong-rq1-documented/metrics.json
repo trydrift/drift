@@ -15,6 +15,13 @@
       "value": 0.793939393939394
     }
   },
+  "adjudication": {
+    "breaking-change detection recall": {
+      "adjudicated": 165,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
   "refusals": [],
   "negativeControls": 16168,
   "confusion": {

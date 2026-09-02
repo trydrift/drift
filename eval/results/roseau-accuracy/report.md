@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Citation | Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau |
 | Ecosystem | maven |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
-| Run date | 2026-08-27T21:50:09.891Z |
+| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
+| Run date | 2026-09-02T11:58:31.706Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -48,12 +48,12 @@ Computed because this corpus supplies real negatives, so a false positive has a 
 | | |
 | --- | --- |
 | True positives | 96 |
-| False positives | 10 |
-| True negatives | 157 |
+| False positives | 11 |
+| True negatives | 156 |
 | False negatives | 4 |
-| Precision | 96/106 (90.6%) |
+| Precision | 96/107 (89.7%) |
 | Recall | 96/100 (96.0%) |
-| F1 | 0.932 |
+| F1 | 0.928 |
 
 ### Breakdown
 

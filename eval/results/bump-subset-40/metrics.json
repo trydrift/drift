@@ -17,19 +17,41 @@
       "value": 0.8717948717948718
     },
     "affected-repository identification rate": {
-      "numerator": 14,
+      "numerator": 17,
       "denominator": 39,
-      "value": 0.358974358974359
+      "value": 0.4358974358974359
     },
     "consumer localization rate": {
-      "numerator": 7,
+      "numerator": 8,
       "denominator": 39,
-      "value": 0.1794871794871795
+      "value": 0.20512820512820512
     },
     "false-safe verdicts": {
-      "numerator": 9,
+      "numerator": 11,
       "denominator": 39,
-      "value": 0.23076923076923078
+      "value": 0.28205128205128205
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 39,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 39,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "consumer localization rate": {
+      "adjudicated": 39,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "false-safe verdicts": {
+      "adjudicated": 39,
+      "notAdjudicated": 0,
+      "reasons": {}
     }
   },
   "refusals": [
@@ -75,9 +97,9 @@
         "value": 0.9375
       },
       "affected-repository identification rate": {
-        "numerator": 7,
+        "numerator": 8,
         "denominator": 16,
-        "value": 0.4375
+        "value": 0.5
       },
       "consumer localization rate": {
         "numerator": 3,
@@ -92,14 +114,14 @@
         "value": 0.9166666666666666
       },
       "affected-repository identification rate": {
+        "numerator": 6,
+        "denominator": 12,
+        "value": 0.5
+      },
+      "consumer localization rate": {
         "numerator": 5,
         "denominator": 12,
         "value": 0.4166666666666667
-      },
-      "consumer localization rate": {
-        "numerator": 4,
-        "denominator": 12,
-        "value": 0.3333333333333333
       }
     },
     "label: DEPENDENCY_LOCK_FAILURE": {
@@ -109,9 +131,9 @@
         "value": 0.5
       },
       "affected-repository identification rate": {
-        "numerator": 0,
+        "numerator": 1,
         "denominator": 2,
-        "value": 0
+        "value": 0.5
       },
       "consumer localization rate": {
         "numerator": 0,
@@ -127,18 +149,18 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.20512820512820512,
-      "high": 0.5128205128205128,
+      "low": 0.28205128205128205,
+      "high": 0.5897435897435898,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.05128205128205128,
-      "high": 0.3076923076923077,
+      "low": 0.07692307692307693,
+      "high": 0.3333333333333333,
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.10256410256410256,
-      "high": 0.358974358974359,
+      "low": 0.15384615384615385,
+      "high": 0.4358974358974359,
       "iterations": 2000
     }
   },

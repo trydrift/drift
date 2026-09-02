@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `3d7939b671b05db95b4014ca55d1155b0f307d5e` |
-| Run date | 2026-08-27T22:37:47.568Z |
+| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
+| Run date | 2026-09-02T12:00:33.174Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -28,24 +28,36 @@ Read this before any rate below.
 | --- | --- |
 | Available in the dataset | 63 |
 | Selected for this run (all) | 63 |
-| Scored | 61 |
-| Excluded | 2 |
+| Scored | 63 |
+| Excluded | 0 |
 | Negative/control cases among the scored | 0 |
-
-Every exclusion, with its reason:
-
-| Reason | Cases |
-| --- | --- |
-| `source-unavailable` | 2 |
 
 ## Results
 
+### Adjudication coverage
+
+Unadjudicated cases remain in the corpus and artifacts, but do not enter the metric denominator.
+
+| Question | Adjudicated | Not adjudicated |
+| --- | ---: | ---: |
+| affected-repository identification rate | 3 | 60 |
+| consumer localization rate | 3 | 60 |
+| dependency-update detection rate | 3 | 60 |
+| false-safe verdicts | 3 | 60 |
+
+Reasons:
+
+- affected-repository identification rate: 60 — the corpus supplies a manifest range rather than an authoritative exact before/after version pair
+- consumer localization rate: 60 — the corpus supplies a manifest range rather than an authoritative exact before/after version pair
+- dependency-update detection rate: 60 — the corpus supplies a manifest range rather than an authoritative exact before/after version pair
+- false-safe verdicts: 60 — the corpus supplies a manifest range rather than an authoritative exact before/after version pair
+
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 42/61 (68.9%) | 57.4–80.3% |
-| consumer localization rate | 38/61 (62.3%) | 50.8–73.8% |
-| dependency-update detection rate | 61/61 (100.0%) | 100.0–100.0% |
-| false-safe verdicts | 6/61 (9.8%) | 3.3–18.0% |
+| affected-repository identification rate | 3/3 (100.0%) | not reported (under 20 cases) |
+| consumer localization rate | 3/3 (100.0%) | not reported (under 20 cases) |
+| dependency-update detection rate | 3/3 (100.0%) | not reported (under 20 cases) |
+| false-safe verdicts | 0/3 (0.0%) | not reported (under 20 cases) |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,9 +69,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: known-breaking-upgrade | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
+| exactVersionAdjudicated: true | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
+| label: known-breaking-upgrade | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
 | versionToIsRange: false | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
-| versionToIsRange: true | 39/58 (67.2%) | 35/58 (60.3%) | 58/58 (100.0%) |
 
 ## What is deliberately not reported
 

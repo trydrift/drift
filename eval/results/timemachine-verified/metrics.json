@@ -12,24 +12,57 @@
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 49,
-      "denominator": 69,
-      "value": 0.7101449275362319
+      "numerator": 32,
+      "denominator": 34,
+      "value": 0.9411764705882353
     },
     "affected-repository identification rate": {
-      "numerator": 35,
-      "denominator": 69,
-      "value": 0.5072463768115942
+      "numerator": 17,
+      "denominator": 26,
+      "value": 0.6538461538461539
     },
     "consumer localization rate": {
-      "numerator": 40,
-      "denominator": 69,
-      "value": 0.5797101449275363
+      "numerator": 18,
+      "denominator": 26,
+      "value": 0.6923076923076923
     },
     "false-safe verdicts": {
       "numerator": 0,
-      "denominator": 69,
+      "denominator": 26,
       "value": 0
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 34,
+      "notAdjudicated": 35,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 35
+      }
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 26,
+      "notAdjudicated": 43,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 35,
+        "the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset": 8
+      }
+    },
+    "consumer localization rate": {
+      "adjudicated": 26,
+      "notAdjudicated": 43,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 35,
+        "the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset": 8
+      }
+    },
+    "false-safe verdicts": {
+      "adjudicated": 26,
+      "notAdjudicated": 43,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 35,
+        "the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset": 8
+      }
     }
   },
   "refusals": [
@@ -53,70 +86,60 @@
   "breakdown": {
     "label: migration-failure-easy": {
       "dependency-update detection rate": {
-        "numerator": 32,
-        "denominator": 44,
-        "value": 0.7272727272727273
+        "numerator": 22,
+        "denominator": 24,
+        "value": 0.9166666666666666
       },
       "affected-repository identification rate": {
-        "numerator": 21,
-        "denominator": 44,
-        "value": 0.4772727272727273
+        "numerator": 11,
+        "denominator": 20,
+        "value": 0.55
       },
       "consumer localization rate": {
-        "numerator": 24,
-        "denominator": 44,
-        "value": 0.5454545454545454
+        "numerator": 12,
+        "denominator": 20,
+        "value": 0.6
       }
     },
     "label: migration-failure-medium": {
       "dependency-update detection rate": {
-        "numerator": 15,
-        "denominator": 23,
-        "value": 0.6521739130434783
+        "numerator": 9,
+        "denominator": 9,
+        "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 12,
-        "denominator": 23,
-        "value": 0.5217391304347826
+        "numerator": 6,
+        "denominator": 6,
+        "value": 1
       },
       "consumer localization rate": {
-        "numerator": 14,
-        "denominator": 23,
-        "value": 0.6086956521739131
+        "numerator": 6,
+        "denominator": 6,
+        "value": 1
       }
     },
     "label: migration-failure-hard": {
       "dependency-update detection rate": {
-        "numerator": 2,
-        "denominator": 2,
-        "value": 1
-      },
-      "affected-repository identification rate": {
-        "numerator": 2,
-        "denominator": 2,
-        "value": 1
-      },
-      "consumer localization rate": {
-        "numerator": 2,
-        "denominator": 2,
+        "numerator": 1,
+        "denominator": 1,
         "value": 1
       }
     }
   },
   "intervals": {
     "dependency-update detection rate": {
-      "low": 0.5942028985507246,
-      "high": 0.8115942028985508,
+      "low": 0.8529411764705882,
+      "high": 1,
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.391304347826087,
-      "high": 0.6231884057971014,
+      "low": 0.46153846153846156,
+      "high": 0.8076923076923077,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.463768115942029,
-      "high": 0.6956521739130435,
+      "low": 0.5,
+      "high": 0.8461538461538461,
       "iterations": 2000
     },
     "false-safe verdicts": {
