@@ -1,0 +1,15 @@
+{
+  "version": "drift-external-run-v1",
+  "runId": "swe-bump-213",
+  "datasetId": "swe-bump",
+  "createdAt": "2026-09-02T16:25:53.283Z",
+  "driftCommit": "8ee01cd80f063c1e3f940bde9282254343436c9f",
+  "driftTreeDirty": false,
+  "harnessVersion": "8ee01cd80f063c1e3f940bde9282254343436c9f",
+  "datasetVersion": "unresolved",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-213",
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": ""
+}
