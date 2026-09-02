@@ -380,6 +380,70 @@ const PROSE_RULES: ProseRule[] = [
     symbolGroup: 1,
     summarize: (m) => `\`${m[1]}\` now returns ${m[2]?.trim()}`,
   },
+  /*
+   * Signature changes stated in prose.
+   *
+   * `change_signature` is the single largest scored slice of Kong's category
+   * task, and before these rules Drift read almost every one of those commits
+   * as a bare `behaviour-change` — it saw the break, it just could not name
+   * the kind. `prose-now-requires` above already catches "`x` now takes …";
+   * these cover the rest of how a maintainer writes "the shape of this call
+   * changed". A message legitimately describing several changes still yields
+   * several findings — `matchProse` collects every rule that fires — so these
+   * running alongside `prose-breaking-change-footer` is intended, not a bug.
+   *
+   * The backtick-quoted forms carry no more false-positive risk than any
+   * other rule in this table. The two symbol-less forms fire only on the
+   * literal word "signature" next to a change verb, or on an explicit
+   * `fn(a, b) -> fn(b)` call-shape rewrite with the *same* name on both
+   * sides — phrasings that do not occur in a commit that changed nothing.
+   */
+  {
+    id: 'prose-signature-of-symbol',
+    kind: 'signature-change',
+    // The trailing change word is required: "signature of `parse`" on its own
+    // is as likely to be documentation as a break.
+    pattern: /\b(?:call|constructor|method|function|callback)?\s*signature\s+of\s+`([\w$.]+)`[^.\n]{0,40}?\b(?:changed|changes|change\b|different|new\b)/i,
+    symbolGroup: 1,
+    summarize: (m) => `the signature of \`${m[1]}\` changed`,
+  },
+  {
+    id: 'prose-symbol-signature-changed',
+    kind: 'signature-change',
+    pattern: /`([\w$.]+)`(?:\([^`]*\))?(?:\(\))?\s+(?:call|constructor|method)?\s*signature\s+(?:has\s+|have\s+|is\s+|was\s+|were\s+)?(?:been\s+)?\bchanged\b/i,
+    symbolGroup: 1,
+    summarize: (m) => `the signature of \`${m[1]}\` changed`,
+  },
+  {
+    id: 'prose-nth-argument-of-symbol',
+    kind: 'signature-change',
+    pattern: /\b(?:first|second|third|fourth|fifth|sixth|last|\d+(?:st|nd|rd|th))\s+(?:positional\s+)?(?:argument|parameter|param|arg)\s+(?:for|of|to|in|passed\s+to)\s+`([\w$.]+)`/i,
+    symbolGroup: 1,
+    summarize: (m) => `an argument of \`${m[1]}\` changed`,
+  },
+  {
+    id: 'prose-symbol-no-longer-takes',
+    kind: 'signature-change',
+    pattern: /`([\w$.]+)`(?:\([^`]*\))?(?:\(\))?(?:[\w\s,`()[\]{}$.]{0,40}?)\s+no\s+longer\s+(?:takes|accepts|expects|requires)\s+(.{2,90}?)(?:[.;]|$)/i,
+    symbolGroup: 1,
+    summarize: (m) => `\`${m[1]}\` no longer takes ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-signature-changed-phrase',
+    kind: 'signature-change',
+    pattern: /\b(?:call|constructor|method|function|callback)?\s*signature\s+(?:of\b[^.\n]{0,80}?)?\s*(?:has\s+|have\s+|is\s+|was\s+|were\s+)?(?:been\s+)?\bchanged\b|\bchanged\s+(?:the\s+)?(?:\w+\s+){0,3}signature\b/i,
+    symbolGroup: 0,
+    summarize: () => 'a function signature changed',
+  },
+  {
+    id: 'prose-call-shape-rewrite',
+    kind: 'signature-change',
+    // One level of nested parens on each side — `fn(other(), x)` is common —
+    // and the same callee name required on both sides via the backreference.
+    pattern: /\b(?:refactor(?:ed|ing)?\s+)?([\w$.]+)\s*\((?:[^()]|\([^()]*\))*\)\s*(?:->|→|into)\s*\1\s*\(/i,
+    symbolGroup: 0,
+    summarize: () => 'a call signature was rewritten',
+  },
   {
     /**
      * "`x` must now be …" / "`x` is now …" — the same statement in the other

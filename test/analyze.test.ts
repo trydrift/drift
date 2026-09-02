@@ -203,6 +203,51 @@ describe('prose rules', () => {
       false,
     );
   });
+
+  describe('signature changes are named as such, not folded into behaviour-change', () => {
+    const readsSignatureChange = (line: string) =>
+      matchProse(line).some((m) => m.kind === 'signature-change');
+
+    test('"the signature of `x` changed", either word order', () => {
+      assert.ok(readsSignatureChange('BREAKING CHANGE: constructor signature of `TagManager` has changed.'));
+      assert.ok(readsSignatureChange('the call signature of `useSelector` changed'));
+      assert.ok(readsSignatureChange('We changed the signature of the multi-series mapping function'));
+      assert.ok(
+        readsSignatureChange(
+          'The signature of the mapping function has changed from (data, series, index) to (data, index, series)',
+        ),
+      );
+    });
+
+    test('"`x` no longer takes …" is a signature change, and still also a behaviour-change', () => {
+      const matches = matchProse('BREAKING CHANGE: `AwsLogDriver` no longer takes construct properties.');
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+      // `prose-no-longer` still fires too — a caller wants both framings.
+      assert.ok(matches.some((m) => m.ruleId === 'prose-no-longer'));
+    });
+
+    test('an ordinal argument tied to a backticked symbol', () => {
+      assert.ok(
+        readsSignatureChange('The second argument for `useIndeterminateChecked` is now an object of options'),
+      );
+      assert.ok(readsSignatureChange('`onError` is no longer the second parameter of `useController`'));
+    });
+
+    test('an explicit call-shape rewrite with the same name on both sides', () => {
+      assert.ok(readsSignatureChange('fetch(Resource.create(), {}, body) -> fetch(Resource.create(), body)'));
+      assert.ok(
+        readsSignatureChange('Refactor fetchJSON(instance = {}, url, compression) into fetchJSON(instance = {}, options)'),
+      );
+    });
+
+    test('does not fire on a commit that left the signature alone', () => {
+      assert.equal(readsSignatureChange('The public signature is unchanged in this release.'), false);
+      assert.equal(readsSignatureChange('Document the signature of `parse` in the README.'), false);
+      assert.equal(readsSignatureChange('Rename the internal helper; no signature has not changed here'), false);
+      // A different function on each side of the arrow is a data-flow arrow, not a rewrite.
+      assert.equal(readsSignatureChange('map(xs) -> filter(xs)'), false);
+    });
+  });
 });
 
 describe('OpenAPI diffing', () => {
