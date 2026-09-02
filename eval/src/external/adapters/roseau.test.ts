@@ -107,3 +107,51 @@ test('Roseau classifies source packages absent from the 267-case truth table', (
     assert.match(classified.reason, /absent from results\/bench\/jezek_dietrich\.json/);
   }
 });
+
+test('toolBinaryConsensus: near-unanimous reference verdict, else null', async () => {
+  const { toolBinaryConsensus } = await import('./roseau.ts');
+  const b = (isBinaryBreaking: boolean) => ({ isBinaryBreaking, isSourceBreaking: isBinaryBreaking });
+  // 4/4 and 3/4 count as a consensus; 2/4 does not.
+  assert.equal(toolBinaryConsensus({ a: b(true), c: b(true), d: b(true), e: b(true) }), true);
+  assert.equal(toolBinaryConsensus({ a: b(true), c: b(true), d: b(true), e: b(false) }), true);
+  assert.equal(toolBinaryConsensus({ a: b(true), c: b(true), d: b(false), e: b(false) }), null);
+  assert.equal(toolBinaryConsensus({ a: b(false), c: b(false), d: b(false), e: b(false) }), false);
+  assert.equal(toolBinaryConsensus({ a: b(true), c: b(true) }), null); // too few tools
+});
+
+test('scoreRoseau excludes a case whose GroundTruth the kit\'s own tools contradict', async () => {
+  const { scoreRoseau } = await import('./roseau.ts');
+  const b = (isBinaryBreaking: boolean) => ({ isBinaryBreaking, isSourceBreaking: true });
+  const contested = scoreRoseau({
+    entry: {
+      name: 'membersIfazeMethodParamAdd',
+      groundTruthBinaryBreaking: false, // GroundTruth: not breaking
+      groundTruthSourceBreaking: true,
+      recorded: { Revapi: b(true), Japicmp: b(true), RoseauJar: b(true), RoseauJdtSources: b(true) },
+    },
+    changes: [{ kind: 'member-removed', symbol: 'x', detail: '' }],
+    diffUnavailable: null,
+    datasetVersion: 'v',
+    sourceHash: 'h',
+    toolLocator: 'loc',
+    durationMs: 1,
+  });
+  assert.equal(contested.excluded?.kind, 'ground-truth-contested');
+  assert.equal(contested.outcomes && Object.keys(contested.outcomes).length, 0);
+
+  const agreed = scoreRoseau({
+    entry: {
+      name: 'realNegative',
+      groundTruthBinaryBreaking: false,
+      groundTruthSourceBreaking: false,
+      recorded: { Revapi: b(false), Japicmp: b(false), RoseauJar: b(false), RoseauJdtSources: b(false) },
+    },
+    changes: [],
+    diffUnavailable: null,
+    datasetVersion: 'v',
+    sourceHash: 'h',
+    toolLocator: 'loc',
+    durationMs: 1,
+  });
+  assert.equal(agreed.excluded, null);
+});

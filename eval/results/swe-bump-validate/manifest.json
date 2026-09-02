@@ -1,0 +1,15 @@
+{
+  "version": "drift-external-run-v1",
+  "runId": "swe-bump-validate",
+  "datasetId": "swe-bump",
+  "createdAt": "2026-09-02T16:58:27.717Z",
+  "driftCommit": "6778f5db5a357acf5e132246b5235629ecfd6081",
+  "driftTreeDirty": false,
+  "harnessVersion": "6778f5db5a357acf5e132246b5235629ecfd6081",
+  "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-validate",
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "Detection only. Every task here is a known-breaking upgrade — the corpus was collected by bumping packages until `tsc` failed — so there is no negative population and no precision or false-positive rate can be computed from it. The questions it does answer are whether Drift sees the update, decides the repository is affected, points at consumer code, and above all whether it ever tells a developer with a broken build that they are fine.\n\nInstallation and the `tsc` oracle are not run in this track. These projects pin four different Node majors and three package managers against lockfiles from 2022–2024, and a `yarn install` that fails in 2026 is a fact about the registry and this machine rather than about Drift. Keeping the oracle separate lets an install failure exclude a case from repair questions without discarding the detection answer."
+}

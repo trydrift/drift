@@ -98,6 +98,13 @@ export const exclusionKindSchema = z.enum([
   'reproduction-failed',
   /** The dataset's label does not map onto anything Drift represents, so a comparison would not be meaningful. */
   'label-unmappable',
+  /**
+   * The dataset's own reference tools near-unanimously disagree with its
+   * ground-truth label for this case, so scoring against that label would
+   * measure the corpus's internal contradiction rather than the tool. The
+   * count is reported; the case is not silently dropped.
+   */
+  'ground-truth-contested',
   /** Drift does not support this ecosystem or file type at the stage under test. A real, reportable product limit. */
   'out-of-scope-for-drift',
   /** Excluded by the run's own selection (limit/sample), not by anything about the case. */
