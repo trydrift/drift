@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyze, matchProse } from '../dist/analyze/index.js';
+import { analyze, declaresBreakingChange, matchProse } from '../dist/analyze/index.js';
 import { diffSpecs } from '../dist/evidence/spec/openapi.js';
 import {
   acceptsCallOfArity,
@@ -272,6 +272,36 @@ describe('prose rules', () => {
       const matches = matchProse('`render` was removed; the callback argument was removed from the new API');
       assert.ok(matches.some((m) => m.kind === 'removed-export'));
       assert.ok(matches.some((m) => m.kind === 'signature-change'));
+    });
+
+    test('anchored:true keeps a refinement whose anchor is a line or two up', () => {
+      // The footer sits above the sentence in a real multi-line commit body.
+      const body = matchProse('the encode method is now synchronous', { anchored: true });
+      assert.ok(body.some((m) => m.kind === 'signature-change'));
+      // Without the anchor, the same sentence is not evidence of a break.
+      assert.deepEqual(matchProse('the encode method is now synchronous'), []);
+    });
+  });
+
+  describe('declaresBreakingChange — the marker, not the words', () => {
+    test('recognises the Conventional Commits footer in its real spellings', () => {
+      for (const t of [
+        'feat: x\n\nBREAKING CHANGE: the API moved',
+        'BREAKING-CHANGE: dropped node 12',
+        'BREAKING CHANGES: several',
+        '*** BREAKING CHANGE ***\nObservable.from no longer supports the map fn',
+        'BREAKING CHANGE - Observable.from no longer supports the optional map function',
+        '## Breaking Changes\n\n- `foo` removed',
+      ]) {
+        assert.equal(declaresBreakingChange(t), true, JSON.stringify(t));
+      }
+    });
+
+    test('does not fire on "breaking change" sitting inside a changelog bullet', () => {
+      const kuzzleStyle =
+        'Adapt ES service\n\n - `deleteByQuery`: **breaking change** does not return ids\n' +
+        '**breaking change** `truncateCollection` does not return `acknowledged` anymore';
+      assert.equal(declaresBreakingChange(kuzzleStyle), false);
     });
   });
 });

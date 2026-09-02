@@ -478,7 +478,7 @@ const PROSE_RULES: ProseRule[] = [
     kind: 'signature-change',
     refinement: true,
     pattern:
-      /\b(?:changed?|changing|updated?|updating|revamp(?:ed)?|rework(?:ed)?|adjust(?:ed)?|modif(?:y|ied)|switch(?:ed)?|new)\s+(?:the\s+)?[\w`.$()/,&\s-]{0,45}?\bsignatures?\b|\bsignatures?\s+(?:of\b[^.\n]{0,60}?)?\s*(?:has\s+|have\s+|is\s+|was\s+|were\s+|now\s+)/i,
+      /\b(?:changed?|changing|updated?|updating|revamp(?:ed)?|rework(?:ed)?|adjust(?:ed)?|modif(?:y|ied)|switch(?:ed)?|new|different|generic\s+single)\s+(?:the\s+)?[\w`.$()/,&\s-]{0,45}?\bsignatures?\b|\bsignatures?\s+(?:of\b[^.\n]{0,60}?)?\s*(?:has\s+|have\s+|is\s+|was\s+|were\s+|now\s+|changed|change[ds]|updated?)\b|\b(?:two|multiple|separate|distinct|overloaded)\s+signatures?\b|\binterfaces?\s+(?:has\s+|have\s+)?changed\b/i,
     symbolGroup: 0,
     summarize: () => 'a function signature changed',
   },
@@ -486,8 +486,38 @@ const PROSE_RULES: ProseRule[] = [
     id: 'prose-argument-list-changed',
     kind: 'signature-change',
     refinement: true,
-    pattern:
-      /\b(?:arg(?:ument)?|param(?:eter)?)s?\s+order\b|\bargs?\s+now\s+(?:given|passed|taken)\b|\bno\s+longer\s+(?:accepts?|takes?|supports?|allows?|passes?)\s+(?:an?\s+|the\s+)?(?:`?[\w$.]+`?\s+)?(?:arg(?:ument)?|param(?:eter)?|result\s+selector|selector|callback)\b|\b(?:result\s+selector|`?thisArg`?|this\s+argument|callback\s+argument)\s+(?:is\s+|was\s+|has\s+been\s+)?removed\b|\b(?:use|using|switch(?:ed)?\s+to|replaced?\s+.{0,30}?with|pass(?:ing)?)\s+(?:an?\s+)?(?:options?|config(?:uration)?)\s+object\b|\b(?:options?|config(?:uration)?)\s+object\s+(?:as\s+)?(?:the\s+)?(?:arg(?:ument)?|param(?:eter)?)\b|\bparam(?:eter)?s?\s+(?:are|is)\s+no\s+longer\s+optional\b/i,
+    // Argument-list edits with no word "signature": reordering, a removed or
+    // added positional argument, a switch to an options object, a `thisArg`
+    // dropped, "call pattern no longer available". Every branch names the
+    // parameter list explicitly.
+    pattern: new RegExp(
+      [
+        String.raw`\b(?:arg(?:ument)?|param(?:eter)?)s?\s+order\b`,
+        String.raw`\bargs?\s+now\s+(?:given|passed|taken)\b`,
+        String.raw`\b(?:standardi[sz]e|standardi[sz]ed)\s+(?:the\s+)?arg(?:ument)?s?\b`,
+        String.raw`\barg(?:ument)?s?\s+(?:have\s+been\s+|were\s+|are\s+|been\s+)?(?:swapped|reordered|re-ordered)\b`,
+        "\\b`?[\\w$.]+`?\\s+(?:arg(?:ument)?|param(?:eter)?)s?\\s+(?:(?:to|of|from|in|for)\\s+`?[\\w$.]+`?\\s+)?(?:have\\s+|has\\s+|have\\s+been\\s+|has\\s+been\\s+|is\\s+|are\\s+|was\\s+|were\\s+|been\\s+)?(?:removed|added|dropped|changed)\\b",
+        String.raw`\breturn\s+types?\s+(?:has\s+|have\s+|now\s+)?(?:changed|change[ds])\b`,
+        String.raw`\bupdate\s+[\w$.()]+\s+to\s+return\b`,
+        String.raw`\btype\s+changed\s+from\b`,
+        "\\breplaced?\\s+[\\w$.()`]{0,30}?\\s+args?\\s+w(?:ith|/)\\b",
+        "\\b(?:removed?|dropped?|added?)\\s+(?:the\\s+|a\\s+|an\\s+)?(?:deprecated\\s+|new\\s+|optional\\s+|required\\s+)?`?[\\w$.]+`?\\s+(?:arg(?:ument)?|param(?:eter)?)s?\\b",
+        String.raw`\bno\s+longer\s+(?:accepts?|takes?|supports?|allows?|passes?)\b[^.\n]{0,45}?(?:arg(?:ument)?s?|param(?:eter)?s?|[Ss]elector|callbacks?|thisArg)\b`,
+        String.raw`\bcall\s+pattern\s+is\s+no\s+longer\b`,
+        String.raw`\bis\s+no\s+longer\s+(?:a\s+)?valid\s+call\b`,
+        "\\b(?:`?thisArg`?|this\\s+argument)\\b[^.\\n]{0,40}?\\b(?:removed|no\\s+longer|default|undefined|dropped)\\b",
+        String.raw`\b(?:requires?|required|takes?|needs?|accepts?|expects?)\s+(?:a\s+|an\s+|the\s+)?(?:new|additional|extra|second|third|fourth)\s+(?:constructor\s+)?(?:arg(?:ument)?|param(?:eter)?)s?\b`,
+        String.raw`\b(?:constructor|function|method)\s+(?:signature\s+)?(?:now\s+)?(?:requires?|takes?|accepts?|expects?|required)\b`,
+        String.raw`\bis\s+no\s+longer\s+(?:the\s+)?(?:first|second|third|fourth|fifth|last|\d+(?:st|nd|rd|th))\s+(?:arg(?:ument)?|param(?:eter)?)\b`,
+        String.raw`\bnow\s+(?:have|has)\s+(?:two|three|multiple|several)\s+(?:arg(?:ument)?|param(?:eter)?)s?\b`,
+        String.raw`\bnow\s+(?:two|three)\s+param(?:eter)?s\b`,
+        "\\b(?:use|using|takes?|expects?|switch(?:ed)?\\s+`?[\\w$.]+`?(?:\\s+setting)?\\s+to|switch(?:ed)?\\s+to|pass(?:ing)?|is\\s+now|are\\s+now|it\\s+is\\s+now)\\s+(?:an?\\s+|two\\s+|the\\s+)?(?:object\\s+options?|options?\\s+(?:object|hash)|config(?:uration)?\\s+(?:object|hash)|`?[\\w$.]+`?\\s+option\\b)",
+        String.raw`\b(?:options?|config(?:uration)?)\s+(?:object|hash)\s+(?:as\b|instead\b|for\b)`,
+        String.raw`\bparam(?:eter)?s?\s+(?:are|is)\s+no\s+longer\s+optional\b`,
+        String.raw`\bformerly\s+a\s+config\s+object\b`,
+      ].join('|'),
+      'i',
+    ),
     symbolGroup: 0,
     summarize: () => 'an argument list changed',
   },
@@ -496,7 +526,7 @@ const PROSE_RULES: ProseRule[] = [
     kind: 'signature-change',
     refinement: true,
     pattern:
-      /\b(?:make[s]?|made|turn(?:ed)?)\s+[\w`.$()]+\s+(?:in)?to\s+(?:an?\s+)?async\b|\b(?:is|are)\s+now\s+async\b|\basync\b[^.\n]{0,40}?\b(?:callback|promise|await|sync)\b|\bnow\s+returns?\s+(?:a\s+|an\s+)?(?:promise|observable|thenable)\b|\bnow\s+return\s+promises\b|\b(?:update|change)\s+(?:the\s+)?return\s+types?\b|\bdrop(?:ped|s)?\s+(?:support\s+for\s+)?callbacks?\b|\bremove[d]?\s+callback\s+support\b/i,
+      /\b(?:make[s]?|made|turn(?:ed)?|change)\s+[\w`#.$()"\s]{1,40}?\s+(?:(?:in)?to\s+)?(?:be\s+)?(?:an?\s+)?a?sync(?:hronous)?(?:\s+function)?\b|\b(?:is|are|be)\s+(?:now\s+|an?\s+)*a?sync(?:hronous)?(?:\s+function|\s+now)?\b|\bnow\s+a?sync(?:hronous)?\b|\ba?sync\s+now\b|\basync\b[^.\n]{0,40}?\b(?:callback|promise|await|sync)\b|\b(?:callback|promise|sync)s?\b[^.\n]{0,40}?\basync\b|\bpromises?\s+instead\s+of\s+(?:using\s+)?callbacks?\b|\bnow\s+returns?\s+(?:a\s+|an\s+)?(?:promise|observable|thenable|query)\b|\bnow\s+return\s+promises\b|\breturns?\s+[\w"']+,?\s+not\s+(?:a\s+)?(?:promise|callback|query)\b|\b(?:needs?|has|have|dosnt\s+wait|doesn'?t\s+wait)\s+to\s+be\s+awaited\b|\bmust\s+(?:now\s+)?be\s+awaited\b|\b(?:update|change|updated)\s+(?:the\s+)?return\s+types?\b|\bdrop(?:ped|s)?\s+(?:support\s+for\s+)?callbacks?\b|\bremove[d]?\s+callback\s+support\b|\bno\s+(?:longer\s+)?(?:takes?|accepts?|using)\s+(?:a\s+|the\s+)?callbacks?\b/i,
     symbolGroup: 0,
     summarize: () => 'a callback/return signature changed',
   },
@@ -597,8 +627,51 @@ export interface ProseMatch {
   refinement?: boolean;
 }
 
+/**
+ * Options for {@link matchProse}.
+ *
+ * `anchored` says the surrounding text has already declared a breaking change —
+ * a Conventional Commits `BREAKING CHANGE:` footer, or a changelog "Breaking
+ * Changes" heading — somewhere other than this line. A refinement rule
+ * (see {@link ProseRule.refinement}) then keeps its match even with no
+ * non-refinement match on the *same* line, because the footer that anchors it
+ * is a line or two up. Callers that see the whole message (`fromProseEvidence`)
+ * pass this; a caller matching one line in isolation does not.
+ */
+export interface MatchProseOptions {
+  anchored?: boolean;
+}
+
+/**
+ * True when `text` carries an explicit, format-level breaking-change
+ * declaration — a Conventional Commits `BREAKING CHANGE:` footer (the colon,
+ * an en/em dash, `*** … ***`, or a bare line), or a changelog "Breaking
+ * Changes" heading.
+ *
+ * Deliberately *not* the words "breaking change" appearing mid-sentence: a
+ * changelog bullet like `` - `deleteByQuery`: **breaking change** … `` states
+ * a break but is not the marker, and letting the anchor match it would let a
+ * refinement rule fire on a line the footer rule itself would not.
+ */
+export function declaresBreakingChange(text: string): boolean {
+  for (const raw of text.split('\n')) {
+    const line = raw
+      .replace(/\r$/, '')
+      .replace(/^\s*[-*>]+\s+/, '') // a list bullet
+      .replace(/\*{1,3}([^*\n]+?)\*{1,3}/g, '$1') // markdown emphasis wrappers
+      .replace(/\s*[-*=]{2,}\s*$/, '') // trailing rule/decoration, e.g. `BREAKING CHANGE ***`
+      .trim();
+    // The marker at the head of a line, followed by its delimiter — `:`, a
+    // dash, `*** … ***` (now stripped to nothing), or the end of the line.
+    // Not the words appearing after other prose on the line.
+    if (/^BREAKING[ -]CHANGES?\b[ \t]*(?::|[-–—][ \t]|$)/i.test(line)) return true;
+    if (/^#{1,6}[ \t].*\bbreaking\s+changes?\b/i.test(line)) return true;
+  }
+  return false;
+}
+
 /** Run every prose rule over a single changelog/release-note line. */
-export function matchProse(passage: string): ProseMatch[] {
+export function matchProse(passage: string, opts: MatchProseOptions = {}): ProseMatch[] {
   const out: ProseMatch[] = [];
   const text = passage.replace(/^[-*+]\s+/, '').trim();
   if (!text) return out;
@@ -641,9 +714,11 @@ export function matchProse(passage: string): ProseMatch[] {
   }
 
   // A refinement match specialises the kind of a break another rule found on
-  // this line; it is never the sole evidence a line is breaking. If nothing
-  // else matched, the refinements go with it.
-  if (out.some((m) => !m.refinement)) return out;
+  // this line; it is never the sole evidence a line is breaking. Keep it when
+  // a same-line rule matched, or when the caller says the message declared a
+  // breaking change elsewhere (the `BREAKING CHANGE:` footer whose body this
+  // line is). Otherwise the refinements go with the empty result.
+  if (opts.anchored || out.some((m) => !m.refinement)) return out;
   return out.filter((m) => !m.refinement);
 }
 
