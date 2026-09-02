@@ -119,9 +119,9 @@ export default function Home() {
             <span aria-hidden>·</span>
             <span>{proof.recordings} recorded analyses</span>
             <span aria-hidden>·</span>
-            <a href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
+            <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
               Public benchmarks
-            </a>
+            </Link>
           </p>
         </section>
 
