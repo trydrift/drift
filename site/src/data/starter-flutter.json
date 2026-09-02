@@ -6,10 +6,10 @@
   "language": "Dart",
   "repo": "https://github.com/bizz84/starter_architecture_flutter_firebase",
   "blurb": "A production-shaped Flutter application with exact hosted packages in its committed Pub lockfile.",
-  "capturedAt": "2026-09-01T14:09:55.083Z",
+  "capturedAt": "2026-09-02T18:28:07.627Z",
   "commit": "c5b1940cbd6b2647a39394a9f4e516ad2c332131",
-  "engine": "ee5654bba156d0af",
-  "durationMs": 34304,
+  "engine": "0f302818dc27799c",
+  "durationMs": 53619,
   "packagesChecked": 20,
   "manifests": [
     "pubspec.yaml",
@@ -22,7 +22,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 705,
+      "at": 479,
       "phase": "Looking for manifests",
       "detail": "bizz84/starter_architecture_flutter_firebase",
       "done": 0,
@@ -30,7 +30,7 @@
     },
     {
       "type": "progress",
-      "at": 794,
+      "at": 526,
       "phase": "Reading the workspace",
       "detail": "5 packages · undeclared",
       "done": 0,
@@ -38,7 +38,7 @@
     },
     {
       "type": "progress",
-      "at": 808,
+      "at": 532,
       "phase": "Reading manifest",
       "detail": "pubspec.yaml",
       "done": 0,
@@ -46,7 +46,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -90,7 +90,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -134,7 +134,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -178,7 +178,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -222,7 +222,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -266,7 +266,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -310,7 +310,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -354,7 +354,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -398,7 +398,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -442,7 +442,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -486,7 +486,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -530,7 +530,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -574,7 +574,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -618,7 +618,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#rxdart@0.28.0",
         "name": "rxdart",
@@ -662,7 +662,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#shared_preferences@2.5.3",
         "name": "shared_preferences",
@@ -706,7 +706,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -750,7 +750,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -794,7 +794,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 813,
+      "at": 539,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -838,7 +838,7 @@
     },
     {
       "type": "progress",
-      "at": 813,
+      "at": 539,
       "phase": "Reading manifest",
       "detail": "android/build.gradle",
       "done": 0,
@@ -846,7 +846,7 @@
     },
     {
       "type": "progress",
-      "at": 813,
+      "at": 540,
       "phase": "Reading manifest",
       "detail": "android/app/build.gradle",
       "done": 0,
@@ -854,7 +854,7 @@
     },
     {
       "type": "progress",
-      "at": 814,
+      "at": 540,
       "phase": "Reading manifest",
       "detail": "ios/Podfile",
       "done": 0,
@@ -862,7 +862,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 816,
+      "at": 544,
       "candidate": {
         "id": "ios/Podfile#FirebaseFirestore@11.10.0",
         "name": "FirebaseFirestore",
@@ -906,7 +906,7 @@
     },
     {
       "type": "progress",
-      "at": 816,
+      "at": 544,
       "phase": "Reading manifest",
       "detail": "macos/Podfile",
       "done": 0,
@@ -914,7 +914,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 817,
+      "at": 545,
       "candidate": {
         "id": "macos/Podfile#FirebaseFirestore@11.10.0",
         "name": "FirebaseFirestore",
@@ -958,7 +958,7 @@
     },
     {
       "type": "progress",
-      "at": 817,
+      "at": 545,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -966,7 +966,7 @@
     },
     {
       "type": "progress",
-      "at": 817,
+      "at": 546,
       "phase": "Checking registries",
       "detail": "20 direct dependencies",
       "done": 0,
@@ -974,7 +974,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 817,
+      "at": 547,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -1018,7 +1018,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 547,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -1062,7 +1062,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 549,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -1106,7 +1106,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 551,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -1150,7 +1150,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 551,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -1194,7 +1194,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 551,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -1238,7 +1238,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 552,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -1282,7 +1282,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 552,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -1326,7 +1326,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 552,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -1370,7 +1370,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 555,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -1414,7 +1414,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 555,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -1458,7 +1458,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 556,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -1502,7 +1502,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 818,
+      "at": 556,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -1546,7 +1546,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 819,
+      "at": 556,
       "candidate": {
         "id": "pubspec.yaml#rxdart@0.28.0",
         "name": "rxdart",
@@ -1590,7 +1590,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 819,
+      "at": 557,
       "candidate": {
         "id": "pubspec.yaml#shared_preferences@2.5.3",
         "name": "shared_preferences",
@@ -1634,7 +1634,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 819,
+      "at": 567,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -1678,7 +1678,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 819,
+      "at": 568,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -1722,7 +1722,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 819,
+      "at": 569,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -1766,7 +1766,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 819,
+      "at": 570,
       "candidate": {
         "id": "ios/Podfile#FirebaseFirestore@11.10.0",
         "name": "FirebaseFirestore",
@@ -1810,7 +1810,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 819,
+      "at": 571,
       "candidate": {
         "id": "macos/Podfile#FirebaseFirestore@11.10.0",
         "name": "FirebaseFirestore",
@@ -1854,116 +1854,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 900,
-      "candidate": {
-        "id": "pubspec.yaml#cupertino_icons@1.0.8",
-        "name": "cupertino_icons",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.8",
-        "latest": "1.0.9",
-        "selected": "1.0.9",
-        "safeLatest": "1.0.9",
-        "publishedVersions": [
-          "1.0.9"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 900,
-      "phase": "Outdated",
-      "detail": "cupertino_icons 1.0.8 → 1.0.9",
-      "done": 1,
-      "total": 20
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 901,
-      "candidate": {
-        "id": "pubspec.yaml#equatable@2.0.7",
-        "name": "equatable",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.0.7",
-        "latest": "2.1.0",
-        "selected": "2.1.0",
-        "safeLatest": "2.1.0",
-        "publishedVersions": [
-          "2.1.0",
-          "2.0.8"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 901,
-      "phase": "Outdated",
-      "detail": "equatable 2.0.7 → 2.1.0",
-      "done": 2,
-      "total": 20
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 905,
+      "at": 1001,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -2027,46 +1918,28 @@
     },
     {
       "type": "progress",
-      "at": 905,
+      "at": 1001,
       "phase": "Outdated",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
-      "done": 3,
+      "done": 1,
       "total": 20
     },
     {
       "type": "candidate-upsert",
-      "at": 910,
+      "at": 1002,
       "candidate": {
-        "id": "pubspec.yaml#firebase_auth@5.5.2",
-        "name": "firebase_auth",
+        "id": "pubspec.yaml#cupertino_icons@1.0.8",
+        "name": "cupertino_icons",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "5.5.2",
-        "latest": "6.6.1",
-        "selected": "5.7.0",
-        "safeLatest": "5.7.0",
+        "current": "1.0.8",
+        "latest": "1.0.9",
+        "selected": "1.0.9",
+        "safeLatest": "1.0.9",
         "publishedVersions": [
-          "6.6.1",
-          "6.6.0",
-          "6.5.7",
-          "6.5.6",
-          "6.5.5",
-          "6.5.4",
-          "6.5.3",
-          "6.5.2",
-          "6.5.1",
-          "6.5.0",
-          "6.4.0",
-          "6.3.0",
-          "6.2.0",
-          "6.1.4",
-          "6.1.3",
-          "6.1.2",
-          "6.1.1",
-          "6.1.0",
-          "5.7.0"
+          "1.0.9"
         ],
         "provenance": {
           "kind": "runtime",
@@ -2099,15 +1972,70 @@
     },
     {
       "type": "progress",
-      "at": 910,
+      "at": 1002,
       "phase": "Outdated",
-      "detail": "firebase_auth 5.5.2 → 5.7.0",
-      "done": 4,
+      "detail": "cupertino_icons 1.0.8 → 1.0.9",
+      "done": 2,
       "total": 20
     },
     {
       "type": "candidate-upsert",
-      "at": 913,
+      "at": 1025,
+      "candidate": {
+        "id": "pubspec.yaml#equatable@2.0.7",
+        "name": "equatable",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.0.7",
+        "latest": "2.1.0",
+        "selected": "2.1.0",
+        "safeLatest": "2.1.0",
+        "publishedVersions": [
+          "2.1.0",
+          "2.0.8"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1025,
+      "phase": "Outdated",
+      "detail": "equatable 2.0.7 → 2.1.0",
+      "done": 3,
+      "total": 20
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1030,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -2171,131 +2099,87 @@
     },
     {
       "type": "progress",
-      "at": 913,
+      "at": 1030,
       "phase": "Outdated",
       "detail": "firebase_core 3.13.0 → 3.15.2",
+      "done": 4,
+      "total": 20
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1036,
+      "candidate": {
+        "id": "pubspec.yaml#firebase_auth@5.5.2",
+        "name": "firebase_auth",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "5.5.2",
+        "latest": "6.6.1",
+        "selected": "5.7.0",
+        "safeLatest": "5.7.0",
+        "publishedVersions": [
+          "6.6.1",
+          "6.6.0",
+          "6.5.7",
+          "6.5.6",
+          "6.5.5",
+          "6.5.4",
+          "6.5.3",
+          "6.5.2",
+          "6.5.1",
+          "6.5.0",
+          "6.4.0",
+          "6.3.0",
+          "6.2.0",
+          "6.1.4",
+          "6.1.3",
+          "6.1.2",
+          "6.1.1",
+          "6.1.0",
+          "5.7.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1036,
+      "phase": "Outdated",
+      "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 5,
       "total": 20
     },
     {
       "type": "candidate-upsert",
-      "at": 914,
-      "candidate": {
-        "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
-        "name": "firebase_ui_auth",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.16.1",
-        "latest": "3.1.0",
-        "selected": "1.17.0",
-        "safeLatest": "1.17.0",
-        "publishedVersions": [
-          "3.1.0",
-          "3.0.1",
-          "3.0.0",
-          "2.0.0",
-          "1.17.0"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 914,
-      "phase": "Outdated",
-      "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
-      "done": 6,
-      "total": 20
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 915,
-      "candidate": {
-        "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
-        "name": "firebase_ui_firestore",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.7.1",
-        "latest": "2.1.0",
-        "selected": "1.7.3",
-        "safeLatest": "1.7.3",
-        "publishedVersions": [
-          "2.1.0",
-          "2.0.1",
-          "2.0.0",
-          "1.7.3",
-          "1.7.2"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 915,
-      "phase": "Outdated",
-      "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
-      "done": 7,
-      "total": 20
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 915,
+      "at": 1036,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -2358,15 +2242,131 @@
     },
     {
       "type": "progress",
-      "at": 915,
+      "at": 1036,
       "phase": "Outdated",
       "detail": "flutter 0.0.0 → 0.0.20",
+      "done": 6,
+      "total": 20
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1037,
+      "candidate": {
+        "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
+        "name": "firebase_ui_firestore",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.7.1",
+        "latest": "2.1.0",
+        "selected": "1.7.3",
+        "safeLatest": "1.7.3",
+        "publishedVersions": [
+          "2.1.0",
+          "2.0.1",
+          "2.0.0",
+          "1.7.3",
+          "1.7.2"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1037,
+      "phase": "Outdated",
+      "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
+      "done": 7,
+      "total": 20
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1039,
+      "candidate": {
+        "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
+        "name": "firebase_ui_auth",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.16.1",
+        "latest": "3.1.0",
+        "selected": "1.17.0",
+        "safeLatest": "1.17.0",
+        "publishedVersions": [
+          "3.1.0",
+          "3.0.1",
+          "3.0.0",
+          "2.0.0",
+          "1.17.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1039,
+      "phase": "Outdated",
+      "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 8,
       "total": 20
     },
     {
       "type": "candidate-upsert",
-      "at": 917,
+      "at": 1040,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -2422,7 +2422,7 @@
     },
     {
       "type": "progress",
-      "at": 917,
+      "at": 1040,
       "phase": "Outdated",
       "detail": "riverpod 2.6.1 → 3.4.2",
       "done": 9,
@@ -2430,7 +2430,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 918,
+      "at": 1042,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -2487,7 +2487,7 @@
     },
     {
       "type": "progress",
-      "at": 918,
+      "at": 1042,
       "phase": "Outdated",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
       "done": 10,
@@ -2495,7 +2495,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 920,
+      "at": 1044,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -2547,7 +2547,7 @@
     },
     {
       "type": "progress",
-      "at": 920,
+      "at": 1044,
       "phase": "Outdated",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
       "done": 11,
@@ -2555,7 +2555,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 923,
+      "at": 1047,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -2564,10 +2564,11 @@
         "workspace": "",
         "workspaceName": null,
         "current": "14.8.1",
-        "latest": "18.0.0",
-        "selected": "18.0.0",
+        "latest": "18.0.1",
+        "selected": "18.0.1",
         "safeLatest": null,
         "publishedVersions": [
+          "18.0.1",
           "18.0.0",
           "17.5.0",
           "17.4.0",
@@ -2584,8 +2585,7 @@
           "16.2.4",
           "16.2.3",
           "16.2.2",
-          "16.2.1",
-          "16.2.0"
+          "16.2.1"
         ],
         "provenance": {
           "kind": "runtime",
@@ -2618,15 +2618,15 @@
     },
     {
       "type": "progress",
-      "at": 923,
+      "at": 1047,
       "phase": "Outdated",
-      "detail": "go_router 14.8.1 → 18.0.0",
+      "detail": "go_router 14.8.1 → 18.0.1",
       "done": 12,
       "total": 20
     },
     {
       "type": "candidate-upsert",
-      "at": 924,
+      "at": 1049,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -2672,7 +2672,7 @@
     },
     {
       "type": "progress",
-      "at": 924,
+      "at": 1049,
       "phase": "Outdated",
       "detail": "intl 0.20.2 → 0.20.3",
       "done": 13,
@@ -2680,12 +2680,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 926,
+      "at": 1051,
       "id": "pubspec.yaml#rxdart@0.28.0"
     },
     {
       "type": "progress",
-      "at": 926,
+      "at": 1051,
       "phase": "Up to date",
       "detail": "rxdart@0.28.0",
       "done": 14,
@@ -2693,7 +2693,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 929,
+      "at": 1053,
       "candidate": {
         "id": "pubspec.yaml#shared_preferences@2.5.3",
         "name": "shared_preferences",
@@ -2740,7 +2740,7 @@
     },
     {
       "type": "progress",
-      "at": 929,
+      "at": 1053,
       "phase": "Outdated",
       "detail": "shared_preferences 2.5.3 → 2.5.5",
       "done": 15,
@@ -2748,7 +2748,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 929,
+      "at": 1054,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -2803,7 +2803,7 @@
     },
     {
       "type": "progress",
-      "at": 929,
+      "at": 1054,
       "phase": "Outdated",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
       "done": 16,
@@ -2811,7 +2811,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 930,
+      "at": 1054,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -2857,7 +2857,7 @@
     },
     {
       "type": "progress",
-      "at": 930,
+      "at": 1054,
       "phase": "Outdated",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
       "done": 17,
@@ -2865,7 +2865,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 932,
+      "at": 1088,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -2911,7 +2911,7 @@
     },
     {
       "type": "progress",
-      "at": 932,
+      "at": 1088,
       "phase": "Outdated",
       "detail": "url_launcher 6.3.1 → 6.3.2",
       "done": 18,
@@ -2919,7 +2919,7 @@
     },
     {
       "type": "progress",
-      "at": 2165,
+      "at": 1992,
       "phase": "Indexing your code",
       "detail": "88 files indexed · 20 direct dependencies to check",
       "done": 0,
@@ -2927,12 +2927,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 32617,
+      "at": 49328,
       "id": "ios/Podfile#FirebaseFirestore@11.10.0"
     },
     {
       "type": "progress",
-      "at": 32617,
+      "at": 49328,
       "phase": "Could not check",
       "detail": "FirebaseFirestore@11.10.0 · Drift could not reach CocoaPods Trunk for FirebaseFirestore.",
       "done": 19,
@@ -2940,12 +2940,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 32617,
+      "at": 49328,
       "id": "macos/Podfile#FirebaseFirestore@11.10.0"
     },
     {
       "type": "progress",
-      "at": 32617,
+      "at": 49328,
       "phase": "Could not check",
       "detail": "FirebaseFirestore@11.10.0 · Drift could not reach CocoaPods Trunk for FirebaseFirestore.",
       "done": 20,
@@ -2953,7 +2953,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49329,
       "phase": "Reading release notes and changelog",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -2961,7 +2961,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49329,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -3005,7 +3005,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49329,
       "phase": "Checking package metadata",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -3013,7 +3013,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49329,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -3057,7 +3057,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49329,
       "phase": "Reading release notes and changelog",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -3065,7 +3065,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49329,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -3109,7 +3109,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49329,
       "phase": "Checking package metadata",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -3117,7 +3117,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49329,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -3161,7 +3161,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49329,
       "phase": "Reading release notes and changelog",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -3169,7 +3169,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49329,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -3213,7 +3213,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49329,
       "phase": "Checking package metadata",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -3221,7 +3221,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49329,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -3265,7 +3265,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49329,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -3273,7 +3273,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49329,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -3317,7 +3317,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Checking package metadata",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -3325,7 +3325,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -3369,7 +3369,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -3377,7 +3377,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -3421,7 +3421,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Checking package metadata",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -3429,7 +3429,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -3473,7 +3473,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -3481,7 +3481,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -3525,7 +3525,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Checking package metadata",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -3533,7 +3533,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -3577,7 +3577,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -3585,7 +3585,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -3629,7 +3629,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Checking package metadata",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -3637,7 +3637,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -3681,7 +3681,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Reading release notes and changelog",
       "detail": "flutter 0.0.0 → 0.0.20",
       "done": 0,
@@ -3689,7 +3689,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -3733,7 +3733,7 @@
     },
     {
       "type": "progress",
-      "at": 32618,
+      "at": 49330,
       "phase": "Checking package metadata",
       "detail": "flutter 0.0.0 → 0.0.20",
       "done": 0,
@@ -3741,7 +3741,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32618,
+      "at": 49330,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -3785,7 +3785,7 @@
     },
     {
       "type": "progress",
-      "at": 32619,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -3793,7 +3793,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32619,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -3837,7 +3837,7 @@
     },
     {
       "type": "progress",
-      "at": 32619,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -3845,7 +3845,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32619,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -3889,7 +3889,7 @@
     },
     {
       "type": "progress",
-      "at": 32620,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -3897,7 +3897,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32620,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -3941,7 +3941,7 @@
     },
     {
       "type": "progress",
-      "at": 32620,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -3949,7 +3949,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32620,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -3993,7 +3993,7 @@
     },
     {
       "type": "progress",
-      "at": 32620,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -4001,7 +4001,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32620,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -4045,7 +4045,7 @@
     },
     {
       "type": "progress",
-      "at": 32620,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -4053,7 +4053,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32620,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -4097,7 +4097,7 @@
     },
     {
       "type": "progress",
-      "at": 32620,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -4105,7 +4105,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32620,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -4149,7 +4149,7 @@
     },
     {
       "type": "progress",
-      "at": 32620,
+      "at": 49331,
       "phase": "Checking repository status",
       "detail": "flutter 0.0.0 → 0.0.20",
       "done": 0,
@@ -4157,7 +4157,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32620,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -4201,7 +4201,7 @@
     },
     {
       "type": "progress",
-      "at": 32620,
+      "at": 49331,
       "phase": "Checking security advisories",
       "detail": "flutter 0.0.0 → 0.0.20",
       "done": 0,
@@ -4209,7 +4209,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32620,
+      "at": 49331,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -4253,7 +4253,59 @@
     },
     {
       "type": "progress",
-      "at": 32626,
+      "at": 49343,
+      "phase": "Checking security advisories",
+      "detail": "cupertino_icons 1.0.8 → 1.0.9",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 49343,
+      "candidate": {
+        "id": "pubspec.yaml#cupertino_icons@1.0.8",
+        "name": "cupertino_icons",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.0.8",
+        "latest": "1.0.8",
+        "selected": "1.0.8",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 49343,
       "phase": "Checking security advisories",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -4261,7 +4313,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32626,
+      "at": 49343,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -4305,7 +4357,7 @@
     },
     {
       "type": "progress",
-      "at": 32626,
+      "at": 49343,
       "phase": "Checking security advisories",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -4313,7 +4365,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32626,
+      "at": 49343,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -4357,7 +4409,7 @@
     },
     {
       "type": "progress",
-      "at": 32626,
+      "at": 49343,
       "phase": "Checking security advisories",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -4365,7 +4417,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32626,
+      "at": 49343,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -4409,59 +4461,7 @@
     },
     {
       "type": "progress",
-      "at": 32627,
-      "phase": "Checking security advisories",
-      "detail": "cupertino_icons 1.0.8 → 1.0.9",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 32627,
-      "candidate": {
-        "id": "pubspec.yaml#cupertino_icons@1.0.8",
-        "name": "cupertino_icons",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.0.8",
-        "latest": "1.0.8",
-        "selected": "1.0.8",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 32627,
+      "at": 49343,
       "phase": "Checking security advisories",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -4469,7 +4469,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32627,
+      "at": 49343,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -4513,7 +4513,7 @@
     },
     {
       "type": "progress",
-      "at": 32628,
+      "at": 49343,
       "phase": "Checking security advisories",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -4521,7 +4521,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32628,
+      "at": 49343,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -4565,7 +4565,7 @@
     },
     {
       "type": "progress",
-      "at": 32628,
+      "at": 49343,
       "phase": "Checking security advisories",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -4573,7 +4573,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32628,
+      "at": 49343,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -4617,7 +4617,7 @@
     },
     {
       "type": "progress",
-      "at": 32784,
+      "at": 49571,
       "phase": "Comparing the public API surface",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -4625,7 +4625,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32784,
+      "at": 49571,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -4669,7 +4669,7 @@
     },
     {
       "type": "progress",
-      "at": 32831,
+      "at": 49571,
       "phase": "Comparing the public API surface",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -4677,7 +4677,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32831,
+      "at": 49571,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -4721,7 +4721,7 @@
     },
     {
       "type": "progress",
-      "at": 32832,
+      "at": 49573,
       "phase": "Comparing the public API surface",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -4729,7 +4729,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32832,
+      "at": 49573,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -4773,7 +4773,7 @@
     },
     {
       "type": "progress",
-      "at": 32887,
+      "at": 49761,
       "phase": "Comparing the public API surface",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -4781,7 +4781,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 32887,
+      "at": 49761,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -4825,7 +4825,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -4833,7 +4833,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -4877,7 +4877,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -4885,7 +4885,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -4929,7 +4929,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -4937,7 +4937,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -4981,7 +4981,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -4989,7 +4989,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -5033,7 +5033,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -5041,7 +5041,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -5085,7 +5085,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -5093,7 +5093,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -5137,7 +5137,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -5145,7 +5145,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -5189,7 +5189,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Checking license",
       "detail": "flutter 0.0.0 → 0.0.20",
       "done": 0,
@@ -5197,7 +5197,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#flutter@0.0.0",
         "name": "flutter",
@@ -5241,7 +5241,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Reading release notes and changelog",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -5249,7 +5249,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -5293,7 +5293,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50438,
       "phase": "Comparing the public API surface",
       "detail": "cloud_firestore 5.6.6 → 5.6.12 · 1 evidence source",
       "done": 0,
@@ -5301,7 +5301,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50438,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -5345,7 +5345,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Reading release notes and changelog",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -5353,7 +5353,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -5397,7 +5397,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Comparing the public API surface",
       "detail": "cupertino_icons 1.0.8 → 1.0.9 · 2 evidence sources",
       "done": 0,
@@ -5405,7 +5405,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -5449,7 +5449,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Reading release notes and changelog",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -5457,7 +5457,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -5501,7 +5501,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Comparing the public API surface",
       "detail": "equatable 2.0.7 → 2.1.0 · 1 evidence source",
       "done": 0,
@@ -5509,7 +5509,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -5553,7 +5553,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -5561,7 +5561,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -5605,7 +5605,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Comparing the public API surface",
       "detail": "firebase_auth 5.5.2 → 5.7.0 · 3 evidence sources",
       "done": 0,
@@ -5613,7 +5613,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -5657,7 +5657,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -5665,7 +5665,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -5709,7 +5709,7 @@
     },
     {
       "type": "progress",
-      "at": 33159,
+      "at": 50439,
       "phase": "Comparing the public API surface",
       "detail": "firebase_core 3.13.0 → 3.15.2 · 3 evidence sources",
       "done": 0,
@@ -5717,7 +5717,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33159,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -5761,7 +5761,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -5769,7 +5769,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -5813,7 +5813,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "Comparing the public API surface",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0 · 2 evidence sources",
       "done": 0,
@@ -5821,7 +5821,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -5865,7 +5865,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "Reading release notes and changelog",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -5873,7 +5873,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -5917,7 +5917,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "Comparing the public API surface",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3 · 1 evidence source",
       "done": 0,
@@ -5925,7 +5925,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -5969,111 +5969,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
-      "phase": "Reading release notes and changelog",
-      "detail": "flutter 0.0.0 → 0.0.20",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33160,
-      "candidate": {
-        "id": "pubspec.yaml#flutter@0.0.0",
-        "name": "flutter",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.0.0",
-        "latest": "0.0.0",
-        "selected": "0.0.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33160,
-      "phase": "Comparing the public API surface",
-      "detail": "flutter 0.0.0 → 0.0.20 · 1 evidence source",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33160,
-      "candidate": {
-        "id": "pubspec.yaml#flutter@0.0.0",
-        "name": "flutter",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.0.0",
-        "latest": "0.0.0",
-        "selected": "0.0.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "No breaking changes to look for",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -6081,7 +5977,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -6125,7 +6021,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "Searching your code for 1 breaking change",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -6133,7 +6029,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -6177,7 +6073,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "No breaking changes to look for",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -6185,7 +6081,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -6229,7 +6125,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "No breaking changes to look for",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -6237,7 +6133,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -6281,7 +6177,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "No breaking changes to look for",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -6289,7 +6185,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -6333,7 +6229,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "Searching your code for 1 breaking change",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -6341,7 +6237,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -6385,7 +6281,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "No breaking changes to look for",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -6393,7 +6289,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -6437,59 +6333,7 @@
     },
     {
       "type": "progress",
-      "at": 33160,
-      "phase": "No breaking changes to look for",
-      "detail": "flutter 0.0.0 → 0.0.20",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33160,
-      "candidate": {
-        "id": "pubspec.yaml#flutter@0.0.0",
-        "name": "flutter",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.0.0",
-        "latest": "0.0.0",
-        "selected": "0.0.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33160,
+      "at": 50439,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -6497,7 +6341,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33160,
+      "at": 50439,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -6541,7 +6385,7 @@
     },
     {
       "type": "progress",
-      "at": 33162,
+      "at": 50441,
       "phase": "Weighing what this upgrade is worth",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -6549,7 +6393,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33162,
+      "at": 50441,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -6593,7 +6437,7 @@
     },
     {
       "type": "progress",
-      "at": 33163,
+      "at": 50442,
       "phase": "Weighing what this upgrade is worth",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -6601,7 +6445,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33163,
+      "at": 50442,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -6645,7 +6489,7 @@
     },
     {
       "type": "progress",
-      "at": 33164,
+      "at": 50443,
       "phase": "Weighing what this upgrade is worth",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -6653,7 +6497,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33164,
+      "at": 50443,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -6697,7 +6541,7 @@
     },
     {
       "type": "progress",
-      "at": 33165,
+      "at": 50444,
       "phase": "Weighing what this upgrade is worth",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -6705,7 +6549,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33165,
+      "at": 50445,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -6749,59 +6593,7 @@
     },
     {
       "type": "progress",
-      "at": 33166,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "flutter 0.0.0 → 0.0.20",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33166,
-      "candidate": {
-        "id": "pubspec.yaml#flutter@0.0.0",
-        "name": "flutter",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.0.0",
-        "latest": "0.0.0",
-        "selected": "0.0.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33167,
+      "at": 50446,
       "phase": "Checking maintenance signals",
       "detail": "cloud_firestore 5.6.6 → 5.6.12",
       "done": 0,
@@ -6809,7 +6601,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33167,
+      "at": 50446,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -6853,7 +6645,7 @@
     },
     {
       "type": "progress",
-      "at": 33168,
+      "at": 50447,
       "phase": "Checking maintenance signals",
       "detail": "equatable 2.0.7 → 2.1.0",
       "done": 0,
@@ -6861,7 +6653,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33168,
+      "at": 50447,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -6905,7 +6697,7 @@
     },
     {
       "type": "progress",
-      "at": 33169,
+      "at": 50447,
       "phase": "Checking maintenance signals",
       "detail": "firebase_auth 5.5.2 → 5.7.0",
       "done": 0,
@@ -6913,7 +6705,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33169,
+      "at": 50447,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -6957,7 +6749,7 @@
     },
     {
       "type": "progress",
-      "at": 33170,
+      "at": 50448,
       "phase": "Checking maintenance signals",
       "detail": "firebase_core 3.13.0 → 3.15.2",
       "done": 0,
@@ -6965,7 +6757,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33170,
+      "at": 50448,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -7009,7 +6801,7 @@
     },
     {
       "type": "progress",
-      "at": 33170,
+      "at": 50449,
       "phase": "Checking maintenance signals",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3",
       "done": 0,
@@ -7017,7 +6809,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33170,
+      "at": 50449,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -7061,59 +6853,7 @@
     },
     {
       "type": "progress",
-      "at": 33171,
-      "phase": "Checking maintenance signals",
-      "detail": "flutter 0.0.0 → 0.0.20",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33171,
-      "candidate": {
-        "id": "pubspec.yaml#flutter@0.0.0",
-        "name": "flutter",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.0.0",
-        "latest": "0.0.0",
-        "selected": "0.0.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33171,
+      "at": 50449,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -7121,7 +6861,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33171,
+      "at": 50449,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -7165,7 +6905,7 @@
     },
     {
       "type": "progress",
-      "at": 33172,
+      "at": 50451,
       "phase": "Weighing what this upgrade is worth",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -7173,7 +6913,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33172,
+      "at": 50451,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -7217,7 +6957,7 @@
     },
     {
       "type": "progress",
-      "at": 33174,
+      "at": 50453,
       "phase": "Checking maintenance signals",
       "detail": "cupertino_icons 1.0.8 → 1.0.9",
       "done": 0,
@@ -7225,7 +6965,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33174,
+      "at": 50453,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -7269,7 +7009,7 @@
     },
     {
       "type": "progress",
-      "at": 33174,
+      "at": 50453,
       "phase": "Checking maintenance signals",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0",
       "done": 0,
@@ -7277,7 +7017,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33174,
+      "at": 50453,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -7321,7 +7061,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33174,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#cloud_firestore@5.6.6",
         "name": "cloud_firestore",
@@ -7402,7 +7142,7 @@
     },
     {
       "type": "progress",
-      "at": 33174,
+      "at": 50454,
       "phase": "Checked",
       "detail": "cloud_firestore 5.6.6 → 5.6.12 · safe for your code · no breaking changes found — not deeply verified",
       "done": 1,
@@ -7410,7 +7150,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33174,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#equatable@2.0.7",
         "name": "equatable",
@@ -7471,7 +7211,7 @@
     },
     {
       "type": "progress",
-      "at": 33174,
+      "at": 50454,
       "phase": "Checked",
       "detail": "equatable 2.0.7 → 2.1.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 2,
@@ -7479,7 +7219,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33174,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#firebase_auth@5.5.2",
         "name": "firebase_auth",
@@ -7560,7 +7300,7 @@
     },
     {
       "type": "progress",
-      "at": 33174,
+      "at": 50454,
       "phase": "Checked",
       "detail": "firebase_auth 5.5.2 → 5.7.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
@@ -7568,7 +7308,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33174,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#firebase_core@3.13.0",
         "name": "firebase_core",
@@ -7649,7 +7389,7 @@
     },
     {
       "type": "progress",
-      "at": 33174,
+      "at": 50454,
       "phase": "Checked",
       "detail": "firebase_core 3.13.0 → 3.15.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
@@ -7657,7 +7397,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_firestore@1.7.1",
         "name": "firebase_ui_firestore",
@@ -7721,111 +7461,23 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Checked",
       "detail": "firebase_ui_firestore 1.7.1 → 1.7.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 5,
       "total": 17
     },
     {
-      "type": "candidate-upsert",
-      "at": 33175,
-      "candidate": {
-        "id": "pubspec.yaml#flutter@0.0.0",
-        "name": "flutter",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.0.0",
-        "latest": "0.0.20",
-        "selected": "0.0.20",
-        "safeLatest": null,
-        "publishedVersions": [
-          "0.0.20",
-          "0.0.19",
-          "0.0.18",
-          "0.0.17",
-          "0.0.16",
-          "0.0.15",
-          "0.0.14",
-          "0.0.13",
-          "0.0.12",
-          "0.0.11",
-          "0.0.10",
-          "0.0.9",
-          "0.0.8",
-          "0.0.7",
-          "0.0.6",
-          "0.0.5",
-          "0.0.4",
-          "0.0.3"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Insufficient evidence. pub.dev has no archive for flutter 0.0.0. It may be retracted, or published to a private pub server. No release notes, changelog, or migration guide was reachable for flutter 0.0.20, and no source repository could be resolved for it.",
-        "recommendation": "insufficient-evidence",
-        "hasCompatibilityEvidence": false,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "evidence-missing",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": {
-          "localizationRan": true,
-          "localizationComplete": true,
-          "sourceFilesDiscovered": 85,
-          "sourceFilesIndexed": 85,
-          "sourceTruncated": false,
-          "runtimeConfigsDiscovered": 3,
-          "runtimeConfigsIndexed": 3,
-          "runtimeConfigComplete": true
-        },
-        "surfaceAssessment": {
-          "available": false,
-          "reason": "version-unavailable",
-          "inspection": "failed",
-          "tool": "pub source",
-          "detail": "pub.dev has no archive for flutter 0.0.0. It may be retracted, or published to a private pub server."
-        },
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "pub.dev has no archive for flutter 0.0.0. It may be retracted, or published to a private pub server. No release notes, changelog, or migration guide was reachable for flutter 0.0.20, and no source repository could be resolved for it."
-        ],
-        "breaking": []
-      }
-    },
-    {
       "type": "progress",
-      "at": 33175,
-      "phase": "Checked",
-      "detail": "flutter 0.0.0 → 0.0.20 · evidence missing · drift could not obtain enough upstream evidence to decide",
-      "done": 6,
-      "total": 17
-    },
-    {
-      "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Reading release notes and changelog",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -7869,15 +7521,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Checking package metadata",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -7921,15 +7573,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Reading release notes and changelog",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -7973,15 +7625,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Checking package metadata",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -8025,15 +7677,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Reading release notes and changelog",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -8077,15 +7729,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Checking package metadata",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -8129,15 +7781,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50454,
       "phase": "Reading release notes and changelog",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 6,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50454,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -8181,15 +7833,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Checking package metadata",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 6,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -8233,15 +7885,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Reading release notes and changelog",
       "detail": "intl 0.20.2 → 0.20.3",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -8285,15 +7937,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Checking package metadata",
       "detail": "intl 0.20.2 → 0.20.3",
-      "done": 6,
+      "done": 5,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -8336,112 +7988,8 @@
       }
     },
     {
-      "type": "progress",
-      "at": 33175,
-      "phase": "Reading release notes and changelog",
-      "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 6,
-      "total": 17
-    },
-    {
       "type": "candidate-upsert",
-      "at": 33175,
-      "candidate": {
-        "id": "pubspec.yaml#riverpod@2.6.1",
-        "name": "riverpod",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.6.1",
-        "latest": "2.6.1",
-        "selected": "2.6.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33175,
-      "phase": "Checking package metadata",
-      "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 6,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33175,
-      "candidate": {
-        "id": "pubspec.yaml#riverpod@2.6.1",
-        "name": "riverpod",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.6.1",
-        "latest": "2.6.1",
-        "selected": "2.6.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking package metadata",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#cupertino_icons@1.0.8",
         "name": "cupertino_icons",
@@ -8537,15 +8085,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Checked",
       "detail": "cupertino_icons 1.0.8 → 1.0.9 · safe for your code · 1 upstream change, none used here — not deeply verified",
-      "done": 7,
+      "done": 6,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#firebase_ui_auth@1.16.1",
         "name": "firebase_ui_auth",
@@ -8643,23 +8191,127 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Checked",
       "detail": "firebase_ui_auth 1.16.1 → 1.17.0 · safe for your code · 1 upstream change, none used here — not deeply verified",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Reading release notes and changelog",
-      "detail": "riverpod_annotation 2.6.1 → 4.0.6",
-      "done": 8,
+      "detail": "riverpod 2.6.1 → 3.4.2",
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
+      "candidate": {
+        "id": "pubspec.yaml#riverpod@2.6.1",
+        "name": "riverpod",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.6.1",
+        "latest": "2.6.1",
+        "selected": "2.6.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50455,
+      "phase": "Checking package metadata",
+      "detail": "riverpod 2.6.1 → 3.4.2",
+      "done": 7,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50455,
+      "candidate": {
+        "id": "pubspec.yaml#riverpod@2.6.1",
+        "name": "riverpod",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.6.1",
+        "latest": "2.6.1",
+        "selected": "2.6.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking package metadata",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50455,
+      "phase": "Reading release notes and changelog",
+      "detail": "riverpod_annotation 2.6.1 → 4.0.6",
+      "done": 7,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -8703,15 +8355,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Checking package metadata",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -8755,119 +8407,15 @@
     },
     {
       "type": "progress",
-      "at": 33175,
-      "phase": "Reading release notes and changelog",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33175,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33175,
-      "phase": "Checking package metadata",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33175,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking package metadata",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33175,
+      "at": 50455,
       "phase": "Checking repository status",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33175,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -8911,15 +8459,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
+      "at": 50455,
       "phase": "Checking repository status",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -8963,15 +8511,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
+      "at": 50455,
       "phase": "Checking repository status",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50455,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -9015,15 +8563,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
+      "at": 50456,
       "phase": "Checking repository status",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 8,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50456,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -9067,15 +8615,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
+      "at": 50456,
       "phase": "Checking repository status",
       "detail": "intl 0.20.2 → 0.20.3",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50456,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -9119,15 +8667,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
+      "at": 50456,
       "phase": "Checking repository status",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50456,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -9171,15 +8719,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
+      "at": 50456,
       "phase": "Checking repository status",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50456,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -9223,67 +8771,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
-      "phase": "Checking repository status",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33176,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking repository status",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33176,
+      "at": 50456,
       "phase": "Checking security advisories",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50456,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -9327,15 +8823,15 @@
     },
     {
       "type": "progress",
-      "at": 33176,
+      "at": 50457,
       "phase": "Checking security advisories",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 8,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33176,
+      "at": 50457,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -9379,15 +8875,15 @@
     },
     {
       "type": "progress",
-      "at": 33177,
+      "at": 50458,
       "phase": "Checking license",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33177,
+      "at": 50458,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -9431,15 +8927,15 @@
     },
     {
       "type": "progress",
-      "at": 33177,
+      "at": 50458,
       "phase": "Checking license",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 8,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33177,
+      "at": 50458,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -9483,119 +8979,15 @@
     },
     {
       "type": "progress",
-      "at": 33177,
-      "phase": "Checking security advisories",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33177,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33177,
-      "phase": "Checking license",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33177,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33180,
+      "at": 50493,
       "phase": "Checking security advisories",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50493,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -9639,15 +9031,15 @@
     },
     {
       "type": "progress",
-      "at": 33180,
+      "at": 50493,
       "phase": "Checking security advisories",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50493,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -9691,15 +9083,15 @@
     },
     {
       "type": "progress",
-      "at": 33180,
+      "at": 50493,
       "phase": "Checking security advisories",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50493,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -9743,15 +9135,15 @@
     },
     {
       "type": "progress",
-      "at": 33180,
+      "at": 50493,
       "phase": "Checking license",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50493,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -9795,15 +9187,15 @@
     },
     {
       "type": "progress",
-      "at": 33180,
+      "at": 50493,
       "phase": "Checking license",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50493,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -9847,15 +9239,15 @@
     },
     {
       "type": "progress",
-      "at": 33180,
+      "at": 50493,
       "phase": "Checking license",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50493,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -9899,119 +9291,15 @@
     },
     {
       "type": "progress",
-      "at": 33180,
-      "phase": "Checking security advisories",
-      "detail": "intl 0.20.2 → 0.20.3",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33180,
-      "candidate": {
-        "id": "pubspec.yaml#intl@0.20.2",
-        "name": "intl",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.20.2",
-        "latest": "0.20.2",
-        "selected": "0.20.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33180,
-      "phase": "Checking license",
-      "detail": "intl 0.20.2 → 0.20.3",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33180,
-      "candidate": {
-        "id": "pubspec.yaml#intl@0.20.2",
-        "name": "intl",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.20.2",
-        "latest": "0.20.2",
-        "selected": "0.20.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33180,
+      "at": 50502,
       "phase": "Checking security advisories",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50502,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -10055,15 +9343,15 @@
     },
     {
       "type": "progress",
-      "at": 33180,
+      "at": 50502,
       "phase": "Checking license",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33180,
+      "at": 50502,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -10107,15 +9395,119 @@
     },
     {
       "type": "progress",
-      "at": 33382,
+      "at": 50553,
+      "phase": "Checking security advisories",
+      "detail": "intl 0.20.2 → 0.20.3",
+      "done": 7,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50553,
+      "candidate": {
+        "id": "pubspec.yaml#intl@0.20.2",
+        "name": "intl",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.20.2",
+        "latest": "0.20.2",
+        "selected": "0.20.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50553,
+      "phase": "Checking license",
+      "detail": "intl 0.20.2 → 0.20.3",
+      "done": 7,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50553,
+      "candidate": {
+        "id": "pubspec.yaml#intl@0.20.2",
+        "name": "intl",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.20.2",
+        "latest": "0.20.2",
+        "selected": "0.20.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50836,
       "phase": "Comparing the public API surface",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33382,
+      "at": 50836,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -10159,15 +9551,15 @@
     },
     {
       "type": "progress",
-      "at": 33383,
+      "at": 50836,
       "phase": "Comparing the public API surface",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33383,
+      "at": 50836,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -10211,15 +9603,15 @@
     },
     {
       "type": "progress",
-      "at": 33383,
+      "at": 50836,
       "phase": "Comparing the public API surface",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33383,
+      "at": 50836,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -10263,15 +9655,15 @@
     },
     {
       "type": "progress",
-      "at": 33383,
+      "at": 50836,
       "phase": "Reading release notes and changelog",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33383,
+      "at": 50836,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -10315,15 +9707,15 @@
     },
     {
       "type": "progress",
-      "at": 33383,
+      "at": 50836,
       "phase": "Comparing the public API surface",
       "detail": "flutter_svg 2.0.17 → 2.3.0 · 2 evidence sources",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33383,
+      "at": 50836,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -10367,15 +9759,15 @@
     },
     {
       "type": "progress",
-      "at": 33383,
+      "at": 50836,
       "phase": "Searching your code for 1 breaking change",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33383,
+      "at": 50836,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -10419,15 +9811,15 @@
     },
     {
       "type": "progress",
-      "at": 33384,
+      "at": 50837,
       "phase": "Weighing what this upgrade is worth",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33384,
+      "at": 50837,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -10471,15 +9863,15 @@
     },
     {
       "type": "progress",
-      "at": 33386,
+      "at": 50838,
       "phase": "Checking maintenance signals",
       "detail": "flutter_svg 2.0.17 → 2.3.0",
-      "done": 8,
+      "done": 7,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33386,
+      "at": 50838,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -10523,7 +9915,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33387,
+      "at": 50839,
       "candidate": {
         "id": "pubspec.yaml#flutter_svg@2.0.17",
         "name": "flutter_svg",
@@ -10625,33 +10017,33 @@
     },
     {
       "type": "progress",
-      "at": 33387,
+      "at": 50839,
       "phase": "Checked",
       "detail": "flutter_svg 2.0.17 → 2.3.0 · safe for your code · 1 upstream change, none used here — not deeply verified",
-      "done": 9,
+      "done": 8,
       "total": 17
     },
     {
       "type": "progress",
-      "at": 33387,
+      "at": 50839,
       "phase": "Reading release notes and changelog",
-      "detail": "url_launcher 6.3.1 → 6.3.2",
-      "done": 9,
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33387,
+      "at": 50839,
       "candidate": {
-        "id": "pubspec.yaml#url_launcher@6.3.1",
-        "name": "url_launcher",
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "6.3.1",
-        "latest": "6.3.1",
-        "selected": "6.3.1",
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10685,25 +10077,25 @@
     },
     {
       "type": "progress",
-      "at": 33387,
+      "at": 50839,
       "phase": "Checking package metadata",
-      "detail": "url_launcher 6.3.1 → 6.3.2",
-      "done": 9,
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33387,
+      "at": 50839,
       "candidate": {
-        "id": "pubspec.yaml#url_launcher@6.3.1",
-        "name": "url_launcher",
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "6.3.1",
-        "latest": "6.3.1",
-        "selected": "6.3.1",
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10737,25 +10129,25 @@
     },
     {
       "type": "progress",
-      "at": 33387,
+      "at": 50839,
       "phase": "Checking repository status",
-      "detail": "url_launcher 6.3.1 → 6.3.2",
-      "done": 9,
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33387,
+      "at": 50839,
       "candidate": {
-        "id": "pubspec.yaml#url_launcher@6.3.1",
-        "name": "url_launcher",
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "6.3.1",
-        "latest": "6.3.1",
-        "selected": "6.3.1",
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10789,25 +10181,25 @@
     },
     {
       "type": "progress",
-      "at": 33387,
+      "at": 50839,
       "phase": "Checking security advisories",
-      "detail": "url_launcher 6.3.1 → 6.3.2",
-      "done": 9,
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33387,
+      "at": 50839,
       "candidate": {
-        "id": "pubspec.yaml#url_launcher@6.3.1",
-        "name": "url_launcher",
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "6.3.1",
-        "latest": "6.3.1",
-        "selected": "6.3.1",
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10841,25 +10233,25 @@
     },
     {
       "type": "progress",
-      "at": 33387,
+      "at": 50839,
       "phase": "Checking license",
-      "detail": "url_launcher 6.3.1 → 6.3.2",
-      "done": 9,
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33387,
+      "at": 50839,
       "candidate": {
-        "id": "pubspec.yaml#url_launcher@6.3.1",
-        "name": "url_launcher",
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "6.3.1",
-        "latest": "6.3.1",
-        "selected": "6.3.1",
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10893,15 +10285,119 @@
     },
     {
       "type": "progress",
-      "at": 33388,
+      "at": 50841,
       "phase": "Comparing the public API surface",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 9,
+      "detail": "intl 0.20.2 → 0.20.3",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33388,
+      "at": 50841,
+      "candidate": {
+        "id": "pubspec.yaml#intl@0.20.2",
+        "name": "intl",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.20.2",
+        "latest": "0.20.2",
+        "selected": "0.20.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50841,
+      "phase": "Comparing the public API surface",
+      "detail": "riverpod_annotation 2.6.1 → 4.0.6",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50841,
+      "candidate": {
+        "id": "pubspec.yaml#riverpod_annotation@2.6.1",
+        "name": "riverpod_annotation",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.6.1",
+        "latest": "2.6.1",
+        "selected": "2.6.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50841,
+      "phase": "Comparing the public API surface",
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50841,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -10945,15 +10441,15 @@
     },
     {
       "type": "progress",
-      "at": 33388,
+      "at": 50841,
       "phase": "Reading release notes and changelog",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 9,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33388,
+      "at": 50841,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -10997,15 +10493,15 @@
     },
     {
       "type": "progress",
-      "at": 33388,
+      "at": 50841,
       "phase": "Comparing the public API surface",
-      "detail": "go_router 14.8.1 → 18.0.0 · 2 evidence sources",
-      "done": 9,
+      "detail": "go_router 14.8.1 → 18.0.1 · 2 evidence sources",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33388,
+      "at": 50841,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -11049,15 +10545,15 @@
     },
     {
       "type": "progress",
-      "at": 33388,
+      "at": 50842,
       "phase": "Searching your code for 46 breaking changes",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 9,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33388,
+      "at": 50842,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -11101,15 +10597,15 @@
     },
     {
       "type": "progress",
-      "at": 33463,
+      "at": 50975,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 9,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33463,
+      "at": 50975,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -11153,15 +10649,15 @@
     },
     {
       "type": "progress",
-      "at": 33464,
+      "at": 50978,
       "phase": "Checking maintenance signals",
-      "detail": "go_router 14.8.1 → 18.0.0",
-      "done": 9,
+      "detail": "go_router 14.8.1 → 18.0.1",
+      "done": 8,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33464,
+      "at": 50978,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -11205,7 +10701,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33466,
+      "at": 50980,
       "candidate": {
         "id": "pubspec.yaml#go_router@14.8.1",
         "name": "go_router",
@@ -11214,10 +10710,11 @@
         "workspace": "",
         "workspaceName": null,
         "current": "14.8.1",
-        "latest": "18.0.0",
-        "selected": "18.0.0",
+        "latest": "18.0.1",
+        "selected": "18.0.1",
         "safeLatest": null,
         "publishedVersions": [
+          "18.0.1",
           "18.0.0",
           "17.5.0",
           "17.4.0",
@@ -11234,8 +10731,7 @@
           "16.2.4",
           "16.2.3",
           "16.2.2",
-          "16.2.1",
-          "16.2.0"
+          "16.2.1"
         ],
         "provenance": {
           "kind": "runtime",
@@ -11646,7 +11142,7 @@
         "impactFiles": 0,
         "evidenceCount": 2,
         "gaps": [
-          "No release notes, changelog, or migration guide was reachable for go_router 18.0.0."
+          "No release notes, changelog, or migration guide was reachable for go_router 18.0.1."
         ],
         "breaking": [
           {
@@ -11668,7 +11164,7 @@
                 "source": "type-surface-diff",
                 "title": "46 API surface change(s) in go_router",
                 "url": null,
-                "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+                "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
               }
             ],
             "sites": []
@@ -11692,7 +11188,7 @@
                 "source": "type-surface-diff",
                 "title": "46 API surface change(s) in go_router",
                 "url": null,
-                "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+                "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
               }
             ],
             "sites": []
@@ -11716,7 +11212,7 @@
                 "source": "type-surface-diff",
                 "title": "46 API surface change(s) in go_router",
                 "url": null,
-                "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+                "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
               }
             ],
             "sites": []
@@ -11741,7 +11237,7 @@
                 "source": "type-surface-diff",
                 "title": "46 API surface change(s) in go_router",
                 "url": null,
-                "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+                "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
               }
             ],
             "sites": []
@@ -11751,33 +11247,345 @@
     },
     {
       "type": "progress",
-      "at": 33466,
+      "at": 50980,
       "phase": "Checked",
-      "detail": "go_router 14.8.1 → 18.0.0 · safe for your code · 46 upstream changes, none used here — not deeply verified",
-      "done": 10,
+      "detail": "go_router 14.8.1 → 18.0.1 · safe for your code · 46 upstream changes, none used here — not deeply verified",
+      "done": 9,
       "total": 17
     },
     {
       "type": "progress",
-      "at": 33467,
-      "phase": "Comparing the public API surface",
-      "detail": "riverpod_annotation 2.6.1 → 4.0.6",
-      "done": 10,
+      "at": 50980,
+      "phase": "Reading release notes and changelog",
+      "detail": "url_launcher 6.3.1 → 6.3.2",
+      "done": 9,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33467,
+      "at": 50980,
       "candidate": {
-        "id": "pubspec.yaml#riverpod_annotation@2.6.1",
-        "name": "riverpod_annotation",
+        "id": "pubspec.yaml#url_launcher@6.3.1",
+        "name": "url_launcher",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.6.1",
-        "latest": "2.6.1",
-        "selected": "2.6.1",
+        "current": "6.3.1",
+        "latest": "6.3.1",
+        "selected": "6.3.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50980,
+      "phase": "Checking package metadata",
+      "detail": "url_launcher 6.3.1 → 6.3.2",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50980,
+      "candidate": {
+        "id": "pubspec.yaml#url_launcher@6.3.1",
+        "name": "url_launcher",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "6.3.1",
+        "latest": "6.3.1",
+        "selected": "6.3.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking package metadata",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50980,
+      "phase": "Checking repository status",
+      "detail": "url_launcher 6.3.1 → 6.3.2",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50980,
+      "candidate": {
+        "id": "pubspec.yaml#url_launcher@6.3.1",
+        "name": "url_launcher",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "6.3.1",
+        "latest": "6.3.1",
+        "selected": "6.3.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking repository status",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50980,
+      "phase": "Checking security advisories",
+      "detail": "url_launcher 6.3.1 → 6.3.2",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50980,
+      "candidate": {
+        "id": "pubspec.yaml#url_launcher@6.3.1",
+        "name": "url_launcher",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "6.3.1",
+        "latest": "6.3.1",
+        "selected": "6.3.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50980,
+      "phase": "Checking license",
+      "detail": "url_launcher 6.3.1 → 6.3.2",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50980,
+      "candidate": {
+        "id": "pubspec.yaml#url_launcher@6.3.1",
+        "name": "url_launcher",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "6.3.1",
+        "latest": "6.3.1",
+        "selected": "6.3.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50993,
+      "phase": "Reading release notes and changelog",
+      "detail": "flutter 0.0.0 → 0.0.20",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50993,
+      "candidate": {
+        "id": "pubspec.yaml#flutter@0.0.0",
+        "name": "flutter",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.0.0",
+        "latest": "0.0.0",
+        "selected": "0.0.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50993,
+      "phase": "Comparing the public API surface",
+      "detail": "flutter 0.0.0 → 0.0.20 · 1 evidence source",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50993,
+      "candidate": {
+        "id": "pubspec.yaml#flutter@0.0.0",
+        "name": "flutter",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.0.0",
+        "latest": "0.0.0",
+        "selected": "0.0.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -11811,25 +11619,25 @@
     },
     {
       "type": "progress",
-      "at": 33467,
-      "phase": "Comparing the public API surface",
-      "detail": "intl 0.20.2 → 0.20.3",
-      "done": 10,
+      "at": 50993,
+      "phase": "No breaking changes to look for",
+      "detail": "flutter 0.0.0 → 0.0.20",
+      "done": 9,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 33467,
+      "at": 50993,
       "candidate": {
-        "id": "pubspec.yaml#intl@0.20.2",
-        "name": "intl",
+        "id": "pubspec.yaml#flutter@0.0.0",
+        "name": "flutter",
         "ecosystem": "pub",
         "manifestPath": "pubspec.yaml",
         "workspace": "",
         "workspaceName": null,
-        "current": "0.20.2",
-        "latest": "0.20.2",
-        "selected": "0.20.2",
+        "current": "0.0.0",
+        "latest": "0.0.0",
+        "selected": "0.0.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -11837,7 +11645,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Comparing the public API surface",
+        "phase": "No breaking changes to look for",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -11863,7 +11671,199 @@
     },
     {
       "type": "progress",
-      "at": 33470,
+      "at": 50993,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "flutter 0.0.0 → 0.0.20",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50993,
+      "candidate": {
+        "id": "pubspec.yaml#flutter@0.0.0",
+        "name": "flutter",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.0.0",
+        "latest": "0.0.0",
+        "selected": "0.0.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50995,
+      "phase": "Checking maintenance signals",
+      "detail": "flutter 0.0.0 → 0.0.20",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50995,
+      "candidate": {
+        "id": "pubspec.yaml#flutter@0.0.0",
+        "name": "flutter",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.0.0",
+        "latest": "0.0.0",
+        "selected": "0.0.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 50995,
+      "candidate": {
+        "id": "pubspec.yaml#flutter@0.0.0",
+        "name": "flutter",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.0.0",
+        "latest": "0.0.20",
+        "selected": "0.0.20",
+        "safeLatest": null,
+        "publishedVersions": [
+          "0.0.20",
+          "0.0.19",
+          "0.0.18",
+          "0.0.17",
+          "0.0.16",
+          "0.0.15",
+          "0.0.14",
+          "0.0.13",
+          "0.0.12",
+          "0.0.11",
+          "0.0.10",
+          "0.0.9",
+          "0.0.8",
+          "0.0.7",
+          "0.0.6",
+          "0.0.5",
+          "0.0.4",
+          "0.0.3"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Insufficient evidence. pub.dev has no archive for flutter 0.0.0. It may be retracted, or published to a private pub server. No release notes, changelog, or migration guide was reachable for flutter 0.0.20, and no source repository could be resolved for it.",
+        "recommendation": "insufficient-evidence",
+        "hasCompatibilityEvidence": false,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "evidence-missing",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": {
+          "localizationRan": true,
+          "localizationComplete": true,
+          "sourceFilesDiscovered": 85,
+          "sourceFilesIndexed": 85,
+          "sourceTruncated": false,
+          "runtimeConfigsDiscovered": 3,
+          "runtimeConfigsIndexed": 3,
+          "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": false,
+          "reason": "version-unavailable",
+          "inspection": "failed",
+          "tool": "pub source",
+          "detail": "pub.dev has no archive for flutter 0.0.0. It may be retracted, or published to a private pub server."
+        },
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "pub.dev has no archive for flutter 0.0.0. It may be retracted, or published to a private pub server. No release notes, changelog, or migration guide was reachable for flutter 0.0.20, and no source repository could be resolved for it."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 50995,
+      "phase": "Checked",
+      "detail": "flutter 0.0.0 → 0.0.20 · evidence missing · drift could not obtain enough upstream evidence to decide",
+      "done": 10,
+      "total": 17
+    },
+    {
+      "type": "progress",
+      "at": 51041,
       "phase": "Reading release notes and changelog",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
       "done": 10,
@@ -11871,7 +11871,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33470,
+      "at": 51041,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -11915,7 +11915,7 @@
     },
     {
       "type": "progress",
-      "at": 33470,
+      "at": 51045,
       "phase": "Comparing the public API surface",
       "detail": "force_update_helper 0.2.1 → 0.3.0 · 2 evidence sources",
       "done": 10,
@@ -11923,7 +11923,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33470,
+      "at": 51045,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -11967,7 +11967,7 @@
     },
     {
       "type": "progress",
-      "at": 33470,
+      "at": 51045,
       "phase": "No breaking changes to look for",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
       "done": 10,
@@ -11975,7 +11975,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33470,
+      "at": 51045,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -12019,7 +12019,7 @@
     },
     {
       "type": "progress",
-      "at": 33470,
+      "at": 51045,
       "phase": "Weighing what this upgrade is worth",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
       "done": 10,
@@ -12027,7 +12027,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33470,
+      "at": 51045,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -12071,7 +12071,7 @@
     },
     {
       "type": "progress",
-      "at": 33471,
+      "at": 51047,
       "phase": "Checking maintenance signals",
       "detail": "force_update_helper 0.2.1 → 0.3.0",
       "done": 10,
@@ -12079,7 +12079,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33471,
+      "at": 51047,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -12123,7 +12123,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33471,
+      "at": 51048,
       "candidate": {
         "id": "pubspec.yaml#force_update_helper@0.2.1",
         "name": "force_update_helper",
@@ -12183,7 +12183,7 @@
     },
     {
       "type": "progress",
-      "at": 33471,
+      "at": 51048,
       "phase": "Checked",
       "detail": "force_update_helper 0.2.1 → 0.3.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 11,
@@ -12191,7 +12191,7 @@
     },
     {
       "type": "progress",
-      "at": 33471,
+      "at": 51048,
       "phase": "Reading release notes and changelog",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
       "done": 11,
@@ -12199,7 +12199,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33472,
+      "at": 51048,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -12243,7 +12243,7 @@
     },
     {
       "type": "progress",
-      "at": 33472,
+      "at": 51048,
       "phase": "Comparing the public API surface",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2 · 2 evidence sources",
       "done": 11,
@@ -12251,7 +12251,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33472,
+      "at": 51048,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -12295,7 +12295,7 @@
     },
     {
       "type": "progress",
-      "at": 33472,
+      "at": 51048,
       "phase": "Reading release notes and changelog",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
       "done": 11,
@@ -12303,7 +12303,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33472,
+      "at": 51048,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -12347,7 +12347,7 @@
     },
     {
       "type": "progress",
-      "at": 33472,
+      "at": 51048,
       "phase": "Comparing the public API surface",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6 · 2 evidence sources",
       "done": 11,
@@ -12355,7 +12355,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33472,
+      "at": 51049,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -12399,7 +12399,7 @@
     },
     {
       "type": "progress",
-      "at": 33472,
+      "at": 51049,
       "phase": "Searching your code for 10 breaking changes",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
       "done": 11,
@@ -12407,7 +12407,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33472,
+      "at": 51049,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -12451,7 +12451,7 @@
     },
     {
       "type": "progress",
-      "at": 33472,
+      "at": 51049,
       "phase": "Searching your code for 1 breaking change",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
       "done": 11,
@@ -12459,7 +12459,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33472,
+      "at": 51049,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -12503,7 +12503,7 @@
     },
     {
       "type": "progress",
-      "at": 33477,
+      "at": 51074,
       "phase": "Weighing what this upgrade is worth",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
       "done": 11,
@@ -12511,7 +12511,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33477,
+      "at": 51074,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -12555,7 +12555,7 @@
     },
     {
       "type": "progress",
-      "at": 33480,
+      "at": 51077,
       "phase": "Weighing what this upgrade is worth",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
       "done": 11,
@@ -12563,7 +12563,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33481,
+      "at": 51077,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -12607,7 +12607,7 @@
     },
     {
       "type": "progress",
-      "at": 33482,
+      "at": 51079,
       "phase": "Checking maintenance signals",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2",
       "done": 11,
@@ -12615,7 +12615,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33482,
+      "at": 51079,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -12659,7 +12659,7 @@
     },
     {
       "type": "progress",
-      "at": 33483,
+      "at": 51080,
       "phase": "Checking maintenance signals",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6",
       "done": 11,
@@ -12667,7 +12667,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33483,
+      "at": 51080,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -12711,7 +12711,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33484,
+      "at": 51083,
       "candidate": {
         "id": "pubspec.yaml#flutter_riverpod@2.6.1",
         "name": "flutter_riverpod",
@@ -13071,7 +13071,7 @@
     },
     {
       "type": "progress",
-      "at": 33484,
+      "at": 51083,
       "phase": "Needs your attention",
       "detail": "flutter_riverpod 2.6.1 → 3.4.2 · affects your code · 32 actionable sites in 14 files — not deeply verified",
       "done": 12,
@@ -13079,7 +13079,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33484,
+      "at": 51084,
       "candidate": {
         "id": "pubspec.yaml#riverpod_annotation@2.6.1",
         "name": "riverpod_annotation",
@@ -13184,7 +13184,7 @@
     },
     {
       "type": "progress",
-      "at": 33484,
+      "at": 51084,
       "phase": "Checked",
       "detail": "riverpod_annotation 2.6.1 → 4.0.6 · safe for your code · 1 upstream change, none used here — not deeply verified",
       "done": 13,
@@ -13192,7 +13192,7 @@
     },
     {
       "type": "progress",
-      "at": 33485,
+      "at": 51084,
       "phase": "Reading release notes and changelog",
       "detail": "intl 0.20.2 → 0.20.3",
       "done": 13,
@@ -13200,7 +13200,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33485,
+      "at": 51084,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -13244,7 +13244,7 @@
     },
     {
       "type": "progress",
-      "at": 33485,
+      "at": 51084,
       "phase": "Comparing the public API surface",
       "detail": "intl 0.20.2 → 0.20.3 · 2 evidence sources",
       "done": 13,
@@ -13252,7 +13252,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33485,
+      "at": 51084,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -13296,7 +13296,7 @@
     },
     {
       "type": "progress",
-      "at": 33485,
+      "at": 51084,
       "phase": "Searching your code for 1 breaking change",
       "detail": "intl 0.20.2 → 0.20.3",
       "done": 13,
@@ -13304,7 +13304,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33485,
+      "at": 51084,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -13348,7 +13348,7 @@
     },
     {
       "type": "progress",
-      "at": 33485,
+      "at": 51085,
       "phase": "Weighing what this upgrade is worth",
       "detail": "intl 0.20.2 → 0.20.3",
       "done": 13,
@@ -13356,7 +13356,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33485,
+      "at": 51085,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -13400,7 +13400,7 @@
     },
     {
       "type": "progress",
-      "at": 33486,
+      "at": 51086,
       "phase": "Checking maintenance signals",
       "detail": "intl 0.20.2 → 0.20.3",
       "done": 13,
@@ -13408,7 +13408,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33487,
+      "at": 51086,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -13452,7 +13452,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33487,
+      "at": 51087,
       "candidate": {
         "id": "pubspec.yaml#intl@0.20.2",
         "name": "intl",
@@ -13546,7 +13546,7 @@
     },
     {
       "type": "progress",
-      "at": 33487,
+      "at": 51087,
       "phase": "Checked",
       "detail": "intl 0.20.2 → 0.20.3 · safe for your code · 1 upstream change, none used here — not deeply verified",
       "done": 14,
@@ -13554,7 +13554,7 @@
     },
     {
       "type": "progress",
-      "at": 33603,
+      "at": 51170,
       "phase": "Comparing the public API surface",
       "detail": "url_launcher 6.3.1 → 6.3.2",
       "done": 14,
@@ -13562,7 +13562,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33603,
+      "at": 51170,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -13606,7 +13606,7 @@
     },
     {
       "type": "progress",
-      "at": 33603,
+      "at": 51170,
       "phase": "Reading release notes and changelog",
       "detail": "url_launcher 6.3.1 → 6.3.2",
       "done": 14,
@@ -13614,7 +13614,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33603,
+      "at": 51170,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -13658,7 +13658,7 @@
     },
     {
       "type": "progress",
-      "at": 33603,
+      "at": 51170,
       "phase": "Comparing the public API surface",
       "detail": "url_launcher 6.3.1 → 6.3.2 · 1 evidence source",
       "done": 14,
@@ -13666,7 +13666,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33603,
+      "at": 51170,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -13710,7 +13710,7 @@
     },
     {
       "type": "progress",
-      "at": 33603,
+      "at": 51170,
       "phase": "No breaking changes to look for",
       "detail": "url_launcher 6.3.1 → 6.3.2",
       "done": 14,
@@ -13718,7 +13718,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33603,
+      "at": 51170,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -13762,7 +13762,7 @@
     },
     {
       "type": "progress",
-      "at": 33603,
+      "at": 51170,
       "phase": "Weighing what this upgrade is worth",
       "detail": "url_launcher 6.3.1 → 6.3.2",
       "done": 14,
@@ -13770,7 +13770,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33603,
+      "at": 51170,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -13814,7 +13814,7 @@
     },
     {
       "type": "progress",
-      "at": 33605,
+      "at": 51173,
       "phase": "Checking maintenance signals",
       "detail": "url_launcher 6.3.1 → 6.3.2",
       "done": 14,
@@ -13822,7 +13822,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33605,
+      "at": 51173,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -13866,7 +13866,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 33605,
+      "at": 51175,
       "candidate": {
         "id": "pubspec.yaml#url_launcher@6.3.1",
         "name": "url_launcher",
@@ -13928,7 +13928,7 @@
     },
     {
       "type": "progress",
-      "at": 33605,
+      "at": 51175,
       "phase": "Checked",
       "detail": "url_launcher 6.3.1 → 6.3.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 15,
@@ -13936,398 +13936,15 @@
     },
     {
       "type": "progress",
-      "at": 33992,
-      "phase": "Comparing the public API surface",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 15,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33992,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33992,
-      "phase": "Reading release notes and changelog",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 15,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33992,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33992,
-      "phase": "Comparing the public API surface",
-      "detail": "shared_preferences 2.5.3 → 2.5.5 · 1 evidence source",
-      "done": 15,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33992,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33992,
-      "phase": "No breaking changes to look for",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 15,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33992,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33992,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 15,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33992,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33994,
-      "phase": "Checking maintenance signals",
-      "detail": "shared_preferences 2.5.3 → 2.5.5",
-      "done": 15,
-      "total": 17
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33994,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.3",
-        "selected": "2.5.3",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 33994,
-      "candidate": {
-        "id": "pubspec.yaml#shared_preferences@2.5.3",
-        "name": "shared_preferences",
-        "ecosystem": "pub",
-        "manifestPath": "pubspec.yaml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.5.3",
-        "latest": "2.5.5",
-        "selected": "2.5.5",
-        "safeLatest": "2.5.5",
-        "publishedVersions": [
-          "2.5.5",
-          "2.5.4"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for shared_preferences 2.5.5.",
-        "recommendation": "safe-to-upgrade",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "clean",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": {
-          "localizationRan": true,
-          "localizationComplete": true,
-          "sourceFilesDiscovered": 85,
-          "sourceFilesIndexed": 85,
-          "sourceTruncated": false,
-          "runtimeConfigsDiscovered": 3,
-          "runtimeConfigsIndexed": 3,
-          "runtimeConfigComplete": true
-        },
-        "surfaceAssessment": {
-          "available": true,
-          "inspection": "succeeded",
-          "tool": "pub source",
-          "packageRole": "code"
-        },
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "No release notes, changelog, or migration guide was reachable for shared_preferences 2.5.5."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 33994,
-      "phase": "Checked",
-      "detail": "shared_preferences 2.5.3 → 2.5.5 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 16,
-      "total": 17
-    },
-    {
-      "type": "progress",
-      "at": 34299,
+      "at": 52489,
       "phase": "Comparing the public API surface",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 16,
+      "done": 15,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 34299,
+      "at": 52489,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -14371,15 +13988,15 @@
     },
     {
       "type": "progress",
-      "at": 34299,
+      "at": 52489,
       "phase": "Reading release notes and changelog",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 16,
+      "done": 15,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 34299,
+      "at": 52489,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -14423,15 +14040,15 @@
     },
     {
       "type": "progress",
-      "at": 34299,
+      "at": 52489,
       "phase": "Comparing the public API surface",
       "detail": "riverpod 2.6.1 → 3.4.2 · 2 evidence sources",
-      "done": 16,
+      "done": 15,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 34299,
+      "at": 52489,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -14475,15 +14092,15 @@
     },
     {
       "type": "progress",
-      "at": 34300,
+      "at": 52490,
       "phase": "Searching your code for 11 breaking changes",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 16,
+      "done": 15,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 34300,
+      "at": 52490,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -14527,15 +14144,15 @@
     },
     {
       "type": "progress",
-      "at": 34302,
+      "at": 52492,
       "phase": "Weighing what this upgrade is worth",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 16,
+      "done": 15,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 34302,
+      "at": 52492,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -14579,15 +14196,15 @@
     },
     {
       "type": "progress",
-      "at": 34303,
+      "at": 52494,
       "phase": "Checking maintenance signals",
       "detail": "riverpod 2.6.1 → 3.4.2",
-      "done": 16,
+      "done": 15,
       "total": 17
     },
     {
       "type": "candidate-upsert",
-      "at": 34303,
+      "at": 52494,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -14631,7 +14248,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 34304,
+      "at": 52495,
       "candidate": {
         "id": "pubspec.yaml#riverpod@2.6.1",
         "name": "riverpod",
@@ -14889,9 +14506,392 @@
     },
     {
       "type": "progress",
-      "at": 34304,
+      "at": 52495,
       "phase": "Checked",
       "detail": "riverpod 2.6.1 → 3.4.2 · safe for your code · 11 upstream changes, none used here — not deeply verified",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "type": "progress",
+      "at": 52743,
+      "phase": "Comparing the public API surface",
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 52743,
+      "candidate": {
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 52743,
+      "phase": "Reading release notes and changelog",
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 52744,
+      "candidate": {
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 52744,
+      "phase": "Comparing the public API surface",
+      "detail": "shared_preferences 2.5.3 → 2.5.5 · 1 evidence source",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 52744,
+      "candidate": {
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 52744,
+      "phase": "No breaking changes to look for",
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 52744,
+      "candidate": {
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 52744,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 52744,
+      "candidate": {
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 52746,
+      "phase": "Checking maintenance signals",
+      "detail": "shared_preferences 2.5.3 → 2.5.5",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 52746,
+      "candidate": {
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.3",
+        "latest": "2.5.3",
+        "selected": "2.5.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 52747,
+      "candidate": {
+        "id": "pubspec.yaml#shared_preferences@2.5.3",
+        "name": "shared_preferences",
+        "ecosystem": "pub",
+        "manifestPath": "pubspec.yaml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.3",
+        "latest": "2.5.5",
+        "selected": "2.5.5",
+        "safeLatest": "2.5.5",
+        "publishedVersions": [
+          "2.5.5",
+          "2.5.4"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for shared_preferences 2.5.5.",
+        "recommendation": "safe-to-upgrade",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "clean",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": {
+          "localizationRan": true,
+          "localizationComplete": true,
+          "sourceFilesDiscovered": 85,
+          "sourceFilesIndexed": 85,
+          "sourceTruncated": false,
+          "runtimeConfigsDiscovered": 3,
+          "runtimeConfigsIndexed": 3,
+          "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": true,
+          "inspection": "succeeded",
+          "tool": "pub source",
+          "packageRole": "code"
+        },
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "No release notes, changelog, or migration guide was reachable for shared_preferences 2.5.5."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 52747,
+      "phase": "Checked",
+      "detail": "shared_preferences 2.5.3 → 2.5.5 · safe for your code · no breaking changes found — not deeply verified",
       "done": 17,
       "total": 17
     }
@@ -15261,10 +15261,11 @@
       "workspace": "",
       "workspaceName": null,
       "current": "14.8.1",
-      "latest": "18.0.0",
-      "selected": "18.0.0",
+      "latest": "18.0.1",
+      "selected": "18.0.1",
       "safeLatest": null,
       "publishedVersions": [
+        "18.0.1",
         "18.0.0",
         "17.5.0",
         "17.4.0",
@@ -15281,8 +15282,7 @@
         "16.2.4",
         "16.2.3",
         "16.2.2",
-        "16.2.1",
-        "16.2.0"
+        "16.2.1"
       ],
       "provenance": {
         "kind": "runtime",
@@ -15693,7 +15693,7 @@
       "impactFiles": 0,
       "evidenceCount": 2,
       "gaps": [
-        "No release notes, changelog, or migration guide was reachable for go_router 18.0.0."
+        "No release notes, changelog, or migration guide was reachable for go_router 18.0.1."
       ],
       "breaking": [
         {
@@ -15715,7 +15715,7 @@
               "source": "type-surface-diff",
               "title": "46 API surface change(s) in go_router",
               "url": null,
-              "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+              "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
             }
           ],
           "sites": []
@@ -15739,7 +15739,7 @@
               "source": "type-surface-diff",
               "title": "46 API surface change(s) in go_router",
               "url": null,
-              "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+              "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
             }
           ],
           "sites": []
@@ -15763,7 +15763,7 @@
               "source": "type-surface-diff",
               "title": "46 API surface change(s) in go_router",
               "url": null,
-              "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+              "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
             }
           ],
           "sites": []
@@ -15788,7 +15788,7 @@
               "source": "type-surface-diff",
               "title": "46 API surface change(s) in go_router",
               "url": null,
-              "locator": "go_router 14.8.1 → 18.0.0 (published lib/) · computed by pub source"
+              "locator": "go_router 14.8.1 → 18.0.1 (published lib/) · computed by pub source"
             }
           ],
           "sites": []

@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-09-01T14:09:31.522Z",
+  "capturedAt": "2026-09-02T18:28:01.061Z",
   "commit": "fe9426276484eb8df7d96176ff4631b343a8e204",
-  "engine": "ee5654bba156d0af",
-  "durationMs": 5438,
+  "engine": "0f302818dc27799c",
+  "durationMs": 12361,
   "packagesChecked": 6,
   "manifests": [
     "requirements-build.txt",
@@ -20,7 +20,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 380,
+      "at": 121,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
@@ -28,7 +28,7 @@
     },
     {
       "type": "progress",
-      "at": 389,
+      "at": 131,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -36,7 +36,7 @@
     },
     {
       "type": "progress",
-      "at": 391,
+      "at": 132,
       "phase": "Reading manifest",
       "detail": "requirements-build.txt",
       "done": 0,
@@ -44,7 +44,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 391,
+      "at": 133,
       "candidate": {
         "id": "requirements-build.txt#flatbuffers@25.12.19",
         "name": "flatbuffers",
@@ -88,7 +88,7 @@
     },
     {
       "type": "progress",
-      "at": 391,
+      "at": 133,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
@@ -96,7 +96,7 @@
     },
     {
       "type": "progress",
-      "at": 391,
+      "at": 133,
       "phase": "Reading manifest",
       "detail": "Models/MediaPipeLandscape/CoreML/requirements.txt",
       "done": 0,
@@ -104,7 +104,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 133,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0",
         "name": "coremltools",
@@ -148,7 +148,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 133,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -192,7 +192,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 133,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -236,7 +236,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 133,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15",
         "name": "onnx2torch",
@@ -280,7 +280,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 133,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -324,7 +324,7 @@
     },
     {
       "type": "progress",
-      "at": 392,
+      "at": 133,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -332,7 +332,7 @@
     },
     {
       "type": "progress",
-      "at": 392,
+      "at": 133,
       "phase": "Checking registries",
       "detail": "6 direct dependencies",
       "done": 0,
@@ -340,7 +340,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 133,
       "candidate": {
         "id": "requirements-build.txt#flatbuffers@25.12.19",
         "name": "flatbuffers",
@@ -384,7 +384,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 134,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0",
         "name": "coremltools",
@@ -428,7 +428,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 134,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -472,7 +472,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 134,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -516,7 +516,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 134,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15",
         "name": "onnx2torch",
@@ -560,7 +560,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 392,
+      "at": 134,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -604,12 +604,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 411,
+      "at": 145,
       "id": "requirements-build.txt#flatbuffers@25.12.19"
     },
     {
       "type": "progress",
-      "at": 411,
+      "at": 145,
       "phase": "Up to date",
       "detail": "flatbuffers@25.12.19",
       "done": 1,
@@ -617,12 +617,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 412,
+      "at": 146,
       "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15"
     },
     {
       "type": "progress",
-      "at": 412,
+      "at": 146,
       "phase": "Up to date",
       "detail": "onnx2torch@1.5.15",
       "done": 2,
@@ -630,12 +630,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 699,
+      "at": 152,
       "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0"
     },
     {
       "type": "progress",
-      "at": 699,
+      "at": 152,
       "phase": "Up to date",
       "detail": "coremltools@9.0",
       "done": 3,
@@ -643,23 +643,29 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 709,
+      "at": 177,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
+        "name": "torch",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.22.0",
-        "selected": "1.22.0",
+        "current": "2.7.0",
+        "latest": "2.14.0",
+        "selected": "2.14.0",
         "safeLatest": null,
         "publishedVersions": [
-          "1.22.0",
-          "1.21.0",
-          "1.20.1",
-          "1.20.0"
+          "2.14.0",
+          "2.13.0",
+          "2.12.1",
+          "2.12.0",
+          "2.11.0",
+          "2.10.0",
+          "2.9.1",
+          "2.9.0",
+          "2.8.0",
+          "2.7.1"
         ],
         "provenance": {
           "kind": "runtime",
@@ -692,15 +698,15 @@
     },
     {
       "type": "progress",
-      "at": 709,
+      "at": 177,
       "phase": "Outdated",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 4,
       "total": 6
     },
     {
       "type": "candidate-upsert",
-      "at": 714,
+      "at": 183,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -764,7 +770,7 @@
     },
     {
       "type": "progress",
-      "at": 714,
+      "at": 183,
       "phase": "Outdated",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 5,
@@ -772,28 +778,23 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 722,
+      "at": 190,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
-        "name": "torch",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "2.7.0",
-        "latest": "2.13.0",
-        "selected": "2.13.0",
+        "current": "1.19.1",
+        "latest": "1.22.0",
+        "selected": "1.22.0",
         "safeLatest": null,
         "publishedVersions": [
-          "2.13.0",
-          "2.12.1",
-          "2.12.0",
-          "2.11.0",
-          "2.10.0",
-          "2.9.1",
-          "2.9.0",
-          "2.8.0",
-          "2.7.1"
+          "1.22.0",
+          "1.21.0",
+          "1.20.1",
+          "1.20.0"
         ],
         "provenance": {
           "kind": "runtime",
@@ -826,15 +827,15 @@
     },
     {
       "type": "progress",
-      "at": 722,
+      "at": 190,
       "phase": "Outdated",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "onnx 1.19.1 → 1.22.0",
       "done": 6,
       "total": 6
     },
     {
       "type": "progress",
-      "at": 722,
+      "at": 192,
       "phase": "Reading release notes and changelog",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -842,7 +843,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 722,
+      "at": 192,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -886,7 +887,7 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 193,
       "phase": "Checking package metadata",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -894,7 +895,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 193,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -938,7 +939,7 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 193,
       "phase": "Reading release notes and changelog",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -946,7 +947,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 193,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -990,7 +991,7 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 193,
       "phase": "Checking package metadata",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -998,7 +999,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 193,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1042,15 +1043,15 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 193,
       "phase": "Reading release notes and changelog",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 193,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1094,15 +1095,15 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 193,
       "phase": "Checking package metadata",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 193,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1146,7 +1147,7 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 194,
       "phase": "Checking repository status",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -1154,7 +1155,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 194,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1198,7 +1199,7 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 194,
       "phase": "Checking repository status",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -1206,7 +1207,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 194,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1250,15 +1251,15 @@
     },
     {
       "type": "progress",
-      "at": 723,
+      "at": 195,
       "phase": "Checking repository status",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 723,
+      "at": 195,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1302,59 +1303,7 @@
     },
     {
       "type": "progress",
-      "at": 735,
-      "phase": "Checking security advisories",
-      "detail": "onnx 1.19.1 → 1.22.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 735,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 736,
+      "at": 206,
       "phase": "Checking security advisories",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -1362,7 +1311,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 736,
+      "at": 206,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1406,15 +1355,15 @@
     },
     {
       "type": "progress",
-      "at": 736,
+      "at": 207,
       "phase": "Checking security advisories",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 736,
+      "at": 207,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1458,7 +1407,59 @@
     },
     {
       "type": "progress",
-      "at": 894,
+      "at": 207,
+      "phase": "Checking security advisories",
+      "detail": "onnx 1.19.1 → 1.22.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 207,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 363,
       "phase": "Comparing the public API surface",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -1466,7 +1467,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 894,
+      "at": 363,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1510,7 +1511,7 @@
     },
     {
       "type": "progress",
-      "at": 897,
+      "at": 364,
       "phase": "Comparing the public API surface",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -1518,7 +1519,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 897,
+      "at": 364,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1562,7 +1563,7 @@
     },
     {
       "type": "progress",
-      "at": 925,
+      "at": 380,
       "phase": "Indexing your code",
       "detail": "78 files indexed · 6 direct dependencies to check",
       "done": 0,
@@ -1570,15 +1571,15 @@
     },
     {
       "type": "progress",
-      "at": 1471,
+      "at": 864,
       "phase": "Comparing the public API surface",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1471,
+      "at": 864,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1622,7 +1623,7 @@
     },
     {
       "type": "progress",
-      "at": 2954,
+      "at": 7331,
       "phase": "Checking license",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -1630,7 +1631,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2954,
+      "at": 7331,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1674,7 +1675,7 @@
     },
     {
       "type": "progress",
-      "at": 2955,
+      "at": 7331,
       "phase": "Checking license",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -1682,7 +1683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2955,
+      "at": 7331,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1726,15 +1727,15 @@
     },
     {
       "type": "progress",
-      "at": 2955,
+      "at": 7331,
       "phase": "Checking license",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2955,
+      "at": 7332,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1778,7 +1779,7 @@
     },
     {
       "type": "progress",
-      "at": 2955,
+      "at": 7332,
       "phase": "Reading release notes and changelog",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -1786,7 +1787,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2955,
+      "at": 7332,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1830,7 +1831,7 @@
     },
     {
       "type": "progress",
-      "at": 2955,
+      "at": 7332,
       "phase": "Comparing the public API surface",
       "detail": "huggingface-hub 0.34.4 → 1.29.0 · 21 evidence sources",
       "done": 0,
@@ -1838,7 +1839,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2955,
+      "at": 7332,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1882,7 +1883,7 @@
     },
     {
       "type": "progress",
-      "at": 2960,
+      "at": 7339,
       "phase": "Reading release notes and changelog",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -1890,7 +1891,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2960,
+      "at": 7339,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1934,7 +1935,7 @@
     },
     {
       "type": "progress",
-      "at": 2960,
+      "at": 7339,
       "phase": "Comparing the public API surface",
       "detail": "onnx 1.19.1 → 1.22.0 · 6 evidence sources",
       "done": 0,
@@ -1942,7 +1943,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2960,
+      "at": 7339,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1986,15 +1987,15 @@
     },
     {
       "type": "progress",
-      "at": 2961,
+      "at": 7340,
       "phase": "Reading release notes and changelog",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2961,
+      "at": 7340,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -2038,15 +2039,15 @@
     },
     {
       "type": "progress",
-      "at": 2961,
+      "at": 7340,
       "phase": "Comparing the public API surface",
-      "detail": "torch 2.7.0 → 2.13.0 · 9 evidence sources",
+      "detail": "torch 2.7.0 → 2.14.0 · 10 evidence sources",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2961,
+      "at": 7340,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -2090,15 +2091,15 @@
     },
     {
       "type": "progress",
-      "at": 3018,
-      "phase": "Searching your code for 190 breaking changes",
+      "at": 7382,
+      "phase": "Searching your code for 191 breaking changes",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3018,
+      "at": 7382,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -2116,7 +2117,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Searching your code for 190 breaking changes",
+        "phase": "Searching your code for 191 breaking changes",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -2142,7 +2143,7 @@
     },
     {
       "type": "progress",
-      "at": 3018,
+      "at": 7382,
       "phase": "Searching your code for 30 breaking changes",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -2150,7 +2151,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3018,
+      "at": 7382,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -2194,15 +2195,15 @@
     },
     {
       "type": "progress",
-      "at": 3018,
-      "phase": "Searching your code for 2435 breaking changes",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "at": 7382,
+      "phase": "Searching your code for 2652 breaking changes",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3018,
+      "at": 7382,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -2220,7 +2221,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Searching your code for 2435 breaking changes",
+        "phase": "Searching your code for 2652 breaking changes",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -2246,7 +2247,7 @@
     },
     {
       "type": "progress",
-      "at": 3190,
+      "at": 9327,
       "phase": "Weighing what this upgrade is worth",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -2254,7 +2255,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3191,
+      "at": 9327,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -2298,7 +2299,7 @@
     },
     {
       "type": "progress",
-      "at": 3238,
+      "at": 9391,
       "phase": "Checking maintenance signals",
       "detail": "huggingface-hub 0.34.4 → 1.29.0",
       "done": 0,
@@ -2306,7 +2307,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3238,
+      "at": 9391,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -2350,7 +2351,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3249,
+      "at": 9403,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -3930,6 +3931,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_b980d67451",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_5306b66a2f",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -3954,7 +3963,7 @@
             "runtimeState": "incompatible"
           }
         ],
-        "breakingCount": 190,
+        "breakingCount": 191,
         "impactCount": 2,
         "impactFiles": 2,
         "evidenceCount": 21,
@@ -4089,7 +4098,7 @@
     },
     {
       "type": "progress",
-      "at": 3249,
+      "at": 9403,
       "phase": "Needs your attention",
       "detail": "huggingface-hub 0.34.4 → 1.29.0 · affects your code · 2 actionable sites in 2 files — not deeply verified",
       "done": 1,
@@ -4097,7 +4106,7 @@
     },
     {
       "type": "progress",
-      "at": 3344,
+      "at": 9519,
       "phase": "Weighing what this upgrade is worth",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 1,
@@ -4105,7 +4114,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3344,
+      "at": 9519,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -4149,7 +4158,7 @@
     },
     {
       "type": "progress",
-      "at": 3394,
+      "at": 9573,
       "phase": "Checking maintenance signals",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 1,
@@ -4157,7 +4166,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3394,
+      "at": 9573,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -4201,7 +4210,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3395,
+      "at": 9574,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -4637,7 +4646,7 @@
     },
     {
       "type": "progress",
-      "at": 3395,
+      "at": 9574,
       "phase": "Needs your attention",
       "detail": "onnx 1.19.1 → 1.22.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
       "done": 2,
@@ -4645,15 +4654,15 @@
     },
     {
       "type": "progress",
-      "at": 5241,
+      "at": 11138,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5241,
+      "at": 11138,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4697,15 +4706,15 @@
     },
     {
       "type": "progress",
-      "at": 5291,
+      "at": 11194,
       "phase": "Checking maintenance signals",
-      "detail": "torch 2.7.0 → 2.13.0",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5291,
+      "at": 11194,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4749,7 +4758,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5435,
+      "at": 11409,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4758,10 +4767,11 @@
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
         "current": "2.7.0",
-        "latest": "2.13.0",
-        "selected": "2.13.0",
+        "latest": "2.14.0",
+        "selected": "2.14.0",
         "safeLatest": null,
         "publishedVersions": [
+          "2.14.0",
           "2.13.0",
           "2.12.1",
           "2.12.0",
@@ -5047,6 +5057,326 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_ce9ae11cbf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8ef0090771",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6b8f3e5f43",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_bbb52fc190",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_da69f6ab36",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2cc0432502",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1cc4162d29",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2168c0ff66",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_093d3067cf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_19726e052b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7d57e621ba",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2023df8ee0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_54ce68fccf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0355725235",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_10f67f4954",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_959b1d0bf5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f0b2844d2b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ecaa034b56",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a13d5fe6cf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f1c271fa47",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d62c63640d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_70cddb18c0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_93ba4ad81a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2356c63a16",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_17f1d29c48",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_969766b7c5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_497d95d7be",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4df6fd188c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ffd2466eee",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_58fd544de1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cf3b234fbd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6cbc1c7582",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_238cd7fb74",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_496b5fbaf0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3b9d79f744",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7de9715e5f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_248dbaa277",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9dba1900f0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b3f39758ef",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5b738c87d0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_3d515bdc9a",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -5135,6 +5465,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_707a32c6e9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_380bff88ef",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -5144,6 +5482,14 @@
           },
           {
             "changeId": "bc_c8e1a66e26",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_db4d1a8eb9",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5208,6 +5554,22 @@
           },
           {
             "changeId": "bc_99fedfc82b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5b5693dd08",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9c7008dd3e",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5287,6 +5649,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_06a6689528",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_b31323aec5",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -5304,6 +5674,22 @@
           },
           {
             "changeId": "bc_c122306326",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_92a5425c04",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c9db57b0f9",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5360,6 +5746,38 @@
           },
           {
             "changeId": "bc_3cc65fe246",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2a78221af2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_dcbff7da74",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0819a2a797",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_213becce9e",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5735,6 +6153,30 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_11c2c3fd1f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_631eff47ef",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_125b4464ce",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_789e9b4213",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -5751,7 +6193,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_c99dcd7406",
+            "changeId": "bc_bff430baaf",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5759,7 +6201,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_6a650f08a2",
+            "changeId": "bc_65518fcfd3",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5767,7 +6209,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_a2e5963c1f",
+            "changeId": "bc_045fbfd747",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -5775,7 +6217,15 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_eac672c0ff",
+            "changeId": "bc_785dbe303c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ecadd0b920",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6247,6 +6697,22 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_c7c8c62982",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_28034d29d0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_c8c6c7defc",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -6391,6 +6857,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_6252f0605a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_4ade9095eb",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -6400,6 +6874,22 @@
           },
           {
             "changeId": "bc_c8f1299b6e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a06cdfc3dd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_dff349cf8e",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6511,6 +7001,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_d3789b06c6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_00b7159d91",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -6552,6 +7050,14 @@
           },
           {
             "changeId": "bc_a7868339d2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7d9e66fac5",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6631,7 +7137,23 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_8d9d1403f4",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_dd34454a66",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7582aa95ff",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6719,7 +7241,47 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_187c792d28",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_529d9137ff",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_05fe3b8b0f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3b47e4bca4",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1a8bc64576",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9ba8244d86",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6735,7 +7297,55 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_694ed85f82",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_440216d624",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a4af262480",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b9643aaf64",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cc92336535",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2780857900",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_be58d8cf77",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6783,6 +7393,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_eefaf3ac33",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_71c673b7f4",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -6799,7 +7417,39 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_a9424a7d58",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c35ded39fd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_12622a508b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_0f8d1a606e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_bac0cde196",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6816,6 +7466,14 @@
           },
           {
             "changeId": "bc_a7e6bc7cb9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_448e41990a",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6855,7 +7513,31 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_1bc9fc12e8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a7a8d9085b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_174005619a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_13002ec76f",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6888,6 +7570,14 @@
           },
           {
             "changeId": "bc_c34f3f9253",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e0e8546dda",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -6928,6 +7618,14 @@
           },
           {
             "changeId": "bc_185e564758",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fa4500af60",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7016,6 +7714,14 @@
           },
           {
             "changeId": "bc_017087b0ba",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_128a041716",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7135,6 +7841,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_41d0839a18",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_0014607327",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7152,6 +7866,14 @@
           },
           {
             "changeId": "bc_5b40a67f52",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_720f01c71a",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7191,6 +7913,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_46c336f7af",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_262b787c52",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7215,6 +7945,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_aaea958ba2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_43a83ad03b",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7224,6 +7962,14 @@
           },
           {
             "changeId": "bc_a6e490ccfa",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_aa95029d65",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7263,6 +8009,22 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_d91970131d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ba630e2355",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_3938d36d9b",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7279,7 +8041,55 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_85373d84ac",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3e2a04b812",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9f290d0893",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_213b44e7db",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6da5d1d4f8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_dc5b3d3821",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9bda69d749",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7639,6 +8449,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_ed11cababd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_864802d2e2",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7663,6 +8481,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_558fe7d1af",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_f7bd017170",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7671,7 +8497,55 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_6a32d08fd5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_201f3022e6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_876984ddce",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d8f6e8267c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e059da3bda",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f02bd0f629",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_58bbebc9fb",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7688,6 +8562,14 @@
           },
           {
             "changeId": "bc_e4bc213b3c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0992793cb0",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7735,7 +8617,39 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_79db191ff6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8436124a4f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_15f9ec44ba",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_4ff6b62c52",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6f18d75432",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7751,7 +8665,63 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_c24623db2c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_b42f434777",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2851aee917",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_757a924e78",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_19f107e99c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5968a8e071",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9560f78a1c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f65f4d0d27",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7799,6 +8769,22 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_38019c326f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c1905c531b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_382af0d2bb",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7824,6 +8810,14 @@
           },
           {
             "changeId": "bc_dfa7f579d5",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_53b27b13c6",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7887,6 +8881,22 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_33ca032f1d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6f7e6a90cd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_aef2551154",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -7895,7 +8905,31 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_05a52fe79a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_b391a08dd0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e4dcf2092f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5233242280",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -7960,6 +8994,14 @@
           },
           {
             "changeId": "bc_c274a5ad58",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_71093c4766",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -8823,6 +9865,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_727274f82c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_def0c02fe3",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -8840,14 +9890,6 @@
           },
           {
             "changeId": "bc_2870f8ccc7",
-            "state": "unaffected",
-            "reason": "no-local-impact",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e474943c1a",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -9400,6 +10442,14 @@
           },
           {
             "changeId": "bc_90cc9c7e4e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_adb925dcb3",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -10255,6 +11305,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_47363d5ee2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_f8526816ee",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -10728,6 +11786,14 @@
           },
           {
             "changeId": "bc_0d82b47a8e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d29f1892a8",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -12055,6 +13121,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_5f75dc589e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_13c1958e5c",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -13343,6 +14417,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_420049861e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_5100701509",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -13360,6 +14442,22 @@
           },
           {
             "changeId": "bc_eecdb834bd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ad8c4c28d3",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_137b191fa6",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -13527,6 +14625,38 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_a6b64b3d63",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_07dfc0c74e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_47aa122e55",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_806e6a8b62",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_0131d80189",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -13607,6 +14737,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_a9aba09597",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_438292c0a9",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -13639,6 +14777,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_b3f02fd6ab",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_8b1b759c37",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -13647,7 +14793,23 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_b7bbcba92f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_f5f1d264bd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a2664d48a9",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -13752,6 +14914,14 @@
           },
           {
             "changeId": "bc_078db11639",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_82bf62f14f",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -14743,6 +15913,38 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_1173201b29",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_71735e8881",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_235930fadf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_537c400650",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_33f0e1a1aa",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -14943,6 +16145,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_f845203fb4",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_83c5299ce3",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -14959,7 +16169,79 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_7a59285680",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5701b7bf30",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a227b05d87",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7056543ecc",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_20a4e943ff",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ceab3f2c83",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_75d0ea6788",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_d0888de298",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2602fcd950",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_127788c16b",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -14975,6 +16257,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_8fc380484d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_b47e478009",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -14983,7 +16273,71 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_48e8f0553a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_253e319d60",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9b88455e0a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c49a00043d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9d9a689413",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2a664527f0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_45e18d1e4b",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_eee4574e84",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fbe2a1f9f5",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -15071,6 +16425,22 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_11d75e37fa",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_900e2ebd8d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_549c6f24e0",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -15079,7 +16449,47 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_22f8879674",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e5529208a7",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_83d30a732e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ea77eee47c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_379dbe2192",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e44d0c1fb1",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -15111,7 +16521,39 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_eb749d05e2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_da3ac0710f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c202043df1",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_af18caf95c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f1e6dfb702",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -22575,6 +24017,166 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_d17904cbe9",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d16d527cd2",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3796073699",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3f40af99e4",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5d42fd899f",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9cb73a6dac",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2d1ba4730c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4cc3b3580d",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_25a23fb209",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ead11dbf00",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_10b7b726bf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b452abe82a",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c08e4a45bd",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4f3fb706a4",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_32ef39beab",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0379048278",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_feb915dc7e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_51d970a458",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_41f16ad167",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f5a968ee0e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_a761822d55",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -22687,7 +24289,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_609cf6049f",
+            "changeId": "bc_6f22b2a57b",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -22800,6 +24402,14 @@
           },
           {
             "changeId": "bc_2bdc4b0318",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b66cdc49e2",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -23503,6 +25113,54 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_52edec08f0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_08e8dc3eda",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_88f786cdbf",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ea8e078b75",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_66e2fd2dc8",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6ba15be990",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_e544063301",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -23560,6 +25218,14 @@
           },
           {
             "changeId": "bc_e32c216138",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_41229f8b3d",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -24135,6 +25801,70 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_f4357722ab",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7aedab1720",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3421f05ecb",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ccaddfe5e0",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8665d0ed97",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a0c325495e",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8d834db3d6",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_46ff7f31af",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_0f7fb8641e",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -24183,6 +25913,14 @@
             "runtimeState": null
           },
           {
+            "changeId": "bc_91ddbe2da4",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
             "changeId": "bc_61b42df3d7",
             "state": "unaffected",
             "reason": "no-local-impact",
@@ -24192,6 +25930,14 @@
           },
           {
             "changeId": "bc_ba5397d30c",
+            "state": "unaffected",
+            "reason": "no-local-impact",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4185104801",
             "state": "unaffected",
             "reason": "no-local-impact",
             "siteCount": 0,
@@ -24303,10 +26049,10 @@
             "runtimeState": "incompatible"
           }
         ],
-        "breakingCount": 2435,
+        "breakingCount": 2652,
         "impactCount": 1,
         "impactFiles": 1,
-        "evidenceCount": 9,
+        "evidenceCount": 10,
         "gaps": [],
         "breaking": [
           {
@@ -24331,7 +26077,7 @@
             "evidence": [
               {
                 "source": "registry-metadata",
-                "title": "torch@2.13.0 requires Python >=3.10",
+                "title": "torch@2.14.0 requires Python >=3.10",
                 "url": null,
                 "locator": null
               }
@@ -24366,9 +26112,9 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "2417 API surface change(s) in torch",
+                "title": "2624 API surface change(s) in torch",
                 "url": null,
-                "locator": "torch 2.7.0 → 2.13.0 (public symbols, best-effort) · computed by python ast"
+                "locator": "torch 2.7.0 → 2.14.0 (public symbols, best-effort) · computed by python ast"
               }
             ],
             "sites": []
@@ -24392,9 +26138,9 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "2417 API surface change(s) in torch",
+                "title": "2624 API surface change(s) in torch",
                 "url": null,
-                "locator": "torch 2.7.0 → 2.13.0 (public symbols, best-effort) · computed by python ast"
+                "locator": "torch 2.7.0 → 2.14.0 (public symbols, best-effort) · computed by python ast"
               }
             ],
             "sites": []
@@ -24418,9 +26164,9 @@
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "2417 API surface change(s) in torch",
+                "title": "2624 API surface change(s) in torch",
                 "url": null,
-                "locator": "torch 2.7.0 → 2.13.0 (public symbols, best-effort) · computed by python ast"
+                "locator": "torch 2.7.0 → 2.14.0 (public symbols, best-effort) · computed by python ast"
               }
             ],
             "sites": []
@@ -24430,9 +26176,9 @@
     },
     {
       "type": "progress",
-      "at": 5436,
+      "at": 11412,
       "phase": "Needs your attention",
-      "detail": "torch 2.7.0 → 2.13.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
+      "detail": "torch 2.7.0 → 2.14.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
       "done": 3,
       "total": 3
     }
@@ -26017,6 +27763,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_b980d67451",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_5306b66a2f",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -26041,7 +27795,7 @@
           "runtimeState": "incompatible"
         }
       ],
-      "breakingCount": 190,
+      "breakingCount": 191,
       "impactCount": 2,
       "impactFiles": 2,
       "evidenceCount": 21,
@@ -26181,10 +27935,11 @@
       "workspace": "Models/MediaPipeLandscape/CoreML",
       "workspaceName": null,
       "current": "2.7.0",
-      "latest": "2.13.0",
-      "selected": "2.13.0",
+      "latest": "2.14.0",
+      "selected": "2.14.0",
       "safeLatest": null,
       "publishedVersions": [
+        "2.14.0",
         "2.13.0",
         "2.12.1",
         "2.12.0",
@@ -26470,6 +28225,326 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_ce9ae11cbf",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8ef0090771",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6b8f3e5f43",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_bbb52fc190",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_da69f6ab36",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2cc0432502",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_1cc4162d29",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2168c0ff66",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_093d3067cf",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_19726e052b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7d57e621ba",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2023df8ee0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_54ce68fccf",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_0355725235",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_10f67f4954",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_959b1d0bf5",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f0b2844d2b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ecaa034b56",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_a13d5fe6cf",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f1c271fa47",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_d62c63640d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_70cddb18c0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_93ba4ad81a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2356c63a16",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_17f1d29c48",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_969766b7c5",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_497d95d7be",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_4df6fd188c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ffd2466eee",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_58fd544de1",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_cf3b234fbd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6cbc1c7582",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_238cd7fb74",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_496b5fbaf0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_3b9d79f744",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7de9715e5f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_248dbaa277",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9dba1900f0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_b3f39758ef",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5b738c87d0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_3d515bdc9a",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -26558,6 +28633,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_707a32c6e9",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_380bff88ef",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -26567,6 +28650,14 @@
         },
         {
           "changeId": "bc_c8e1a66e26",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_db4d1a8eb9",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -26631,6 +28722,22 @@
         },
         {
           "changeId": "bc_99fedfc82b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5b5693dd08",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9c7008dd3e",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -26710,6 +28817,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_06a6689528",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_b31323aec5",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -26727,6 +28842,22 @@
         },
         {
           "changeId": "bc_c122306326",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_92a5425c04",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c9db57b0f9",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -26783,6 +28914,38 @@
         },
         {
           "changeId": "bc_3cc65fe246",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2a78221af2",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_dcbff7da74",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_0819a2a797",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_213becce9e",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -27158,6 +29321,30 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_11c2c3fd1f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_631eff47ef",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_125b4464ce",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_789e9b4213",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -27174,7 +29361,7 @@
           "runtimeState": null
         },
         {
-          "changeId": "bc_c99dcd7406",
+          "changeId": "bc_bff430baaf",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -27182,7 +29369,7 @@
           "runtimeState": null
         },
         {
-          "changeId": "bc_6a650f08a2",
+          "changeId": "bc_65518fcfd3",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -27190,7 +29377,7 @@
           "runtimeState": null
         },
         {
-          "changeId": "bc_a2e5963c1f",
+          "changeId": "bc_045fbfd747",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -27198,7 +29385,15 @@
           "runtimeState": null
         },
         {
-          "changeId": "bc_eac672c0ff",
+          "changeId": "bc_785dbe303c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ecadd0b920",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -27670,6 +29865,22 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_c7c8c62982",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_28034d29d0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_c8c6c7defc",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -27814,6 +30025,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_6252f0605a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_4ade9095eb",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -27823,6 +30042,22 @@
         },
         {
           "changeId": "bc_c8f1299b6e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_a06cdfc3dd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_dff349cf8e",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -27934,6 +30169,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_d3789b06c6",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_00b7159d91",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -27975,6 +30218,14 @@
         },
         {
           "changeId": "bc_a7868339d2",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7d9e66fac5",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28054,7 +30305,23 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_8d9d1403f4",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_dd34454a66",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7582aa95ff",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28142,7 +30409,47 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_187c792d28",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_529d9137ff",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_05fe3b8b0f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_3b47e4bca4",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_1a8bc64576",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9ba8244d86",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28158,7 +30465,55 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_694ed85f82",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_440216d624",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_a4af262480",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_b9643aaf64",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_cc92336535",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2780857900",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_be58d8cf77",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28206,6 +30561,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_eefaf3ac33",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_71c673b7f4",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -28222,7 +30585,39 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_a9424a7d58",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c35ded39fd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_12622a508b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_0f8d1a606e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_bac0cde196",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28239,6 +30634,14 @@
         },
         {
           "changeId": "bc_a7e6bc7cb9",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_448e41990a",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28278,7 +30681,31 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_1bc9fc12e8",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_a7a8d9085b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_174005619a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_13002ec76f",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28311,6 +30738,14 @@
         },
         {
           "changeId": "bc_c34f3f9253",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_e0e8546dda",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28351,6 +30786,14 @@
         },
         {
           "changeId": "bc_185e564758",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_fa4500af60",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28439,6 +30882,14 @@
         },
         {
           "changeId": "bc_017087b0ba",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_128a041716",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28558,6 +31009,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_41d0839a18",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_0014607327",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -28575,6 +31034,14 @@
         },
         {
           "changeId": "bc_5b40a67f52",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_720f01c71a",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28614,6 +31081,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_46c336f7af",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_262b787c52",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -28638,6 +31113,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_aaea958ba2",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_43a83ad03b",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -28647,6 +31130,14 @@
         },
         {
           "changeId": "bc_a6e490ccfa",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_aa95029d65",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -28686,6 +31177,22 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_d91970131d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ba630e2355",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_3938d36d9b",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -28702,7 +31209,55 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_85373d84ac",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_3e2a04b812",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9f290d0893",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_213b44e7db",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6da5d1d4f8",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_dc5b3d3821",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9bda69d749",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -29062,6 +31617,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_ed11cababd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_864802d2e2",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -29086,6 +31649,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_558fe7d1af",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_f7bd017170",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -29094,7 +31665,55 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_6a32d08fd5",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_201f3022e6",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_876984ddce",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_d8f6e8267c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_e059da3bda",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f02bd0f629",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_58bbebc9fb",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -29111,6 +31730,14 @@
         },
         {
           "changeId": "bc_e4bc213b3c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_0992793cb0",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -29158,7 +31785,39 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_79db191ff6",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8436124a4f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_15f9ec44ba",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_4ff6b62c52",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6f18d75432",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -29174,7 +31833,63 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_c24623db2c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_b42f434777",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2851aee917",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_757a924e78",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_19f107e99c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5968a8e071",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9560f78a1c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f65f4d0d27",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -29222,6 +31937,22 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_38019c326f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c1905c531b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_382af0d2bb",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -29247,6 +31978,14 @@
         },
         {
           "changeId": "bc_dfa7f579d5",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_53b27b13c6",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -29310,6 +32049,22 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_33ca032f1d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6f7e6a90cd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_aef2551154",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -29318,7 +32073,31 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_05a52fe79a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_b391a08dd0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_e4dcf2092f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5233242280",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -29383,6 +32162,14 @@
         },
         {
           "changeId": "bc_c274a5ad58",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_71093c4766",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -30246,6 +33033,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_727274f82c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_def0c02fe3",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -30263,14 +33058,6 @@
         },
         {
           "changeId": "bc_2870f8ccc7",
-          "state": "unaffected",
-          "reason": "no-local-impact",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_e474943c1a",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -30823,6 +33610,14 @@
         },
         {
           "changeId": "bc_90cc9c7e4e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_adb925dcb3",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -31678,6 +34473,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_47363d5ee2",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_f8526816ee",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -32151,6 +34954,14 @@
         },
         {
           "changeId": "bc_0d82b47a8e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_d29f1892a8",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -33478,6 +36289,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_5f75dc589e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_13c1958e5c",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -34766,6 +37585,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_420049861e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_5100701509",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -34783,6 +37610,22 @@
         },
         {
           "changeId": "bc_eecdb834bd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ad8c4c28d3",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_137b191fa6",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -34950,6 +37793,38 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_a6b64b3d63",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_07dfc0c74e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_47aa122e55",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_806e6a8b62",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_0131d80189",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -35030,6 +37905,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_a9aba09597",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_438292c0a9",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -35062,6 +37945,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_b3f02fd6ab",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_8b1b759c37",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -35070,7 +37961,23 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_b7bbcba92f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_f5f1d264bd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_a2664d48a9",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -35175,6 +38082,14 @@
         },
         {
           "changeId": "bc_078db11639",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_82bf62f14f",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -36166,6 +39081,38 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_1173201b29",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_71735e8881",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_235930fadf",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_537c400650",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_33f0e1a1aa",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -36366,6 +39313,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_f845203fb4",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_83c5299ce3",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -36382,7 +39337,79 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_7a59285680",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5701b7bf30",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_a227b05d87",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7056543ecc",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_20a4e943ff",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ceab3f2c83",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_75d0ea6788",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_d0888de298",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2602fcd950",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_127788c16b",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -36398,6 +39425,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_8fc380484d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_b47e478009",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -36406,7 +39441,71 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_48e8f0553a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_253e319d60",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9b88455e0a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c49a00043d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9d9a689413",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2a664527f0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_45e18d1e4b",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_eee4574e84",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_fbe2a1f9f5",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -36494,6 +39593,22 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_11d75e37fa",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_900e2ebd8d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_549c6f24e0",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -36502,7 +39617,47 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_22f8879674",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_e5529208a7",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_83d30a732e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ea77eee47c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_379dbe2192",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_e44d0c1fb1",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -36534,7 +39689,39 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_eb749d05e2",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_da3ac0710f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c202043df1",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_af18caf95c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f1e6dfb702",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -43998,6 +47185,166 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_d17904cbe9",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_d16d527cd2",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_3796073699",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_3f40af99e4",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_5d42fd899f",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9cb73a6dac",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_2d1ba4730c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_4cc3b3580d",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_25a23fb209",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ead11dbf00",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_10b7b726bf",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_b452abe82a",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_c08e4a45bd",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_4f3fb706a4",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_32ef39beab",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_0379048278",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_feb915dc7e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_51d970a458",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_41f16ad167",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f5a968ee0e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_a761822d55",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -44110,7 +47457,7 @@
           "runtimeState": null
         },
         {
-          "changeId": "bc_609cf6049f",
+          "changeId": "bc_6f22b2a57b",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -44223,6 +47570,14 @@
         },
         {
           "changeId": "bc_2bdc4b0318",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_b66cdc49e2",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -44926,6 +48281,54 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_52edec08f0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_08e8dc3eda",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_88f786cdbf",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ea8e078b75",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_66e2fd2dc8",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_6ba15be990",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_e544063301",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -44983,6 +48386,14 @@
         },
         {
           "changeId": "bc_e32c216138",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_41229f8b3d",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -45558,6 +48969,70 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_f4357722ab",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_7aedab1720",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_3421f05ecb",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_ccaddfe5e0",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8665d0ed97",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_a0c325495e",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8d834db3d6",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_46ff7f31af",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_0f7fb8641e",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -45606,6 +49081,14 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_91ddbe2da4",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_61b42df3d7",
           "state": "unaffected",
           "reason": "no-local-impact",
@@ -45615,6 +49098,14 @@
         },
         {
           "changeId": "bc_ba5397d30c",
+          "state": "unaffected",
+          "reason": "no-local-impact",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_4185104801",
           "state": "unaffected",
           "reason": "no-local-impact",
           "siteCount": 0,
@@ -45726,10 +49217,10 @@
           "runtimeState": "incompatible"
         }
       ],
-      "breakingCount": 2435,
+      "breakingCount": 2652,
       "impactCount": 1,
       "impactFiles": 1,
-      "evidenceCount": 9,
+      "evidenceCount": 10,
       "gaps": [],
       "breaking": [
         {
@@ -45754,7 +49245,7 @@
           "evidence": [
             {
               "source": "registry-metadata",
-              "title": "torch@2.13.0 requires Python >=3.10",
+              "title": "torch@2.14.0 requires Python >=3.10",
               "url": null,
               "locator": null
             }
@@ -45789,9 +49280,9 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "2417 API surface change(s) in torch",
+              "title": "2624 API surface change(s) in torch",
               "url": null,
-              "locator": "torch 2.7.0 → 2.13.0 (public symbols, best-effort) · computed by python ast"
+              "locator": "torch 2.7.0 → 2.14.0 (public symbols, best-effort) · computed by python ast"
             }
           ],
           "sites": []
@@ -45815,9 +49306,9 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "2417 API surface change(s) in torch",
+              "title": "2624 API surface change(s) in torch",
               "url": null,
-              "locator": "torch 2.7.0 → 2.13.0 (public symbols, best-effort) · computed by python ast"
+              "locator": "torch 2.7.0 → 2.14.0 (public symbols, best-effort) · computed by python ast"
             }
           ],
           "sites": []
@@ -45841,9 +49332,9 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "2417 API surface change(s) in torch",
+              "title": "2624 API surface change(s) in torch",
               "url": null,
-              "locator": "torch 2.7.0 → 2.13.0 (public symbols, best-effort) · computed by python ast"
+              "locator": "torch 2.7.0 → 2.14.0 (public symbols, best-effort) · computed by python ast"
             }
           ],
           "sites": []
