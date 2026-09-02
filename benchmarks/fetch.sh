@@ -16,11 +16,33 @@
 set -eu
 cd "$(dirname "$0")"
 
+# Download $1 to $2 and verify its md5 is $3, retrying the whole cycle a few
+# times. Zenodo rate-limits (HTTP 429) when sibling CI jobs fetch the same
+# record at once, and without this a throttled response — an HTML error page
+# saved under the archive's name — would fail the checksum and kill the run.
+# --fail makes curl reject those responses; the loop re-fetches on a transient
+# miss instead of giving up on the first one.
+fetch_verified() {
+  url=$1 dest=$2 want=$3 attempt=1
+  while [ "$attempt" -le 5 ]; do
+    rm -f "$dest"
+    if curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o "$dest" "$url" \
+      && echo "$want  $dest" | md5sum -c - ; then
+      return 0
+    fi
+    echo "fetch_verified: attempt $attempt for $dest failed, retrying in 15s" >&2
+    sleep 15
+    attempt=$((attempt + 1))
+  done
+  echo "fetch_verified: giving up on $dest after $((attempt - 1)) attempts" >&2
+  return 1
+}
+
 case "${1:-}" in
   kong)
     if [ ! -d kong-zenodo-13857646 ]; then
-      curl -sSLO "https://zenodo.org/records/13857646/files/replication_package.zip?download=1"
-      echo "786cda66ae080cc70e5fb4a04e472429  replication_package.zip" | md5sum -c -
+      fetch_verified "https://zenodo.org/records/13857646/files/replication_package.zip?download=1" \
+        replication_package.zip 786cda66ae080cc70e5fb4a04e472429
       mkdir -p kong-zenodo-13857646
       unzip -q replication_package.zip -d kong-zenodo-13857646
     fi
@@ -39,8 +61,8 @@ case "${1:-}" in
   roseau)
     if [ ! -d roseau ]; then
       mkdir -p roseau
-      curl -sSLo roseau/archive.zip "https://zenodo.org/records/15536418/files/archive.zip?download=1"
-      echo "60a6f44feb4189e7751034bdfdfafef3  roseau/archive.zip" | md5sum -c -
+      fetch_verified "https://zenodo.org/records/15536418/files/archive.zip?download=1" \
+        roseau/archive.zip 60a6f44feb4189e7751034bdfdfafef3
       (cd roseau && unzip -q archive.zip 'accuracy-dataset/*' 'results/*')
     fi
     ;;
