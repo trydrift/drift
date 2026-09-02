@@ -471,8 +471,16 @@ export function parseJapicmp(output: string): SurfaceChange[] {
     // `([-+*])\1\1` requires the three marker characters to be identical,
     // which they always are for a given verb; the compatibility flag is then
     // whatever immediately follows, with no `\s*` between them to swallow it.
+    //
+    // `(?:\s*\(<-\s*\w+\))?\s*` before the colon is japicmp's type-transition
+    // delta: a class turned into an interface (or the reverse) is reported as
+    // `***! MODIFIED INTERFACE (<- CLASS) : …`, with the old kind and an extra
+    // space wedged between the kind word and the colon. Without this the line
+    // did not match at all, and a `class` becoming an `interface` — which
+    // breaks every `new`, `extends` and `implements` against it — was read as
+    // no change. (Roseau's `otherClazzToIfaze` / `otherIfazeToClass`.)
     const match =
-      /^([-+*])\1\1([!*])?\s+(\w+)\s+(CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS):\s*(.+)$/.exec(
+      /^([-+*])\1\1([!*])?\s+(\w+)\s+(CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS)(?:\s*\(<-\s*\w+\))?\s*:\s*(.+)$/.exec(
         line,
       );
     if (!match) continue;
