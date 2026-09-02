@@ -203,6 +203,21 @@ interface ProseRule {
     to?: 'commonjs' | 'esm' | 'dual';
     incompatibleUsage: ModuleIncompatibleUsage[];
   };
+  /**
+   * A refinement rule *names the kind* of a break another rule already found
+   * on the same line — it never establishes one on its own.
+   *
+   * "update the function signatures", "make it async", "use an options object"
+   * are how a maintainer describes a signature change *inside* a
+   * `BREAKING CHANGE:` footer, but the same words also describe an internal
+   * refactor in an ordinary `chore:` / `perf:` subject. A rule broad enough to
+   * catch the former in prose that names no symbol will fire on the latter
+   * too. Marking it `refinement` keeps its precision contribution (a better
+   * `kind` on a line already known to be breaking) while removing its recall
+   * contribution (turning a line breaking on its own) — `matchProse` drops
+   * every refinement match from a line that produced no other match.
+   */
+  refinement?: boolean;
 }
 
 /**
@@ -444,6 +459,59 @@ const PROSE_RULES: ProseRule[] = [
     symbolGroup: 0,
     summarize: () => 'a call signature was rewritten',
   },
+  /*
+   * Refinement rules (see `ProseRule.refinement`).
+   *
+   * These name a signature change in prose that quotes no symbol — "update
+   * the function signatures", "make `x` async, drop callback support", "switch
+   * to an options object arg", "argument order changed". That phrasing is how
+   * Kong's `change_signature` commits read when they are not backtick-quoting
+   * anything (its `async/sync`, `option object` and `this argument` subtypes),
+   * but the very same words describe an internal refactor in an ordinary
+   * `perf:`/`chore:` subject. Firing standalone they cost RQ1 precision (a
+   * commit with no other breaking signal newly reads as breaking); as
+   * refinements they only sharpen `behaviour-change` → `signature-change` on a
+   * line the footer or a symbol rule already flagged, so RQ1 is untouched.
+   */
+  {
+    id: 'prose-verb-signature',
+    kind: 'signature-change',
+    refinement: true,
+    pattern:
+      /\b(?:changed?|changing|updated?|updating|revamp(?:ed)?|rework(?:ed)?|adjust(?:ed)?|modif(?:y|ied)|switch(?:ed)?|new)\s+(?:the\s+)?[\w`.$()/,&\s-]{0,45}?\bsignatures?\b|\bsignatures?\s+(?:of\b[^.\n]{0,60}?)?\s*(?:has\s+|have\s+|is\s+|was\s+|were\s+|now\s+)/i,
+    symbolGroup: 0,
+    summarize: () => 'a function signature changed',
+  },
+  {
+    id: 'prose-argument-list-changed',
+    kind: 'signature-change',
+    refinement: true,
+    pattern:
+      /\b(?:arg(?:ument)?|param(?:eter)?)s?\s+order\b|\bargs?\s+now\s+(?:given|passed|taken)\b|\bno\s+longer\s+(?:accepts?|takes?|supports?|allows?|passes?)\s+(?:an?\s+|the\s+)?(?:`?[\w$.]+`?\s+)?(?:arg(?:ument)?|param(?:eter)?|result\s+selector|selector|callback)\b|\b(?:result\s+selector|`?thisArg`?|this\s+argument|callback\s+argument)\s+(?:is\s+|was\s+|has\s+been\s+)?removed\b|\b(?:use|using|switch(?:ed)?\s+to|replaced?\s+.{0,30}?with|pass(?:ing)?)\s+(?:an?\s+)?(?:options?|config(?:uration)?)\s+object\b|\b(?:options?|config(?:uration)?)\s+object\s+(?:as\s+)?(?:the\s+)?(?:arg(?:ument)?|param(?:eter)?)\b|\bparam(?:eter)?s?\s+(?:are|is)\s+no\s+longer\s+optional\b/i,
+    symbolGroup: 0,
+    summarize: () => 'an argument list changed',
+  },
+  {
+    id: 'prose-async-signature',
+    kind: 'signature-change',
+    refinement: true,
+    pattern:
+      /\b(?:make[s]?|made|turn(?:ed)?)\s+[\w`.$()]+\s+(?:in)?to\s+(?:an?\s+)?async\b|\b(?:is|are)\s+now\s+async\b|\basync\b[^.\n]{0,40}?\b(?:callback|promise|await|sync)\b|\bnow\s+returns?\s+(?:a\s+|an\s+)?(?:promise|observable|thenable)\b|\bnow\s+return\s+promises\b|\b(?:update|change)\s+(?:the\s+)?return\s+types?\b|\bdrop(?:ped|s)?\s+(?:support\s+for\s+)?callbacks?\b|\bremove[d]?\s+callback\s+support\b/i,
+    symbolGroup: 0,
+    summarize: () => 'a callback/return signature changed',
+  },
+  {
+    /**
+     * "`x` is now required" — `prose-now-requires` misses it because its verb
+     * list is requires/takes/accepts/expects, not the past participle. This
+     * one is backtick-anchored, so it fires standalone like the rest.
+     */
+    id: 'prose-symbol-now-required',
+    kind: 'signature-change',
+    pattern: /`([\w$.]+)`(?:\([^`]*\))?(?:\(\))?\s+(?:is|are|becomes?|became)\s+now\s+(?:required|mandatory|non-optional)\b/i,
+    symbolGroup: 1,
+    summarize: (m) => `\`${m[1]}\` is now required`,
+  },
   {
     /**
      * "`x` must now be …" / "`x` is now …" — the same statement in the other
@@ -525,6 +593,8 @@ export interface ProseMatch {
   };
   /** The line the match came from, kept verbatim for the report. */
   passage: string;
+  /** See `ProseRule.refinement`. Present only when the source rule set it. */
+  refinement?: boolean;
 }
 
 /** Run every prose rule over a single changelog/release-note line. */
@@ -565,11 +635,16 @@ export function matchProse(passage: string): ProseMatch[] {
             },
           }
         : {}),
+      ...(rule.refinement ? { refinement: true as const } : {}),
       passage: text,
     });
   }
 
-  return out;
+  // A refinement match specialises the kind of a break another rule found on
+  // this line; it is never the sole evidence a line is breaking. If nothing
+  // else matched, the refinements go with it.
+  if (out.some((m) => !m.refinement)) return out;
+  return out.filter((m) => !m.refinement);
 }
 
 function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): RuntimeRequirement | null {

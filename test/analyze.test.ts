@@ -248,6 +248,32 @@ describe('prose rules', () => {
       assert.equal(readsSignatureChange('map(xs) -> filter(xs)'), false);
     });
   });
+
+  describe('refinement rules only sharpen a break another rule already found', () => {
+    test('a broad signature phrase alone establishes nothing', () => {
+      // No symbol, no marker — the phrasing of an internal refactor subject.
+      for (const line of [
+        'refactor(content-docs): make readVersionsMetadata async',
+        'perf: re-use options object when generating ETags',
+        'chore: fix return type of findFlatConfigFile',
+        'update function signatures for basic math ops',
+      ]) {
+        assert.deepEqual(matchProse(line), [], `expected no match for ${JSON.stringify(line)}`);
+      }
+    });
+
+    test('the same phrase on a BREAKING CHANGE line is kept, and names the kind', () => {
+      const matches = matchProse('BREAKING CHANGE: make Query.prototype.exec() async, drop callback support');
+      assert.ok(matches.some((m) => m.ruleId === 'prose-breaking-change-footer'));
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+    });
+
+    test('a refinement rides on a symbol rule as its anchor, not only the footer', () => {
+      const matches = matchProse('`render` was removed; the callback argument was removed from the new API');
+      assert.ok(matches.some((m) => m.kind === 'removed-export'));
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+    });
+  });
 });
 
 describe('OpenAPI diffing', () => {
