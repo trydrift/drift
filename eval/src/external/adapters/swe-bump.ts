@@ -64,13 +64,17 @@ const execFile = promisify(execFileCallback);
  * is not version-pinned and two runs of it a year apart are not strictly
  * comparable.
  *
- * This track cannot close that gap and does not pretend to. It writes the
- * range into the manifest exactly as the dataset states it and records that
- * under `manifestVersionTo`, with `versionToIsRange` beside it. Resolving the
- * range would mean running the package manager, which is the install step this
- * track deliberately does not perform — so what the range resolves to is
- * genuinely unknown here, and the artifact says `versionToIsRange: true`
- * rather than presenting a range under a field name that implies a resolution.
+ * The range still goes into the manifest exactly as the dataset states it,
+ * recorded under `manifestVersionTo` with `versionToIsRange` beside it. What
+ * the adjudicator scores against is the concrete pair *Drift itself resolved*
+ * while analysing — `analyzeRepository` already reads the committed lockfile
+ * for the before version and asks the registry what the new range points at,
+ * because its published type-surface diff cannot run on a range. That pair is
+ * exactly what the prediction is about, and it is captured in
+ * `exactVersionPair` with `exactVersionResolvedBy: "drift"`. No package-manager
+ * install is added to obtain it. A case where Drift cannot resolve a concrete
+ * pair (no committed lockfile, say) stays unadjudicated for the
+ * version-pair questions, with that reason recorded.
  */
 
 export const ADAPTER_VERSION = 'swe-bump-detect-v1';
@@ -160,12 +164,6 @@ export class SweBumpUnavailable extends Error {
  * has is reported `source-unavailable`, never replaced.
  */
 export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPrediction> {
-  // The target alone is enough to prove this case cannot adjudicate an exact
-  // version question. Do not clone a repository or query registries merely to
-  // produce outcomes that scoring must discard; keep the case and its raw
-  // specifier, explicitly unadjudicated.
-  if (!semver.valid(task.versionTo)) return unresolvedPrediction(task.versionTo, null);
-
   const work = await mkdtemp(join(tmpdir(), `drift-swebump-${task.owner}-`));
   const repo = join(work, 'repo');
 
@@ -216,10 +214,6 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
     }
 
     const versionFrom = section[task.package] ?? null;
-    const exactVersionPair = exactSweBumpVersionPair(versionFrom, task.versionTo);
-    if (!exactVersionPair) {
-      return unresolvedPrediction(task.versionTo, versionFrom);
-    }
 
     section[task.package] = task.versionTo;
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
@@ -252,6 +246,21 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
     const result = await deepVerify(await analyzeRepository(analysisOptions), analysisOptions);
 
     const plan = result.plan;
+
+    // The corpus states the upgrade as a range (`^8.0.1`), not a pin — so the
+    // authoritative before/after pair is not in the dataset. It *is* in the
+    // resolution Drift already performs: `analyzeRepository` reads the
+    // committed lockfile for the before version and queries the registry for
+    // what the new range resolves to, because its published type-surface diff
+    // needs concrete versions to fetch. That resolved pair is exactly what the
+    // prediction is about, so it is what scoring adjudicates against. No
+    // package-manager install is added here; this reuses a query the pipeline
+    // makes regardless.
+    const applied = (plan?.changes ?? []).find((change) => change.name === task.package);
+    const resolvedFrom = applied?.from && semver.valid(applied.from) ? semver.valid(applied.from) : null;
+    const resolvedTo = applied?.to && semver.valid(applied.to) ? semver.valid(applied.to) : null;
+    const exactVersionPair = resolvedFrom && resolvedTo ? { from: resolvedFrom, to: resolvedTo } : null;
+
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({
         name: change.name,
@@ -278,23 +287,11 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
   }
 }
 
+/** Normalise a `v`-prefixed exact before/after pair; `null` if either side is a range. */
 export function exactSweBumpVersionPair(from: string | null, to: string): { from: string; to: string } | null {
   const exactFrom = from ? semver.valid(from) : null;
   const exactTo = semver.valid(to);
   return exactFrom && exactTo ? { from: exactFrom, to: exactTo } : null;
-}
-
-function unresolvedPrediction(manifestVersionTo: string, versionFrom: string | null): SweBumpPrediction {
-  return {
-    dependencyChanges: [],
-    breakingChanges: [],
-    impactSites: [],
-    verdict: 'insufficient-evidence',
-    summary: 'No authoritative exact before/after version pair was available to analyze.',
-    manifestVersionTo,
-    versionFrom,
-    exactVersionPair: null,
-  };
 }
 
 /**
@@ -347,12 +344,13 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
       containerImage: null,
       sourceHash: input.sourceHash,
       extra: {
-        // The corpus states a range, not a pin. See the module docstring.
-        // The corpus states a range, not a pin. See the module docstring.
+        // The corpus states a range, not a pin (see the module docstring); the
+        // pair below, when present, is what Drift resolved that range to.
         versionToIsRange: String(/[\^~><*x|\s]/.test(task.versionTo)),
         manifestVersionTo: prediction?.manifestVersionTo ?? 'unavailable',
         manifestVersionFrom: prediction?.versionFrom ?? 'unavailable',
         exactVersionAdjudicated: String(Boolean(prediction?.exactVersionPair)),
+        exactVersionResolvedBy: prediction?.exactVersionPair ? 'drift' : 'none',
       },
     },
     truth: {
@@ -384,7 +382,7 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
   const localized = prediction.impactSites.length > 0;
   const adjudicated = detectedUpdate !== undefined;
   const unadjudicatedReason =
-    'the corpus supplies a manifest range rather than an authoritative exact before/after version pair';
+    'the corpus supplies a manifest range and Drift could not resolve it to a concrete before/after version pair';
 
   return {
     ...base,
