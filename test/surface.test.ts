@@ -367,6 +367,38 @@ describe('japicmp output', () => {
     assert.ok(parseJapicmp(sample).every((c) => !c.symbol.startsWith('.')));
   });
 
+  test('a class turned into an interface (and the reverse) is reported', () => {
+    // Verbatim japicmp 0.26.1 output for Roseau's otherClazzToIfaze /
+    // otherIfazeToClass: the old kind and an extra space sit between the kind
+    // word and the colon (`MODIFIED INTERFACE (<- CLASS) :`), which the parser
+    // did not match at all before.
+    const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+***! MODIFIED INTERFACE (<- CLASS) : PUBLIC ABSTRACT (<- NON_ABSTRACT) testing_lib.otherClazzToIfaze.ClazzToIfaze  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 63.0 <- 63.0
+	---! REMOVED CONSTRUCTOR: PUBLIC(-) ClazzToIfaze()
+***! MODIFIED CLASS (<- INTERFACE) : PUBLIC NON_ABSTRACT (<- ABSTRACT) testing_lib.otherIfazeToClass.IfazeToClass  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 63.0 <- 63.0
+`);
+    assert.deepEqual(
+      changes.map((c) => [c.kind, c.symbol]),
+      [
+        ['signature-changed', 'testing_lib.otherClazzToIfaze.ClazzToIfaze'],
+        ['member-removed', 'testing_lib.otherClazzToIfaze.ClazzToIfaze.ClazzToIfaze'],
+        ['signature-changed', 'testing_lib.otherIfazeToClass.IfazeToClass'],
+      ],
+    );
+  });
+
+  test('the transition delta does not make an unflagged kind change newly reportable', () => {
+    // Same shape, compatible marker (`***` , no `!`): still silent.
+    assert.deepEqual(
+      parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+***  MODIFIED INTERFACE (<- CLASS) : PUBLIC ABSTRACT com.example.Widget  (not serializable)
+`),
+      [],
+    );
+  });
+
   test('keeps qualified Roseau symbols when japicmp reports modifier deltas', () => {
     const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
 ***! MODIFIED CLASS: PACKAGE_PROTECTED (<- PUBLIC) testing_lib.accessModifierClazzAccessDecrease.AccessModifierClazzAccessDecrease  (not serializable)
