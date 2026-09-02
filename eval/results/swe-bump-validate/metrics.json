@@ -1,0 +1,138 @@
+{
+  "datasetId": "swe-bump",
+  "datasetClass": "consumer-impact",
+  "available": 63,
+  "selected": 63,
+  "attempted": 63,
+  "notRun": 0,
+  "scored": 63,
+  "excluded": {},
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 3,
+      "denominator": 3,
+      "value": 1
+    },
+    "affected-repository identification rate": {
+      "numerator": 3,
+      "denominator": 3,
+      "value": 1
+    },
+    "consumer localization rate": {
+      "numerator": 3,
+      "denominator": 3,
+      "value": 1
+    },
+    "false-safe verdicts": {
+      "numerator": 0,
+      "denominator": 3,
+      "value": 0
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
+    },
+    "consumer localization rate": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
+    },
+    "false-safe verdicts": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: known-breaking-upgrade": {
+      "dependency-update detection rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      }
+    },
+    "versionToIsRange: false": {
+      "dependency-update detection rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      }
+    },
+    "exactVersionAdjudicated: true": {
+      "dependency-update detection rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      }
+    }
+  },
+  "intervals": {},
+  "mappingCoverage": {
+    "exact": 63
+  }
+}
