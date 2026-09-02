@@ -5,31 +5,59 @@
   "selected": 63,
   "attempted": 63,
   "notRun": 0,
-  "scored": 61,
-  "excluded": {
-    "source-unavailable": 2
-  },
+  "scored": 63,
+  "excluded": {},
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 61,
-      "denominator": 61,
+      "numerator": 3,
+      "denominator": 3,
       "value": 1
     },
     "affected-repository identification rate": {
-      "numerator": 42,
-      "denominator": 61,
-      "value": 0.6885245901639344
+      "numerator": 3,
+      "denominator": 3,
+      "value": 1
     },
     "consumer localization rate": {
-      "numerator": 38,
-      "denominator": 61,
-      "value": 0.6229508196721312
+      "numerator": 3,
+      "denominator": 3,
+      "value": 1
     },
     "false-safe verdicts": {
-      "numerator": 6,
-      "denominator": 61,
-      "value": 0.09836065573770492
+      "numerator": 0,
+      "denominator": 3,
+      "value": 0
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
+    },
+    "consumer localization rate": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
+    },
+    "false-safe verdicts": {
+      "adjudicated": 3,
+      "notAdjudicated": 60,
+      "reasons": {
+        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
+      }
     }
   },
   "refusals": [
@@ -53,36 +81,19 @@
   "breakdown": {
     "label: known-breaking-upgrade": {
       "dependency-update detection rate": {
-        "numerator": 61,
-        "denominator": 61,
+        "numerator": 3,
+        "denominator": 3,
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 42,
-        "denominator": 61,
-        "value": 0.6885245901639344
-      },
-      "consumer localization rate": {
-        "numerator": 38,
-        "denominator": 61,
-        "value": 0.6229508196721312
-      }
-    },
-    "versionToIsRange: true": {
-      "dependency-update detection rate": {
-        "numerator": 58,
-        "denominator": 58,
+        "numerator": 3,
+        "denominator": 3,
         "value": 1
       },
-      "affected-repository identification rate": {
-        "numerator": 39,
-        "denominator": 58,
-        "value": 0.6724137931034483
-      },
       "consumer localization rate": {
-        "numerator": 35,
-        "denominator": 58,
-        "value": 0.603448275862069
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
       }
     },
     "versionToIsRange: false": {
@@ -101,30 +112,26 @@
         "denominator": 3,
         "value": 1
       }
+    },
+    "exactVersionAdjudicated: true": {
+      "dependency-update detection rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      }
     }
   },
-  "intervals": {
-    "dependency-update detection rate": {
-      "low": 1,
-      "high": 1,
-      "iterations": 2000
-    },
-    "affected-repository identification rate": {
-      "low": 0.5737704918032787,
-      "high": 0.8032786885245902,
-      "iterations": 2000
-    },
-    "consumer localization rate": {
-      "low": 0.5081967213114754,
-      "high": 0.7377049180327869,
-      "iterations": 2000
-    },
-    "false-safe verdicts": {
-      "low": 0.03278688524590164,
-      "high": 0.18032786885245902,
-      "iterations": 2000
-    }
-  },
+  "intervals": {},
   "mappingCoverage": {
     "exact": 63
   }
