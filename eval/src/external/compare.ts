@@ -3,8 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
+import type { Dataset } from './dataset.ts';
 import type { ExternalCaseResult } from './record.ts';
 import { resultsDir, type RunManifest } from './results.ts';
+import type { Selection } from './selection.ts';
 
 const SAFE_EQUIVALENT = new Set([
   'clean',
@@ -22,6 +24,8 @@ export interface CaseTransition {
   newResult: ExternalCaseResult;
 }
 
+export type ComparisonSelection = Selection & { dataset: Dataset };
+
 export function caseState(result: ExternalCaseResult): CaseState {
   if (result.excluded) {
     return /ENOTEMPTY|cleanup|directory not empty/i.test(result.excluded.reason) ? 'cleanup-failed' : 'excluded';
@@ -36,15 +40,85 @@ export function compareCases(
   oldResults: readonly ExternalCaseResult[],
   newResults: readonly ExternalCaseResult[],
 ): CaseTransition[] {
+  assertSameCasePopulation(
+    'result',
+    oldResults.map((result) => result.caseId),
+    newResults.map((result) => result.caseId),
+  );
   const oldById = new Map(oldResults.map((result) => [result.caseId, result]));
   return newResults
-    .flatMap((newResult) => {
-      const oldResult = oldById.get(newResult.caseId);
-      return oldResult
-        ? [{ caseId: newResult.caseId, from: caseState(oldResult), to: caseState(newResult), oldResult, newResult }]
-        : [];
+    .map((newResult) => {
+      const oldResult = oldById.get(newResult.caseId)!;
+      return { caseId: newResult.caseId, from: caseState(oldResult), to: caseState(newResult), oldResult, newResult };
     })
     .sort((a, b) => a.caseId.localeCompare(b.caseId));
+}
+
+export function validateRunCompatibility(
+  oldManifest: RunManifest,
+  newManifest: RunManifest,
+  oldSelection: ComparisonSelection,
+  newSelection: ComparisonSelection,
+  oldResults: readonly ExternalCaseResult[],
+  newResults: readonly ExternalCaseResult[],
+): void {
+  if (oldManifest.datasetId !== newManifest.datasetId) {
+    throw new Error(`Cannot compare different datasets: ${oldManifest.datasetId} != ${newManifest.datasetId}.`);
+  }
+  if (oldManifest.datasetVersion !== newManifest.datasetVersion) {
+    throw new Error(
+      `Cannot compare different dataset versions: ${oldManifest.datasetVersion} != ${newManifest.datasetVersion}.`,
+    );
+  }
+  if (oldSelection.dataset.id !== oldManifest.datasetId || newSelection.dataset.id !== newManifest.datasetId) {
+    throw new Error('A selection dataset identity does not match its run manifest.');
+  }
+
+  const oldSource = sourceIdentity(oldSelection.dataset);
+  const newSource = sourceIdentity(newSelection.dataset);
+  if (oldSource !== newSource) {
+    throw new Error(`Cannot compare different dataset sources: ${oldSource} != ${newSource}.`);
+  }
+
+  assertSameCasePopulation('selected', oldSelection.ids, newSelection.ids);
+  assertSameCasePopulation(
+    `old run results versus its selection`,
+    oldSelection.ids,
+    oldResults.map((result) => result.caseId),
+  );
+  assertSameCasePopulation(
+    `new run results versus its selection`,
+    newSelection.ids,
+    newResults.map((result) => result.caseId),
+  );
+}
+
+function sourceIdentity(dataset: Dataset): string {
+  const { kind, url, version, conceptVersion } = dataset.source;
+  return [kind, url, version, conceptVersion ?? ''].join('|');
+}
+
+function assertSameCasePopulation(label: string, oldIds: readonly string[], newIds: readonly string[]): void {
+  const oldSet = uniqueCaseIds(`${label} old`, oldIds);
+  const newSet = uniqueCaseIds(`${label} new`, newIds);
+  const oldOnly = [...oldSet].filter((id) => !newSet.has(id)).sort();
+  const newOnly = [...newSet].filter((id) => !oldSet.has(id)).sort();
+  if (oldOnly.length > 0 || newOnly.length > 0) {
+    throw new Error(
+      `${label} case populations differ; old-only: ${oldOnly.join(', ') || 'none'}; new-only: ${newOnly.join(', ') || 'none'}.`,
+    );
+  }
+}
+
+function uniqueCaseIds(label: string, ids: readonly string[]): Set<string> {
+  const unique = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const id of ids) {
+    if (unique.has(id)) duplicates.add(id);
+    unique.add(id);
+  }
+  if (duplicates.size > 0) throw new Error(`${label} contains duplicate case IDs: ${[...duplicates].sort().join(', ')}.`);
+  return unique;
 }
 
 export function renderComparison(
@@ -136,12 +210,16 @@ async function main(argv: readonly string[]): Promise<void> {
       : {};
   const oldDir = resultsDir(oldRun);
   const newDir = resultsDir(newRun);
-  const [oldResults, newResults, manifest] = await Promise.all([
+  const [oldResults, newResults, oldManifest, newManifest, oldSelection, newSelection] = await Promise.all([
     readCases(oldDir),
     readCases(newDir),
+    readFile(join(oldDir, 'manifest.json'), 'utf8').then((text) => JSON.parse(text) as RunManifest),
     readFile(join(newDir, 'manifest.json'), 'utf8').then((text) => JSON.parse(text) as RunManifest),
+    readFile(join(oldDir, 'selection.json'), 'utf8').then((text) => JSON.parse(text) as ComparisonSelection),
+    readFile(join(newDir, 'selection.json'), 'utf8').then((text) => JSON.parse(text) as ComparisonSelection),
   ]);
-  const comparison = renderComparison(manifest.datasetId, compareCases(oldResults, newResults), adjudications);
+  validateRunCompatibility(oldManifest, newManifest, oldSelection, newSelection, oldResults, newResults);
+  const comparison = renderComparison(newManifest.datasetId, compareCases(oldResults, newResults), adjudications);
   process.stdout.write(comparison.text);
   if (comparison.unadjudicatedSafeTransitions.length > 0) {
     process.stderr.write(
