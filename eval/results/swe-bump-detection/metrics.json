@@ -5,59 +5,53 @@
   "selected": 63,
   "attempted": 63,
   "notRun": 0,
-  "scored": 63,
-  "excluded": {},
+  "scored": 61,
+  "excluded": {
+    "source-unavailable": 2
+  },
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 3,
-      "denominator": 3,
+      "numerator": 61,
+      "denominator": 61,
       "value": 1
     },
     "affected-repository identification rate": {
-      "numerator": 3,
-      "denominator": 3,
-      "value": 1
+      "numerator": 41,
+      "denominator": 61,
+      "value": 0.6721311475409836
     },
     "consumer localization rate": {
-      "numerator": 3,
-      "denominator": 3,
-      "value": 1
+      "numerator": 36,
+      "denominator": 61,
+      "value": 0.5901639344262295
     },
     "false-safe verdicts": {
-      "numerator": 0,
-      "denominator": 3,
-      "value": 0
+      "numerator": 6,
+      "denominator": 61,
+      "value": 0.09836065573770492
     }
   },
   "adjudication": {
     "dependency-update detection rate": {
-      "adjudicated": 3,
-      "notAdjudicated": 60,
-      "reasons": {
-        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
-      }
+      "adjudicated": 61,
+      "notAdjudicated": 0,
+      "reasons": {}
     },
     "affected-repository identification rate": {
-      "adjudicated": 3,
-      "notAdjudicated": 60,
-      "reasons": {
-        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
-      }
+      "adjudicated": 61,
+      "notAdjudicated": 0,
+      "reasons": {}
     },
     "consumer localization rate": {
-      "adjudicated": 3,
-      "notAdjudicated": 60,
-      "reasons": {
-        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
-      }
+      "adjudicated": 61,
+      "notAdjudicated": 0,
+      "reasons": {}
     },
     "false-safe verdicts": {
-      "adjudicated": 3,
-      "notAdjudicated": 60,
-      "reasons": {
-        "the corpus supplies a manifest range rather than an authoritative exact before/after version pair": 60
-      }
+      "adjudicated": 61,
+      "notAdjudicated": 0,
+      "reasons": {}
     }
   },
   "refusals": [
@@ -81,19 +75,36 @@
   "breakdown": {
     "label: known-breaking-upgrade": {
       "dependency-update detection rate": {
-        "numerator": 3,
-        "denominator": 3,
+        "numerator": 61,
+        "denominator": 61,
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 3,
-        "denominator": 3,
-        "value": 1
+        "numerator": 41,
+        "denominator": 61,
+        "value": 0.6721311475409836
       },
       "consumer localization rate": {
-        "numerator": 3,
-        "denominator": 3,
+        "numerator": 36,
+        "denominator": 61,
+        "value": 0.5901639344262295
+      }
+    },
+    "versionToIsRange: true": {
+      "dependency-update detection rate": {
+        "numerator": 58,
+        "denominator": 58,
         "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 38,
+        "denominator": 58,
+        "value": 0.6551724137931034
+      },
+      "consumer localization rate": {
+        "numerator": 33,
+        "denominator": 58,
+        "value": 0.5689655172413793
       }
     },
     "versionToIsRange: false": {
@@ -115,23 +126,44 @@
     },
     "exactVersionAdjudicated: true": {
       "dependency-update detection rate": {
-        "numerator": 3,
-        "denominator": 3,
+        "numerator": 61,
+        "denominator": 61,
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 3,
-        "denominator": 3,
-        "value": 1
+        "numerator": 41,
+        "denominator": 61,
+        "value": 0.6721311475409836
       },
       "consumer localization rate": {
-        "numerator": 3,
-        "denominator": 3,
-        "value": 1
+        "numerator": 36,
+        "denominator": 61,
+        "value": 0.5901639344262295
       }
     }
   },
-  "intervals": {},
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 1,
+      "high": 1,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.5573770491803278,
+      "high": 0.7868852459016393,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.47540983606557374,
+      "high": 0.7049180327868853,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0.03278688524590164,
+      "high": 0.18032786885245902,
+      "iterations": 2000
+    }
+  },
   "mappingCoverage": {
     "exact": 63
   }

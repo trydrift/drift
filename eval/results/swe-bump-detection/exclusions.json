@@ -1,1 +1,60 @@
-[]
+[
+  {
+    "caseId": "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
+    "kind": "source-unavailable",
+    "reason": "commit 3d80009b32c9fe6bfe93f67ffcf396013949afaa could not be fetched from https://github.com/ayocodingit/boilerplate-express-service.git: Command failed: git fetch --quiet --depth 1 origin 3d80009b32c9fe6bfe93f67ffcf396013949afaa\nfatal: could not read Username for 'https://github.com': No such device or address\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
+      "repository": "https://github.com/ayocodingit/boilerplate-express-service",
+      "commit": "3d80009b32c9fe6bfe93f67ffcf396013949afaa",
+      "baseCommit": null,
+      "dependency": "express-jwt",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "karrioapi__karrio-dashboard-axios__^1.6.8",
+    "kind": "source-unavailable",
+    "reason": "commit 00ef3e6f7f4e368310b1ce3ae99284a07734ae84 could not be fetched from https://github.com/karrioapi/karrio-dashboard.git: Command failed: git fetch --quiet --depth 1 origin 00ef3e6f7f4e368310b1ce3ae99284a07734ae84\nfatal: could not read Username for 'https://github.com': No such device or address\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "karrioapi__karrio-dashboard-axios__^1.6.8",
+      "repository": "https://github.com/karrioapi/karrio-dashboard",
+      "commit": "00ef3e6f7f4e368310b1ce3ae99284a07734ae84",
+      "baseCommit": null,
+      "dependency": "axios",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  }
+]

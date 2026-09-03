@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
-| Run date | 2026-09-02T12:36:28.042Z |
+| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
+| Run date | 2026-09-03T05:16:58.027Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -103,7 +103,7 @@ how generously the mapping was written.
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
-| `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
+| `japicmp` | installed (version unknown) | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
 

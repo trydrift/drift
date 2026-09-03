@@ -1,1 +1,338 @@
-[]
+[
+  {
+    "caseId": "accessModifierClazzNestedIfazeAccessDecreasePublicToProtected",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "accessModifierClazzNestedIfazeAccessDecreasePublicToProtected",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "access",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "dataTypeIfazeConstantNarrowing",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "dataTypeIfazeConstantNarrowing",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "data",
+        "groundTruthSourceBreaking": "false",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "dataTypeIfazeConstantWidening",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "dataTypeIfazeConstantWidening",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "data",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "exceptionClazzMethodTryCatchToThrowChecked",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=not-binary-breaking, Japicmp=not-binary-breaking, RoseauJar=not-binary-breaking, RoseauJdtSources=not-binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "exceptionClazzMethodTryCatchToThrowChecked",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "exception",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "inheritanceIfazeMethodMovedFromSuperInterface",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "inheritanceIfazeMethodMovedFromSuperInterface",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "inheritance",
+        "groundTruthSourceBreaking": "false",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "membersClazzFieldConstantDelete",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=not-binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "membersClazzFieldConstantDelete",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "members",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "membersClazzMethodAbstractDelete",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "membersClazzMethodAbstractDelete",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "members",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "membersIfazeConstantDelete",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=not-binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "membersIfazeConstantDelete",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "members",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "membersIfazeMethodDelete",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "membersIfazeMethodDelete",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "members",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "membersIfazeMethodParamAdd",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "membersIfazeMethodParamAdd",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "members",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "membersIfazeMethodParamDelete",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says not-binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=binary-breaking, Japicmp=binary-breaking, RoseauJar=binary-breaking, RoseauJdtSources=binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "membersIfazeMethodParamDelete",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "members",
+        "groundTruthSourceBreaking": "true",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"Japicmp\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJar\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true},\"RoseauJdtSources\":{\"isBinaryBreaking\":true,\"isSourceBreaking\":true}}"
+      }
+    }
+  },
+  {
+    "caseId": "modifierMethodNonNativeToNative",
+    "kind": "ground-truth-contested",
+    "reason": "GroundTruth says binary-breaking, but the kit's own reference tools are near-unanimous the other way (Revapi=not-binary-breaking, Japicmp=not-binary-breaking, RoseauJar=not-binary-breaking, RoseauJdtSources=not-binary-breaking).",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "roseau",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "recordId": "modifierMethodNonNativeToNative",
+      "repository": "https://github.com/alien-tools/roseau",
+      "commit": "10.5281/zenodo.15536418",
+      "baseCommit": null,
+      "dependency": "io.drift.bench:roseau-accuracy",
+      "fromVersion": "1.0.0",
+      "toVersion": "2.0.0",
+      "packageManager": "maven",
+      "requiredRuntime": "a JDK providing javac and jar, plus the japicmp CLI",
+      "oracleCommand": null,
+      "containerImage": null,
+      "sourceHash": "17f7b337e68260163e73afdfb9761fe0c03c518ff2d68859d0ce8897c41a7098",
+      "extra": {
+        "family": "modifier",
+        "groundTruthSourceBreaking": "false",
+        "toolLocator": "io.drift.bench:roseau-accuracy 1.0.0 → 2.0.0 (classfiles)",
+        "recordedLabels": "{\"Revapi\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":false},\"Japicmp\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":false},\"RoseauJar\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":false},\"RoseauJdtSources\":{\"isBinaryBreaking\":false,\"isSourceBreaking\":false}}"
+      }
+    }
+  }
+]

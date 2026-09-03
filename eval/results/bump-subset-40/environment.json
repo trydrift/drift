@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-02T11:58:21.456Z",
+  "capturedAt": "2026-09-03T04:46:02.022Z",
   "platform": "linux",
   "arch": "x64",
   "node": "v22.23.2",
@@ -55,7 +55,7 @@
     {
       "tool": "japicmp",
       "available": true,
-      "version": "SYNOPSIS",
+      "version": "installed (version unknown)",
       "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
     }
   ]
