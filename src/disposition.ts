@@ -41,6 +41,16 @@ export function deriveBreakingChangeDispositions(
   runtimeAnalyses: readonly RuntimeAnalysisDispositionInput[],
   localizationRan: boolean,
   localizationComplete = true,
+  /**
+   * Breaking-change ids an authoritative, isolated verification has shown this
+   * repository builds/tests cleanly against. The only affirmative negative
+   * evidence that lets a zero-hit completed search resolve to `unaffected`
+   * rather than `impact-unresolved`. Compiler-provable changes an isolated
+   * pass disproves are pruned from the plan upstream of this
+   * (`verification/apply.ts`), so in practice this covers changes a pass
+   * cleared that were never localized to a specific site.
+   */
+  verifiedCompatibleChangeIds: ReadonlySet<string> = new Set(),
 ): BreakingChangeDisposition[] {
   const analysesById = new Map<string, RuntimeAnalysisDispositionInput[]>();
   for (const analysis of runtimeAnalyses) {
@@ -90,8 +100,17 @@ export function deriveBreakingChangeDispositions(
     if (!localizationRan) {
       return { changeId: change.id, state: 'unknown', reason: 'not-localized', sites: [], actionableSites: [] };
     }
-    return localizationComplete
-      ? { changeId: change.id, state: 'unaffected', reason: 'no-local-impact', sites: [], actionableSites: [] }
-      : { changeId: change.id, state: 'unknown', reason: 'localization-incomplete', sites: [], actionableSites: [] };
+    if (!localizationComplete) {
+      return { changeId: change.id, state: 'unknown', reason: 'localization-incomplete', sites: [], actionableSites: [] };
+    }
+    if (verifiedCompatibleChangeIds.has(change.id)) {
+      return { changeId: change.id, state: 'unaffected', reason: 'no-local-impact', sites: [], actionableSites: [] };
+    }
+    // Localization completed and found nothing. That is not proof the change
+    // cannot reach this repository — see `impact-unresolved` in `types.ts`.
+    // Only an authoritative verification (which populates
+    // `verifiedCompatibleChangeIds`) turns a zero-hit search into an
+    // all-clear; absent one, the impact is unresolved, never `unaffected`.
+    return { changeId: change.id, state: 'unknown', reason: 'impact-unresolved', sites: [], actionableSites: [] };
   });
 }

@@ -534,6 +534,21 @@ export interface BreakingChangeDisposition {
     | 'runtime-compatible'
     | 'not-localized'
     | 'localization-incomplete'
+    /**
+     * Localization ran to completion and found no site, but a completed
+     * syntactic search is not affirmative evidence that an upstream breaking
+     * change cannot reach this repository (structural typing, inferred types,
+     * wrappers, generated code, dynamic dispatch, behavioural changes, and
+     * ownership relationships all defeat it). Without an authoritative
+     * verification clearing the change, the honest state is `unknown` — impact
+     * is unresolved, not disproven.
+     */
+    | 'impact-unresolved'
+    /**
+     * Retained for compatibility. No longer emitted for API changes: a
+     * zero-hit completed search now resolves to `impact-unresolved`. Runtime
+     * requirements use `runtime-compatible` for their genuine all-clear.
+     */
     | 'no-local-impact';
   /** All explanatory locations, including review-only runtime declarations. */
   sites: ImpactSite[];

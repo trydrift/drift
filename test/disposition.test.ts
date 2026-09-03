@@ -77,8 +77,21 @@ describe('deriveBreakingChangeDispositions: API findings', () => {
     assert.equal(d.actionableSites.length, 0, 'but it may not drive an edit');
   });
 
-  test('no hit after localization ran is unaffected', () => {
+  test('no hit after a completed localization is impact-unresolved, never unaffected', () => {
+    // A completed syntactic search that found nothing is not affirmative
+    // evidence the change cannot reach this repository — structural typing,
+    // inferred types, wrappers, generated code, dynamic dispatch, behavioural
+    // changes and ownership relationships all defeat it. Only an authoritative
+    // verification can turn this into an all-clear.
     const d = only(deriveBreakingChangeDispositions([apiChange()], [], [], true));
+    assert.equal(d.state, 'unknown');
+    assert.equal(d.reason, 'impact-unresolved');
+  });
+
+  test('an authoritative verification clearing the change makes a zero-hit search unaffected', () => {
+    const d = only(
+      deriveBreakingChangeDispositions([apiChange()], [], [], true, true, new Set(['bc_api'])),
+    );
     assert.equal(d.state, 'unaffected');
     assert.equal(d.reason, 'no-local-impact');
   });
@@ -175,13 +188,29 @@ describe('deriveBreakingChangeDispositions: mixed API + runtime candidates', () 
     assert.equal(ds.find((d) => d.changeId === 'bc_rt')?.state, 'review-only');
   });
 
-  test('API unaffected + runtime compatible is the only genuine all-clear', () => {
+  test('API zero-hit + runtime compatible: the runtime clears, the API stays unresolved', () => {
     const changes = [apiChange('bc_api'), runtimeChange('bc_rt')];
     const ds = deriveBreakingChangeDispositions(
       changes,
       [site('bc_rt', 'high', { runtimeVerdict: 'compatible' })],
       [rt('bc_rt', 'compatible', 'satisfies')],
       true,
+    );
+    assert.equal(ds.find((d) => d.changeId === 'bc_rt')?.state, 'unaffected');
+    const api = ds.find((d) => d.changeId === 'bc_api');
+    assert.equal(api?.state, 'unknown');
+    assert.equal(api?.reason, 'impact-unresolved');
+  });
+
+  test('a verification clearing the API change is the genuine all-clear', () => {
+    const changes = [apiChange('bc_api'), runtimeChange('bc_rt')];
+    const ds = deriveBreakingChangeDispositions(
+      changes,
+      [site('bc_rt', 'high', { runtimeVerdict: 'compatible' })],
+      [rt('bc_rt', 'compatible', 'satisfies')],
+      true,
+      true,
+      new Set(['bc_api']),
     );
     assert.deepEqual(ds.map((d) => d.state).sort(), ['unaffected', 'unaffected']);
   });

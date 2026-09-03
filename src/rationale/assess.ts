@@ -218,7 +218,10 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     decisions: actionableDecisions.length,
     actionable: actionableChanges.length > 0,
     runtimeUnresolved,
-    localizationUnresolved: dispositions.some((disposition) => disposition.reason === 'localization-incomplete'),
+    localizationUnresolved: dispositions.some(
+      (disposition) =>
+        disposition.reason === 'localization-incomplete' || disposition.reason === 'impact-unresolved',
+    ),
     roleContractChanged: roleContract !== null,
   });
   const confidence = judgeConfidence(input);
