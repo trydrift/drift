@@ -18,8 +18,8 @@
     "language": "Python",
     "repo": "https://github.com/scrapy/scrapy",
     "blurb": "The web crawling framework that most Python scrapers are built on.",
-    "commit": "e30c44432439cd74ab014d42131cd9006f9476f7",
-    "capturedAt": "2026-09-03T19:54:20.293Z",
+    "commit": "ebfb04912d8cafa2307ec0fb43a7f7f144921a63",
+    "capturedAt": "2026-09-03T21:32:01.899Z",
     "packagesChecked": 8,
     "candidates": 2
   },
@@ -78,8 +78,8 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "f65ab5629e0401d34d0b0e9be1bc865c76941b9a",
-    "capturedAt": "2026-09-03T19:55:21.525Z",
+    "commit": "ab800dc09dbe2d1eb1ed1ee8f091282561e0ccc4",
+    "capturedAt": "2026-09-03T21:32:10.030Z",
     "packagesChecked": 24,
     "candidates": 8
   },
