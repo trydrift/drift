@@ -76,7 +76,9 @@ describe('dependency scan tree', () => {
   test('groups the last scan by user-facing severity', () => {
     const state = new DriftState();
     state.setCandidates([
-      candidate({ name: 'safe', breakingCount: 2, impactCount: 0, impactFiles: 0 }),
+      // Breaking changes upstream, no local site, nothing verified: unresolved
+      // impact, not "Safe".
+      candidate({ name: 'unresolved', breakingCount: 2, impactCount: 0, impactFiles: 0 }),
       candidate({ name: 'unchecked', breakingCount: 0, impactCount: 0, impactFiles: 0, recommendation: 'insufficient-evidence' }),
       candidate({ name: 'failed', status: 'error', breakingCount: 0, impactCount: 0, impactFiles: 0 }),
       candidate({ name: 'affected' }),
@@ -87,8 +89,8 @@ describe('dependency scan tree', () => {
     assert.deepEqual(groups.map((g) => tree.getTreeItem(g).label), [
       'Affected (1)',
       'Failed (1)',
+      'Review Required (1)',
       'Evidence Missing (1)',
-      'Safe (1)',
     ]);
     tree.dispose();
   });
