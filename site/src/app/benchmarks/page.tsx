@@ -122,6 +122,16 @@ export default function Benchmarks() {
                 ? "Given what an upstream maintainer published — prose, or two versions of a library — does Drift work out what changed?"
                 : "Given a real project at a real commit and an upgrade known to break it, does Drift see the update, decide the project is affected, and avoid telling the developer it is safe?"}
             </p>
+            {group.datasetClass === "consumer-impact" && (
+              <p className="mt-3 max-w-2xl rounded-lg border border-border bg-surface-hover/50 px-3.5 py-2.5 text-sm leading-6 text-muted">
+                <strong className="font-medium text-foreground">TypeScript is where this is furthest along.</strong>{" "}
+                swe-bump-bench&rsquo;s {narrative.javaVsTypeScript.sweBump.affectedFraction} affected-repository rate
+                and {narrative.javaVsTypeScript.sweBump.falseSafePercent} false-safe rate are the numbers behind that.
+                The Java (BUMP) and Python (TimeMachine) consumer-impact results below are earlier and weaker on the
+                same questions — see the two Java cards under &ldquo;Known weaknesses&rdquo; — and are published as
+                beta results, not a claim that they are launch-ready in the way the TypeScript numbers are.
+              </p>
+            )}
             <div className="mt-5 space-y-5">
               {group.datasets.map((dataset) => (
                 <BenchmarkCard key={dataset.runId} dataset={dataset} />
@@ -174,42 +184,40 @@ export default function Benchmarks() {
               </p>
             </Weakness>
 
-            <Weakness title="On Java, Drift finds the upstream change and then fails to find it in your code">
+            <Weakness title="On Java, Drift finds the upstream change and then fails to find it in your code — beta, not launch-ready">
               <p>
                 In BUMP&rsquo;s {narrative.bumpSubset.selected}-case Java subset, Drift detected the update in {narrative.bumpSubset.detectionFraction} cases.
                 It still returned a false-safe verdict for {narrative.bumpSubset.falseSafeFraction} of them ({narrative.bumpSubset.falseSafePercent}).
+                That is the number this page treats as blocking a general-availability claim for Java consumer-impact —
+                it is published as beta, tracked for improvement, not presented as equivalent to the TypeScript result above.
               </p>
               <p className="mt-3">
-                The hardest failures live outside a public API surface, such as build-plugin rules and behavioural test failures.
-                An API diff cannot see those by itself.
+                Some of the hardest failures live outside a public API surface entirely — build-plugin rules and
+                behavioural test failures an API diff cannot see by itself. One specific localization gap has since
+                been fixed: the Maven coordinate a dependency is fetched under is frequently not the Java package it
+                ships (a Jenkins plugin&rsquo;s <code className="font-mono text-[12px]">groupId</code> is nothing like its <code className="font-mono text-[12px]">hudson.*</code> packages),
+                so a consumer file that plainly imported and used the changed type was never searched. Re-running
+                this exact subset after that fix left the numbers on this card unmoved, which says the fix does not
+                reach this particular corpus&rsquo; packages — not that nothing changed. The remaining gap is still
+                unidentified.
               </p>
             </Weakness>
 
-            <Weakness title="Drift's japicmp output parser drops class-level changes">
+            <Weakness title="Drift's prose rules generalise beyond changelog phrasing, with real limits">
               <p>
-                Roseau recall is {narrative.roseau.recallFraction} ({narrative.roseau.recallPercent}), with {narrative.roseau.fn} misses.
-                We checked every miss against japicmp&rsquo;s raw report.
+                On {narrative.kong.rq2.dataset.available.toLocaleString()} human-annotated real npm breaking changes,
+                Drift reads a breaking change out of the maintainer&rsquo;s own commit message in{" "}
+                {narrative.kong.rq2.overallPercent} of cases — {narrative.kong.rq2.withDetailPercent} where the
+                message says more than the bare marker, {narrative.kong.rq2.withoutDetailPercent} where it doesn&rsquo;t.
+                Naming the right <em>kind</em> of change is the harder question: {narrative.kong.rq2.categoryFraction} of
+                the scoreable cases ({narrative.kong.rq2.categoryPercent}).
               </p>
-              <ul className="mt-3 list-disc space-y-2 pl-5 marker:text-brand-text">
-                <li>
-                  Seven misses come from <code className="font-mono text-[12px] text-brand-text">parseJapicmp</code> ignoring
-                  <code className="ml-1 font-mono text-[12px]">MODIFIED CLASS</code> and <code className="font-mono text-[12px]">MODIFIED INTERFACE</code> lines.
-                </li>
-                <li>One of those cases also uses a japicmp marker that Drift&rsquo;s parser does not recognize.</li>
-                <li>The eighth miss is upstream: japicmp reports that method as unchanged.</li>
-              </ul>
-              <p className="mt-3 font-medium text-foreground">
-                This was not fixed before publishing the run. Re-running after seeing the test cases would tune the score to its own benchmark.
+              <p className="mt-3">
+                The ceiling there is structural, not a rule the corpus is waiting for: about a fifth of the scoreable
+                cases carry no description at all beyond the bare marker, and prose alone cannot name a kind for a
+                sentence that says nothing. Closing the rest needs the published-artefact API diff, a different Drift
+                capability than the prose interpreter this corpus tests.
               </p>
-            </Weakness>
-
-            <Weakness title="Drift's prose rules generalise poorly beyond changelog phrasing">
-              On {narrative.kong.rq2.dataset.available.toLocaleString()} human-annotated real npm breaking changes,
-              Drift read a breaking change out of the maintainer&rsquo;s own commit message in{" "}
-              {narrative.kong.rq2.overallPercent} of cases — and {narrative.kong.rq2.withDetailPercent} where the
-              message says more than the bare marker (versus {narrative.kong.rq2.withoutDetailPercent} where it
-              doesn&rsquo;t), so most of the gap is Drift rather than the corpus. The rules are shaped for changelog
-              and release-note phrasing.
             </Weakness>
 
             <Weakness title="Whether japicmp is installed changes the Java result completely">
