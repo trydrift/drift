@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyze, matchProse } from '../dist/analyze/index.js';
+import { analyze, declaresBreakingChange, matchProse } from '../dist/analyze/index.js';
 import { diffSpecs } from '../dist/evidence/spec/openapi.js';
 import {
   acceptsCallOfArity,
@@ -202,6 +202,136 @@ describe('prose rules', () => {
       ),
       false,
     );
+  });
+
+  test('a bare BREAKING CHANGE marker with no description is still a detected break', () => {
+    for (const line of ['BREAKING CHANGE', 'BREAKING CHANGE:', 'BREAKING-CHANGE:', 'BREAKING CHANGES:', 'BREAKING CHANGE: none']) {
+      const matches = matchProse(line);
+      assert.ok(
+        matches.some((m) => m.ruleId === 'prose-breaking-change-marker' && m.kind === 'unknown'),
+        `expected a bare-marker match for ${JSON.stringify(line)}`,
+      );
+    }
+  });
+
+  test('the bare-marker rule yields to the footer rule once there is a description', () => {
+    const matches = matchProse('BREAKING CHANGE: the storage format changed');
+    assert.ok(matches.some((m) => m.ruleId === 'prose-breaking-change-footer'));
+    assert.equal(matches.some((m) => m.ruleId === 'prose-breaking-change-marker'), false);
+  });
+
+  test('the plural footer spelling is read', () => {
+    assert.ok(
+      matchProse('BREAKING CHANGES: several endpoints were removed').some(
+        (m) => m.ruleId === 'prose-breaking-change-footer',
+      ),
+    );
+  });
+
+  test('"breaking change" as ordinary prose is still not a marker', () => {
+    assert.deepEqual(matchProse('This is a breaking change for some users.'), []);
+    assert.deepEqual(matchProse('We were careful to avoid any breaking change here.'), []);
+  });
+
+  describe('signature changes are named as such, not folded into behaviour-change', () => {
+    const readsSignatureChange = (line: string) =>
+      matchProse(line).some((m) => m.kind === 'signature-change');
+
+    test('"the signature of `x` changed", either word order', () => {
+      assert.ok(readsSignatureChange('BREAKING CHANGE: constructor signature of `TagManager` has changed.'));
+      assert.ok(readsSignatureChange('the call signature of `useSelector` changed'));
+      assert.ok(readsSignatureChange('We changed the signature of the multi-series mapping function'));
+      assert.ok(
+        readsSignatureChange(
+          'The signature of the mapping function has changed from (data, series, index) to (data, index, series)',
+        ),
+      );
+    });
+
+    test('"`x` no longer takes …" is a signature change, and still also a behaviour-change', () => {
+      const matches = matchProse('BREAKING CHANGE: `AwsLogDriver` no longer takes construct properties.');
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+      // `prose-no-longer` still fires too — a caller wants both framings.
+      assert.ok(matches.some((m) => m.ruleId === 'prose-no-longer'));
+    });
+
+    test('an ordinal argument tied to a backticked symbol', () => {
+      assert.ok(
+        readsSignatureChange('The second argument for `useIndeterminateChecked` is now an object of options'),
+      );
+      assert.ok(readsSignatureChange('`onError` is no longer the second parameter of `useController`'));
+    });
+
+    test('an explicit call-shape rewrite with the same name on both sides', () => {
+      assert.ok(readsSignatureChange('fetch(Resource.create(), {}, body) -> fetch(Resource.create(), body)'));
+      assert.ok(
+        readsSignatureChange('Refactor fetchJSON(instance = {}, url, compression) into fetchJSON(instance = {}, options)'),
+      );
+    });
+
+    test('does not fire on a commit that left the signature alone', () => {
+      assert.equal(readsSignatureChange('The public signature is unchanged in this release.'), false);
+      assert.equal(readsSignatureChange('Document the signature of `parse` in the README.'), false);
+      assert.equal(readsSignatureChange('Rename the internal helper; no signature has not changed here'), false);
+      // A different function on each side of the arrow is a data-flow arrow, not a rewrite.
+      assert.equal(readsSignatureChange('map(xs) -> filter(xs)'), false);
+    });
+  });
+
+  describe('refinement rules only sharpen a break another rule already found', () => {
+    test('a broad signature phrase alone establishes nothing', () => {
+      // No symbol, no marker — the phrasing of an internal refactor subject.
+      for (const line of [
+        'refactor(content-docs): make readVersionsMetadata async',
+        'perf: re-use options object when generating ETags',
+        'chore: fix return type of findFlatConfigFile',
+        'update function signatures for basic math ops',
+      ]) {
+        assert.deepEqual(matchProse(line), [], `expected no match for ${JSON.stringify(line)}`);
+      }
+    });
+
+    test('the same phrase on a BREAKING CHANGE line is kept, and names the kind', () => {
+      const matches = matchProse('BREAKING CHANGE: make Query.prototype.exec() async, drop callback support');
+      assert.ok(matches.some((m) => m.ruleId === 'prose-breaking-change-footer'));
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+    });
+
+    test('a refinement rides on a symbol rule as its anchor, not only the footer', () => {
+      const matches = matchProse('`render` was removed; the callback argument was removed from the new API');
+      assert.ok(matches.some((m) => m.kind === 'removed-export'));
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+    });
+
+    test('anchored:true keeps a refinement whose anchor is a line or two up', () => {
+      // The footer sits above the sentence in a real multi-line commit body.
+      const body = matchProse('the encode method is now synchronous', { anchored: true });
+      assert.ok(body.some((m) => m.kind === 'signature-change'));
+      // Without the anchor, the same sentence is not evidence of a break.
+      assert.deepEqual(matchProse('the encode method is now synchronous'), []);
+    });
+  });
+
+  describe('declaresBreakingChange — the marker, not the words', () => {
+    test('recognises the Conventional Commits footer in its real spellings', () => {
+      for (const t of [
+        'feat: x\n\nBREAKING CHANGE: the API moved',
+        'BREAKING-CHANGE: dropped node 12',
+        'BREAKING CHANGES: several',
+        '*** BREAKING CHANGE ***\nObservable.from no longer supports the map fn',
+        'BREAKING CHANGE - Observable.from no longer supports the optional map function',
+        '## Breaking Changes\n\n- `foo` removed',
+      ]) {
+        assert.equal(declaresBreakingChange(t), true, JSON.stringify(t));
+      }
+    });
+
+    test('does not fire on "breaking change" sitting inside a changelog bullet', () => {
+      const kuzzleStyle =
+        'Adapt ES service\n\n - `deleteByQuery`: **breaking change** does not return ids\n' +
+        '**breaking change** `truncateCollection` does not return `acknowledged` anymore';
+      assert.equal(declaresBreakingChange(kuzzleStyle), false);
+    });
   });
 });
 

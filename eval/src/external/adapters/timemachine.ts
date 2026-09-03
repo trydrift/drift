@@ -396,12 +396,19 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
     'the historical requirement is a range and the corpus does not supply its exact resolved before version';
   const partialMigrationReason =
     'the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset';
+  // Localization is a strict subset of affected-identification: pointing at a
+  // consumer line only counts as a "yes" when Drift also stood behind the
+  // conclusion that the repository is affected. Scoring them as independent
+  // conditions let `localized` exceed `identifiedAffected` — a case with impact
+  // sites but a hedged (`verification-incomplete` / `insufficient-evidence`)
+  // verdict — which is impossible per case and made the pooled rates disagree.
+  const identifiedAffected = prediction.verdict === 'locally-affected';
   const outcomes = {
     ...(detectionAdjudicated ? { detectedUpdate } : {}),
     ...(projectAdjudicated
       ? {
-          identifiedAffected: prediction.verdict === 'locally-affected',
-          localized: prediction.impactSites.length > 0,
+          identifiedAffected,
+          localized: identifiedAffected && prediction.impactSites.length > 0,
           falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
         }
       : {}),

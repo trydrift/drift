@@ -675,8 +675,12 @@ describe('reading what a maintainer actually wrote', () => {
 
   test('still reads the plain form', () => {
     const matches = matchProse('`parse` no longer accepts a string.');
-    assert.equal(matches.length, 1);
-    assert.equal(matches[0]?.symbols[0], 'parse');
+    // "no longer accepts <noun>" is read two ways on purpose: the general
+    // `prose-no-longer` behaviour-change, and `prose-symbol-no-longer-takes`
+    // naming it as the signature change it is.
+    assert.ok(matches.every((m) => m.symbols[0] === 'parse'));
+    assert.ok(matches.some((m) => m.ruleId === 'prose-no-longer'));
+    assert.ok(matches.some((m) => m.kind === 'signature-change'));
   });
 
   test('reads the other voice too', () => {

@@ -9,6 +9,7 @@ import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { dependencyKey, stableId } from '../util/id.js';
 import {
+  declaresBreakingChange,
   kindForFindingCode,
   matchProse,
   remediationForFinding,
@@ -304,8 +305,13 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
   const out: BreakingChange[] = [];
   const seen = new Set<string>();
 
+  // A `BREAKING CHANGE:` footer or a "Breaking Changes" heading applies to the
+  // whole record, not just the line it sits on — so a refinement rule matching
+  // the sentence *below* the marker is still anchored by it.
+  const anchored = declaresBreakingChange(record.content);
+
   for (const line of record.content.split('\n')) {
-    for (const match of matchProse(line)) {
+    for (const match of matchProse(line, { anchored })) {
       const key = `${match.kind}:${match.symbols.join(',')}`;
       if (seen.has(key)) continue;
       seen.add(key);

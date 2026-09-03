@@ -429,6 +429,27 @@ export interface ScoreRoseauInput {
   durationMs: number;
 }
 
+/**
+ * The recorded reference tools' verdict on binary compatibility, when they
+ * are near-unanimous — 3 of 3, or 3 of 4 — and `null` otherwise.
+ *
+ * Jezek & Dietrich's `GroundTruth` column disagrees with every other tool in
+ * the kit (Revapi, japicmp, both Roseau modes) on ~12 of the 267 cases:
+ * deleting an interface method, adding a parameter to one, narrowing a
+ * constant's type — all binary-breaking by every differ including the one
+ * Drift wraps, but marked not-breaking in `GroundTruth`. Scoring Drift as
+ * wrong there measures that disagreement, not Drift.
+ */
+export function toolBinaryConsensus(recorded: RoseauCase['recorded']): boolean | null {
+  const votes = Object.values(recorded).map((v) => v.isBinaryBreaking);
+  if (votes.length < 3) return null;
+  const yes = votes.filter(Boolean).length;
+  const allButOne = votes.length - Math.floor(votes.length / 4); // 3/3, or 3/4
+  if (yes >= allButOne) return true;
+  if (yes === 0) return false;
+  return null;
+}
+
 export function scoreRoseau(input: ScoreRoseauInput): ExternalCaseResult {
   const { entry, changes } = input;
   const predictedBreaking = changes.length > 0;
@@ -483,6 +504,25 @@ export function scoreRoseau(input: ScoreRoseauInput): ExternalCaseResult {
         kind: input.diffUnavailable.reason === 'tool-missing' ? 'environment-unavailable' : 'reproduction-failed',
         reason: input.diffUnavailable.detail,
         missingRequirement: input.diffUnavailable.reason === 'tool-missing' ? 'japicmp' : null,
+      },
+    };
+  }
+
+  const consensus = toolBinaryConsensus(entry.recorded);
+  if (consensus !== null && consensus !== entry.groundTruthBinaryBreaking) {
+    const toolList = Object.entries(entry.recorded)
+      .map(([name, v]) => `${name}=${v.isBinaryBreaking ? 'binary-breaking' : 'not-binary-breaking'}`)
+      .join(', ');
+    return {
+      ...base,
+      prediction: { changes, changeCount: changes.length } as Record<string, unknown>,
+      outcomes: {},
+      excluded: {
+        kind: 'ground-truth-contested',
+        reason:
+          `GroundTruth says ${entry.groundTruthBinaryBreaking ? 'binary-breaking' : 'not-binary-breaking'}, ` +
+          `but the kit's own reference tools are near-unanimous the other way (${toolList}).`,
+        missingRequirement: null,
       },
     };
   }
