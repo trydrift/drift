@@ -22,6 +22,10 @@ import { deriveBreakingChangeDispositions } from '../dist/disposition.js';
 import { severityOf } from '../dist/upgrade/severity.js';
 import { safeUpgradeCandidates } from '../dist/cli.js';
 import { isSafeEquivalentVerdict, verdictFor, resolvePlanVerdict } from '../dist/report/confidence.js';
+import { buildPlan } from '../dist/plan/index.js';
+import { applyVerification } from '../dist/upgrade/verification.js';
+import { classify } from '../dist/confidence/taxonomy.js';
+import { DEFAULT_CONFIG } from '../dist/config/schema.js';
 
 const apiChange = (id = 'bc_api', overrides: Record<string, unknown> = {}) => ({
   id,
@@ -103,26 +107,43 @@ describe('Case B — a high-confidence imported local site', () => {
   });
 });
 
-describe('Case D — an isolated verification pass is the one thing that clears a zero-hit search', () => {
-  test('disposition is unaffected only when the change id is in the verified-compatible set', () => {
-    const withoutProof = deriveBreakingChangeDispositions([apiChange()], [], [], true, true)[0]!;
-    assert.equal(withoutProof.state, 'unknown');
+describe('Case D — only an isolated, compile-capable verification clears a zero-hit search', () => {
+  const compilePass = [{ label: 'typecheck', status: 'passed', compileCapable: true }];
 
-    const withProof = deriveBreakingChangeDispositions(
-      [apiChange()],
-      [],
-      [],
-      true,
-      true,
-      new Set(['bc_api']),
-    )[0]!;
-    assert.equal(withProof.state, 'unaffected');
+  test('a completed zero-hit search alone never resolves a disposition to unaffected', () => {
+    const d = deriveBreakingChangeDispositions([apiChange()], [], [], true, true)[0]!;
+    assert.equal(d.state, 'unknown');
+    assert.equal(d.reason, 'impact-unresolved');
   });
 
-  test('scan severity reaches upstream-only only behind a passing verification', () => {
+  test('severity: upstream-only requires the reconciled verifiedUnaffected flag, not verification.status', () => {
+    // nothing verified
     assert.equal(severityOf(scanCandidate({ breakingCount: 1 })), 'review-required');
+    // a bare `passed` with no reconciled flag — the exact case the reviewer flagged
     assert.equal(
       severityOf(scanCandidate({ breakingCount: 1, verification: { status: 'passed', checks: [] } })),
+      'review-required',
+    );
+    // passed, compile-capable, but batch-scoped
+    assert.equal(
+      severityOf(
+        scanCandidate({
+          breakingCount: 1,
+          verification: { status: 'passed', checks: compilePass, measuredWith: 2 },
+          verifiedUnaffected: false,
+        }),
+      ),
+      'review-required',
+    );
+    // the reconciled flag is set — an isolated compile-capable pass cleared it
+    assert.equal(
+      severityOf(
+        scanCandidate({
+          breakingCount: 1,
+          verification: { status: 'passed', checks: compilePass, measuredWith: 1 },
+          verifiedUnaffected: true,
+        }),
+      ),
       'upstream-only',
     );
   });
@@ -185,6 +206,112 @@ describe('Case G — a multi-dependency plan is only as safe as its weakest depe
       ],
     };
     assert.equal(resolvePlanVerdict(plan as never), 'insufficient-evidence');
+  });
+});
+
+describe('severity and disposition/verdict cannot disagree after a real verification', () => {
+  const repo = {
+    owner: 'acme',
+    repo: 'app',
+    baseBranch: 'main',
+    beforeSha: 'a'.repeat(40),
+    afterSha: 'b'.repeat(40),
+  };
+  const change = {
+    name: 'acme-sdk',
+    ecosystem: 'npm' as const,
+    from: '1.0.0',
+    to: '2.0.0',
+    kind: 'runtime' as const,
+    bump: 'major' as const,
+    manifestPath: 'package.json',
+  };
+  const ev = {
+    id: 'ev_1',
+    source: 'type-surface-diff' as const,
+    dependency: 'acme-sdk',
+    title: 'API surface diff',
+    content: '`createClient` removed',
+    weight: 1,
+  };
+  const breakingOf = (kind: string) => ({
+    id: 'bc_1',
+    dependency: 'acme-sdk',
+    kind,
+    summary: 'something changed',
+    remediation: 'adapt',
+    symbols: ['createClient'],
+    confidence: 'high' as const,
+    taxonomy: classify(kind),
+    citations: ['ev_1'],
+  });
+  const plan = (kind: string) =>
+    buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [change],
+      evidence: [ev],
+      breakingChanges: [breakingOf(kind)],
+      impactSites: [],
+      localizationRan: true,
+      localizationComplete: true,
+    });
+  const candidate = (p: unknown) => ({
+    name: 'acme-sdk',
+    manifestPath: 'package.json',
+    packageManager: 'npm',
+    status: 'ready',
+    breakingCount: 1,
+    impactCount: 0,
+    impactFiles: 0,
+    impactConfidence: 'none' as const,
+    gaps: [] as string[],
+    risk: 'none',
+    summary: 's',
+    plan: p,
+  });
+  const isolatedCompilePass = {
+    status: 'passed' as const,
+    checks: [{ kind: 'typecheck', label: 'tsc', status: 'passed', compileCapable: true, durationMs: 1, output: '' }],
+    failedFiles: [],
+    measuredWith: 1,
+  };
+
+  test('compiler-provable change + isolated compile-capable pass: pruned, severity is upstream-only', () => {
+    const verified = applyVerification(candidate(plan('removed-export')) as never, isolatedCompilePass as never);
+    assert.equal(verified.verifiedUnaffected, true);
+    assert.equal(severityOf(verified as never), 'upstream-only');
+    // The compiler-provable prediction was cleared and removed from the plan —
+    // that removal, not a special-case verdict, is what makes it safe.
+    assert.equal((verified.plan as { breakingChanges: unknown[] }).breakingChanges.length, 0);
+  });
+
+  test('behavioural change + isolated compile-capable pass: NOT cleared, nothing reads safe', () => {
+    const verified = applyVerification(candidate(plan('behaviour-change')) as never, isolatedCompilePass as never);
+    assert.notEqual(verified.verifiedUnaffected, true);
+    assert.equal(severityOf(verified as never), 'review-required');
+    const dispositions = (verified.plan as { dispositions?: { state: string }[] }).dispositions ?? [];
+    assert.ok(dispositions.length > 0 && dispositions.every((d) => d.state !== 'unaffected'));
+    assert.equal(isSafeEquivalentVerdict(resolvePlanVerdict(verified.plan as never)), false);
+  });
+
+  test('batch pass never clears, whatever the change kind', () => {
+    const batch = { ...isolatedCompilePass, measuredWith: 2 };
+    const verified = applyVerification(candidate(plan('removed-export')) as never, batch as never);
+    assert.notEqual(verified.verifiedUnaffected, true);
+    assert.equal(severityOf(verified as never), 'review-required');
+  });
+
+  test('a green run with no compile-capable check never clears', () => {
+    const testOnly = {
+      status: 'passed' as const,
+      checks: [{ kind: 'test', label: 'npm test', status: 'passed', compileCapable: false, durationMs: 1, output: '' }],
+      failedFiles: [],
+      measuredWith: 1,
+    };
+    const verified = applyVerification(candidate(plan('removed-export')) as never, testOnly as never);
+    assert.notEqual(verified.verifiedUnaffected, true);
+    assert.equal(severityOf(verified as never), 'review-required');
   });
 });
 

@@ -242,11 +242,13 @@ describe('CLI safe bulk upgrade selection', () => {
     verification:
       severity === 'verification-failed'
         ? { status: 'failed' }
-        : // `upstream-only` is only reachable behind an isolated verification pass now:
-          // a completed localization with no hits is not affirmative evidence of safety.
+        : // `upstream-only` is only reachable behind an isolated, compile-capable
+          // pass that cleared everything — represented by the reconciled
+          // `verifiedUnaffected` flag, not by `verification.status` alone.
           severity === 'upstream-only'
-          ? { status: 'passed', checks: [{ label: 'typecheck', status: 'passed' }] }
+          ? { status: 'passed', checks: [{ label: 'typecheck', status: 'passed', compileCapable: true }], measuredWith: 1 }
           : undefined,
+    ...(severity === 'upstream-only' ? { verifiedUnaffected: true } : {}),
   }) as never;
 
   test('selects only candidates Drift proved safe for this repository', () => {

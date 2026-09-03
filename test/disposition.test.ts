@@ -88,12 +88,14 @@ describe('deriveBreakingChangeDispositions: API findings', () => {
     assert.equal(d.reason, 'impact-unresolved');
   });
 
-  test('an authoritative verification clearing the change makes a zero-hit search unaffected', () => {
-    const d = only(
-      deriveBreakingChangeDispositions([apiChange()], [], [], true, true, new Set(['bc_api'])),
-    );
-    assert.equal(d.state, 'unaffected');
-    assert.equal(d.reason, 'no-local-impact');
+  test('a change an isolated verification actually cleared never reaches here (it is pruned)', () => {
+    // `prunePlan` (verification/apply.ts) removes a compiler-provable change an
+    // isolated compile-capable pass disproved, so `deriveBreakingChangeDispositions`
+    // is only ever called with the changes that survived. Nothing in this
+    // function turns a surviving zero-hit change into `unaffected`.
+    const d = only(deriveBreakingChangeDispositions([apiChange()], [], [], true, true));
+    assert.equal(d.state, 'unknown');
+    assert.equal(d.reason, 'impact-unresolved');
   });
 
   test('no hit and localization never ran is unknown, never unaffected', () => {
@@ -202,17 +204,16 @@ describe('deriveBreakingChangeDispositions: mixed API + runtime candidates', () 
     assert.equal(api?.reason, 'impact-unresolved');
   });
 
-  test('a verification clearing the API change is the genuine all-clear', () => {
-    const changes = [apiChange('bc_api'), runtimeChange('bc_rt')];
+  test('the only genuine all-clear here is runtime-compatible with no surviving API change', () => {
+    // With the API change pruned (an isolated pass cleared it), only the
+    // runtime-compatible disposition remains — and it is `unaffected`.
     const ds = deriveBreakingChangeDispositions(
-      changes,
+      [runtimeChange('bc_rt')],
       [site('bc_rt', 'high', { runtimeVerdict: 'compatible' })],
       [rt('bc_rt', 'compatible', 'satisfies')],
       true,
-      true,
-      new Set(['bc_api']),
     );
-    assert.deepEqual(ds.map((d) => d.state).sort(), ['unaffected', 'unaffected']);
+    assert.deepEqual(ds.map((d) => d.state), ['unaffected']);
   });
 });
 

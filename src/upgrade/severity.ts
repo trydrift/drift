@@ -60,8 +60,31 @@ export interface SeverityInput {
    */
   verification?: {
     status: string;
-    checks?: readonly { label: string; status: string }[];
+    checks?: readonly { label: string; status: string; compileCapable?: boolean }[];
+    /**
+     * How many upgrades were installed together when this was measured.
+     * Absent or `1` means isolated. `> 1` means the verdict is about the
+     * *group*, and a green group proves nothing about this candidate alone —
+     * see `verificationScope` in `verification/apply.ts`.
+     */
+    measuredWith?: number;
   };
+  /**
+   * The reconciled answer to "has an authoritative verification shown this
+   * repository is unaffected?" — computed once, by the layer that can see the
+   * plan (`applyVerification` in `upgrade/verification.ts`), never re-derived
+   * from `verification.status` here.
+   *
+   * `true` only when an **isolated**, compile-capable pass cleared every
+   * compiler-provable prediction and nothing non-runtime is left unresolved.
+   * A batch pass, a pass with no compile-capable check, a behavioural change
+   * that survived a green build, or an unavailable plan all leave this
+   * `undefined`/`false`, and an upstream break with no located site then
+   * renders `review-required`, never `upstream-only`. This is the single
+   * signal that keeps `severityOf` from inventing stronger safety evidence
+   * than `applyVerificationToPlan` is willing to act on.
+   */
+  verifiedUnaffected?: boolean;
   /**
    * The strongest local-impact confidence among the sites behind
    * `impactCount`, when it was computed.
@@ -241,9 +264,12 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // inferred types, wrappers, generated code, dynamic dispatch, behavioural
   // changes, and ownership relationships. `upstream-only` tells the developer
   // "safe, none used here" and lets bulk upgrade install it unattended, so it
-  // may only be reached when an isolated verification pass actually stood
-  // behind that claim. Absent one, this is `review-required`: real upstream
-  // incompatibility, local impact unresolved.
+  // may only be reached when `verifiedUnaffected` says an isolated,
+  // compile-capable verification actually stood behind that claim (computed
+  // in `applyVerification`, never from `verification.status` alone — a batch
+  // pass or a check that never compiled anything does not count). Absent that,
+  // this is `review-required`: real upstream incompatibility, local impact
+  // unresolved.
   //
   // Runtime-requirement breaks are excluded here on purpose: they are resolved
   // against runtime *configuration*, not source sites, and an unresolved one
@@ -251,7 +277,7 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // with only runtime breaks means they resolved `compatible`, which *is*
   // affirmative evidence and stays `upstream-only`.
   if (apiBreakingCount > 0) {
-    return verificationState(candidate) === 'passed' ? 'upstream-only' : 'review-required';
+    return candidate.verifiedUnaffected === true ? 'upstream-only' : 'review-required';
   }
   if (candidate.breakingCount > 0) return 'upstream-only';
 
@@ -339,11 +365,17 @@ export function describeSeverity(candidate: SeverityInput): string {
         : "Verified breaking · this upgrade broke the project's own checks — measured, not predicted";
     }
     case 'upstream-only': {
-      // Only an isolated verification pass reaches this verdict now (see
-      // `severityOf`), so it always carries measured evidence, never a bare
-      // "localization found nothing" inference.
       const base = `${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
-      return `Verified safe · ${base}, and your own checks pass`;
+      // Two ways to reach this verdict, and they carry different evidence:
+      //  - `verifiedUnaffected`: an isolated, compile-capable pass cleared
+      //    every compiler-provable prediction. Measured.
+      //  - otherwise: the only breaking change was a runtime requirement that
+      //    resolved `compatible` against this repository's declared runtime.
+      //    A configuration fact, not a build — so it must not claim "checks
+      //    pass".
+      return candidate.verifiedUnaffected === true
+        ? `Verified safe · ${base}, and your own checks pass`
+        : `Safe for your code · ${base}`;
     }
     case 'review-required': {
       const runtimeSites = candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial'

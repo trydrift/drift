@@ -1064,8 +1064,19 @@ describe('runtime severity: unresolved compatibility can never render as safe', 
     const candidate = { ...baseCandidate, recommendation: 'safe-to-upgrade' };
     assert.equal(severityOf(candidate), 'review-required');
     assert.doesNotMatch(describeSeverity(candidate), /none used here|Safe for your code/);
+    // A bare passing verification is not enough; a batch pass is not enough.
     assert.equal(
       severityOf({ ...candidate, verification: { status: 'passed', checks: [] } }),
+      'review-required',
+    );
+    // The reconciled verifiedUnaffected flag (isolated + compile-capable + all
+    // cleared, computed by applyVerification) is what earns upstream-only.
+    assert.equal(
+      severityOf({
+        ...candidate,
+        verification: { status: 'passed', checks: [{ label: 'tsc', status: 'passed', compileCapable: true }], measuredWith: 1 },
+        verifiedUnaffected: true,
+      }),
       'upstream-only',
     );
   });

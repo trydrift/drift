@@ -47,10 +47,20 @@ describe('a failed verification outranks a clean-looking result', () => {
     // "review-required", not "upstream-only": a completed localization that
     // found nothing is not affirmative evidence the repository is unaffected.
     assert.equal(severityOf({ ...base, breakingCount: 1 }), 'review-required');
-    // With an isolated verification pass behind it, the safe-equivalent verdict
-    // is earned.
+    // A bare `passed` is not enough — the reconciled `verifiedUnaffected` flag
+    // (isolated, compile-capable, everything cleared) is what earns
+    // `upstream-only`.
     assert.equal(
       severityOf({ ...base, breakingCount: 1, verification: { status: 'passed', checks: [] } }),
+      'review-required',
+    );
+    assert.equal(
+      severityOf({
+        ...base,
+        breakingCount: 1,
+        verification: { status: 'passed', checks: [{ label: 'tsc', status: 'passed', compileCapable: true }], measuredWith: 1 },
+        verifiedUnaffected: true,
+      }),
       'upstream-only',
     );
   });
@@ -148,7 +158,12 @@ describe('a failed verification outranks a clean-looking result', () => {
   test('sorts above clean and upstream-only, below a located impact site', () => {
     const affected = { ...base, impactCount: 1 };
     const verificationFailed = { ...base, verification: { status: 'failed', checks: [] } };
-    const upstreamOnly = { ...base, breakingCount: 1, verification: { status: 'passed', checks: [] } };
+    const upstreamOnly = {
+      ...base,
+      breakingCount: 1,
+      verification: { status: 'passed', checks: [{ label: 'tsc', status: 'passed', compileCapable: true }], measuredWith: 1 },
+      verifiedUnaffected: true,
+    };
     const clean = { ...base };
 
     const sorted = [clean, upstreamOnly, affected, verificationFailed].sort(compareSeverity);

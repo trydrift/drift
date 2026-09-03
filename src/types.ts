@@ -545,9 +545,11 @@ export interface BreakingChangeDisposition {
      */
     | 'impact-unresolved'
     /**
-     * Retained for compatibility. No longer emitted for API changes: a
-     * zero-hit completed search now resolves to `impact-unresolved`. Runtime
-     * requirements use `runtime-compatible` for their genuine all-clear.
+     * No longer emitted. A zero-hit completed search resolves to
+     * `impact-unresolved`; a change an isolated verification cleared is pruned
+     * before it reaches `deriveBreakingChangeDispositions`; runtime
+     * requirements use `runtime-compatible`. Retained in the union so historical
+     * recordings and stored plans still parse.
      */
     | 'no-local-impact';
   /** All explanatory locations, including review-only runtime declarations. */
