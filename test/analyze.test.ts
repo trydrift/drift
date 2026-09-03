@@ -1185,7 +1185,7 @@ describe('analysis', () => {
 });
 
 describe('search symbols derived from a computed finding', () => {
-  const symbolsFor = async (symbol: string): Promise<string[]> => {
+  const symbolsFor = async (symbol: string, code = 'member-removed'): Promise<string[]> => {
     const changes = await analyze(
       [{ name: 'dep', ecosystem: 'go', from: '1', to: '2', kind: 'runtime', bump: 'minor', manifestPath: 'go.mod' } as never],
       [
@@ -1196,7 +1196,7 @@ describe('search symbols derived from a computed finding', () => {
           title: 't',
           content: 'c',
           weight: 1,
-          findings: [{ code: 'member-removed', symbol, detail: 'd' }],
+          findings: [{ code, symbol, detail: 'd' }],
         } as never,
       ],
       { config: DEFAULT_CONFIG, logger: createLogger('silent') },
@@ -1247,5 +1247,41 @@ describe('search symbols derived from a computed finding', () => {
     // "golang.org/x/sys constants" is a label, not a symbol; splitting it on
     // its dots produced `golang`, which matched every import of the module.
     assert.deepEqual(await symbolsFor('golang.org/x/sys constants'), ['golang.org/x/sys constants']);
+  });
+
+  describe('a member becoming required also searches the owning type', () => {
+    // The real axios/TypeScript shape this comes from: `AxiosRequestConfig`
+    // gains a required `headers`, and `headers` is common enough to sit in
+    // `GENERIC_LEAF_NAMES` — so before this, the only search symbol was
+    // `AxiosRequestConfig.headers`, which no caller ever writes verbatim, and
+    // `const config: AxiosRequestConfig = {...}` — sitting in the file that
+    // imports the type — was never found. 6 of 61 swe-bump-bench cases came
+    // back false-safe; this was the mechanism behind two of them.
+    test('the owner is added when the member name is too generic to search alone', async () => {
+      const symbols = await symbolsFor('AxiosRequestConfig.headers', 'member-now-required');
+      assert.ok(symbols.includes('AxiosRequestConfig'), JSON.stringify(symbols));
+      assert.deepEqual(symbols, ['AxiosRequestConfig', 'AxiosRequestConfig.headers']);
+    });
+
+    test('a type annotation of the owner is what this exists to localize', async () => {
+      const symbols = await symbolsFor('AxiosRequestConfig.headers', 'member-now-required');
+      const usageLine = 'const config: AxiosRequestConfig = { url, data };';
+      assert.ok(symbols.some((symbol) => usageLine.includes(symbol)));
+    });
+
+    test('a distinctive member name still contributes its own bare leaf too', async () => {
+      const symbols = await symbolsFor('AxiosRequestConfig.transformResponse', 'member-now-required');
+      assert.deepEqual(symbols.sort(), [
+        'AxiosRequestConfig',
+        'AxiosRequestConfig.transformResponse',
+        'transformResponse',
+      ]);
+    });
+
+    // A plain `member-removed` finding stays owner-less — see 'a two-part
+    // member yields the qualified name and the bare member, never the bare
+    // owner' above. A removed or renamed member is a fact about the member,
+    // not the type; searching the owner there would just as often point at an
+    // unrelated construction that happens to share a type name.
   });
 });

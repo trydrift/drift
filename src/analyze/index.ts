@@ -225,6 +225,23 @@ function symbolsFromFinding(finding: StructuredFinding): string[] {
       const owner = parts[parts.length - 2];
       if (owner) symbols.add(`${owner}.${last}`);
     }
+
+    // A member *becoming required* is a fact about the owning type, not about
+    // the member's own name: `AxiosRequestConfig.headers` becoming required
+    // means every construction or type annotation of `AxiosRequestConfig`
+    // needs a look, whether or not that literal happens to mention `headers`.
+    // `headers` and `url` are exactly the field names common enough to sit in
+    // `GENERIC_LEAF_NAMES`, so without this the qualified symbol
+    // (`AxiosRequestConfig.headers`, which no caller ever writes verbatim) was
+    // the only thing searched, and `const config: AxiosRequestConfig = {...}`
+    // — sitting in the very file that imports the type — was never found.
+    // Scoped to this one finding kind: a removed or renamed member is a fact
+    // about the member, and searching its owner instead would just as often
+    // point at an unrelated construction that happens to share a type name.
+    if (parts.length >= 2 && kindForFindingCode(finding.code) === 'required-field-added') {
+      const owner = parts[parts.length - 2];
+      if (owner && !isGenericLeaf(owner)) symbols.add(owner);
+    }
   }
 
   // OpenAPI locations arrive as `GET /users/{id}`; the path alone is what
