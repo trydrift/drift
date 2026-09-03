@@ -59,11 +59,15 @@ export type DriftVerdict =
  * `detected-not-locally-reachable` is deliberately **excluded**: production no
  * longer treats a completed localization with zero hits as a safety claim, so
  * a known-breaking upgrade Drift reports that way is a conservative miss
- * (review-needed), not a false-safe. `'upstream-only'` is likewise excluded —
- * production now only emits it behind an isolated verification pass, and
- * keeping the benchmark strict there costs nothing.
+ * (review-needed), not a false-safe.
+ *
+ * `'upstream-only'` **is** included: production renders it as "Verified safe"
+ * and lets bulk upgrade install it, and it is only emitted now behind an
+ * isolated, compile-capable verification that cleared every prediction. Once
+ * it is shown to a user as safe it must be scored as a safety claim — a
+ * known-breaking upgrade Drift reports that way is a false-safe.
  */
-const SAFE_EQUIVALENT_SEVERITY_VERDICTS = new Set<DriftVerdict>(['clean']);
+const SAFE_EQUIVALENT_SEVERITY_VERDICTS = new Set<DriftVerdict>(['clean', 'upstream-only']);
 
 export function isUserFacingSafeVerdict(verdict: DriftVerdict): boolean {
   if (SAFE_EQUIVALENT_SEVERITY_VERDICTS.has(verdict)) return true;
