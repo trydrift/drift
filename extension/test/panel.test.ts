@@ -464,7 +464,7 @@ test('the nonce is applied to both the script and the CSP', () => {
 test('an upstream-only package is not framed as an alarm', () => {
   // `upstream-only` is only reachable behind an isolated verification pass now —
   // a completed localization with no hits is not affirmative evidence of safety.
-  const c = candidate({ verification: { status: 'passed', checks: [], failedFiles: [] } });
+  const c = candidate({ verification: { status: 'passed', checks: [{ kind: 'typecheck', label: 'tsc', status: 'passed', compileCapable: true, durationMs: 1, output: '' }], failedFiles: [], measuredWith: 1 }, verifiedUnaffected: true });
   assert.equal(severityOf(c), 'upstream-only');
 
   const html = renderPanel(
@@ -872,7 +872,7 @@ test('safe upgrades can be taken in one action, unknown ones cannot', () => {
   const verified = candidate({
     id: 'b@1->2',
     name: 'b',
-    verification: { status: 'passed', checks: [], failedFiles: [] },
+    verification: { status: 'passed', checks: [{ kind: 'typecheck', label: 'tsc', status: 'passed', compileCapable: true, durationMs: 1, output: '' }], failedFiles: [], measuredWith: 1 }, verifiedUnaffected: true,
   });
   const html = renderPanel(
     model({
@@ -2212,7 +2212,11 @@ describe('Quick Scan vs Deep Verification', () => {
           },
         ],
         failedFiles: [],
+        measuredWith: 1,
       },
+      // What `applyVerification` computes for an isolated compile-capable pass
+      // that cleared every prediction.
+      verifiedUnaffected: true,
     });
 
     const html = renderPanel(
@@ -2269,7 +2273,7 @@ describe('Quick Scan vs Deep Verification', () => {
 
   test('"Deep Verify All" is offered only while something is actually eligible for it', () => {
     const nothingToVerify = candidate({
-      verification: { status: 'passed', checks: [], failedFiles: [] },
+      verification: { status: 'passed', checks: [{ kind: 'typecheck', label: 'tsc', status: 'passed', compileCapable: true, durationMs: 1, output: '' }], failedFiles: [], measuredWith: 1 }, verifiedUnaffected: true,
     });
     const withVerify = candidate({ id: 'other@1->2' });
 
