@@ -6,10 +6,10 @@
   "language": "Swift",
   "repo": "https://github.com/layoutBox/FlexLayout",
   "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
-  "capturedAt": "2026-09-02T21:41:19.938Z",
+  "capturedAt": "2026-09-03T14:08:00.912Z",
   "commit": "320a19f1e842f335f0d636dd810e07498eae9f0b",
-  "engine": "6360d1618d3881e4",
-  "durationMs": 36820,
+  "engine": "8eb935940a5a9bbf",
+  "durationMs": 40424,
   "packagesChecked": 5,
   "manifests": [
     "Package.swift",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 320,
+      "at": 148,
       "phase": "Looking for manifests",
       "detail": "layoutBox/FlexLayout",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 342,
+      "at": 163,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 342,
+      "at": 163,
       "candidate": {
         "id": "Package.swift#facebook/yoga@3.2.1",
         "name": "facebook/yoga",
@@ -79,7 +79,7 @@
     },
     {
       "type": "progress",
-      "at": 342,
+      "at": 163,
       "phase": "Reading manifest",
       "detail": "Podfile",
       "done": 0,
@@ -87,7 +87,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 164,
       "candidate": {
         "id": "Podfile#Yoga@3.2.1",
         "name": "Yoga",
@@ -131,7 +131,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 164,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -175,7 +175,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 164,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -219,7 +219,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 164,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -263,7 +263,7 @@
     },
     {
       "type": "progress",
-      "at": 343,
+      "at": 164,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -271,7 +271,7 @@
     },
     {
       "type": "progress",
-      "at": 343,
+      "at": 164,
       "phase": "Checking registries",
       "detail": "5 direct dependencies",
       "done": 0,
@@ -279,7 +279,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 165,
       "candidate": {
         "id": "Package.swift#facebook/yoga@3.2.1",
         "name": "facebook/yoga",
@@ -323,7 +323,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 165,
       "candidate": {
         "id": "Podfile#Yoga@3.2.1",
         "name": "Yoga",
@@ -367,7 +367,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 165,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -411,7 +411,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 343,
+      "at": 165,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -455,7 +455,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 344,
+      "at": 165,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -499,12 +499,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 358,
+      "at": 177,
       "id": "Package.swift#facebook/yoga@3.2.1"
     },
     {
       "type": "progress",
-      "at": 358,
+      "at": 177,
       "phase": "Up to date",
       "detail": "facebook/yoga@3.2.1",
       "done": 1,
@@ -512,7 +512,7 @@
     },
     {
       "type": "progress",
-      "at": 581,
+      "at": 222,
       "phase": "Indexing your code",
       "detail": "59 files indexed · 5 direct dependencies to check",
       "done": 0,
@@ -520,38 +520,38 @@
     },
     {
       "type": "candidate-drop",
-      "at": 36576,
-      "id": "Podfile#SwiftLint@0.55.1"
+      "at": 39557,
+      "id": "Podfile#FlexLayout@2.2.1"
     },
     {
       "type": "progress",
-      "at": 36576,
+      "at": 39557,
       "phase": "Could not check",
-      "detail": "SwiftLint@0.55.1 · Drift could not reach CocoaPods Trunk for SwiftLint.",
+      "detail": "FlexLayout@2.2.1 · Drift could not reach CocoaPods Trunk for FlexLayout.",
       "done": 2,
       "total": 5
     },
     {
       "type": "candidate-drop",
-      "at": 36661,
-      "id": "Podfile#FlexLayout@2.2.1"
+      "at": 39557,
+      "id": "Podfile#PinLayout@1.10.5"
     },
     {
       "type": "progress",
-      "at": 36661,
+      "at": 39557,
       "phase": "Could not check",
-      "detail": "FlexLayout@2.2.1 · Drift could not reach CocoaPods Trunk for FlexLayout.",
+      "detail": "PinLayout@1.10.5 · Drift could not reach CocoaPods Trunk for PinLayout.",
       "done": 3,
       "total": 5
     },
     {
       "type": "candidate-drop",
-      "at": 36683,
+      "at": 39557,
       "id": "Podfile#Yoga@3.2.1"
     },
     {
       "type": "progress",
-      "at": 36683,
+      "at": 39557,
       "phase": "Could not check",
       "detail": "Yoga@3.2.1 · Drift could not reach CocoaPods Trunk for Yoga.",
       "done": 4,
@@ -559,14 +559,14 @@
     },
     {
       "type": "candidate-drop",
-      "at": 36750,
-      "id": "Podfile#PinLayout@1.10.5"
+      "at": 39557,
+      "id": "Podfile#SwiftLint@0.55.1"
     },
     {
       "type": "progress",
-      "at": 36750,
+      "at": 39557,
       "phase": "Could not check",
-      "detail": "PinLayout@1.10.5 · Drift could not reach CocoaPods Trunk for PinLayout.",
+      "detail": "SwiftLint@0.55.1 · Drift could not reach CocoaPods Trunk for SwiftLint.",
       "done": 5,
       "total": 5
     }
