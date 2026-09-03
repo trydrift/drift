@@ -22,9 +22,9 @@
       "value": 0.6538461538461539
     },
     "consumer localization rate": {
-      "numerator": 18,
+      "numerator": 17,
       "denominator": 26,
-      "value": 0.6923076923076923
+      "value": 0.6538461538461539
     },
     "false-safe verdicts": {
       "numerator": 0,
@@ -96,9 +96,9 @@
         "value": 0.55
       },
       "consumer localization rate": {
-        "numerator": 12,
+        "numerator": 11,
         "denominator": 20,
-        "value": 0.6
+        "value": 0.55
       }
     },
     "label: migration-failure-medium": {
@@ -138,8 +138,8 @@
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.5,
-      "high": 0.8461538461538461,
+      "low": 0.46153846153846156,
+      "high": 0.8076923076923077,
       "iterations": 2000
     },
     "false-safe verdicts": {

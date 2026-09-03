@@ -10,9 +10,9 @@
   "missingRequirements": {},
   "rates": {
     "breaking-change detection recall": {
-      "numerator": 131,
+      "numerator": 161,
       "denominator": 165,
-      "value": 0.793939393939394
+      "value": 0.9757575757575757
     }
   },
   "adjudication": {
@@ -25,23 +25,23 @@
   "refusals": [],
   "negativeControls": 16168,
   "confusion": {
-    "tp": 131,
+    "tp": 161,
     "fp": 31,
     "tn": 16137,
-    "fn": 34
+    "fn": 4
   },
   "classification": {
     "precision": {
-      "numerator": 131,
-      "denominator": 162,
-      "value": 0.808641975308642
+      "numerator": 161,
+      "denominator": 192,
+      "value": 0.8385416666666666
     },
     "recall": {
-      "numerator": 131,
+      "numerator": 161,
       "denominator": 165,
-      "value": 0.793939393939394
+      "value": 0.9757575757575757
     },
-    "f1": 0.8012232415902141
+    "f1": 0.9019607843137254
   },
   "baseline": {
     "name": "conventional-commits marker",
@@ -66,16 +66,16 @@
   "breakdown": {
     "label: documents-breaking-change": {
       "breaking-change detection recall": {
-        "numerator": 131,
+        "numerator": 161,
         "denominator": 165,
-        "value": 0.793939393939394
+        "value": 0.9757575757575757
       }
     },
     "markerBaselinePredictsBreaking: true": {
       "breaking-change detection recall": {
-        "numerator": 131,
+        "numerator": 161,
         "denominator": 164,
-        "value": 0.7987804878048781
+        "value": 0.9817073170731707
       }
     },
     "markerBaselinePredictsBreaking: false": {
@@ -87,9 +87,9 @@
     },
     "messageStatesDetail: false": {
       "breaking-change detection recall": {
-        "numerator": 17,
+        "numerator": 47,
         "denominator": 48,
-        "value": 0.3541666666666667
+        "value": 0.9791666666666666
       }
     },
     "messageStatesDetail: true": {
@@ -102,8 +102,8 @@
   },
   "intervals": {
     "breaking-change detection recall": {
-      "low": 0.7333333333333333,
-      "high": 0.8545454545454545,
+      "low": 0.9515151515151515,
+      "high": 0.9939393939393939,
       "iterations": 2000
     }
   },

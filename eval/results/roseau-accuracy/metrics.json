@@ -5,72 +5,74 @@
   "selected": 267,
   "attempted": 267,
   "notRun": 0,
-  "scored": 267,
-  "excluded": {},
+  "scored": 255,
+  "excluded": {
+    "ground-truth-contested": 12
+  },
   "missingRequirements": {},
   "rates": {
     "breaking-change detection recall": {
-      "numerator": 96,
-      "denominator": 100,
-      "value": 0.96
+      "numerator": 98,
+      "denominator": 98,
+      "value": 1
     }
   },
   "adjudication": {
     "breaking-change detection recall": {
-      "adjudicated": 100,
+      "adjudicated": 98,
       "notAdjudicated": 0,
       "reasons": {}
     }
   },
   "refusals": [],
-  "negativeControls": 167,
+  "negativeControls": 157,
   "confusion": {
-    "tp": 96,
-    "fp": 11,
+    "tp": 98,
+    "fp": 1,
     "tn": 156,
-    "fn": 4
+    "fn": 0
   },
   "classification": {
     "precision": {
-      "numerator": 96,
-      "denominator": 107,
-      "value": 0.897196261682243
+      "numerator": 98,
+      "denominator": 99,
+      "value": 0.98989898989899
     },
     "recall": {
-      "numerator": 96,
-      "denominator": 100,
-      "value": 0.96
+      "numerator": 98,
+      "denominator": 98,
+      "value": 1
     },
-    "f1": 0.927536231884058
+    "f1": 0.9949238578680203
   },
   "baseline": null,
   "breakdown": {
     "label: binary-breaking": {
       "breaking-change detection recall": {
-        "numerator": 96,
-        "denominator": 100,
-        "value": 0.96
+        "numerator": 98,
+        "denominator": 98,
+        "value": 1
       }
     },
     "groundTruthSourceBreaking: true": {
       "breaking-change detection recall": {
-        "numerator": 76,
-        "denominator": 79,
-        "value": 0.9620253164556962
+        "numerator": 78,
+        "denominator": 78,
+        "value": 1
       }
     },
     "groundTruthSourceBreaking: false": {
       "breaking-change detection recall": {
         "numerator": 20,
-        "denominator": 21,
-        "value": 0.9523809523809523
+        "denominator": 20,
+        "value": 1
       }
     }
   },
   "intervals": {
     "breaking-change detection recall": {
-      "low": 0.92,
-      "high": 0.99,
+      "low": 1,
+      "high": 1,
       "iterations": 2000
     }
   },

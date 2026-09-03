@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
-| Run date | 2026-09-02T12:02:42.673Z |
+| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
+| Run date | 2026-09-03T04:50:57.956Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -64,7 +64,7 @@ Reasons:
 | Question | Result | 95% interval |
 | --- | --- | --- |
 | affected-repository identification rate | 17/26 (65.4%) | 46.2–80.8% |
-| consumer localization rate | 18/26 (69.2%) | 50.0–84.6% |
+| consumer localization rate | 17/26 (65.4%) | 46.2–80.8% |
 | dependency-update detection rate | 32/34 (94.1%) | 85.3–100.0% |
 | false-safe verdicts | 0/26 (0.0%) | 0.0–0.0% |
 
@@ -78,7 +78,7 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: migration-failure-easy | 11/20 (55.0%) | 12/20 (60.0%) | 22/24 (91.7%) |
+| label: migration-failure-easy | 11/20 (55.0%) | 11/20 (55.0%) | 22/24 (91.7%) |
 | label: migration-failure-hard | — | — | 1/1 (100.0%) |
 | label: migration-failure-medium | 6/6 (100.0%) | 6/6 (100.0%) | 9/9 (100.0%) |
 

@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Citation | Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau |
 | Ecosystem | maven |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
-| Run date | 2026-09-02T11:58:31.706Z |
+| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
+| Run date | 2026-09-03T04:46:09.548Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -28,15 +28,21 @@ Read this before any rate below.
 | --- | --- |
 | Available in the dataset | 267 |
 | Selected for this run (all) | 267 |
-| Scored | 267 |
-| Excluded | 0 |
-| Negative/control cases among the scored | 167 |
+| Scored | 255 |
+| Excluded | 12 |
+| Negative/control cases among the scored | 157 |
+
+Every exclusion, with its reason:
+
+| Reason | Cases |
+| --- | --- |
+| `ground-truth-contested` | 12 |
 
 ## Results
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| breaking-change detection recall | 96/100 (96.0%) | 92.0–99.0% |
+| breaking-change detection recall | 98/98 (100.0%) | 100.0–100.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -47,13 +53,13 @@ Computed because this corpus supplies real negatives, so a false positive has a 
 
 | | |
 | --- | --- |
-| True positives | 96 |
-| False positives | 11 |
+| True positives | 98 |
+| False positives | 1 |
 | True negatives | 156 |
-| False negatives | 4 |
-| Precision | 96/107 (89.7%) |
-| Recall | 96/100 (96.0%) |
-| F1 | 0.928 |
+| False negatives | 0 |
+| Precision | 98/99 (99.0%) |
+| Recall | 98/98 (100.0%) |
+| F1 | 0.995 |
 
 ### Breakdown
 
@@ -62,9 +68,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | breaking-change detection recall |
 | --- | --- |
-| groundTruthSourceBreaking: false | 20/21 (95.2%) |
-| groundTruthSourceBreaking: true | 76/79 (96.2%) |
-| label: binary-breaking | 96/100 (96.0%) |
+| groundTruthSourceBreaking: false | 20/20 (100.0%) |
+| groundTruthSourceBreaking: true | 78/78 (100.0%) |
+| label: binary-breaking | 98/98 (100.0%) |
 
 ## Label mapping coverage
 
@@ -96,7 +102,7 @@ how generously the mapping was written.
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
-| `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
+| `japicmp` | installed (version unknown) | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
 

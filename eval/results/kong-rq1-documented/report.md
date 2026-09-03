@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `b4a343b34605b92c8e99bdb236c0421cae615551` |
-| Run date | 2026-09-02T11:58:55.340Z |
+| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
+| Run date | 2026-09-03T04:46:04.062Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq1-documented --run-id kong-rq1-documented` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -36,7 +36,7 @@ Read this before any rate below.
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| breaking-change detection recall | 131/165 (79.4%) | 73.3–85.5% |
+| breaking-change detection recall | 161/165 (97.6%) | 95.2–99.4% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -47,13 +47,13 @@ Computed because this corpus supplies real negatives, so a false positive has a 
 
 | | |
 | --- | --- |
-| True positives | 131 |
+| True positives | 161 |
 | False positives | 31 |
 | True negatives | 16137 |
-| False negatives | 34 |
-| Precision | 131/162 (80.9%) |
-| Recall | 131/165 (79.4%) |
-| F1 | 0.801 |
+| False negatives | 4 |
+| Precision | 161/192 (83.9%) |
+| Recall | 161/165 (97.6%) |
+| F1 | 0.902 |
 
 ### Trivial baseline on the same cases
 
@@ -72,10 +72,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | breaking-change detection recall |
 | --- | --- |
-| label: documents-breaking-change | 131/165 (79.4%) |
+| label: documents-breaking-change | 161/165 (97.6%) |
 | markerBaselinePredictsBreaking: false | 0/1 (0.0%) |
-| markerBaselinePredictsBreaking: true | 131/164 (79.9%) |
-| messageStatesDetail: false | 17/48 (35.4%) |
+| markerBaselinePredictsBreaking: true | 161/164 (98.2%) |
+| messageStatesDetail: false | 47/48 (97.9%) |
 | messageStatesDetail: true | 114/117 (97.4%) |
 
 ## Label mapping coverage

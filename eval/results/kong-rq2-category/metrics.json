@@ -10,14 +10,14 @@
   "missingRequirements": {},
   "rates": {
     "breaking-change detection recall": {
-      "numerator": 1144,
+      "numerator": 1431,
       "denominator": 1511,
-      "value": 0.757114493712773
+      "value": 0.9470549305095963
     },
     "category classification accuracy": {
-      "numerator": 2,
+      "numerator": 91,
       "denominator": 134,
-      "value": 0.014925373134328358
+      "value": 0.6791044776119403
     }
   },
   "adjudication": {
@@ -53,84 +53,84 @@
   "breakdown": {
     "label: rename class": {
       "breaking-change detection recall": {
-        "numerator": 15,
+        "numerator": 21,
         "denominator": 22,
-        "value": 0.6818181818181818
+        "value": 0.9545454545454546
       }
     },
     "label: remove method": {
       "breaking-change detection recall": {
-        "numerator": 97,
+        "numerator": 121,
         "denominator": 126,
-        "value": 0.7698412698412699
+        "value": 0.9603174603174603
       }
     },
     "label: change_behavior": {
       "breaking-change detection recall": {
-        "numerator": 770,
+        "numerator": 963,
         "denominator": 1026,
-        "value": 0.7504873294346979
+        "value": 0.9385964912280702
       }
     },
     "label: remove constant": {
       "breaking-change detection recall": {
-        "numerator": 7,
+        "numerator": 10,
         "denominator": 10,
-        "value": 0.7
+        "value": 1
       }
     },
     "label: rename method": {
       "breaking-change detection recall": {
-        "numerator": 41,
+        "numerator": 48,
         "denominator": 50,
-        "value": 0.82
+        "value": 0.96
       }
     },
     "label: remove class": {
       "breaking-change detection recall": {
-        "numerator": 20,
+        "numerator": 26,
         "denominator": 26,
-        "value": 0.7692307692307693
+        "value": 1
       }
     },
     "label: remove field": {
       "breaking-change detection recall": {
-        "numerator": 23,
+        "numerator": 26,
         "denominator": 27,
-        "value": 0.8518518518518519
+        "value": 0.9629629629629629
       }
     },
     "label: change_signature": {
       "breaking-change detection recall": {
-        "numerator": 100,
+        "numerator": 128,
         "denominator": 134,
-        "value": 0.746268656716418
+        "value": 0.9552238805970149
       },
       "category classification accuracy": {
-        "numerator": 2,
+        "numerator": 91,
         "denominator": 134,
-        "value": 0.014925373134328358
+        "value": 0.6791044776119403
       }
     },
     "label: move class": {
       "breaking-change detection recall": {
-        "numerator": 5,
+        "numerator": 7,
         "denominator": 7,
-        "value": 0.7142857142857143
+        "value": 1
       }
     },
     "label: move": {
       "breaking-change detection recall": {
-        "numerator": 1,
+        "numerator": 2,
         "denominator": 2,
-        "value": 0.5
+        "value": 1
       }
     },
     "label: rename constant": {
       "breaking-change detection recall": {
-        "numerator": 0,
+        "numerator": 1,
         "denominator": 1,
-        "value": 0
+        "value": 1
       }
     },
     "label: remove interface": {
@@ -142,9 +142,9 @@
     },
     "label: rename field": {
       "breaking-change detection recall": {
-        "numerator": 23,
+        "numerator": 29,
         "denominator": 29,
-        "value": 0.7931034482758621
+        "value": 1
       }
     },
     "label: move field": {
@@ -156,9 +156,9 @@
     },
     "label: rename interface": {
       "breaking-change detection recall": {
-        "numerator": 3,
+        "numerator": 4,
         "denominator": 4,
-        "value": 0.75
+        "value": 1
       }
     },
     "label: rename package": {
@@ -170,9 +170,9 @@
     },
     "label: remove module": {
       "breaking-change detection recall": {
-        "numerator": 12,
+        "numerator": 16,
         "denominator": 17,
-        "value": 0.7058823529411765
+        "value": 0.9411764705882353
       }
     },
     "label: rename module": {
@@ -184,9 +184,9 @@
     },
     "label: move method": {
       "breaking-change detection recall": {
-        "numerator": 11,
+        "numerator": 12,
         "denominator": 12,
-        "value": 0.9166666666666666
+        "value": 1
       }
     },
     "label: move module": {
@@ -205,9 +205,9 @@
     },
     "label: remove": {
       "breaking-change detection recall": {
-        "numerator": 1,
+        "numerator": 2,
         "denominator": 2,
-        "value": 0.5
+        "value": 1
       }
     },
     "label: remove type": {
@@ -226,14 +226,14 @@
     },
     "markerBaselinePredictsBreaking: true": {
       "breaking-change detection recall": {
-        "numerator": 1144,
+        "numerator": 1431,
         "denominator": 1464,
-        "value": 0.7814207650273224
+        "value": 0.9774590163934426
       },
       "category classification accuracy": {
-        "numerator": 2,
+        "numerator": 91,
         "denominator": 129,
-        "value": 0.015503875968992248
+        "value": 0.7054263565891473
       }
     },
     "markerBaselinePredictsBreaking: false": {
@@ -250,38 +250,38 @@
     },
     "messageStatesDetail: true": {
       "breaking-change detection recall": {
-        "numerator": 1084,
+        "numerator": 1091,
         "denominator": 1120,
-        "value": 0.9678571428571429
+        "value": 0.9741071428571428
       },
       "category classification accuracy": {
-        "numerator": 1,
+        "numerator": 68,
         "denominator": 97,
-        "value": 0.010309278350515464
+        "value": 0.7010309278350515
       }
     },
     "messageStatesDetail: false": {
       "breaking-change detection recall": {
-        "numerator": 60,
+        "numerator": 340,
         "denominator": 391,
-        "value": 0.1534526854219949
+        "value": 0.8695652173913043
       },
       "category classification accuracy": {
-        "numerator": 1,
+        "numerator": 23,
         "denominator": 37,
-        "value": 0.02702702702702703
+        "value": 0.6216216216216216
       }
     }
   },
   "intervals": {
     "breaking-change detection recall": {
-      "low": 0.7352746525479815,
-      "high": 0.7782925215089345,
+      "low": 0.9358041032428855,
+      "high": 0.9583057577763071,
       "iterations": 2000
     },
     "category classification accuracy": {
-      "low": 0,
-      "high": 0.03731343283582089,
+      "low": 0.6044776119402985,
+      "high": 0.7611940298507462,
       "iterations": 2000
     }
   },
