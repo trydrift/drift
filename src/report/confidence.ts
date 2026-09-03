@@ -33,7 +33,7 @@ export const VERDICT_TEXT: Record<FindingVerdict, string> = {
   'no-incompatible-change-in-checked-surfaces':
     'No incompatible change detected in the surfaces that were checked',
   'detected-not-locally-reachable':
-    'Incompatible change detected upstream, but not reachable from this repository',
+    'Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading',
   'locally-affected': 'This repository is affected',
   'insufficient-evidence': 'Insufficient evidence to say',
   'verification-incomplete': 'Verification incomplete',
@@ -90,8 +90,40 @@ export function verdictFor(change: BreakingChange): FindingVerdict {
   return 'locally-affected';
 }
 
-/** The two verdicts that tell a developer this upgrade does not affect them. */
-const SAFE_EQUIVALENT_VERDICTS = new Set<FindingVerdict>([
+/**
+ * The verdict(s) that tell a developer this upgrade does not affect them.
+ *
+ * `detected-not-locally-reachable` is deliberately **not** here. A completed
+ * localization that found nothing is not affirmative evidence the repository is
+ * unaffected — structural typing, inferred types, wrappers, generated code,
+ * dynamic dispatch, behavioural changes and ownership relationships all defeat
+ * a syntactic search. That verdict now means "real upstream break, local
+ * impact unresolved — review", and only `no-incompatible-change-in-checked-
+ * surfaces` (reached when every breaking change was either absent or cleared
+ * by isolated verification, so `plan.breakingChanges` is empty) is a safe
+ * claim.
+ */
+export const SAFE_EQUIVALENT_VERDICTS: ReadonlySet<FindingVerdict> = new Set<FindingVerdict>([
+  'no-incompatible-change-in-checked-surfaces',
+]);
+
+/**
+ * The one place any surface — CLI, Action, extension, SARIF, benchmark harness
+ * — may ask "did Drift tell the developer this upgrade is safe for them?".
+ * A completed localization with no hits is not one of these.
+ */
+export function isSafeEquivalentVerdict(verdict: FindingVerdict): boolean {
+  return SAFE_EQUIVALENT_VERDICTS.has(verdict);
+}
+
+/**
+ * Verdicts a confirmed regression is allowed to override to `locally-affected`.
+ * Broader than {@link SAFE_EQUIVALENT_VERDICTS}: a measured regression must win
+ * over "not reachable" too, even though that is no longer itself a safe claim —
+ * it still asserts the repository is *not* broken, which the measurement
+ * contradicts.
+ */
+const REGRESSION_OVERRIDABLE_VERDICTS = new Set<FindingVerdict>([
   'no-incompatible-change-in-checked-surfaces',
   'detected-not-locally-reachable',
 ]);
@@ -163,7 +195,7 @@ export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
   const verdicts = plan.breakingChanges.map((change) => verdictFor(change));
   const reduced = reduceVerdict(verdicts, plan.breakingChanges.length === 0, plan.checkedSurfaces);
 
-  if (plan.confirmedRegressions.length > 0 && SAFE_EQUIVALENT_VERDICTS.has(reduced)) {
+  if (plan.confirmedRegressions.length > 0 && REGRESSION_OVERRIDABLE_VERDICTS.has(reduced)) {
     return 'locally-affected';
   }
 
@@ -180,7 +212,15 @@ export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
   // one dependency still wins regardless of what is incomplete for another —
   // whenever some actionable dependency's evidence is not what the verdict
   // implies it is.
-  if (SAFE_EQUIVALENT_VERDICTS.has(reduced) && !everyDependencySurfaceChecked(plan)) {
+  // `detected-not-locally-reachable` is no longer a safety claim, but it is
+  // still a claim that *this* repository is not broken by the change — and that
+  // claim cannot stand for a plan where some dependency's surface was never
+  // computed. The weakest link there is that Drift could not establish the
+  // upstream question for that dependency at all: `insufficient-evidence`.
+  if (
+    (SAFE_EQUIVALENT_VERDICTS.has(reduced) || reduced === 'detected-not-locally-reachable') &&
+    !everyDependencySurfaceChecked(plan)
+  ) {
     return 'insufficient-evidence';
   }
 
