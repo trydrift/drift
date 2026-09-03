@@ -32,7 +32,7 @@ function result(caseId: string, verdict: string, polarity: 'positive' | 'negativ
 
 test('case comparison reports stable identities and verdict transitions', () => {
   const oldResults = [result('moved-safe', 'insufficient-evidence'), result('affected', 'locally-affected')];
-  const newResults = [result('affected', 'locally-affected'), result('moved-safe', 'detected-not-locally-reachable')];
+  const newResults = [result('affected', 'locally-affected'), result('moved-safe', 'no-incompatible-change-in-checked-surfaces')];
   const transitions = compareCases(oldResults, newResults);
 
   assert.deepEqual(transitions.map(({ caseId, from, to }) => ({ caseId, from, to })), [

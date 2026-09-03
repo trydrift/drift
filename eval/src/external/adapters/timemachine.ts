@@ -198,7 +198,7 @@ export interface TimemachinePrediction {
   manifestPath: string;
 }
 
-const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean', 'detected-not-locally-reachable']);
+const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean']); // detected-not-locally-reachable is not a safety claim; see src/report/confidence.ts
 
 const REQUIREMENTS_CANDIDATES = [
   'requirements.txt',

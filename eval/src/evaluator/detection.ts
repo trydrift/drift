@@ -107,26 +107,24 @@ export interface DetectionScore {
  * better without changing the product, so it is a named constant with its
  * reasoning attached, and every member has to be defended.
  *
- * `no-incompatible-change-in-checked-surfaces` and `clean` are the obvious two.
- * `detected-not-locally-reachable` is the third and was previously excluded on
- * the grounds that it is inconclusive. It is not: production distinguishes it
- * from `verification-incomplete` precisely on whether localization *ran*, so it
- * means "we searched this repository and the changed symbol is not used here",
- * which is a conclusion about the user's code and the sentence they act on.
- * Excluding it was wrong in both directions — it under-counted false-safes,
- * because Drift saying "not reachable from this repository" about code that is
- * in fact affected is exactly the failure this metric exists to catch, and it
- * made a genuine control case (a real upstream break the consumer never calls)
- * structurally incapable of scoring `correctSafe`.
+ * `no-incompatible-change-in-checked-surfaces` and `clean` are the two.
+ * `detected-not-locally-reachable` was previously included on the grounds that
+ * "we searched and found nothing" is a conclusion about the user's code. That
+ * reasoning is now rejected in production: a completed syntactic search misses
+ * structural typing, inferred types, wrappers, generated code, dynamic
+ * dispatch, behavioural changes and ownership relationships, so production
+ * treats that verdict as "review needed", not a safety claim. It is excluded
+ * here to match — a known-breaking upgrade Drift reports that way is a
+ * conservative miss, not a false-safe.
  *
  * Every remaining verdict — `insufficient-evidence`, `verification-incomplete`,
- * `unchecked`, `verification-failed`, `upstream-only` — describes a check that
- * did not complete, and an incomplete check is not a claim about anything.
+ * `unchecked`, `verification-failed`, `upstream-only`, `detected-not-locally-
+ * reachable` — describes a check that did not complete or did not establish
+ * safety, and neither is a claim that the repository is unaffected.
  */
 const SAFE_EQUIVALENT = new Set([
   'no-incompatible-change-in-checked-surfaces',
   'clean',
-  'detected-not-locally-reachable',
 ]);
 
 export function isSafeEquivalent(verdict: string): boolean {

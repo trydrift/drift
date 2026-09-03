@@ -141,7 +141,7 @@ export interface SweBumpPrediction {
  * same reason: two halves of one harness disagreeing about what "Drift said it
  * was safe" means would be worse than either answer.
  */
-const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean', 'detected-not-locally-reachable']);
+const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean']); // detected-not-locally-reachable is not a safety claim; see src/report/confidence.ts
 
 export class SweBumpUnavailable extends Error {
   readonly kind: ExclusionKind;
