@@ -88,7 +88,9 @@ export function summarize(
     const roleContract = roleContractForChanges(breakingChanges);
     detail.push(roleContract
       ? `${apiBreakingCount} published ${roleContract} change${apiBreakingCount === 1 ? '' : 's'} ${apiBreakingCount === 1 ? 'requires' : 'require'} review; ${apiBreakingCount === 1 ? 'this package-role contract is' : 'these package-role contracts are'} assessed independently of source call signatures`
-      : `${apiBreakingCount} upstream API breaking change${apiBreakingCount === 1 ? '' : 's'}, none of which this repository uses`);
+      // Not "none of which this repository uses": a completed search that
+      // found nothing is not proof the change cannot reach this repository.
+      : `${apiBreakingCount} upstream API breaking change${apiBreakingCount === 1 ? '' : 's'}, no usage of the changed parts located in this repository — review before upgrading`);
   }
 
   if (security.checked && security.resolved.length > 0) {

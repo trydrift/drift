@@ -189,15 +189,17 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     input.breakingChanges.some((change) => change.kind !== 'runtime-requirement') &&
     !runtimeUnresolved
   ) {
-    // "None of which this repository uses" is a positive claim about this
-    // repository, and it may only be made when compatibility was actually
-    // established. With a runtime requirement left `unknown` or `partial`,
-    // the true sentence is the analysis statement pushed above — Drift did
-    // not find a local use *and* did not establish there isn't one.
+    // Drift did not find a local use *and* did not establish there isn't one.
+    // A completed syntactic search that found nothing is not a positive claim
+    // about this repository — structural typing, wrappers, generated code,
+    // dynamic dispatch and behavioural changes all evade it — so the sentence
+    // says what actually happened: no usage was located, review before
+    // upgrading. (A package-role contract is genuinely assessed off the
+    // manifest, not source, so it keeps its own wording.)
     const count = input.breakingChanges.filter((change) => change.kind !== 'runtime-requirement').length;
     reasons.push(roleContract
       ? `${count} published ${roleContract} ${plural(count, 'change', 'changes')} require review; these package-role contracts are assessed independently of source call signatures.`
-      : `${count} upstream API breaking ${plural(count, 'change', 'changes')}, none of which this repository uses.`);
+      : `${count} upstream API breaking ${plural(count, 'change', 'changes')}; no usage of the changed parts was located in this repository — review before upgrading.`);
   }
 
   for (const fact of maintenance.facts) {
