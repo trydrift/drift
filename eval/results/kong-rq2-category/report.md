@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T04:46:04.150Z |
+| Drift commit | `5859cf2ac3108a3a236398715c18f3a3b6363551` |
+| Run date | 2026-09-03T21:31:53.815Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
 | Platform | linux/x64, Node v22.23.2 |
 
