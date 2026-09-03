@@ -220,31 +220,49 @@ describe('CLI safe bulk upgrade routing', () => {
 describe('CLI safe bulk upgrade selection', () => {
   const candidateWithSeverity = (
     name: string,
-    severity: 'clean' | 'upstream-only' | 'affected' | 'verification-failed' | 'evidence-missing' | 'error',
+    severity:
+      | 'clean'
+      | 'upstream-only'
+      | 'impact-unresolved'
+      | 'affected'
+      | 'verification-failed'
+      | 'evidence-missing'
+      | 'error',
     manifestPath = 'package.json',
     packageManager = 'npm',
   ) => ({
     ...candidate(name, manifestPath),
     packageManager,
     status: severity === 'error' ? 'error' : 'ready',
-    breakingCount: severity === 'upstream-only' || severity === 'affected' ? 1 : 0,
+    breakingCount:
+      severity === 'upstream-only' || severity === 'impact-unresolved' || severity === 'affected' ? 1 : 0,
     impactCount: severity === 'affected' ? 1 : 0,
     impactFiles: severity === 'affected' ? 1 : 0,
     gaps: severity === 'evidence-missing' ? ['no evidence'] : [],
-    verification: severity === 'verification-failed' ? { status: 'failed' } : undefined,
+    verification:
+      severity === 'verification-failed'
+        ? { status: 'failed' }
+        : // `upstream-only` is only reachable behind an isolated verification pass now:
+          // a completed localization with no hits is not affirmative evidence of safety.
+          severity === 'upstream-only'
+          ? { status: 'passed', checks: [{ label: 'typecheck', status: 'passed' }] }
+          : undefined,
   }) as never;
 
   test('selects only candidates Drift proved safe for this repository', () => {
     const candidates = [
       candidateWithSeverity('clean', 'clean'),
-      candidateWithSeverity('upstream', 'upstream-only'),
+      candidateWithSeverity('verified-upstream', 'upstream-only'),
+      // A real upstream break with no local site and nothing verified: bulk
+      // upgrade must never touch it.
+      candidateWithSeverity('unresolved', 'impact-unresolved'),
       candidateWithSeverity('affected', 'affected'),
       candidateWithSeverity('failed', 'verification-failed'),
       candidateWithSeverity('missing', 'evidence-missing'),
       candidateWithSeverity('error', 'error'),
     ];
 
-    assert.deepEqual(safeUpgradeCandidates(candidates).map((entry) => entry.name), ['clean', 'upstream']);
+    assert.deepEqual(safeUpgradeCandidates(candidates).map((entry) => entry.name), ['clean', 'verified-upstream']);
   });
 
   test('groups one manifest and manager into one batch without reordering groups', () => {

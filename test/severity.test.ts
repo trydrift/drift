@@ -43,7 +43,16 @@ describe('a failed verification outranks a clean-looking result', () => {
 
   test('no verification at all falls through to the ordinary rules', () => {
     assert.equal(severityOf({ ...base }), 'clean');
-    assert.equal(severityOf({ ...base, breakingCount: 1 }), 'upstream-only');
+    // An upstream API break with no located site and nothing verified is
+    // "review-required", not "upstream-only": a completed localization that
+    // found nothing is not affirmative evidence the repository is unaffected.
+    assert.equal(severityOf({ ...base, breakingCount: 1 }), 'review-required');
+    // With an isolated verification pass behind it, the safe-equivalent verdict
+    // is earned.
+    assert.equal(
+      severityOf({ ...base, breakingCount: 1, verification: { status: 'passed', checks: [] } }),
+      'upstream-only',
+    );
   });
 
   test('Deep Verification not-run is orthogonal to a clean static verdict', () => {
@@ -139,7 +148,7 @@ describe('a failed verification outranks a clean-looking result', () => {
   test('sorts above clean and upstream-only, below a located impact site', () => {
     const affected = { ...base, impactCount: 1 };
     const verificationFailed = { ...base, verification: { status: 'failed', checks: [] } };
-    const upstreamOnly = { ...base, breakingCount: 1 };
+    const upstreamOnly = { ...base, breakingCount: 1, verification: { status: 'passed', checks: [] } };
     const clean = { ...base };
 
     const sorted = [clean, upstreamOnly, affected, verificationFailed].sort(compareSeverity);
