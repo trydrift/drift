@@ -68,8 +68,31 @@ export interface SeverityInput {
    */
   verification?: {
     status: string;
-    checks?: readonly { label: string; status: string }[];
+    checks?: readonly { label: string; status: string; compileCapable?: boolean }[];
+    /**
+     * How many upgrades were installed together when this was measured.
+     * Absent or `1` means isolated. `> 1` means the verdict is about the
+     * *group*, and a green group proves nothing about this candidate alone —
+     * see `verificationScope` in `verification/apply.ts`.
+     */
+    measuredWith?: number;
   };
+  /**
+   * The reconciled answer to "has an authoritative verification shown this
+   * repository is unaffected?" — computed once, by the layer that can see the
+   * plan (`applyVerification` in `upgrade/verification.ts`), never re-derived
+   * from `verification.status` here.
+   *
+   * `true` only when an **isolated**, compile-capable pass cleared every
+   * compiler-provable prediction and nothing non-runtime is left unresolved.
+   * A batch pass, a pass with no compile-capable check, a behavioural change
+   * that survived a green build, or an unavailable plan all leave this
+   * `undefined`/`false`, and an upstream break with no located site then
+   * renders `review-required`, never `upstream-only`. This is the single
+   * signal that keeps `severityOf` from inventing stronger safety evidence
+   * than `applyVerificationToPlan` is willing to act on.
+   */
+  verifiedUnaffected?: boolean;
   /**
    * The strongest local-impact confidence among the sites behind
    * `impactCount`, when it was computed.
@@ -243,6 +266,27 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
     (candidate.sourceCoverage?.localizationComplete === false || candidate.sourceCoverage?.sourceTruncated)
   ) return 'localization-incomplete';
 
+  // An upstream **API** break, localization ran to completion, and it pointed
+  // at nothing here. That is *not* affirmative evidence this repository is
+  // unaffected — a completed syntactic search misses structural typing,
+  // inferred types, wrappers, generated code, dynamic dispatch, behavioural
+  // changes, and ownership relationships. `upstream-only` tells the developer
+  // "safe, none used here" and lets bulk upgrade install it unattended, so it
+  // may only be reached when `verifiedUnaffected` says an isolated,
+  // compile-capable verification actually stood behind that claim (computed
+  // in `applyVerification`, never from `verification.status` alone — a batch
+  // pass or a check that never compiled anything does not count). Absent that,
+  // this is `review-required`: real upstream incompatibility, local impact
+  // unresolved.
+  //
+  // Runtime-requirement breaks are excluded here on purpose: they are resolved
+  // against runtime *configuration*, not source sites, and an unresolved one
+  // was already caught as `runtime-unresolved` above — so reaching this point
+  // with only runtime breaks means they resolved `compatible`, which *is*
+  // affirmative evidence and stays `upstream-only`.
+  if (apiBreakingCount > 0) {
+    return candidate.verifiedUnaffected === true ? 'upstream-only' : 'review-required';
+  }
   if (candidate.breakingCount > 0) return 'upstream-only';
 
   // The assessment ran and concluded that nothing could be read. That is the
@@ -330,14 +374,32 @@ export function describeSeverity(candidate: SeverityInput): string {
     }
     case 'upstream-only': {
       const base = `${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
-      return state === 'passed'
+      // Two ways to reach this verdict, and they carry different evidence:
+      //  - `verifiedUnaffected`: an isolated, compile-capable pass cleared
+      //    every compiler-provable prediction. Measured.
+      //  - otherwise: the only breaking change was a runtime requirement that
+      //    resolved `compatible` against this repository's declared runtime.
+      //    A configuration fact, not a build — so it must not claim "checks
+      //    pass".
+      return candidate.verifiedUnaffected === true
         ? `Verified safe · ${base}, and your own checks pass`
-        : `Safe for your code · ${base}${deepNote}`;
+        : `Safe for your code · ${base}`;
     }
     case 'review-required': {
       const runtimeSites = candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial'
         ? candidate.runtimeDeclarationSiteCount ?? 0
         : 0;
+      // No local site at all: this is the "breaking change upstream, localization
+      // found nothing, nothing verified it" case. Say that plainly rather than
+      // claiming a site count Drift does not have.
+      if (candidate.impactCount - runtimeSites <= 0) {
+        const bc = candidate.breakingCount;
+        return (
+          `Review Required · ${bc} breaking change${bc === 1 ? '' : 's'} upstream; ` +
+          'Drift found no usage in this repository but could not prove none — verify before upgrading' +
+          (runtimeUncertainty ? ` · ${runtimeUncertainty}` : '')
+        );
+      }
       const n = Math.max(1, candidate.impactCount - runtimeSites);
       const detail = runtimeUncertainty ? ` · ${runtimeUncertainty}` : '';
       return candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'

@@ -799,7 +799,7 @@ describe('reporting never turns an absence into an all-clear', () => {
       assert.equal(resolvePlanVerdict(plan), 'no-incompatible-change-in-checked-surfaces');
     });
 
-    test('4. both dependencies checked, one upstream-only finding: safe-equivalent behaviour is unchanged', () => {
+    test('4. both dependencies checked, one zero-hit finding: stays detected-not-locally-reachable (review needed, not safe)', () => {
       const plan = twoDependencyPlan({
         localizationRan: true,
         checkedSurfaces: [
@@ -1018,8 +1018,8 @@ describe('reporting never turns an absence into an all-clear', () => {
       assert.equal(resolvePlanVerdict(plan), 'locally-affected');
 
       const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
-      // The individual finding's own honest, hedged verdict is still there —
-      assert.match(body, /not reachable from this repository/i);
+      // The individual finding's own honest, unresolved verdict is still there —
+      assert.match(body, /could not establish whether this repository is affected/i);
       // — alongside the repository-level measured fact: no impact site means
       // no commit, so the header/commit-plan fallback carries it, reusing the
       // same blocker text the per-finding section does not repeat.

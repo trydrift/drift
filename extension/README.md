@@ -10,9 +10,9 @@ No API keys. No tokens to paste. No account.
 
 Open the Drift panel and it starts checking your dependencies, naming each step as it goes — the package, the version pair, whether it is reading a changelog or searching your code. When it finishes you get the one number that matters:
 
-> **3 of 14 upgrades affect code in this repository. The other 11 are safe to take as-is.**
+> **3 of 14 upgrades affect code in this repository. 8 are clean; 3 need a look before you take them.**
 
-That distinction is the product. A package can have seven breaking changes and still be a five-second upgrade for you, because your code never calls the parts that changed. Drift says so plainly, in neutral colour, with the upstream detail one click away — because a warning that turns out to be nothing is how a tool teaches you to ignore it.
+That distinction is the product. A package can have seven breaking changes and still be a five-second upgrade for you, because your code never calls the parts that changed. But "we searched and found nothing" is not the same as "proven safe" — structural typing, wrappers and behavioural changes all evade a search — so Drift separates *no breaking change found* from *breaking change found, no usage located: review before upgrading*, and only calls an upgrade safe when it has affirmative evidence (a clean surface, or an isolated verification that passed). Everything reads in neutral colour with the upstream detail one click away — because a warning that turns out to be nothing is how a tool teaches you to ignore it.
 
 For the upgrades that *do* affect you, Drift shows the exact file and line, then resolves each fix in order: its own deterministic transform first, a validated fix plan second, and your AI agent for whatever's left — holding every edit for review before anything is committed. A fix plan is shown to you *before* it runs: the rule, the evidence attesting it, every call site it would change, and every call site it would decline.
 
@@ -40,7 +40,7 @@ Anything that isn't a command and isn't an answer to a question becomes a standi
 
 ### Scan results
 
-A scan produces one card, not a scatter of boxes: a header with the counts that decide what to do next, then **Affects your code** listed openly, and **Safe to upgrade** collapsed behind a count. Rows are separated by hairlines inside the card rather than each drawing its own frame, so fourteen packages read as one answer instead of fourteen widgets. Expanding a row shows the summary, the target-version picker, the breaking changes Drift matched to your files, and the evidence it read to decide.
+A scan produces one card, not a scatter of boxes: a header with the counts that decide what to do next, then **Affects your code** and **Review required** listed openly, and the genuinely clean upgrades collapsed behind a count. Rows are separated by hairlines inside the card rather than each drawing its own frame, so fourteen packages read as one answer instead of fourteen widgets. Expanding a row shows the summary, the target-version picker, the breaking changes Drift matched to your files, and the evidence it read to decide.
 
 ### The composer controls
 

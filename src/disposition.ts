@@ -90,8 +90,15 @@ export function deriveBreakingChangeDispositions(
     if (!localizationRan) {
       return { changeId: change.id, state: 'unknown', reason: 'not-localized', sites: [], actionableSites: [] };
     }
-    return localizationComplete
-      ? { changeId: change.id, state: 'unaffected', reason: 'no-local-impact', sites: [], actionableSites: [] }
-      : { changeId: change.id, state: 'unknown', reason: 'localization-incomplete', sites: [], actionableSites: [] };
+    if (!localizationComplete) {
+      return { changeId: change.id, state: 'unknown', reason: 'localization-incomplete', sites: [], actionableSites: [] };
+    }
+    // Localization completed and found nothing. That is not proof the change
+    // cannot reach this repository — see `impact-unresolved` in `types.ts`.
+    // A change an authoritative isolated verification actually cleared is
+    // *removed* from the plan upstream of this (`prunePlan` in
+    // `verification/apply.ts`), so it never reaches here; anything that does
+    // reach here with no site is genuinely unresolved, never `unaffected`.
+    return { changeId: change.id, state: 'unknown', reason: 'impact-unresolved', sites: [], actionableSites: [] };
   });
 }

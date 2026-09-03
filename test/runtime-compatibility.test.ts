@@ -1056,14 +1056,45 @@ describe('runtime severity: unresolved compatibility can never render as safe', 
     assert.match(line, /Review required/);
   });
 
-  test('a proven-unused symbol-level change is still allowed to be upstream-only', () => {
+  test('a zero-hit API change without verification is review-required, not a false all-clear', () => {
+    // A clean recommendation from a completed localization is not proof the
+    // symbol is unused — structural typing, wrappers, generated code and
+    // dynamic dispatch all evade a syntactic search. Only an isolated
+    // verification pass earns `upstream-only`.
     const candidate = { ...baseCandidate, recommendation: 'safe-to-upgrade' };
-    assert.equal(severityOf(candidate), 'upstream-only');
-    assert.match(describeSeverity(candidate), /none used here/);
+    assert.equal(severityOf(candidate), 'review-required');
+    assert.doesNotMatch(describeSeverity(candidate), /none used here|Safe for your code/);
+    // A bare passing verification is not enough; a batch pass is not enough.
+    assert.equal(
+      severityOf({ ...candidate, verification: { status: 'passed', checks: [] } }),
+      'review-required',
+    );
+    // The reconciled verifiedUnaffected flag (isolated + compile-capable + all
+    // cleared, computed by applyVerification) is what earns upstream-only.
+    assert.equal(
+      severityOf({
+        ...candidate,
+        verification: { status: 'passed', checks: [{ label: 'tsc', status: 'passed', compileCapable: true }], measuredWith: 1 },
+        verifiedUnaffected: true,
+      }),
+      'upstream-only',
+    );
   });
 
-  test('runtime compatible does not block upstream-only', () => {
-    assert.equal(severityOf({ ...baseCandidate, runtimeCompatibility: 'compatible' }), 'upstream-only');
+  test('runtime compatible with no API break renders upstream-only; an unverified API break does not', () => {
+    // runtimeAnalyses present → the lone breaking change is the runtime one,
+    // resolved compatible: genuine affirmative evidence.
+    assert.equal(
+      severityOf({
+        ...baseCandidate,
+        runtimeCompatibility: 'compatible',
+        runtimeAnalyses: [{ state: 'compatible' as const, reason: 'declared-compatible' }],
+      }),
+      'upstream-only',
+    );
+    // No runtimeAnalyses → the breaking change is an API one with no site and
+    // nothing verified: review-required.
+    assert.equal(severityOf({ ...baseCandidate, runtimeCompatibility: 'compatible' }), 'review-required');
   });
 });
 

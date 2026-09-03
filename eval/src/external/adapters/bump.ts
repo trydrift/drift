@@ -149,7 +149,7 @@ export interface BumpPrediction {
   checkedSurfaces: { surface: string; dependency?: string; ecosystem?: string; workspace?: string; status: string; detail: string }[];
 }
 
-const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean', 'detected-not-locally-reachable']);
+const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean']); // detected-not-locally-reachable is not a safety claim; see src/report/confidence.ts
 
 /**
  * Fetches the real commit pair and runs Drift over it.

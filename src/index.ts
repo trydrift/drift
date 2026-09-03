@@ -160,6 +160,8 @@ export {
   reduceVerdict,
   resolvePlanVerdict,
   repositoryConclusion,
+  SAFE_EQUIVALENT_VERDICTS,
+  isSafeEquivalentVerdict,
   VERIFICATION_FAILURE_BLOCKER_PREFIX,
   overallConfidenceLine,
   evidenceStrengthLabel,

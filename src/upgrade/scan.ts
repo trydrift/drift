@@ -250,6 +250,12 @@ export interface UpgradeCandidate {
    * omitted) is read as `false` by callers not yet updated to supply it.
    */
   impactPendingIsolatedClearance?: boolean;
+  /**
+   * Reconciled "an authoritative verification showed this repository is
+   * unaffected" — see `SeverityInput.verifiedUnaffected`. Set by
+   * `applyVerification`; absent until a pass has actually run.
+   */
+  verifiedUnaffected?: boolean;
   risk: string;
   summary: string;
   /**

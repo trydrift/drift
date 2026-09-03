@@ -11,7 +11,8 @@ import type { Selection } from './selection.ts';
 const SAFE_EQUIVALENT = new Set([
   'clean',
   'no-incompatible-change-in-checked-surfaces',
-  'detected-not-locally-reachable',
+  // `detected-not-locally-reachable` is not here: a completed localization with
+  // no hits is not affirmative evidence of safety. See src/report/confidence.ts.
 ]);
 
 export type CaseState = 'excluded' | 'cleanup-failed' | 'unknown' | 'safe-equivalent' | 'locally-affected';

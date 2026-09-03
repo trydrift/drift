@@ -462,7 +462,9 @@ test('the nonce is applied to both the script and the CSP', () => {
 });
 
 test('an upstream-only package is not framed as an alarm', () => {
-  const c = candidate();
+  // `upstream-only` is only reachable behind an isolated verification pass now —
+  // a completed localization with no hits is not affirmative evidence of safety.
+  const c = candidate({ verification: { status: 'passed', checks: [{ kind: 'typecheck', label: 'tsc', status: 'passed', compileCapable: true, durationMs: 1, output: '' }], failedFiles: [], measuredWith: 1 }, verifiedUnaffected: true });
   assert.equal(severityOf(c), 'upstream-only');
 
   const html = renderPanel(
@@ -472,9 +474,10 @@ test('an upstream-only package is not framed as an alarm', () => {
     }),
   );
 
-  // The row reads "Safe here", and carries neither the warning tint nor the
-  // error tint — only `affected` and `error` deviate from the calm default.
-  assert.match(html, /Safe here/);
+  // The row reads "Verified safe" (an isolated check passed), and carries
+  // neither the warning tint nor the error tint — only `affected` and `error`
+  // deviate from the calm default.
+  assert.match(html, /Verified safe/);
   assert.match(html, /class="dot upstream-only"/);
   assert.ok(!/class="dot affected"/.test(html), 'must not be tinted as affecting the repo');
   assert.ok(!/verdict affected/.test(html), 'must not be labelled as affecting the repo');
@@ -864,16 +867,37 @@ test('a turn with a checkpoint offers a rewind', () => {
 
 test('safe upgrades can be taken in one action, unknown ones cannot', () => {
   const clean = candidate({ id: 'a@1->2', name: 'a', breakingCount: 0, summary: 'no breaking changes' });
-  const upstream = candidate({ id: 'b@1->2', name: 'b' });
+  // Breaking changes upstream, verified clean against this repository's own
+  // checks — the only way an upstream break is bulk-upgrade eligible.
+  const verified = candidate({
+    id: 'b@1->2',
+    name: 'b',
+    verification: { status: 'passed', checks: [{ kind: 'typecheck', label: 'tsc', status: 'passed', compileCapable: true, durationMs: 1, output: '' }], failedFiles: [], measuredWith: 1 }, verifiedUnaffected: true,
+  });
   const html = renderPanel(
     model({
-      thread: [{ id: 'p1', kind: 'packages', headline: 'Two upgrades.', ids: [clean.id, upstream.id] }],
-      candidates: { [clean.id]: clean, [upstream.id]: upstream },
+      thread: [{ id: 'p1', kind: 'packages', headline: 'Two upgrades.', ids: [clean.id, verified.id] }],
+      candidates: { [clean.id]: clean, [verified.id]: verified },
     }),
   );
 
   assert.match(html, /data-action="upgradeAll"/);
   assert.match(html, /Upgrade all 2/);
+});
+
+test('an unverified upstream-breaking upgrade is not offered in the bulk action', () => {
+  const clean = candidate({ id: 'a@1->2', name: 'a', breakingCount: 0, summary: 'no breaking changes' });
+  // Breaking changes upstream, no local site, nothing verified: review required,
+  // so "Upgrade all" only covers the one genuinely-clean upgrade.
+  const unresolved = candidate({ id: 'b@1->2', name: 'b' });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'Two upgrades.', ids: [clean.id, unresolved.id] }],
+      candidates: { [clean.id]: clean, [unresolved.id]: unresolved },
+    }),
+  );
+
+  assert.doesNotMatch(html, /Upgrade all 2/);
 });
 
 test('markdown renders a before/after pair as one comparison with a diff button', () => {
@@ -2188,7 +2212,11 @@ describe('Quick Scan vs Deep Verification', () => {
           },
         ],
         failedFiles: [],
+        measuredWith: 1,
       },
+      // What `applyVerification` computes for an isolated compile-capable pass
+      // that cleared every prediction.
+      verifiedUnaffected: true,
     });
 
     const html = renderPanel(
@@ -2245,7 +2273,7 @@ describe('Quick Scan vs Deep Verification', () => {
 
   test('"Deep Verify All" is offered only while something is actually eligible for it', () => {
     const nothingToVerify = candidate({
-      verification: { status: 'passed', checks: [], failedFiles: [] },
+      verification: { status: 'passed', checks: [{ kind: 'typecheck', label: 'tsc', status: 'passed', compileCapable: true, durationMs: 1, output: '' }], failedFiles: [], measuredWith: 1 }, verifiedUnaffected: true,
     });
     const withVerify = candidate({ id: 'other@1->2' });
 
