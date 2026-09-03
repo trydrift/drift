@@ -54,7 +54,14 @@ export interface BenchmarkNarrative {
     bump: { affectedFraction: string; falseSafePercent: string; detectionFraction: string };
   };
   kong: {
-    rq2: { dataset: BenchmarkDataset; overallPercent: string; withDetailPercent: string; withoutDetailPercent: string };
+    rq2: {
+      dataset: BenchmarkDataset;
+      overallPercent: string;
+      withDetailPercent: string;
+      withoutDetailPercent: string;
+      categoryFraction: string;
+      categoryPercent: string;
+    };
   };
   negativeControls: {
     /** Runs whose confusion matrix reflects real negative controls, by title. */
@@ -89,6 +96,7 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
     "messageStatesDetail: false",
     "breaking-change detection recall",
   );
+  const kongRq2Category = requireRate(kongRq2, "category classification accuracy");
 
   const withRealNegatives = datasets.filter(hasRealNegatives).map((d) => ({ runId: d.runId, title: d.title }));
   const positiveOnly = datasets.filter((d) => !hasRealNegatives(d)).map((d) => ({ runId: d.runId, title: d.title }));
@@ -140,6 +148,8 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
         overallPercent: percent(kongRq2Overall),
         withDetailPercent: percent(kongRq2WithDetail),
         withoutDetailPercent: percent(kongRq2WithoutDetail),
+        categoryFraction: fraction(kongRq2Category),
+        categoryPercent: percent(kongRq2Category),
       },
     },
     negativeControls: { withRealNegatives, positiveOnly },
