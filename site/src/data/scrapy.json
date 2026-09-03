@@ -6,10 +6,10 @@
   "language": "Python",
   "repo": "https://github.com/scrapy/scrapy",
   "blurb": "The web crawling framework that most Python scrapers are built on.",
-  "capturedAt": "2026-09-03T14:07:05.716Z",
-  "commit": "40c5ad9389ca859c4ed5d24af26202c0ca7bf951",
-  "engine": "8eb935940a5a9bbf",
-  "durationMs": 2525,
+  "capturedAt": "2026-09-03T19:54:20.293Z",
+  "commit": "e30c44432439cd74ab014d42131cd9006f9476f7",
+  "engine": "1eb400c9dfe55182",
+  "durationMs": 9625,
   "packagesChecked": 8,
   "manifests": [
     "pyproject.toml",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 768,
+      "at": 169,
       "phase": "Looking for manifests",
       "detail": "scrapy/scrapy",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 791,
+      "at": 202,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 792,
+      "at": 204,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 796,
+      "at": 209,
       "phase": "Reading manifest",
       "detail": "docs/requirements.in",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -95,7 +95,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -139,7 +139,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0",
         "name": "scrapy-spider-metadata",
@@ -183,7 +183,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#sphinx@9.1.0",
         "name": "sphinx",
@@ -227,7 +227,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#sphinx-notfound-page@1.1.0",
         "name": "sphinx-notfound-page",
@@ -271,7 +271,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#sphinx-reredirects@1.1.0",
         "name": "sphinx-reredirects",
@@ -315,7 +315,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0",
         "name": "sphinx-rtd-theme",
@@ -359,7 +359,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 798,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0",
         "name": "sphinx-rtd-dark-mode",
@@ -403,7 +403,7 @@
     },
     {
       "type": "progress",
-      "at": 798,
+      "at": 211,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -411,7 +411,7 @@
     },
     {
       "type": "progress",
-      "at": 799,
+      "at": 211,
       "phase": "Checking registries",
       "detail": "8 direct dependencies",
       "done": 0,
@@ -419,7 +419,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 799,
+      "at": 211,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -463,7 +463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 799,
+      "at": 212,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -507,7 +507,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 799,
+      "at": 212,
       "candidate": {
         "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0",
         "name": "scrapy-spider-metadata",
@@ -551,7 +551,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 800,
+      "at": 212,
       "candidate": {
         "id": "docs/requirements.in#sphinx@9.1.0",
         "name": "sphinx",
@@ -595,7 +595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 800,
+      "at": 212,
       "candidate": {
         "id": "docs/requirements.in#sphinx-notfound-page@1.1.0",
         "name": "sphinx-notfound-page",
@@ -639,7 +639,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 800,
+      "at": 212,
       "candidate": {
         "id": "docs/requirements.in#sphinx-reredirects@1.1.0",
         "name": "sphinx-reredirects",
@@ -683,7 +683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 800,
+      "at": 212,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0",
         "name": "sphinx-rtd-theme",
@@ -727,7 +727,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 800,
+      "at": 213,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0",
         "name": "sphinx-rtd-dark-mode",
@@ -770,21 +770,8 @@
       }
     },
     {
-      "type": "candidate-drop",
-      "at": 849,
-      "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0"
-    },
-    {
-      "type": "progress",
-      "at": 849,
-      "phase": "Up to date",
-      "detail": "scrapy-spider-metadata@0.2.0",
-      "done": 1,
-      "total": 8
-    },
-    {
       "type": "candidate-upsert",
-      "at": 851,
+      "at": 342,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -831,33 +818,46 @@
     },
     {
       "type": "progress",
-      "at": 851,
+      "at": 342,
       "phase": "Outdated",
       "detail": "h2 4.3.0 → 4.4.1",
+      "done": 1,
+      "total": 8
+    },
+    {
+      "type": "candidate-drop",
+      "at": 344,
+      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 344,
+      "phase": "Up to date",
+      "detail": "sphinx-notfound-page@1.1.0",
       "done": 2,
       "total": 8
     },
     {
       "type": "candidate-drop",
-      "at": 852,
-      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
+      "at": 424,
+      "id": "docs/requirements.in#sphinx@9.1.0"
     },
     {
       "type": "progress",
-      "at": 852,
+      "at": 424,
       "phase": "Up to date",
-      "detail": "sphinx-notfound-page@1.1.0",
+      "detail": "sphinx@9.1.0",
       "done": 3,
       "total": 8
     },
     {
       "type": "candidate-drop",
-      "at": 852,
+      "at": 426,
       "id": "docs/requirements.in#sphinx-reredirects@1.1.0"
     },
     {
       "type": "progress",
-      "at": 852,
+      "at": 426,
       "phase": "Up to date",
       "detail": "sphinx-reredirects@1.1.0",
       "done": 4,
@@ -865,25 +865,25 @@
     },
     {
       "type": "candidate-drop",
-      "at": 852,
-      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
+      "at": 426,
+      "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0"
     },
     {
       "type": "progress",
-      "at": 852,
+      "at": 426,
       "phase": "Up to date",
-      "detail": "sphinx-rtd-dark-mode@1.3.0",
+      "detail": "scrapy-spider-metadata@0.2.0",
       "done": 5,
       "total": 8
     },
     {
       "type": "candidate-drop",
-      "at": 854,
+      "at": 429,
       "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0"
     },
     {
       "type": "progress",
-      "at": 854,
+      "at": 429,
       "phase": "Up to date",
       "detail": "sphinx-rtd-theme@3.1.0",
       "done": 6,
@@ -891,20 +891,20 @@
     },
     {
       "type": "candidate-drop",
-      "at": 857,
-      "id": "docs/requirements.in#sphinx@9.1.0"
+      "at": 437,
+      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
     },
     {
       "type": "progress",
-      "at": 857,
+      "at": 437,
       "phase": "Up to date",
-      "detail": "sphinx@9.1.0",
+      "detail": "sphinx-rtd-dark-mode@1.3.0",
       "done": 7,
       "total": 8
     },
     {
       "type": "candidate-upsert",
-      "at": 895,
+      "at": 524,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -955,7 +955,7 @@
     },
     {
       "type": "progress",
-      "at": 895,
+      "at": 524,
       "phase": "Outdated",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 8,
@@ -963,7 +963,7 @@
     },
     {
       "type": "progress",
-      "at": 951,
+      "at": 579,
       "phase": "Reading release notes and changelog",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -971,7 +971,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 951,
+      "at": 579,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1015,7 +1015,7 @@
     },
     {
       "type": "progress",
-      "at": 953,
+      "at": 581,
       "phase": "Checking package metadata",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1023,7 +1023,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 953,
+      "at": 581,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1067,7 +1067,7 @@
     },
     {
       "type": "progress",
-      "at": 953,
+      "at": 581,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1075,7 +1075,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 953,
+      "at": 581,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1119,7 +1119,7 @@
     },
     {
       "type": "progress",
-      "at": 954,
+      "at": 582,
       "phase": "Checking package metadata",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1127,7 +1127,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 954,
+      "at": 582,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1171,7 +1171,7 @@
     },
     {
       "type": "progress",
-      "at": 970,
+      "at": 624,
       "phase": "Checking repository status",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1179,7 +1179,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 970,
+      "at": 624,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1223,7 +1223,7 @@
     },
     {
       "type": "progress",
-      "at": 970,
+      "at": 624,
       "phase": "Checking repository status",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1231,7 +1231,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 970,
+      "at": 624,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1275,7 +1275,7 @@
     },
     {
       "type": "progress",
-      "at": 1027,
+      "at": 918,
       "phase": "Checking security advisories",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1283,7 +1283,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1027,
+      "at": 918,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1327,7 +1327,7 @@
     },
     {
       "type": "progress",
-      "at": 1027,
+      "at": 919,
       "phase": "Checking security advisories",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1335,7 +1335,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1027,
+      "at": 919,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1379,7 +1379,7 @@
     },
     {
       "type": "progress",
-      "at": 1288,
+      "at": 2444,
       "phase": "Comparing the public API surface",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1387,7 +1387,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1288,
+      "at": 2444,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1431,7 +1431,7 @@
     },
     {
       "type": "progress",
-      "at": 1295,
+      "at": 2451,
       "phase": "Comparing the public API surface",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1439,7 +1439,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1295,
+      "at": 2451,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1483,15 +1483,7 @@
     },
     {
       "type": "progress",
-      "at": 1511,
-      "phase": "Indexing your code",
-      "detail": "495 files indexed · 8 direct dependencies to check",
-      "done": 0,
-      "total": 8
-    },
-    {
-      "type": "progress",
-      "at": 2209,
+      "at": 2504,
       "phase": "Checking license",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1499,7 +1491,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2209,
+      "at": 2504,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1543,7 +1535,7 @@
     },
     {
       "type": "progress",
-      "at": 2209,
+      "at": 2504,
       "phase": "Checking license",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1551,7 +1543,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2209,
+      "at": 2504,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1595,7 +1587,7 @@
     },
     {
       "type": "progress",
-      "at": 2209,
+      "at": 2506,
       "phase": "Reading release notes and changelog",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1603,7 +1595,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2209,
+      "at": 2506,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1647,7 +1639,7 @@
     },
     {
       "type": "progress",
-      "at": 2209,
+      "at": 2506,
       "phase": "Comparing the public API surface",
       "detail": "h2 4.3.0 → 4.4.1 · 2 evidence sources",
       "done": 0,
@@ -1655,7 +1647,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2209,
+      "at": 2506,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1699,7 +1691,7 @@
     },
     {
       "type": "progress",
-      "at": 2210,
+      "at": 2552,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1707,7 +1699,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2210,
+      "at": 2552,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1751,7 +1743,7 @@
     },
     {
       "type": "progress",
-      "at": 2210,
+      "at": 2552,
       "phase": "Comparing the public API surface",
       "detail": "pydantic 2.12.5 → 2.13.5 · 7 evidence sources",
       "done": 0,
@@ -1759,7 +1751,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2210,
+      "at": 2552,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1803,7 +1795,7 @@
     },
     {
       "type": "progress",
-      "at": 2219,
+      "at": 2602,
       "phase": "Searching your code for 1 breaking change",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1811,7 +1803,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2219,
+      "at": 2602,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1855,7 +1847,7 @@
     },
     {
       "type": "progress",
-      "at": 2220,
+      "at": 2605,
       "phase": "Searching your code for 15 breaking changes",
       "detail": "pydantic 2.12.5 → 2.13.5",
       "done": 0,
@@ -1863,7 +1855,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2220,
+      "at": 2605,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -1907,7 +1899,15 @@
     },
     {
       "type": "progress",
-      "at": 2306,
+      "at": 9055,
+      "phase": "Indexing your code",
+      "detail": "496 files indexed · 8 direct dependencies to check",
+      "done": 0,
+      "total": 8
+    },
+    {
+      "type": "progress",
+      "at": 9350,
       "phase": "Weighing what this upgrade is worth",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1915,7 +1915,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2306,
+      "at": 9350,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -1959,7 +1959,59 @@
     },
     {
       "type": "progress",
-      "at": 2350,
+      "at": 9433,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pydantic 2.12.5 → 2.13.5",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9433,
+      "candidate": {
+        "id": "docs/requirements.in#pydantic@2.12.5",
+        "name": "pydantic",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "2.12.5",
+        "latest": "2.12.5",
+        "selected": "2.12.5",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 9571,
       "phase": "Checking maintenance signals",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 0,
@@ -1967,7 +2019,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2350,
+      "at": 9571,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -2010,8 +2062,60 @@
       }
     },
     {
+      "type": "progress",
+      "at": 9578,
+      "phase": "Checking maintenance signals",
+      "detail": "pydantic 2.12.5 → 2.13.5",
+      "done": 0,
+      "total": 2
+    },
+    {
       "type": "candidate-upsert",
-      "at": 2351,
+      "at": 9579,
+      "candidate": {
+        "id": "docs/requirements.in#pydantic@2.12.5",
+        "name": "pydantic",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "2.12.5",
+        "latest": "2.12.5",
+        "selected": "2.12.5",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 9623,
       "candidate": {
         "id": "docs/requirements.in#h2@4.3.0",
         "name": "h2",
@@ -2058,8 +2162,8 @@
         "sourceCoverage": {
           "localizationRan": true,
           "localizationComplete": true,
-          "sourceFilesDiscovered": 486,
-          "sourceFilesIndexed": 486,
+          "sourceFilesDiscovered": 487,
+          "sourceFilesIndexed": 487,
           "sourceTruncated": false,
           "runtimeConfigsDiscovered": 9,
           "runtimeConfigsIndexed": 9,
@@ -2126,119 +2230,15 @@
     },
     {
       "type": "progress",
-      "at": 2351,
+      "at": 9624,
       "phase": "Checked",
-      "detail": "h2 4.3.0 → 4.4.1 · safe for your code · 1 upstream change, none used here — not deeply verified",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "progress",
-      "at": 2353,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pydantic 2.12.5 → 2.13.5",
+      "detail": "h2 4.3.0 → 4.4.1 · safe for your code · 1 upstream change, none used here",
       "done": 1,
       "total": 2
     },
     {
       "type": "candidate-upsert",
-      "at": 2353,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2391,
-      "phase": "Checking maintenance signals",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2391,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2395,
+      "at": 9624,
       "candidate": {
         "id": "docs/requirements.in#pydantic@2.12.5",
         "name": "pydantic",
@@ -2264,13 +2264,13 @@
         },
         "status": "ready",
         "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. 15 upstream API breaking changes, none of which this repository uses.",
-        "recommendation": "safe-to-upgrade",
+        "risk": "low",
+        "summary": "Upgrade after review. 15 upstream API breaking changes, no usage of the changed parts located in this repository — review before upgrading.",
+        "recommendation": "upgrade-after-review",
         "hasCompatibilityEvidence": true,
         "runtimeCompatibility": null,
         "runtimeAnalyses": [],
-        "severity": "upstream-only",
+        "severity": "review-required",
         "independentActionableFindingCount": 0,
         "actionableImpactCount": 0,
         "actionableImpactFiles": 0,
@@ -2278,8 +2278,8 @@
         "sourceCoverage": {
           "localizationRan": true,
           "localizationComplete": true,
-          "sourceFilesDiscovered": 486,
-          "sourceFilesIndexed": 486,
+          "sourceFilesDiscovered": 487,
+          "sourceFilesIndexed": 487,
           "sourceTruncated": false,
           "runtimeConfigsDiscovered": 9,
           "runtimeConfigsIndexed": 9,
@@ -2294,120 +2294,120 @@
         "dispositions": [
           {
             "changeId": "bc_8f3c4d300b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_87a335a412",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_4707ddadd5",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_4be5f5814b",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_b7ef72fa98",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_4b744c2089",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_1f709ce7ef",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_fa4b742041",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_5044d67483",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_4c19332ce7",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_43c9492eeb",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_f360ae78a4",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_ed3443efe8",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_da66d640ae",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
           },
           {
             "changeId": "bc_22cde557b2",
-            "state": "unaffected",
-            "reason": "no-local-impact",
+            "state": "unknown",
+            "reason": "impact-unresolved",
             "siteCount": 0,
             "actionableSiteCount": 0,
             "runtimeState": null
@@ -2524,9 +2524,9 @@
     },
     {
       "type": "progress",
-      "at": 2395,
+      "at": 9625,
       "phase": "Checked",
-      "detail": "pydantic 2.12.5 → 2.13.5 · safe for your code · 15 upstream changes, none used here — not deeply verified",
+      "detail": "pydantic 2.12.5 → 2.13.5 · review required · 15 breaking changes upstream; drift found no usage in this repository but could not prove none — verify before upgrading",
       "done": 2,
       "total": 2
     }
@@ -2557,13 +2557,13 @@
       },
       "status": "ready",
       "phase": null,
-      "risk": "none",
-      "summary": "Safe to upgrade. 15 upstream API breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
+      "risk": "low",
+      "summary": "Upgrade after review. 15 upstream API breaking changes, no usage of the changed parts located in this repository — review before upgrading.",
+      "recommendation": "upgrade-after-review",
       "hasCompatibilityEvidence": true,
       "runtimeCompatibility": null,
       "runtimeAnalyses": [],
-      "severity": "upstream-only",
+      "severity": "review-required",
       "independentActionableFindingCount": 0,
       "actionableImpactCount": 0,
       "actionableImpactFiles": 0,
@@ -2571,8 +2571,8 @@
       "sourceCoverage": {
         "localizationRan": true,
         "localizationComplete": true,
-        "sourceFilesDiscovered": 486,
-        "sourceFilesIndexed": 486,
+        "sourceFilesDiscovered": 487,
+        "sourceFilesIndexed": 487,
         "sourceTruncated": false,
         "runtimeConfigsDiscovered": 9,
         "runtimeConfigsIndexed": 9,
@@ -2587,120 +2587,120 @@
       "dispositions": [
         {
           "changeId": "bc_8f3c4d300b",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_87a335a412",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_4707ddadd5",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_4be5f5814b",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_b7ef72fa98",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_4b744c2089",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_1f709ce7ef",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_fa4b742041",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_5044d67483",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_4c19332ce7",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_43c9492eeb",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_f360ae78a4",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_ed3443efe8",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_da66d640ae",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
         },
         {
           "changeId": "bc_22cde557b2",
-          "state": "unaffected",
-          "reason": "no-local-impact",
+          "state": "unknown",
+          "reason": "impact-unresolved",
           "siteCount": 0,
           "actionableSiteCount": 0,
           "runtimeState": null
@@ -2860,8 +2860,8 @@
       "sourceCoverage": {
         "localizationRan": true,
         "localizationComplete": true,
-        "sourceFilesDiscovered": 486,
-        "sourceFilesIndexed": 486,
+        "sourceFilesDiscovered": 487,
+        "sourceFilesIndexed": 487,
         "sourceTruncated": false,
         "runtimeConfigsDiscovered": 9,
         "runtimeConfigsIndexed": 9,
