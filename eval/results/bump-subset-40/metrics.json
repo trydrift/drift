@@ -27,9 +27,9 @@
       "value": 0.20512820512820512
     },
     "false-safe verdicts": {
-      "numerator": 11,
+      "numerator": 4,
       "denominator": 39,
-      "value": 0.28205128205128205
+      "value": 0.10256410256410256
     }
   },
   "adjudication": {
@@ -159,8 +159,8 @@
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.15384615384615385,
-      "high": 0.4358974358974359,
+      "low": 0.02564102564102564,
+      "high": 0.20512820512820512,
       "iterations": 2000
     }
   },

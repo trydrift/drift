@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T05:29:44.664Z |
+| Drift commit | `5859cf2ac3108a3a236398715c18f3a3b6363551` |
+| Run date | 2026-09-03T22:37:51.077Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,10 +42,10 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 41/61 (67.2%) | 55.7–78.7% |
-| consumer localization rate | 36/61 (59.0%) | 47.5–70.5% |
+| affected-repository identification rate | 42/61 (68.9%) | 57.4–80.3% |
+| consumer localization rate | 37/61 (60.7%) | 49.2–72.1% |
 | dependency-update detection rate | 61/61 (100.0%) | 100.0–100.0% |
-| false-safe verdicts | 6/61 (9.8%) | 3.3–18.0% |
+| false-safe verdicts | 0/61 (0.0%) | 0.0–0.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,10 +57,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| exactVersionAdjudicated: true | 41/61 (67.2%) | 36/61 (59.0%) | 61/61 (100.0%) |
-| label: known-breaking-upgrade | 41/61 (67.2%) | 36/61 (59.0%) | 61/61 (100.0%) |
+| exactVersionAdjudicated: true | 42/61 (68.9%) | 37/61 (60.7%) | 61/61 (100.0%) |
+| label: known-breaking-upgrade | 42/61 (68.9%) | 37/61 (60.7%) | 61/61 (100.0%) |
 | versionToIsRange: false | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
-| versionToIsRange: true | 38/58 (65.5%) | 33/58 (56.9%) | 58/58 (100.0%) |
+| versionToIsRange: true | 39/58 (67.2%) | 34/58 (58.6%) | 58/58 (100.0%) |
 
 ## What is deliberately not reported
 

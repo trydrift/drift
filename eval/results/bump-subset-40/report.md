@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T05:16:58.027Z |
+| Drift commit | `5859cf2ac3108a3a236398715c18f3a3b6363551` |
+| Run date | 2026-09-03T22:15:34.408Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -45,7 +45,7 @@ Every exclusion, with its reason:
 | affected-repository identification rate | 17/39 (43.6%) | 28.2–59.0% |
 | consumer localization rate | 8/39 (20.5%) | 7.7–33.3% |
 | dependency-update detection rate | 34/39 (87.2%) | 76.9–97.4% |
-| false-safe verdicts | 11/39 (28.2%) | 15.4–43.6% |
+| false-safe verdicts | 4/39 (10.3%) | 2.6–20.5% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
