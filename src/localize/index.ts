@@ -115,9 +115,36 @@ export interface LocalizeOptions {
  * produced identically by a repository that satisfies the requirement and one
  * that never declared a runtime at all.
  */
+/**
+ * Per-dependency localization funnel counts.
+ *
+ * Kept beside the sites, never derived from them: `sites.length === 0` cannot
+ * tell a reader whether the dependency had no importer in this repository at
+ * all, or had importers that simply never used the changed symbol. Those are
+ * different misses with different fixes, and the benchmark miss-reason funnel
+ * (`eval/src/external/impact-funnel.ts`) needs the two separated. Every count
+ * is a fact about what the search looked at, not a judgement about it.
+ */
+export interface LocalizationDiagnostic {
+  dependency: string;
+  ecosystem: Ecosystem;
+  /**
+   * Files that import this dependency (directly or through a re-export edge
+   * the graph walk followed), scoped to the member whose manifest moved.
+   * Zero means nothing in this repository imports the dependency.
+   */
+  importerCandidateFiles: number;
+  /** Breaking changes for this dependency that a source search was attempted for. */
+  changesSearched: number;
+  /** Impact sites found across every change for this dependency. */
+  sitesFound: number;
+}
+
 export interface Localization {
   sites: ImpactSite[];
   runtimeAnalyses: RuntimeRequirementAnalysis[];
+  /** One row per dependency a source search was attempted for. */
+  diagnostics: LocalizationDiagnostic[];
 }
 
 export function localize(
@@ -158,6 +185,37 @@ export function localizeWithRuntime(
   const sites: ImpactSite[] = [];
   const runtimeAnalyses: RuntimeRequirementAnalysis[] = [];
 
+  // Per-dependency funnel counts, accumulated in the same pass. `importerCandidateFiles`
+  // is the largest candidate set seen across this dependency's changes rather
+  // than a sum, because the re-export graph walk produces the same file set for
+  // every change on the same dependency — summing it would just multiply by the
+  // change count.
+  const diagnosticsByDependency = new Map<string, LocalizationDiagnostic>();
+  const recordDiagnostic = (
+    change: BreakingChange,
+    update: { importerCandidateFiles?: number; searched?: boolean; sitesFound?: number },
+  ): void => {
+    const existing =
+      diagnosticsByDependency.get(change.dependency) ??
+      ({
+        dependency: change.dependency,
+        ecosystem: (ecosystemsByName.get(change.dependency) ?? [])[0] ?? ('npm' as Ecosystem),
+        importerCandidateFiles: 0,
+        changesSearched: 0,
+        sitesFound: 0,
+      } satisfies LocalizationDiagnostic);
+    if (update.importerCandidateFiles !== undefined) {
+      existing.importerCandidateFiles = Math.max(existing.importerCandidateFiles, update.importerCandidateFiles);
+    }
+    if (update.searched) existing.changesSearched += 1;
+    if (update.sitesFound) existing.sitesFound += update.sitesFound;
+    // A site can only come from a candidate file, so the importer count can
+    // never honestly be below the site count even on the branches that do not
+    // surface their own candidate set.
+    existing.importerCandidateFiles = Math.max(existing.importerCandidateFiles, existing.sitesFound);
+    diagnosticsByDependency.set(change.dependency, existing);
+  };
+
   /**
    * `candidateFiles` walks this repository's re-export graph from every
    * importer of a dependency, up to `maxReExportDepth` edges out — work that
@@ -191,18 +249,18 @@ export function localizeWithRuntime(
     }
 
     if (change.kind === 'module-system-change') {
-      sites.push(
-        ...inMember(
-          localizeModuleSystemChange(
-            change,
-            index,
-            contentByPath,
-            ecosystemsByName.get(change.dependency) ?? [],
-            moduleMaps,
-          ),
-          member,
+      const moduleSites = inMember(
+        localizeModuleSystemChange(
+          change,
+          index,
+          contentByPath,
+          ecosystemsByName.get(change.dependency) ?? [],
+          moduleMaps,
         ),
+        member,
       );
+      sites.push(...moduleSites);
+      recordDiagnostic(change, { searched: true, sitesFound: moduleSites.length });
       continue;
     }
 
@@ -226,6 +284,8 @@ export function localizeWithRuntime(
       (file) => member === undefined || withinMember(file.path, member),
     );
 
+    recordDiagnostic(change, { importerCandidateFiles: candidates.length, searched: true });
+
     if (candidates.length === 0) {
       logger.debug(`No importers found for ${change.dependency}; ${change.id} has no impact sites`);
       continue;
@@ -241,6 +301,7 @@ export function localizeWithRuntime(
       reach,
     );
     sites.push(...found);
+    recordDiagnostic(change, { sitesFound: found.length });
 
     if (found.length >= maxSitesPerChange) {
       logger.warn(
@@ -249,7 +310,7 @@ export function localizeWithRuntime(
     }
   }
 
-  return { sites, runtimeAnalyses };
+  return { sites, runtimeAnalyses, diagnostics: [...diagnosticsByDependency.values()] };
 }
 
 function localizeModuleSystemChange(
@@ -1645,6 +1706,25 @@ function bindingsForOwner(
   return bindings;
 }
 
+/**
+ * Names in this file that hold a value of a type this dependency owns.
+ *
+ * This is the join that turns a member-level finding into a site. japicmp says
+ * `CommonAnnotationBeanPostProcessor.postProcessPropertyValues` was removed; the
+ * repository writes `p.postProcessPropertyValues(...)`. Nothing links the two
+ * except knowing that `p` holds one of those — so every form a language has for
+ * *binding a name to a dependency type* has to be read here, or the finding
+ * lands nowhere and the change is reported as upstream-only.
+ *
+ * The forms fall into two shapes, and only ever having read the first is what
+ * held Java localization down: an assignment (`Client q = new Client()`) was
+ * recognised, but a **method parameter** was not, because the terminator after
+ * the bound name is `)` or `,` rather than `=` or `;`. Dependency injection —
+ * constructor parameters, `@Bean` methods, handler arguments — is how Java
+ * receives a framework object *most of the time*, so the common case was the
+ * one being missed. The same hole covered TS `function f(c: Client)` and
+ * Python `def f(c: Client)`, whose annotations put the type after the name.
+ */
 function receiversConstructedFrom(content: string, owners: ReadonlySet<string>): Set<string> {
   const receivers = new Set<string>();
   for (const owner of owners) {
@@ -1655,7 +1735,20 @@ function receiversConstructedFrom(content: string, owners: ReadonlySet<string>):
       new RegExp(`^\\s*([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}\\s*\\(`, 'gm'),
       new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*=\\s*new\\s+${escaped}\\s*\\(`, 'g'),
       new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}::new\\s*\\(`, 'g'),
-      new RegExp(`\\b${escaped}(?:\\s*<[^;=(){}]+>)?\\s+([A-Za-z_$][\\w$]*)\\s*(?:[({;=])`, 'g'),
+      // Type-before-name: Java, Kotlin, C#, C. The terminator set is what
+      // decides which *declarations* count, and it admits `)` and `,` so a
+      // method parameter binds, and `:` (not `::`) so a for-each header
+      // (`for (Client it : list)`) does too. `(?<!\bnew\s)` keeps the call
+      // `new Client (arg)` from binding `arg` as if it were a declaration.
+      new RegExp(
+        `(?<!\\bnew\\s)\\b${escaped}(?:\\s*<[^;=(){}]+>)?(?:\\s*\\[\\])?\\s+([A-Za-z_$][\\w$]*)\\s*(?:[({;=,)]|:(?!:))`,
+        'g',
+      ),
+      // Name-before-type: TypeScript, Python, Kotlin, Swift. One pattern covers
+      // annotated parameters, class properties, constructor parameter
+      // properties, and annotated locals. The trailing `(?!\s*\.)` refuses
+      // `x: a.b.Client` matching on the package root rather than the type.
+      new RegExp(`([A-Za-z_$][\\w$]*)\\s*:\\s*(?:readonly\\s+)?${escaped}\\b(?!\\s*\\.)`, 'g'),
     ];
     for (const pattern of patterns) {
       for (const match of content.matchAll(pattern)) if (match[1]) receivers.add(match[1]);
