@@ -17,7 +17,8 @@ import { gatherEvidence, type ProseSource } from './evidence/index.js';
 import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
-import { localizeWithRuntime } from './localize/index.js';
+import { localizeWithRuntime, type LocalizationDiagnostic } from './localize/index.js';
+export type { LocalizationDiagnostic } from './localize/index.js';
 import { completeRuntimeAnalyses, type RuntimeRequirementAnalysis } from './rationale/compatibility.js';
 import { resolveModuleMaps } from './localize/modules.js';
 import { attemptCodemod, type CodemodResult } from './codemod/index.js';
@@ -42,6 +43,7 @@ import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confide
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
 import { probeDependencyChange, type UpgradeVerification } from './verification/upgrade-probe.js';
+import type { VerificationDiagnostic } from './verification/diagnostics.js';
 import { applyVerificationToPlan, combineVerifications, describeVerification } from './verification/apply.js';
 import { detectPackageManagers, type PackageManagerId } from './detect/package-manager.js';
 import type { CheckKind } from './detect/checks.js';
@@ -91,6 +93,16 @@ export interface AnalysisResult {
   /** `null` when no dependency change was found worth analysing. */
   plan: RemediationPlan | null;
   summary: string;
+  /**
+   * Per-dependency localization funnel counts, when a source search ran.
+   *
+   * Not on the plan: this is instrumentation for triage — the benchmark
+   * miss-reason funnel reads it to tell "nothing imports this dependency"
+   * apart from "importers exist but never touch the changed symbol" — and it
+   * carries no schema-version obligation the way a `RemediationPlan` field
+   * would. Absent when there was no checkout to search.
+   */
+  localizationDiagnostics?: LocalizationDiagnostic[];
 }
 
 export async function analyzeRepository(options: AnalysisOptions): Promise<AnalysisResult> {
@@ -248,6 +260,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   /* Stage 5 — localize */
   const impactSites: RemediationPlan['impactSites'] = [];
   const runtimeAnalyses: RuntimeRequirementAnalysis[] = [];
+  const localizationDiagnostics: LocalizationDiagnostic[] = [];
   // Populated below, in the same pass that reads the repository for
   // localization -- a dependency's runtime floor is a property of this
   // repository, not of any one breaking change, so it is gathered once and
@@ -348,6 +361,21 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
         // site, and that is exactly the case the rationale must not read as
         // "nothing found, so nothing wrong".
         runtimeAnalyses.push(...localized.runtimeAnalyses);
+        // Merge funnel counts across members: the same dependency can be
+        // searched once per workspace member, and the benchmark funnel wants
+        // one row per dependency, not one per member.
+        for (const diagnostic of localized.diagnostics) {
+          const existing = localizationDiagnostics.find(
+            (row) => row.dependency === diagnostic.dependency && row.ecosystem === diagnostic.ecosystem,
+          );
+          if (existing) {
+            existing.importerCandidateFiles += diagnostic.importerCandidateFiles;
+            existing.changesSearched += diagnostic.changesSearched;
+            existing.sitesFound += diagnostic.sitesFound;
+          } else {
+            localizationDiagnostics.push({ ...diagnostic });
+          }
+        }
       }
 
       logger.info(`Found ${impactSites.length} impact site(s)`);
@@ -665,7 +693,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // answer calls `deepVerify` next with this result; `analyzeRepository`
   // itself never does, so a Quick Scan is exactly that regardless of what
   // `config.verify.enabled` says.
-  return { plan: withGaps, summary: summarize(withGaps) };
+  return {
+    plan: withGaps,
+    summary: summarize(withGaps),
+    ...(localizationRan ? { localizationDiagnostics } : {}),
+  };
 }
 
 /**
@@ -721,7 +753,11 @@ export async function deepVerify(result: AnalysisResult, options: AnalysisOption
   });
 
   if (verifiedPlan === result.plan) return result;
-  return { plan: verifiedPlan, summary: summarize(verifiedPlan) };
+  return {
+    plan: verifiedPlan,
+    summary: summarize(verifiedPlan),
+    ...(result.localizationDiagnostics ? { localizationDiagnostics: result.localizationDiagnostics } : {}),
+  };
 }
 
 /**
@@ -762,6 +798,13 @@ async function verifyPlan(
   // that moved exactly one dependency, so a batch of several simultaneous
   // bumps in one manifest never has its failure blamed on all of them.
   const confirmedRegressions: string[] = [];
+  // Impact sites the toolchain *measured* rather than predicted: a compiler or
+  // build diagnostic that appeared only after an isolated dependency change.
+  // Bound to a synthetic `measured:<key>` id (no static breaking change to
+  // attach to), so disposition/risk/commit-graph — which iterate
+  // `breakingChanges` — ignore them, while the report and `plan.impactSites`
+  // can still point a reader at the exact line.
+  const measuredSites: ImpactSite[] = [];
 
   for (const [dir, changes] of groups) {
     const manager = await managerFor(workspace, dir, changes[0]!.ecosystem);
@@ -798,7 +841,13 @@ async function verifyPlan(
       // ruling out the one remaining ambiguity: several dependencies moving
       // together in the same manifest, where a red result cannot be
       // attributed to any one of them.
-      if (changes.length === 1) confirmedRegressions.push(dependencyEcosystemKey(changes[0]!));
+      if (changes.length === 1) {
+        const key = dependencyEcosystemKey(changes[0]!);
+        confirmedRegressions.push(key);
+        // Only an isolated failure earns measured sites: a diagnostic from a
+        // multi-dependency group cannot be pinned on this change alone.
+        measuredSites.push(...measuredSitesFrom(verification.introducedDiagnostics ?? [], key, changes[0]!.name, dir));
+      }
     }
     verifiedPlan = applyVerificationToPlan(verifiedPlan, verification, dir);
   }
@@ -836,7 +885,60 @@ async function verifyPlan(
     };
   }
 
+  // Measured sites join `impactSites` last, de-duplicated against anything
+  // static localization already found at the same file+line, so a diagnostic
+  // that merely confirms a predicted site does not double it.
+  if (measuredSites.length > 0) {
+    const known = new Set(verifiedPlan.impactSites.map((site) => `${site.file}:${site.line}`));
+    const fresh = measuredSites.filter((site) => !known.has(`${site.file}:${site.line}`));
+    if (fresh.length > 0) {
+      verifiedPlan = { ...verifiedPlan, impactSites: [...verifiedPlan.impactSites, ...fresh] };
+    }
+  }
+
   return verifiedPlan;
+}
+
+/**
+ * Turn a check's introduced diagnostics into impact sites.
+ *
+ * `node_modules` / virtualenv paths are dropped — a diagnostic inside an
+ * installed package is real, but it is not a location in *this* repository's
+ * code and pointing a reviewer at it wastes the click. What remains is
+ * consumer source the compiler itself named as broken by this change, which is
+ * `high` confidence by construction: it is measured, not matched.
+ */
+function measuredSitesFrom(
+  diagnostics: readonly VerificationDiagnostic[],
+  breakingChangeKey: string,
+  dependencyName: string,
+  dir: string,
+): ImpactSite[] {
+  const sites: ImpactSite[] = [];
+  const seen = new Set<string>();
+  for (const diagnostic of diagnostics) {
+    if (/(^|\/)(node_modules|\.venv|venv|site-packages|target\/|dist\/|build\/)/.test(diagnostic.file)) continue;
+    const file = dir && !diagnostic.file.startsWith(`${dir}/`) ? `${dir}/${diagnostic.file}` : diagnostic.file;
+    const dedupeKey = `${file}:${diagnostic.line}:${diagnostic.column ?? ''}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    sites.push({
+      breakingChangeId: `measured:${breakingChangeKey}`,
+      file,
+      line: diagnostic.line,
+      ...(diagnostic.column !== undefined ? { column: diagnostic.column } : {}),
+      excerpt: (diagnostic.code ? `${diagnostic.code}: ${diagnostic.message}` : diagnostic.message).slice(0, 200),
+      matchedSymbol: diagnostic.code ?? quotedIdentifier(diagnostic.message) ?? dependencyName,
+      confidence: 'high',
+    });
+  }
+  return sites;
+}
+
+/** The first `` `back-ticked` `` or `'quoted'` identifier in a compiler message, if any. */
+function quotedIdentifier(message: string): string | undefined {
+  const match = /[`'"]([A-Za-z_$][\w$.]*)[`'"]/.exec(message);
+  return match?.[1];
 }
 
 /**

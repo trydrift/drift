@@ -308,6 +308,18 @@ export function repositoryConclusion(plan: RemediationPlan): string {
 
   if (plan.confirmedRegressions.length > 0) {
     const measured = plan.blockers.find((blocker) => blocker.startsWith(VERIFICATION_FAILURE_BLOCKER_PREFIX));
+    // Sites the toolchain named in the failing output — see `measuredSitesFrom`
+    // in `analysis.ts`. When present, the conclusion points at them instead of
+    // saying static analysis found nothing: the compiler did.
+    const measuredSites = plan.impactSites.filter((site) => site.breakingChangeId.startsWith('measured:'));
+    if (measuredSites.length > 0) {
+      const where = measuredSites
+        .slice(0, 3)
+        .map((site) => `${site.file}:${site.line}`)
+        .join(', ');
+      const more = measuredSites.length > 3 ? `, +${measuredSites.length - 3} more` : '';
+      return `Drift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at ${where}${more}.`;
+    }
     // `verifyPlan` always writes one of these alongside a confirmedRegressions
     // entry, so `measured` being absent should not happen — but the fact
     // being reported is still true without it, and stating it plainly beats

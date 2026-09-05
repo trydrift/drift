@@ -20,6 +20,7 @@ import {
 } from './checks.js';
 import { detectChecks } from '../detect/checks.js';
 import { isPythonRequirementsFile } from '../detect/python-requirements.js';
+import { parseVerificationDiagnostics, subtractBaseline, type VerificationDiagnostic } from './diagnostics.js';
 
 /**
  * Testing an upgrade before anyone is told about it.
@@ -69,6 +70,23 @@ export interface UpgradeVerification {
   diagnostics?: string;
   /** Repo-relative files named by the failing output, best effort. */
   failedFiles: string[];
+  /**
+   * Structured compiler/build diagnostics that appeared only after the change
+   * — parsed from the output of checks that passed at baseline and fail now,
+   * with the baseline's own diagnostics subtracted. The raw material for
+   * turning a measured regression into concrete {@link ImpactSite}s rather
+   * than a filename list. Absent when nothing was measured, or when the failing
+   * output named no parseable location.
+   */
+  introducedDiagnostics?: VerificationDiagnostic[];
+  /**
+   * Internal: every error diagnostic parsed from this run's failing checks,
+   * with the worktree path stripped. Carried between `checkAt` and
+   * `reconcileAgainstBaseline` so the after/before subtraction operates on
+   * structured data rather than re-parsing strings that reference a worktree
+   * that no longer exists. Not meant for callers — read `introducedDiagnostics`.
+   */
+  parsedDiagnostics?: VerificationDiagnostic[];
   /**
    * How many upgrades were installed together when this was measured.
    *
@@ -435,7 +453,7 @@ async function probeAlone(pass: GroupPass, target: ProbeTarget, hooks: GroupHook
   }
 
   hooks.report(phase, pass.usable.map((check) => check.label).join(', '), [target]);
-  hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase, [target])));
+  hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase, [target]), pass.root));
   return resetWorktree(pass);
 }
 
@@ -950,7 +968,7 @@ async function probeTogether(
 
   const resetOk = await resetWorktree(pass);
   if (green) {
-    for (const target of targets) hooks.settle(target, { ...verdictFrom(outcomes), measuredWith: targets.length });
+    for (const target of targets) hooks.settle(target, { ...verdictFrom(outcomes, pass.root), measuredWith: targets.length });
     return 'settled';
   }
 
@@ -1155,11 +1173,20 @@ function reconcileAgainstBaseline(
   }
 
   const diagnostics = genuine.map((outcome) => `$ ${outcome.label}\n${outcome.fullOutput ?? outcome.output}`).join('\n\n');
+
+  // `after.parsedDiagnostics` is every error `verdictFrom` parsed from the
+  // failing run, worktree path already stripped; `before` passed, so its
+  // `parsedDiagnostics` is empty and the subtraction keeps everything — but it
+  // is still done through `subtractBaseline` so a baseline that printed a
+  // warning the regex misread as an error cannot leak through.
+  const introduced = subtractBaseline(after.parsedDiagnostics ?? [], before.parsedDiagnostics ?? []);
+
   return {
     status: 'failed',
     checks: after.checks,
     diagnostics,
     failedFiles: filesNamedIn(diagnostics),
+    ...(introduced.length > 0 ? { introducedDiagnostics: introduced } : {}),
   };
 }
 
@@ -1222,6 +1249,7 @@ async function checkAt(
         ...(options.token ? { token: options.token } : {}),
         ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
       }),
+      worktree.path,
     );
   } finally {
     await worktree.dispose();
@@ -1303,17 +1331,19 @@ function settleRemainingAsContaminated(
  * pass — an absent answer is not a clean bill of health, which is the same
  * distinction `severity.ts` draws between `clean` and `unchecked`.
  */
-function verdictFrom(outcomes: readonly CheckOutcome[]): UpgradeVerification {
+function verdictFrom(outcomes: readonly CheckOutcome[], root?: string): UpgradeVerification {
   const failed = outcomes.filter((outcome) => outcome.status === 'failed');
   if (failed.length > 0) {
     const diagnostics = failed
       .map((outcome) => `$ ${outcome.label}\n${outcome.fullOutput ?? outcome.output}`)
       .join('\n\n');
+    const parsed = parseVerificationDiagnostics(diagnostics, root).filter((d) => d.severity === 'error');
     return {
       status: 'failed',
       checks: [...outcomes],
       diagnostics,
       failedFiles: filesNamedIn(diagnostics),
+      ...(parsed.length > 0 ? { parsedDiagnostics: parsed } : {}),
     };
   }
 
