@@ -378,7 +378,7 @@ async function computeTypeSurface(
   }
 
   if (!entryPath) {
-    entryPath = await resolveDefinitelyTypedEntry(packageName);
+    entryPath = await resolveDefinitelyTypedEntry(packageName, version);
     if (!entryPath) return null;
     sources = await measure('surface-sources', packageName, () =>
       collectDeclarationSources(packageName, version, entryPath!),
@@ -1282,15 +1282,43 @@ function typeEntryCandidates(packageName: string, pkg: Manifest | null): string[
   return [...new Set(wanted)];
 }
 
-async function resolveDefinitelyTypedEntry(packageName: string): Promise<string | null> {
-  // DefinitelyTyped ships types for the same *major* line, so this is only a
-  // sound comparison when both sides resolve; mismatches yield no evidence.
+/**
+ * The `@types/<pkg>` release line that documents *this* version.
+ *
+ * DefinitelyTyped versions its packages to match the major (and usually the
+ * minor) of what they describe: `@types/express@4` is express 4's API,
+ * `@types/express@5` is express 5's. Resolving both sides to `latest` — the
+ * same bytes twice — is what made every `@types`-only package incomparable,
+ * and it is a large slice of npm: express, lodash and everything else whose
+ * declarations live outside the package.
+ *
+ * The major line is a convention, not a guarantee, so a range that does not
+ * resolve falls back to `latest` rather than failing. When *both* sides fall
+ * back the entry paths are equal, and `computeTypeSurface` still declines to
+ * compare — nothing was learned, and saying so is the point.
+ */
+export async function resolveDefinitelyTypedEntry(
+  packageName: string,
+  version: string,
+): Promise<string | null> {
   const dtName = packageName.startsWith('@')
     ? `@types/${packageName.slice(1).replace('/', '__')}`
     : `@types/${packageName}`;
-  if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
+
+  const major = /^\D*(\d+)\./.exec(version)?.[1] ?? /^\D*(\d+)$/.exec(version)?.[1];
+  if (major && (await exists(dtName, major, 'index.d.ts'))) return `@types:${dtName}@${major}`;
+  if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}@latest`;
 
   return null;
+}
+
+/** Split `@types:@types/express@4` into the package and the range to fetch. */
+export function definitelyTypedTarget(entryPath: string): { name: string; range: string } {
+  const spec = entryPath.slice('@types:'.length);
+  const at = spec.lastIndexOf('@');
+  // `lastIndexOf` lands on the version separator, never on the scope's own
+  // leading `@`, because the range is always appended.
+  return at > 0 ? { name: spec.slice(0, at), range: spec.slice(at + 1) } : { name: spec, range: 'latest' };
 }
 
 /**
@@ -1382,8 +1410,8 @@ async function collectDeclarationSources(
   artifact?: NpmArtifact,
 ): Promise<DeclarationSource[]> {
   if (entryPath.startsWith('@types:')) {
-    const dtName = entryPath.slice('@types:'.length);
-    const content = await fetchText(`${JSDELIVR_CDN}/${dtName}@latest/index.d.ts`);
+    const target = definitelyTypedTarget(entryPath);
+    const content = await fetchText(`${JSDELIVR_CDN}/${target.name}@${target.range}/index.d.ts`);
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
