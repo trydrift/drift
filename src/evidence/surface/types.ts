@@ -147,6 +147,16 @@ export interface SurfaceRequest {
    */
   readRepoFile?: (path: string) => Promise<string | null>;
   /**
+   * Repo-relative path of the manifest that declared this dependency.
+   *
+   * Which manifest matters when the manifest itself says where the dependency
+   * is *published*: a Maven POM declares `<repositories>`, and an artifact
+   * hosted anywhere but Central cannot be found without reading them. The
+   * declaring member's POM is the one that carries them, so a monorepo cannot
+   * fall back to the root.
+   */
+  manifestPath?: string;
+  /**
    * Install a missing helper inline instead of reporting the gap.
    *
    * Sourced from `config.tools.autoInstall`, off by default. When a provider

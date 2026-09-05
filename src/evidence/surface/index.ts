@@ -106,6 +106,7 @@ export async function computeSurfaceDiff(
           ...(options.env ? { env: options.env } : {}),
           timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
           ...(options.readRepoFile ? { readRepoFile: options.readRepoFile } : {}),
+          ...(change.manifestPath ? { manifestPath: change.manifestPath } : {}),
           ...(options.autoInstall ? { autoInstall: true } : {}),
         }),
       { ecosystem: change.ecosystem },

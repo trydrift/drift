@@ -59,9 +59,13 @@ export const javaSurface: SurfaceProvider = {
     // The exact POM declares what kind of artifact this coordinate is. Read it
     // before requiring Java or assuming a jar exists: parent POMs and BOMs are
     // contracts in their own right, not failed classfile libraries.
+    // Central plus whatever this project's own POM says. Resolved once and
+    // reused for the jars below, so a repository list is read at most once.
+    const repositories = [CENTRAL, ...(await declaredRepositories(request))];
+
     const [beforePom, afterPom] = await Promise.all([
-      downloadPom(coordinate, request.from),
-      downloadPom(coordinate, request.to),
+      downloadPom(coordinate, request.from, repositories),
+      downloadPom(coordinate, request.to, repositories),
     ]);
     if (!beforePom.ok) return beforePom.failure;
     if (!afterPom.ok) return afterPom.failure;
@@ -79,15 +83,31 @@ export const javaSurface: SurfaceProvider = {
       };
     }
 
+    // A packaging Drift does not diff directly is not the end of the question.
+    // Several publish a plain `.jar` beside the primary artifact, and that jar
+    // is precisely what a *consumer* compiles against: a Jenkins plugin ships
+    // an `hpi`, but a plugin that depends on it resolves the `.jar` onto its
+    // compile classpath, and 160 classfiles of real API sit inside it. Probed
+    // before declining rather than after, so the role decides how hard Drift
+    // looks and never what it is allowed to find.
+    let siblingJars: { before: JarAttempt & { ok: true }; after: JarAttempt & { ok: true } } | undefined;
     if (beforeRole !== 'library' || afterRole !== 'library') {
-      return {
-        ...unavailable(
-          POM_TOOL,
-          'artifact-type-unsupported',
-          `${request.name} is packaged as ${afterPom.contract.packaging}, not as a Java library jar. Drift identified the Maven role but does not yet claim a classfile API comparison for it.`,
-        ),
-        packageRole: afterRole,
-      };
+      await mkdir(request.workdir, { recursive: true });
+      const [probedBefore, probedAfter] = await Promise.all([
+        downloadJar(coordinate, request.from, request.workdir, repositories),
+        downloadJar(coordinate, request.to, request.workdir, repositories),
+      ]);
+      if (!probedBefore.ok || !probedAfter.ok) {
+        return {
+          ...unavailable(
+            POM_TOOL,
+            'artifact-type-unsupported',
+            `${request.name} is packaged as ${afterPom.contract.packaging}, not as a Java library jar, and publishes no companion jar Drift could compare instead.`,
+          ),
+          packageRole: afterRole,
+        };
+      }
+      siblingJars = { before: probedBefore, after: probedAfter };
     }
 
     // Java is an external runtime prerequisite. Drift provisions japicmp on top
@@ -128,12 +148,23 @@ export const javaSurface: SurfaceProvider = {
     // once both have landed. Failure precedence is preserved exactly as
     // before: "before" failing is reported ahead of "after" failing, even
     // though "after" may now finish (or fail) first.
-    const beforePromise = downloadJar(coordinate, request.from, request.workdir);
-    const afterPromise = downloadJar(coordinate, request.to, request.workdir);
-    afterPromise.catch(() => undefined);
-    const before = await beforePromise;
+    let before: JarAttempt;
+    let after: JarAttempt;
+    if (siblingJars) {
+      // Already fetched while deciding whether a non-library packaging had a
+      // comparable artifact at all; re-downloading them would prove nothing.
+      before = siblingJars.before;
+      after = siblingJars.after;
+    } else {
+      const beforePromise = downloadJar(coordinate, request.from, request.workdir, repositories);
+      const afterPromise = downloadJar(coordinate, request.to, request.workdir, repositories);
+      afterPromise.catch(() => undefined);
+      before = await beforePromise;
+      if (!before.ok) return before.failure;
+      after = await afterPromise;
+      if (!after.ok) return after.failure;
+    }
     if (!before.ok) return before.failure;
-    const after = await afterPromise;
     if (!after.ok) return after.failure;
 
     // A `jar`-packaged coordinate is not necessarily a library: a starter or
@@ -214,21 +245,71 @@ interface Coordinate {
   artifactId: string;
 }
 
+/**
+ * How many declared repositories Drift will try before giving up.
+ *
+ * A POM may list a dozen mirrors; each miss is a round trip, and the artifact
+ * is in the first one or two in every real case. A bound rather than a
+ * judgement about which are worth trying.
+ */
+const MAX_DECLARED_REPOSITORIES = 4;
+
+/**
+ * Where this project says its dependencies are published.
+ *
+ * Maven Central is the default and the overwhelming majority, but it is not
+ * the only place Java is published, and an artifact that is not on it is not
+ * an artifact that does not exist. Jenkins is the concrete case: every
+ * `org.jenkins-ci.*` plugin lives at `repo.jenkins-ci.org`, and looking only at
+ * Central reported 41 of BUMP's Java cases — a tenth of the corpus — as
+ * `version-unavailable`, which reads as "that version was unpublished or
+ * yanked" when the truth is that Drift looked in one place.
+ *
+ * Read from the POM that declared the dependency, which is where Maven itself
+ * reads them, so nothing here knows what Jenkins is. Only `https` is accepted:
+ * these URLs come from the repository under analysis, and while fetching an
+ * artifact is not running one, a plaintext mirror is not a source Drift should
+ * be talked into by a file it is analysing.
+ */
+async function declaredRepositories(request: SurfaceRequest): Promise<string[]> {
+  const read = request.readRepoFile;
+  if (!read) return [];
+
+  // The declaring member's POM first: in a monorepo the repositories are on
+  // the module that has the dependency, not on the aggregator above it.
+  const candidates = [...new Set([request.manifestPath, 'pom.xml'].filter((path): path is string => Boolean(path)))];
+  const urls: string[] = [];
+
+  for (const path of candidates) {
+    const content = await read(path).catch(() => null);
+    if (!content) continue;
+    for (const section of content.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<repositories>([\s\S]*?)<\/repositories>/g)) {
+      for (const entry of section[1]!.matchAll(/<repository(?:\s[^>]*)?>([\s\S]*?)<\/repository>/g)) {
+        const url = tag(entry[1]!, 'url');
+        if (url && /^https:\/\//i.test(url)) urls.push(url.replace(/\/+$/, ''));
+      }
+    }
+    if (urls.length > 0) break;
+  }
+
+  return [...new Set(urls)].slice(0, MAX_DECLARED_REPOSITORIES);
+}
+
 export function parseCoordinate(name: string): Coordinate | null {
   const [groupId, artifactId] = name.split(':');
   if (!groupId || !artifactId) return null;
   return { groupId, artifactId };
 }
 
-/** Maven Central's layout is entirely derivable, so no search API is needed. */
-export function jarUrl(coordinate: Coordinate, version: string): string {
+/** A Maven repository's layout is entirely derivable, so no search API is needed. */
+export function jarUrl(coordinate: Coordinate, version: string, base: string = CENTRAL): string {
   const path = coordinate.groupId.replace(/\./g, '/');
-  return `${CENTRAL}/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}.jar`;
+  return `${base}/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}.jar`;
 }
 
-export function pomUrl(coordinate: Coordinate, version: string): string {
+export function pomUrl(coordinate: Coordinate, version: string, base: string = CENTRAL): string {
   const path = coordinate.groupId.replace(/\./g, '/');
-  return `${CENTRAL}/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}.pom`;
+  return `${base}/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}.pom`;
 }
 
 export type MavenArtifactRole = 'library' | 'pom' | 'maven-plugin' | 'unsupported';
@@ -251,9 +332,20 @@ export interface PomContract {
 
 type PomAttempt = { ok: true; contract: PomContract } | { ok: false; failure: SurfaceOutcome };
 
-async function downloadPom(coordinate: Coordinate, version: string): Promise<PomAttempt> {
-  const url = pomUrl(coordinate, version);
-  const downloaded = await fetchArchive(url, { timeoutMs: 60_000, maxBytes: MAX_POM_BYTES });
+async function downloadPom(
+  coordinate: Coordinate,
+  version: string,
+  bases: readonly string[] = [CENTRAL],
+): Promise<PomAttempt> {
+  let url = pomUrl(coordinate, version, bases[0] ?? CENTRAL);
+  let downloaded = await fetchArchive(url, { timeoutMs: 60_000, maxBytes: MAX_POM_BYTES });
+  // Central answers for almost everything, so it is tried first and the rest
+  // are only paid for when it does not have the artifact.
+  for (const base of bases.slice(1)) {
+    if (downloaded.ok) break;
+    url = pomUrl(coordinate, version, base);
+    downloaded = await fetchArchive(url, { timeoutMs: 60_000, maxBytes: MAX_POM_BYTES });
+  }
   if (!downloaded.ok) {
     return {
       ok: false,
@@ -261,7 +353,7 @@ async function downloadPom(coordinate: Coordinate, version: string): Promise<Pom
         POM_TOOL,
         downloaded.status === 404 ? 'version-unavailable' : 'artifact-unavailable',
         downloaded.status === 404
-          ? `Maven Central has no POM for ${coordinate.groupId}:${coordinate.artifactId}:${version}.`
+          ? `No POM for ${coordinate.groupId}:${coordinate.artifactId}:${version} in ${describeRepositories(bases)}.`
           : `The exact Maven POM at ${url} could not be downloaded (HTTP ${downloaded.status || 'unavailable'}).`,
       ),
     };
@@ -410,12 +502,18 @@ async function downloadJar(
   coordinate: Coordinate,
   version: string,
   workdir: string,
+  bases: readonly string[] = [CENTRAL],
 ): Promise<JarAttempt> {
-  const url = jarUrl(coordinate, version);
+  let url = jarUrl(coordinate, version, bases[0] ?? CENTRAL);
   const path = join(workdir, `${coordinate.artifactId}-${version}.jar`);
 
   try {
-    const downloaded = await fetchArchive(url, { timeoutMs: 60_000 });
+    let downloaded = await fetchArchive(url, { timeoutMs: 60_000 });
+    for (const base of bases.slice(1)) {
+      if (downloaded.ok) break;
+      url = jarUrl(coordinate, version, base);
+      downloaded = await fetchArchive(url, { timeoutMs: 60_000 });
+    }
     // A request that never completed used to throw out of `fetch`; re-thrown so
     // it still lands in this provider's own catch, with the same message.
     if (!downloaded.ok && downloaded.status === 0) throw new Error(downloaded.error ?? 'the request failed');
@@ -426,8 +524,8 @@ async function downloadJar(
           TOOL,
           downloaded.status === 404 ? 'version-unavailable' : 'toolchain-failed',
           downloaded.status === 404
-            ? `Maven Central has no jar for ${coordinate.groupId}:${coordinate.artifactId}:${version}. It may be an internal artefact, or published only as a POM or a BOM.`
-            : `Maven Central returned ${downloaded.status} for ${url}.`,
+            ? `No jar for ${coordinate.groupId}:${coordinate.artifactId}:${version} in ${describeRepositories(bases)}. It may be an internal artefact, or published only as a POM or a BOM.`
+            : `${url} returned ${downloaded.status}.`,
         ),
       };
     }
@@ -585,6 +683,13 @@ export function looksLikeJapicmpReport(output: string): boolean {
       output,
     )
   );
+}
+
+/** "Maven Central" alone, or Central and the repositories the project declared. */
+function describeRepositories(bases: readonly string[]): string {
+  const extra = bases.filter((base) => base !== CENTRAL);
+  if (extra.length === 0) return 'Maven Central';
+  return `Maven Central or ${extra.join(', ')} (declared by this project)`;
 }
 
 function firstLine(text: string): string {

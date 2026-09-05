@@ -198,3 +198,111 @@ describe('Maven artifact roles', () => {
     assert.doesNotMatch(outcome.detail, /no jar/i);
   });
 });
+
+/**
+ * Maven Central is the default, not the only place Java is published.
+ *
+ * A POM declares `<repositories>`, and Maven reads them; Drift did not, so an
+ * artifact hosted anywhere else was reported `version-unavailable` — which
+ * reads as "that version was unpublished or yanked" when the truth is that
+ * Drift looked in one place. Every `org.jenkins-ci.*` plugin lives at
+ * `repo.jenkins-ci.org`, and that alone accounted for 41 of BUMP's Java
+ * cases, a tenth of the corpus.
+ *
+ * Nothing here knows what Jenkins is: the URLs come from the POM that declared
+ * the dependency, which is where Maven itself reads them.
+ */
+describe('repositories the project declares', () => {
+  const JENKINS = 'https://repo.jenkins-ci.org/public';
+
+  const pomWithRepo = (url: string) =>
+    pom(`<repositories><repository><id>r</id><url>${url}/</url></repository></repositories>`);
+
+  /** Serves POMs and jars only from `host`, 404ing every other origin. */
+  function serveOnlyFrom(host: string, packaging: string, jarEntries: string[]) {
+    const seen: string[] = [];
+    globalThis.fetch = (async (input) => {
+      const url = String(input);
+      seen.push(url);
+      if (!url.startsWith(host)) return new Response('not found', { status: 404 });
+      if (url.endsWith('.pom')) return new Response(pom(`<packaging>${packaging}</packaging>`));
+      if (url.endsWith('.jar')) return new Response(fakeJar(jarEntries), { status: 200 });
+      return new Response('not found', { status: 404 });
+    }) as typeof fetch;
+    return { seen: () => seen };
+  }
+
+  test('an artifact only on a declared repository is found there', async () => {
+    const stub = serveOnlyFrom(JENKINS, 'jar', ['com/example/Client.class']);
+    const outcome = await javaSurface.compute({
+      ...changeRequest((async (command, args) => {
+        if (command === 'java' && args[0] === '-version') return { code: 0, stdout: '', stderr: 'openjdk 21' };
+        return { code: 0, stdout: '***! MODIFIED CLASS: PUBLIC com.example.Client\n', stderr: '' };
+      }) as never),
+      manifestPath: 'plugin/pom.xml',
+      readRepoFile: async (path: string) => (path === 'plugin/pom.xml' ? pomWithRepo(JENKINS) : null),
+    });
+
+    assert.equal(outcome.available, true, 'the declared repository answered');
+    assert.ok(stub.seen().some((url) => url.startsWith('https://repo1.maven.org')), 'Central is still tried first');
+    assert.ok(stub.seen().some((url) => url.startsWith(JENKINS)), 'and the declared repository after it');
+  });
+
+  test('a non-library packaging is compared through its companion jar', async () => {
+    // A Jenkins plugin ships an `hpi`; the `.jar` beside it is what a consumer
+    // compiles against, and it carries the real classes.
+    serveOnlyFrom(JENKINS, 'hpi', ['com/example/Client.class']);
+    const outcome = await javaSurface.compute({
+      ...changeRequest((async (command, args) => {
+        if (command === 'java' && args[0] === '-version') return { code: 0, stdout: '', stderr: 'openjdk 21' };
+        return { code: 0, stdout: '***! MODIFIED CLASS: PUBLIC com.example.Client\n', stderr: '' };
+      }) as never),
+      manifestPath: 'plugin/pom.xml',
+      readRepoFile: async () => pomWithRepo(JENKINS),
+    });
+
+    assert.equal(outcome.available, true, 'hpi is not a reason to decline when a jar exists');
+  });
+
+  test('a non-library packaging with no companion jar is still unsupported', async () => {
+    globalThis.fetch = (async (input) => {
+      const url = String(input);
+      if (url.endsWith('.pom')) return new Response(pom('<packaging>maven-plugin</packaging>'));
+      return new Response('not found', { status: 404 });
+    }) as typeof fetch;
+
+    const outcome = await javaSurface.compute(changeRequest((async () => {
+      throw new Error('must not execute');
+    }) as never));
+
+    assert.equal(outcome.available, false);
+    if (outcome.available) return;
+    assert.equal(outcome.reason, 'artifact-type-unsupported');
+    assert.match(outcome.detail, /publishes no companion jar/);
+  });
+
+  test('a plaintext repository is never fetched from', async () => {
+    const stub = serveOnlyFrom(JENKINS, 'jar', ['com/example/Client.class']);
+    await javaSurface.compute({
+      ...changeRequest((async () => ({ code: 1, stdout: '', stderr: 'java not found' })) as never),
+      manifestPath: 'pom.xml',
+      readRepoFile: async () => pomWithRepo('http://insecure.example.invalid/repo'),
+    });
+
+    assert.ok(!stub.seen().some((url) => url.startsWith('http://')), 'http:// declared mirrors are skipped');
+  });
+
+  test('with no repositories declared, only Central is consulted', async () => {
+    const stub = serveOnlyFrom('https://repo1.maven.org', 'jar', ['com/example/Client.class']);
+    await javaSurface.compute({
+      ...changeRequest((async (command, args) => {
+        if (command === 'java' && args[0] === '-version') return { code: 0, stdout: '', stderr: 'openjdk 21' };
+        return { code: 0, stdout: '', stderr: '' };
+      }) as never),
+      readRepoFile: async () => pom('<artifactId>demo</artifactId>'),
+    });
+
+    const origins = new Set(stub.seen().map((url) => new URL(url).origin));
+    assert.deepEqual([...origins], ['https://repo1.maven.org']);
+  });
+});
