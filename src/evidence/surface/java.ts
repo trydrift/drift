@@ -1,7 +1,8 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isAvailable } from '../../util/exec.js';
 import { fetchArchive } from '../../util/http.js';
+import { readZip } from '../../util/archive.js';
 import type { SurfaceChange } from '../type-surface.js';
 import { ensureHelperArtifact } from './helper-artifact.js';
 import {
@@ -134,6 +135,30 @@ export const javaSurface: SurfaceProvider = {
     if (!before.ok) return before.failure;
     const after = await afterPromise;
     if (!after.ok) return after.failure;
+
+    // A `jar`-packaged coordinate is not necessarily a library: a starter or
+    // aggregator (`spring-boot-starter`, BOMs republished as an empty jar for
+    // tooling compatibility) declares no `<packaging>pom</packaging>` but
+    // ships zero classfiles of its own — its real surface lives in whatever
+    // it pulls in. Diffing two empty jars always reports "no differences",
+    // which is indistinguishable from a genuinely unchanged library unless
+    // this is caught before japicmp ever runs. Caught here rather than by
+    // reading `<packaging>` because the packaging tag lies for exactly these
+    // artifacts; only the shipped bytes tell the truth.
+    const [beforeClasses, afterClasses] = await Promise.all([
+      hasClassfiles(before.path),
+      hasClassfiles(after.path),
+    ]);
+    if (!beforeClasses || !afterClasses) {
+      return {
+        ...unavailable(
+          TOOL,
+          'artifact-type-unsupported',
+          `${request.name} ${request.from} → ${request.to} ships no classfiles of its own (an aggregator, starter, or relocated artifact) — its published API surface is not this jar's contents, so Drift did not claim a classfile comparison for it.`,
+        ),
+        packageRole: 'jar',
+      };
+    }
 
     const result = await request.exec(
       'java',
@@ -371,6 +396,12 @@ function pluginContracts(xml: string | null): Map<string, string> {
       .filter(Boolean).join('|'));
   }
   return out;
+}
+
+/** Does this jar carry at least one `.class` entry — real compiled surface, not just resources/metadata? */
+async function hasClassfiles(jarPath: string): Promise<boolean> {
+  const bytes = await readFile(jarPath);
+  return readZip(bytes).some((entry) => entry.path.endsWith('.class'));
 }
 
 type JarAttempt = { ok: true; path: string } | { ok: false; failure: SurfaceOutcome };

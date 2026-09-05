@@ -6,14 +6,39 @@ import {
   javaSurface,
   parsePomContract,
 } from '../dist/evidence/surface/java.js';
+import { setHelperArtifactOverride } from '../dist/evidence/surface/helper-artifact.js';
 import { clearHttpCache } from '../dist/util/http.js';
 import { createLogger } from '../dist/util/logger.js';
 import { remediationForFinding } from '../dist/analyze/rules.js';
 
 const realFetch = globalThis.fetch;
 const logger = createLogger('error');
+setHelperArtifactOverride('japicmp', '/dev/null');
 
 const pom = (body: string) => `<?xml version="1.0"?><project>${body}</project>`;
+
+/**
+ * A minimal zip with only a central directory — enough for `readZip` to
+ * report the entry paths `hasClassfiles` inspects, without needing valid
+ * local headers or compressed bodies nothing here ever reads.
+ */
+function fakeJar(paths: string[]): Buffer {
+  const central: Buffer[] = [];
+  for (const path of paths) {
+    const name = Buffer.from(path, 'utf8');
+    const header = Buffer.alloc(46);
+    header.writeUInt32LE(0x02014b50, 0);
+    header.writeUInt16LE(name.length, 28);
+    central.push(header, name);
+  }
+  const centralDirectory = Buffer.concat(central);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(paths.length, 10);
+  eocd.writeUInt32LE(centralDirectory.length, 12); // central directory size
+  eocd.writeUInt32LE(0, 16); // central directory starts at byte 0 of this buffer
+  return Buffer.concat([centralDirectory, eocd]);
+}
 
 function changeRequest(exec: (...args: never[]) => Promise<never>) {
   return {
@@ -114,6 +139,49 @@ describe('Maven artifact roles', () => {
     if (outcome.available) return;
     assert.equal(outcome.reason, 'artifact-type-unsupported');
     assert.match(outcome.detail, /packaged as maven-plugin, not as a Java library jar/);
+  });
+
+  test('a starter/aggregator jar with no classfiles of its own is inconclusive, not a clean diff', async () => {
+    globalThis.fetch = (async (input) => {
+      const url = String(input);
+      if (url.endsWith('.pom')) return new Response(pom('<artifactId>spring-boot-starter</artifactId>'));
+      // Real starters ship only META-INF/ resources — no `.class` entries.
+      return new Response(fakeJar(['META-INF/MANIFEST.MF', 'META-INF/LICENSE.txt']), { status: 200 });
+    }) as typeof fetch;
+
+    let execCalled = false;
+    const outcome = await javaSurface.compute(changeRequest((async (command, args) => {
+      execCalled = true;
+      if (command === 'java' && args[0] === '-version') return { code: 0, stdout: '', stderr: 'openjdk 21' };
+      throw new Error('japicmp must not run against a classfile-less jar');
+    }) as never));
+
+    assert.equal(outcome.available, false);
+    if (outcome.available) return;
+    assert.equal(outcome.reason, 'artifact-type-unsupported');
+    assert.match(outcome.detail, /ships no classfiles of its own/);
+    assert.equal(execCalled, true, 'java -version still runs before the classfile check');
+  });
+
+  test('a library jar with real classfiles still runs japicmp', async () => {
+    globalThis.fetch = (async (input) => {
+      const url = String(input);
+      if (url.endsWith('.pom')) return new Response(pom('<artifactId>demo</artifactId>'));
+      return new Response(fakeJar(['com/example/Client.class']), { status: 200 });
+    }) as typeof fetch;
+
+    let japicmpRan = false;
+    const outcome = await javaSurface.compute(changeRequest((async (command, args) => {
+      if (command === 'java' && args[0] === '-version') return { code: 0, stdout: '', stderr: 'openjdk 21' };
+      if (command === 'java' && args[0] === '-jar') {
+        japicmpRan = true;
+        return { code: 0, stdout: '***! MODIFIED CLASS: PUBLIC com.example.Client\n', stderr: '' };
+      }
+      throw new Error('unexpected exec');
+    }) as never));
+
+    assert.equal(japicmpRan, true);
+    assert.equal(outcome.available, true);
   });
 
   test('ordinary jar packaging still enters the existing Java tool path', async () => {

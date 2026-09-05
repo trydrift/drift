@@ -924,6 +924,17 @@ def project_root(root):
     named = [path for path in candidates if normalized_distribution(declared_project_name(path) or '') == wanted]
     if len(named) == 1: return named[0]
     if len(candidates) == 1: return candidates[0]
+    # Ambiguity used to fall back to the extraction root, which is the one
+    # directory guaranteed *not* to be a project: an sdist unpacks to
+    # \`<name>-<version>/\`, whose dots and dashes are not a legal identifier, so
+    # no package was ever found under it and the whole surface read as empty.
+    # A src-layout sdist reaches here every time — \`<project>/\` has the
+    # setup/pyproject markers and \`<project>/src/\` holds the \`.egg-info\`, which
+    # is two candidates and no declared name to choose between them. Candidates
+    # are depth-sorted, so the first is the outermost project directory: the
+    # correct answer in that layout, and never worse than the root above it.
+    if named: return named[0]
+    if candidates: return candidates[0]
     return root
 
 root = project_root(extraction_root)
