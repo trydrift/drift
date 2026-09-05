@@ -19,6 +19,7 @@ import {
 // Not part of the public package surface — see the note in
 // `eval/src/adapters/end-to-end.ts`.
 import { deepVerify } from '../../../../dist/analysis.js';
+import { buildImpactFunnel, type ImpactFunnel } from '../impact-funnel.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -147,6 +148,8 @@ export interface BumpPrediction {
   verdict: string;
   summary: string;
   checkedSurfaces: { surface: string; dependency?: string; ecosystem?: string; workspace?: string; status: string; detail: string }[];
+  /** Which pipeline stage a miss was lost at, plus secondary diagnostics. See `impact-funnel.ts`. */
+  impactFunnel: ImpactFunnel;
 }
 
 const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean']); // detected-not-locally-reachable is not a safety claim; see src/report/confidence.ts
@@ -218,13 +221,27 @@ export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
     const result = await deepVerify(await analyzeRepository(analysisOptions), analysisOptions);
 
     const plan = result.plan;
+    const dependency = `${record.updatedDependency.dependencyGroupID}:${record.updatedDependency.dependencyArtifactID}`;
+    const artifactSuffix = `:${record.updatedDependency.dependencyArtifactID}`;
+    const isTargetDependency = (name: string): boolean => name === dependency || name.endsWith(artifactSuffix);
+    const verdict = verdictFromPlan(plan);
+    const impactFunnel = buildImpactFunnel({
+      plan,
+      localizationDiagnostics: result.localizationDiagnostics,
+      isTargetDependency,
+      updateDetected: (plan?.changes ?? []).some((change) => isTargetDependency(change.name)),
+      // BUMP is two real consecutive commits: the before/after pair is always concrete.
+      exactVersionResolved: true,
+      identifiedAffected: verdict === 'locally-affected',
+    });
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({ name: change.name, from: change.from, to: change.to })),
       breakingChanges: (plan?.breakingChanges ?? []).map((change) => ({ kind: String(change.kind), symbols: change.symbols ?? [] })),
       impactSites: (plan?.impactSites ?? []).map((site) => ({ file: site.file, line: site.line, matchedSymbol: site.matchedSymbol })),
-      verdict: verdictFromPlan(plan),
+      verdict,
       summary: result.summary,
       checkedSurfaces: (plan?.checkedSurfaces ?? []).map((surface) => ({ ...surface })),
+      impactFunnel,
     };
   } finally {
     await cleanupTemporaryDirectory(work);
@@ -301,6 +318,7 @@ export function scoreBump(input: ScoreBumpInput): ExternalCaseResult {
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
+    impactFunnel: prediction.impactFunnel,
     outcomes: {
       /*
        * Matched on the full coordinate, or on the artifact as a whole segment.

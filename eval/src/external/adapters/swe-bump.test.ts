@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { exactSweBumpVersionPair, scoreSweBump, type SweBumpPrediction, type SweBumpTask } from './swe-bump.ts';
+import { blankImpactFunnel } from '../impact-funnel.ts';
 
 const TASK: SweBumpTask = {
   id: 'owner__repo-dependency__^2.0.0',
@@ -25,6 +26,7 @@ function prediction(exactVersionPair: SweBumpPrediction['exactVersionPair']): Sw
     manifestVersionTo: TASK.versionTo,
     versionFrom: '^1.0.0',
     exactVersionPair,
+    impactFunnel: blankImpactFunnel(exactVersionPair ? 'consumer-usage-not-found' : 'exact-version-unresolved'),
   };
 }
 

@@ -131,6 +131,16 @@ export interface DatasetMetrics {
    * the rate.
    */
   mappingCoverage: Record<string, number>;
+  /**
+   * Every scored positive case that did not reach `locally-affected`, charged
+   * to the one pipeline stage it was lost at. `total` is the denominator the
+   * affected-repository rate is missing from — the sum of the buckets.
+   *
+   * Present only for datasets whose ground truth supports the affected
+   * question; absent (empty `byReason`, zero `total`) otherwise. See
+   * `impact-funnel.ts` for what each reason means.
+   */
+  affectedMisses: { total: number; byReason: Record<string, number>; unclassified: number };
 }
 
 /**
@@ -287,6 +297,8 @@ export function computeMetrics(input: {
     });
   }
 
+  const affectedMisses = tallyAffectedMisses(dataset, scored);
+
   return {
     datasetId: dataset.id,
     datasetClass: dataset.datasetClass,
@@ -310,7 +322,39 @@ export function computeMetrics(input: {
       counts[result.truth.mappingStatus] = (counts[result.truth.mappingStatus] ?? 0) + 1;
       return counts;
     }, {}),
+    affectedMisses,
   };
+}
+
+/**
+ * Charge every scored positive that did not reach `locally-affected` to the
+ * one pipeline stage the miss-reason funnel assigned it.
+ *
+ * Deliberately spans both the adjudicated misses and the cases withheld from
+ * the affected rate (an unresolved version pair, a partial migration): those
+ * are still real places the pipeline lost the answer, and folding them in is
+ * what makes the bucket totals reconcile against "positives that were not
+ * `locally-affected`" rather than against a shrunken denominator.
+ */
+function tallyAffectedMisses(
+  dataset: Dataset,
+  scored: readonly ExternalCaseResult[],
+): DatasetMetrics['affectedMisses'] {
+  const empty = { total: 0, byReason: {} as Record<string, number>, unclassified: 0 };
+  if (!supportsMetric(dataset, 'identifiedAffected')) return empty;
+
+  const byReason: Record<string, number> = {};
+  let total = 0;
+  let unclassified = 0;
+  for (const result of scored) {
+    if (result.truth.polarity !== 'positive') continue;
+    if (result.outcomes.identifiedAffected === true) continue;
+    total += 1;
+    const reason = result.impactFunnel?.missReason;
+    if (reason) byReason[reason] = (byReason[reason] ?? 0) + 1;
+    else unclassified += 1;
+  }
+  return { total, byReason, unclassified };
 }
 
 /**

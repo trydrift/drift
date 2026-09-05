@@ -368,6 +368,26 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
     );
   }
 
+  if (metrics.affectedMisses.total > 0) {
+    lines.push(
+      '### Affected-repository misses by stage',
+      '',
+      'Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer',
+      'was lost at. This is where affected-repository recall is going — read it before proposing an engine change,',
+      'since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.',
+      '',
+      '| Stage | Cases |',
+      '| --- | ---: |',
+    );
+    for (const [reason, count] of Object.entries(metrics.affectedMisses.byReason).sort((a, b) => b[1] - a[1])) {
+      lines.push(`| \`${reason}\` | ${count} |`);
+    }
+    if (metrics.affectedMisses.unclassified > 0) {
+      lines.push(`| _(no funnel recorded)_ | ${metrics.affectedMisses.unclassified} |`);
+    }
+    lines.push(`| **Total** | **${metrics.affectedMisses.total}** |`, '');
+  }
+
   if (metrics.classification && metrics.confusion) {
     lines.push(
       '### Classification',

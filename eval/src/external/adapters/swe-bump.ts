@@ -20,6 +20,7 @@ import {
 // Not part of the public package surface — see the note in
 // `eval/src/adapters/end-to-end.ts`.
 import { deepVerify } from '../../../../dist/analysis.js';
+import { buildImpactFunnel, type ImpactFunnel } from '../impact-funnel.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -132,6 +133,8 @@ export interface SweBumpPrediction {
   manifestVersionTo: string;
   versionFrom: string | null;
   exactVersionPair: { from: string; to: string } | null;
+  /** Which pipeline stage a miss was lost at, plus secondary diagnostics. See `impact-funnel.ts`. */
+  impactFunnel: ImpactFunnel;
 }
 
 /**
@@ -261,6 +264,19 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
     const resolvedTo = applied?.to && semver.valid(applied.to) ? semver.valid(applied.to) : null;
     const exactVersionPair = resolvedFrom && resolvedTo ? { from: resolvedFrom, to: resolvedTo } : null;
 
+    const verdict = verdictFromPlan(plan);
+    const impactFunnel = buildImpactFunnel({
+      plan,
+      localizationDiagnostics: result.localizationDiagnostics,
+      isTargetDependency: (name) => name === task.package,
+      updateDetected: Boolean(applied),
+      // The corpus states a range; when Drift could not pin it to a concrete
+      // pair the version questions are unadjudicated, and the funnel says so
+      // with the same distinction rather than charging localization for it.
+      exactVersionResolved: Boolean(exactVersionPair),
+      identifiedAffected: verdict === 'locally-affected',
+    });
+
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({
         name: change.name,
@@ -276,11 +292,12 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
         line: site.line,
         matchedSymbol: site.matchedSymbol,
       })),
-      verdict: verdictFromPlan(plan),
+      verdict,
       summary: result.summary,
       manifestVersionTo: task.versionTo,
       versionFrom,
       exactVersionPair,
+      impactFunnel,
     };
   } finally {
     await cleanupTemporaryDirectory(work);
@@ -387,6 +404,7 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
+    impactFunnel: prediction.impactFunnel,
     outcomes: adjudicated
       ? {
           detectedUpdate,
