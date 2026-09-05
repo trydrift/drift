@@ -159,6 +159,8 @@ export interface ProbeOptions {
   fs?: WorkspaceFs;
   logger?: Logger;
   token?: CancelSignal;
+  /** Kills an in-flight check, not merely the next one. See `ExecOptions.signal`. */
+  signal?: AbortSignal;
   /** Per-check timeout. */
   timeoutMs?: number;
   /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
@@ -350,6 +352,7 @@ async function probeGroup(
       install: manager?.install,
       ...(options.installTogether ? { installTogether: options.installTogether } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      ...(options.signal ? { signal: options.signal } : {}),
       ...(options.token ? { token: options.token } : {}),
     };
 
@@ -660,6 +663,7 @@ async function prepareGroup(
         cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
         env,
         timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+        ...(options.signal ? { signal: options.signal } : {}),
         onOutput: hooks.output,
       }),
       { project, manager: install.command },
@@ -713,6 +717,7 @@ async function prepareGroup(
       onOutput: (_check, chunk) => hooks.output(chunk),
       ...(options.token ? { token: options.token } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      ...(options.signal ? { signal: options.signal } : {}),
     });
     baselineRun.end();
     baseline = measured;
@@ -912,6 +917,8 @@ interface GroupPass {
   installTogether?: (root: string, targets: readonly ProbeTarget[]) => Promise<boolean>;
   timeoutMs?: number;
   token?: CancelSignal;
+  /** Kills an in-flight check, not merely the next one. See `ExecOptions.signal`. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -1071,6 +1078,7 @@ function runPass(
     ...(hooks ? { onOutput: (_check: LocalCheck, chunk: string) => hooks.output(chunk) } : {}),
     ...(pass.token ? { token: pass.token } : {}),
     ...(pass.timeoutMs ? { timeoutMs: pass.timeoutMs } : {}),
+    ...(pass.signal ? { signal: pass.signal } : {}),
   }));
 }
 
@@ -1092,6 +1100,8 @@ export interface ChangeProbeOptions {
   fs?: WorkspaceFs;
   logger?: Logger;
   token?: CancelSignal;
+  /** Kills an in-flight check, not merely the next one. See `ExecOptions.signal`. */
+  signal?: AbortSignal;
   timeoutMs?: number;
   /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
   allowedGlobs?: readonly string[];
@@ -1230,6 +1240,7 @@ async function checkAt(
         cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
         env,
         timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+        ...(options.signal ? { signal: options.signal } : {}),
       });
       if (installed.code !== 0) {
         const detail = (installed.stderr || installed.stdout).trim().split('\n').slice(-3).join(' ');
@@ -1248,6 +1259,7 @@ async function checkAt(
         exec,
         ...(options.token ? { token: options.token } : {}),
         ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      ...(options.signal ? { signal: options.signal } : {}),
       }),
       worktree.path,
     );
@@ -1302,6 +1314,7 @@ async function resetWorktreeInner(pass: GroupPass): Promise<boolean> {
       cwd: pass.dir ? `${pass.root}/${pass.dir}` : pass.root,
       env: pass.env,
       timeoutMs: pass.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+      ...(pass.signal ? { signal: pass.signal } : {}),
     })
     .catch(() => ({ code: 1 }) as Awaited<ReturnType<Exec>>);
   return restored.code === 0;

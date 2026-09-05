@@ -105,6 +105,8 @@ export interface RunChecksOptions {
   dir?: string;
   checks: readonly LocalCheck[];
   token?: CancelSignal;
+  /** Kills an in-flight command, not merely the next one. See `ExecOptions.signal`. */
+  signal?: AbortSignal;
   onProgress?: (check: LocalCheck, index: number, total: number) => void;
   /** Called as each check finishes, so a caller can report it while the rest run. */
   onResult?: (outcome: CheckOutcome, index: number, total: number) => void;
@@ -196,6 +198,7 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
       cwd,
       env,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onOutput ? { onOutput: (chunk: string) => options.onOutput!(check, chunk) } : {}),
     });
     const durationMs = Date.now() - started;

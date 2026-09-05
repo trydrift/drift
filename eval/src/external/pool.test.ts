@@ -78,3 +78,19 @@ describe('--concurrency', () => {
     assert.throws(() => parseArgs([...base, '--concurrency', 'lots']), /positive integer/);
   });
 });
+
+describe('--case-timeout', () => {
+  test('is read as seconds and stored as milliseconds', () => {
+    assert.equal(parseArgs(['bump', '--case-timeout', '300']).caseTimeoutMs, 300_000);
+  });
+
+  test('is absent by default, so the deadline module decides', () => {
+    assert.equal(parseArgs(['bump']).caseTimeoutMs, undefined);
+  });
+
+  test('refuses a value that would disable the budget', () => {
+    assert.throws(() => parseArgs(['bump', '--case-timeout', '0']), /positive number/);
+    assert.throws(() => parseArgs(['bump', '--case-timeout', '-5']), /positive number/);
+    assert.throws(() => parseArgs(['bump', '--case-timeout', 'ages']), /positive number/);
+  });
+});

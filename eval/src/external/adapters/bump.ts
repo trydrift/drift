@@ -162,7 +162,7 @@ const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', '
  * received. A commit the remote no longer has — dependabot branches are often
  * deleted — is `source-unavailable`, and is never replaced by the branch head.
  */
-export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
+export async function predictBump(record: BumpRecord, signal?: AbortSignal): Promise<BumpPrediction> {
   const work = await mkdtemp(join(tmpdir(), `drift-bump-${record.project}-`));
   const repo = join(work, 'repo');
   const slug = `${record.projectOrganisation}/${record.project}`;
@@ -211,6 +211,9 @@ export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
       logger: SILENT_LOGGER,
       provider: new LocalGitProvider(repo, { before: beforeSha, after: record.breakingCommit }),
       workspace: repo,
+      // Handed down from the case deadline: when it fires, the build this
+      // case started is killed rather than left running into the next case.
+      ...(signal ? { signal } : {}),
     };
 
     // Deep Verification: install the change and run the project's own build,

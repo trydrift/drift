@@ -76,6 +76,18 @@ export interface AnalysisOptions {
   env?: NodeJS.ProcessEnv;
   /** Reports coarse progress, for editor UI. */
   onProgress?: (stage: AnalysisStage, detail: string) => void;
+  /**
+   * Abandons the analysis, killing any command it has running.
+   *
+   * Verification runs the project's own build, and those commands carry their
+   * own generous timeouts — ten minutes apiece, several per pass. A caller
+   * that has already given up on this repository (a benchmark case past its
+   * deadline, a cancelled scan) would otherwise leave them running to
+   * completion, and abandoned builds accumulate until they starve whatever
+   * runs next. Aborting both stops the next check from starting and kills the
+   * one already in flight.
+   */
+  signal?: AbortSignal;
 }
 
 export type AnalysisStage =
@@ -823,6 +835,16 @@ async function verifyPlan(
       ...(repo.beforeSha ? { beforeSha: repo.beforeSha } : {}),
       kinds: config.verify.checks as CheckKind[],
       timeoutMs: config.verify.timeoutMs,
+      ...(options.signal
+        ? {
+            signal: options.signal,
+            // The probe checks this between checks; the signal above kills the
+            // one already running. Both are needed: without the token an
+            // aborted pass still starts its remaining checks, and without the
+            // signal the in-flight build runs to its own timeout.
+            token: { get isCancellationRequested() { return options.signal!.aborted; } },
+          }
+        : {}),
       ...(config.verify.generatedSourceGlobs.length > 0
         ? { allowedGlobs: config.verify.generatedSourceGlobs }
         : {}),

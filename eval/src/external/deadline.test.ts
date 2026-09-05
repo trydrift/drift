@@ -42,3 +42,36 @@ test('the deadline timer is cleared as soon as the work settles', async () => {
   const after = process.getActiveResourcesInfo().filter((name) => name === 'Timeout').length;
   assert.ok(after <= before, `a timer outlived its case: ${before} -> ${after}`);
 });
+
+/**
+ * A deadline that only stops *waiting* leaves the work running. That is how 21
+ * of BUMP's cases came to consume 8.8 hours between them — better than a third
+ * of a 22.7-hour run — inside cases that had already been abandoned, each
+ * still holding a `mvn test` open to its own ten-minute limit while the next
+ * case tried to start.
+ */
+test('the deadline aborts the work, not just the wait', async () => {
+  let observed: AbortSignal | undefined;
+  await assert.rejects(
+    () =>
+      withDeadline((signal) => {
+        observed = signal;
+        return new Promise(() => undefined);
+      }, 50),
+    /deadline/,
+  );
+
+  assert.ok(observed, 'the work is handed a signal');
+  assert.equal(observed!.aborted, true, 'and it is aborted when the deadline fires');
+});
+
+test('work that finishes in time is never aborted', async () => {
+  let observed: AbortSignal | undefined;
+  const value = await withDeadline(async (signal) => {
+    observed = signal;
+    return 'done';
+  }, 5_000);
+
+  assert.equal(value, 'done');
+  assert.equal(observed!.aborted, false);
+});

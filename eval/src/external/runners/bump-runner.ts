@@ -40,7 +40,7 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
   await forEachWithConcurrency(pending, context.concurrency, async (record) => {
     const started = Date.now();
     try {
-      const { value: prediction, evidence } = await withDeadline(() =>
+      const { value: prediction, evidence } = await withDeadline((signal) =>
         withEvidenceSnapshot(
           {
             mode: context.evidenceMode,
@@ -48,8 +48,9 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
             caseDir: `${context.evidenceRoot}/${safeEvidenceCaseId(record.breakingCommit)}`,
             blobDir: `${context.evidenceRoot}/blobs`,
           },
-          () => predictBump(record),
+          () => predictBump(record, signal),
         ),
+        context.caseTimeoutMs,
       );
       await recordCase(
         withEvidenceMetadata(scoreBump({ record, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }), evidence),

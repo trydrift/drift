@@ -48,10 +48,28 @@ export class CaseTimeout extends Error {
   }
 }
 
-export async function withDeadline<T>(work: () => Promise<T>, timeoutMs = DEFAULT_CASE_TIMEOUT_MS): Promise<T> {
+export async function withDeadline<T>(
+  work: (signal: AbortSignal) => Promise<T>,
+  timeoutMs = DEFAULT_CASE_TIMEOUT_MS,
+): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
+  /*
+   * Racing a timer only stops *waiting* for the work; it does not stop the
+   * work. A case abandoned that way leaves its `mvn test` running to its own
+   * ten-minute limit, and those builds accumulate across cases until they
+   * starve whatever comes next — 21 of BUMP's cases hit this deadline and
+   * between them consumed 8.8 hours, better than a third of a 22.7-hour run,
+   * entirely inside cases that had already given up.
+   *
+   * So the deadline now aborts as well as rejects, and the signal is handed to
+   * the work so it can kill what it started.
+   */
+  const controller = new AbortController();
   const deadline = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new CaseTimeout(timeoutMs)), timeoutMs);
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new CaseTimeout(timeoutMs));
+    }, timeoutMs);
   });
 
   /*
@@ -69,7 +87,7 @@ export async function withDeadline<T>(work: () => Promise<T>, timeoutMs = DEFAUL
    */
 
   try {
-    return await Promise.race([work(), deadline]);
+    return await Promise.race([work(controller.signal), deadline]);
   } finally {
     if (timer) clearTimeout(timer);
   }
