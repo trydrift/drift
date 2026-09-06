@@ -1180,8 +1180,34 @@ for _module in index:
     if _module and _module not in ('__init__', '__main__'):
         owned_tops.add(_module.split('.')[0])
 
+def module_is_public(module):
+    # A symbol's module path decides whether anyone can import it, and Python
+    # says so by convention: one leading underscore on any component means
+    # private. 'numpy._globals.ModuleDeprecationWarning' is not API --
+    # 'numpy.ModuleDeprecationWarning' is, and the re-export walk below emits
+    # that one from the public module that re-exports it.
+    #
+    # Left unfiltered these dominated the output: 13.5% of every finding on the
+    # TimeMachine corpus sat inside a private module ('_pytest' 3459 of them,
+    # '_vendor' 1111, '_distutils_hack'), which is a report nobody can act on
+    # and a numpy bump reported as 2657 breaking changes. They can never be
+    # localized either, because no consumer can name them.
+    #
+    # Dunder components ('__init__', '__main__') are not private in this sense.
+    if not module:
+        return True
+    for part in module.split('.'):
+        if part.startswith('_') and not (part.startswith('__') and part.endswith('__')):
+            return False
+    return True
+
 symbols = {}
 for module, entry in index.items():
+    # Still indexed above, and still followed by resolve(): a public module
+    # re-exporting from a private one is the single most common way a package
+    # is laid out, and that path must keep working. Only *emission* is skipped.
+    if not module_is_public(module):
+        continue
     prefix = '' if module in ('', '__init__', '__main__') else module + '.'
     exported = entry['all'] if entry['has_all'] else None
     names = list(exported) if exported is not None else [n for n in entry['locals'] if public(n)]
