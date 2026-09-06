@@ -6,10 +6,10 @@
   "language": "OCaml",
   "repo": "https://github.com/mirage/ocaml-cohttp",
   "blurb": "OCaml's HTTP library, from the MirageOS project.",
-  "capturedAt": "2026-09-06T18:57:15.963Z",
+  "capturedAt": "2026-09-06T19:49:09.558Z",
   "commit": "7b77cc7f18778967cbe3f64742290f268782fb7d",
-  "engine": "bbb9ef5aefee8eb8",
-  "durationMs": 1116,
+  "engine": "9788aee88c2bb0d8",
+  "durationMs": 453,
   "packagesChecked": 1,
   "manifests": [
     "dune-project",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 213,
+      "at": 412,
       "phase": "Looking for manifests",
       "detail": "mirage/ocaml-cohttp",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 233,
+      "at": 429,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 235,
+      "at": 431,
       "phase": "Reading manifest",
       "detail": "dune-project",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 239,
+      "at": 434,
       "phase": "Reading manifest",
       "detail": "cohttp-lwt-jsoo/test/package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 240,
+      "at": 435,
       "candidate": {
         "id": "cohttp-lwt-jsoo/test/package.json#xmlhttprequest@1.8.0",
         "name": "xmlhttprequest",
@@ -95,7 +95,7 @@
     },
     {
       "type": "progress",
-      "at": 240,
+      "at": 435,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -103,7 +103,7 @@
     },
     {
       "type": "progress",
-      "at": 240,
+      "at": 435,
       "phase": "Checking registries",
       "detail": "1 direct dependency",
       "done": 0,
@@ -111,7 +111,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 240,
+      "at": 435,
       "candidate": {
         "id": "cohttp-lwt-jsoo/test/package.json#xmlhttprequest@1.8.0",
         "name": "xmlhttprequest",
@@ -154,21 +154,13 @@
       }
     },
     {
-      "type": "progress",
-      "at": 281,
-      "phase": "Indexing your code",
-      "detail": "182 files indexed · 1 direct dependency to check",
-      "done": 0,
-      "total": 1
-    },
-    {
       "type": "candidate-drop",
-      "at": 1116,
+      "at": 453,
       "id": "cohttp-lwt-jsoo/test/package.json#xmlhttprequest@1.8.0"
     },
     {
       "type": "progress",
-      "at": 1116,
+      "at": 453,
       "phase": "Up to date",
       "detail": "xmlhttprequest@1.8.0",
       "done": 1,
