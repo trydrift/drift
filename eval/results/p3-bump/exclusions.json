@@ -1,0 +1,872 @@
+[
+  {
+    "caseId": "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
+    "kind": "source-unavailable",
+    "reason": "commit 13fd75e233a5cb2771a6cb186c0decaed6d6545a could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 13fd75e233a5cb2771a6cb186c0decaed6d6545a\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
+      "baseCommit": "13fd75e233a5cb2771a6cb186c0decaed6d6545a^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.15.4",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:13fd75e233a5cb2771a6cb186c0decaed6d6545a-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/544",
+        "preImage": "ghcr.io/chains-project/breaking-updates:13fd75e233a5cb2771a6cb186c0decaed6d6545a-pre"
+      }
+    }
+  },
+  {
+    "caseId": "497b81f4446c257f693648cad7a64f62b23920a2",
+    "kind": "source-unavailable",
+    "reason": "commit 497b81f4446c257f693648cad7a64f62b23920a2 could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 497b81f4446c257f693648cad7a64f62b23920a2\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "497b81f4446c257f693648cad7a64f62b23920a2",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "497b81f4446c257f693648cad7a64f62b23920a2",
+      "baseCommit": "497b81f4446c257f693648cad7a64f62b23920a2^",
+      "dependency": "com.artipie:http",
+      "fromVersion": "v0.25",
+      "toVersion": "v1.1.2-d",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:497b81f4446c257f693648cad7a64f62b23920a2-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/510",
+        "preImage": "ghcr.io/chains-project/breaking-updates:497b81f4446c257f693648cad7a64f62b23920a2-pre"
+      }
+    }
+  },
+  {
+    "caseId": "4aab2869639226035c999c282f31efba15648ea3",
+    "kind": "source-unavailable",
+    "reason": "commit 4aab2869639226035c999c282f31efba15648ea3 could not be fetched from artipie/http: Command failed: git fetch --quiet --depth 2 origin 4aab2869639226035c999c282f31efba15648ea3\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/http.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "4aab2869639226035c999c282f31efba15648ea3",
+      "repository": "https://github.com/artipie/http",
+      "commit": "4aab2869639226035c999c282f31efba15648ea3",
+      "baseCommit": "4aab2869639226035c999c282f31efba15648ea3^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.15.3",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:4aab2869639226035c999c282f31efba15648ea3-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/http/pull/508",
+        "preImage": "ghcr.io/chains-project/breaking-updates:4aab2869639226035c999c282f31efba15648ea3-pre"
+      }
+    }
+  },
+  {
+    "caseId": "5fca04bd287baf1534baff8cc23cc3dc26dc680d",
+    "kind": "source-unavailable",
+    "reason": "commit 5fca04bd287baf1534baff8cc23cc3dc26dc680d could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 5fca04bd287baf1534baff8cc23cc3dc26dc680d\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "5fca04bd287baf1534baff8cc23cc3dc26dc680d",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "5fca04bd287baf1534baff8cc23cc3dc26dc680d",
+      "baseCommit": "5fca04bd287baf1534baff8cc23cc3dc26dc680d^",
+      "dependency": "com.artipie:http",
+      "fromVersion": "v0.25",
+      "toVersion": "v1.1.3",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:5fca04bd287baf1534baff8cc23cc3dc26dc680d-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/511",
+        "preImage": "ghcr.io/chains-project/breaking-updates:5fca04bd287baf1534baff8cc23cc3dc26dc680d-pre"
+      }
+    }
+  },
+  {
+    "caseId": "60c05d7f413430e47f624cc3c7b13c97466c6bb3",
+    "kind": "source-unavailable",
+    "reason": "commit 60c05d7f413430e47f624cc3c7b13c97466c6bb3 could not be fetched from artipie/http: Command failed: git fetch --quiet --depth 2 origin 60c05d7f413430e47f624cc3c7b13c97466c6bb3\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/http.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "60c05d7f413430e47f624cc3c7b13c97466c6bb3",
+      "repository": "https://github.com/artipie/http",
+      "commit": "60c05d7f413430e47f624cc3c7b13c97466c6bb3",
+      "baseCommit": "60c05d7f413430e47f624cc3c7b13c97466c6bb3^",
+      "dependency": "org.junit.jupiter:junit-jupiter-engine",
+      "fromVersion": "5.8.1",
+      "toVersion": "5.10.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:60c05d7f413430e47f624cc3c7b13c97466c6bb3-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "TEST_FAILURE",
+        "versionUpdateType": "minor",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/http/pull/552",
+        "preImage": "ghcr.io/chains-project/breaking-updates:60c05d7f413430e47f624cc3c7b13c97466c6bb3-pre"
+      }
+    }
+  },
+  {
+    "caseId": "72c6b8dd53be12cc675d6c49ca55b18c27e94f1a",
+    "kind": "source-unavailable",
+    "reason": "commit 72c6b8dd53be12cc675d6c49ca55b18c27e94f1a could not be fetched from artipie/http: Command failed: git fetch --quiet --depth 2 origin 72c6b8dd53be12cc675d6c49ca55b18c27e94f1a\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/http.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "72c6b8dd53be12cc675d6c49ca55b18c27e94f1a",
+      "repository": "https://github.com/artipie/http",
+      "commit": "72c6b8dd53be12cc675d6c49ca55b18c27e94f1a",
+      "baseCommit": "72c6b8dd53be12cc675d6c49ca55b18c27e94f1a^",
+      "dependency": "com.artipie:asto",
+      "fromVersion": "v1.9.0",
+      "toVersion": "v1.10.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:72c6b8dd53be12cc675d6c49ca55b18c27e94f1a-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "WERROR_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/http/pull/407",
+        "preImage": "ghcr.io/chains-project/breaking-updates:72c6b8dd53be12cc675d6c49ca55b18c27e94f1a-pre"
+      }
+    }
+  },
+  {
+    "caseId": "7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8",
+    "kind": "source-unavailable",
+    "reason": "commit 7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8 could not be fetched from googleapis/google-cloud-java: Command failed: git fetch --quiet --depth 2 origin 7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8\nerror: RPC failed; curl 92 HTTP/2 stream 5 was not closed cleanly: CANCEL (err 8)\nerror: 30 bytes of body are still expected\nfetch-pack: unexpected disconnect while reading sideband packet\nfatal: early EOF\nfa",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8",
+      "repository": "https://github.com/googleapis/google-cloud-java",
+      "commit": "7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8",
+      "baseCommit": "7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8^",
+      "dependency": "com.google.apis:google-api-services-dns",
+      "fromVersion": "v1-rev20220804-2.0.0",
+      "toVersion": "v2-rev20220505-1.32.1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/googleapis/google-cloud-java/pull/8184",
+        "preImage": "ghcr.io/chains-project/breaking-updates:7d0e38fa9d6a9f96afdc0143fa44b4145e3555d8-pre"
+      }
+    }
+  },
+  {
+    "caseId": "974c914726a07961dcf87718e3035f1de72567ea",
+    "kind": "source-unavailable",
+    "reason": "commit 974c914726a07961dcf87718e3035f1de72567ea could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 974c914726a07961dcf87718e3035f1de72567ea\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "974c914726a07961dcf87718e3035f1de72567ea",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "974c914726a07961dcf87718e3035f1de72567ea",
+      "baseCommit": "974c914726a07961dcf87718e3035f1de72567ea^",
+      "dependency": "com.artipie:asto",
+      "fromVersion": "v1.8.0",
+      "toVersion": "v1.10.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:974c914726a07961dcf87718e3035f1de72567ea-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "WERROR_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/501",
+        "preImage": "ghcr.io/chains-project/breaking-updates:974c914726a07961dcf87718e3035f1de72567ea-pre"
+      }
+    }
+  },
+  {
+    "caseId": "9836e07e553e29f16ee35b5d7e4d0370e1789ecd",
+    "kind": "source-unavailable",
+    "reason": "commit 9836e07e553e29f16ee35b5d7e4d0370e1789ecd could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 9836e07e553e29f16ee35b5d7e4d0370e1789ecd\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "9836e07e553e29f16ee35b5d7e4d0370e1789ecd",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "9836e07e553e29f16ee35b5d7e4d0370e1789ecd",
+      "baseCommit": "9836e07e553e29f16ee35b5d7e4d0370e1789ecd^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.14.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:9836e07e553e29f16ee35b5d7e4d0370e1789ecd-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/534",
+        "preImage": "ghcr.io/chains-project/breaking-updates:9836e07e553e29f16ee35b5d7e4d0370e1789ecd-pre"
+      }
+    }
+  },
+  {
+    "caseId": "a0ec50cb297c4202e138627859a89ef032fa78ab",
+    "kind": "source-unavailable",
+    "reason": "commit a0ec50cb297c4202e138627859a89ef032fa78ab could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin a0ec50cb297c4202e138627859a89ef032fa78ab\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "a0ec50cb297c4202e138627859a89ef032fa78ab",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "a0ec50cb297c4202e138627859a89ef032fa78ab",
+      "baseCommit": "a0ec50cb297c4202e138627859a89ef032fa78ab^",
+      "dependency": "com.artipie:http",
+      "fromVersion": "v0.25",
+      "toVersion": "v1.1.1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:a0ec50cb297c4202e138627859a89ef032fa78ab-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/508",
+        "preImage": "ghcr.io/chains-project/breaking-updates:a0ec50cb297c4202e138627859a89ef032fa78ab-pre"
+      }
+    }
+  },
+  {
+    "caseId": "ab85440ce7321d895c7a9621224ce8059162a26a",
+    "kind": "source-unavailable",
+    "reason": "commit ab85440ce7321d895c7a9621224ce8059162a26a could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin ab85440ce7321d895c7a9621224ce8059162a26a\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "ab85440ce7321d895c7a9621224ce8059162a26a",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "ab85440ce7321d895c7a9621224ce8059162a26a",
+      "baseCommit": "ab85440ce7321d895c7a9621224ce8059162a26a^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.14.1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:ab85440ce7321d895c7a9621224ce8059162a26a-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/536",
+        "preImage": "ghcr.io/chains-project/breaking-updates:ab85440ce7321d895c7a9621224ce8059162a26a-pre"
+      }
+    }
+  },
+  {
+    "caseId": "ae0a0bd1311451e4a5a185a8d96405cfe3e049c5",
+    "kind": "source-unavailable",
+    "reason": "commit ae0a0bd1311451e4a5a185a8d96405cfe3e049c5 could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin ae0a0bd1311451e4a5a185a8d96405cfe3e049c5\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "ae0a0bd1311451e4a5a185a8d96405cfe3e049c5",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "ae0a0bd1311451e4a5a185a8d96405cfe3e049c5",
+      "baseCommit": "ae0a0bd1311451e4a5a185a8d96405cfe3e049c5^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.15.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:ae0a0bd1311451e4a5a185a8d96405cfe3e049c5-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/538",
+        "preImage": "ghcr.io/chains-project/breaking-updates:ae0a0bd1311451e4a5a185a8d96405cfe3e049c5-pre"
+      }
+    }
+  },
+  {
+    "caseId": "b1a941400d68445d76056ab8833cd6d2e3455954",
+    "kind": "source-unavailable",
+    "reason": "commit b1a941400d68445d76056ab8833cd6d2e3455954 could not be fetched from v12technology/fluxtion: Command failed: git fetch --quiet --depth 2 origin b1a941400d68445d76056ab8833cd6d2e3455954\nremote: Repository not found.\nfatal: repository 'https://github.com/v12technology/fluxtion.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "b1a941400d68445d76056ab8833cd6d2e3455954",
+      "repository": "https://github.com/v12technology/fluxtion",
+      "commit": "b1a941400d68445d76056ab8833cd6d2e3455954",
+      "baseCommit": "b1a941400d68445d76056ab8833cd6d2e3455954^",
+      "dependency": "org.yaml:snakeyaml",
+      "fromVersion": "1.33",
+      "toVersion": "2.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:b1a941400d68445d76056ab8833cd6d2e3455954-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "major",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/v12technology/fluxtion/pull/211",
+        "preImage": "ghcr.io/chains-project/breaking-updates:b1a941400d68445d76056ab8833cd6d2e3455954-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c131a3dbb5670183944861f23f225fd772370ff4",
+    "kind": "source-unavailable",
+    "reason": "commit c131a3dbb5670183944861f23f225fd772370ff4 could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin c131a3dbb5670183944861f23f225fd772370ff4\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c131a3dbb5670183944861f23f225fd772370ff4",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "c131a3dbb5670183944861f23f225fd772370ff4",
+      "baseCommit": "c131a3dbb5670183944861f23f225fd772370ff4^",
+      "dependency": "com.artipie:asto",
+      "fromVersion": "v1.8.0",
+      "toVersion": "v1.11.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c131a3dbb5670183944861f23f225fd772370ff4-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "WERROR_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/504",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c131a3dbb5670183944861f23f225fd772370ff4-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c311ee0a84b72b15ba64da3514181c2347912225",
+    "kind": "source-unavailable",
+    "reason": "commit c311ee0a84b72b15ba64da3514181c2347912225 could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin c311ee0a84b72b15ba64da3514181c2347912225\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c311ee0a84b72b15ba64da3514181c2347912225",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "c311ee0a84b72b15ba64da3514181c2347912225",
+      "baseCommit": "c311ee0a84b72b15ba64da3514181c2347912225^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.15.1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c311ee0a84b72b15ba64da3514181c2347912225-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/539",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c311ee0a84b72b15ba64da3514181c2347912225-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c0f6ab75784dbc13ae8ff47298704c0756cf3a2c",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c0f6ab75784dbc13ae8ff47298704c0756cf3a2c",
+      "repository": "https://github.com/ASSERT-KTH/sorald",
+      "commit": "c0f6ab75784dbc13ae8ff47298704c0756cf3a2c",
+      "baseCommit": "c0f6ab75784dbc13ae8ff47298704c0756cf3a2c^",
+      "dependency": "org.sonarsource.sonarlint.core:sonarlint-core",
+      "fromVersion": "8.15.0.65216",
+      "toVersion": "8.19.0.72745",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c0f6ab75784dbc13ae8ff47298704c0756cf3a2c-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/ASSERT-KTH/sorald/pull/1063",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c0f6ab75784dbc13ae8ff47298704c0756cf3a2c-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c44aa1857cdeb811d87303df5671be9431105d3c",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c44aa1857cdeb811d87303df5671be9431105d3c",
+      "repository": "https://github.com/NemProject/nem",
+      "commit": "c44aa1857cdeb811d87303df5671be9431105d3c",
+      "baseCommit": "c44aa1857cdeb811d87303df5671be9431105d3c^",
+      "dependency": "org.hibernate:hibernate-entitymanager",
+      "fromVersion": "4.3.11.Final",
+      "toVersion": "5.6.15.Final",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c44aa1857cdeb811d87303df5671be9431105d3c-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "WERROR_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/NemProject/nem/pull/215",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c44aa1857cdeb811d87303df5671be9431105d3c-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c4950c79dfe902dae8991ff722216c7ba787bf32",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c4950c79dfe902dae8991ff722216c7ba787bf32",
+      "repository": "https://github.com/lukas-krecan/future-converter",
+      "commit": "c4950c79dfe902dae8991ff722216c7ba787bf32",
+      "baseCommit": "c4950c79dfe902dae8991ff722216c7ba787bf32^",
+      "dependency": "org.springframework:spring-core",
+      "fromVersion": "5.3.19",
+      "toVersion": "6.0.4",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c4950c79dfe902dae8991ff722216c7ba787bf32-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "major",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/lukas-krecan/future-converter/pull/85",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c4950c79dfe902dae8991ff722216c7ba787bf32-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c90c8fd408f5f9b6f5760a5e5e0182c8faa73179",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c90c8fd408f5f9b6f5760a5e5e0182c8faa73179",
+      "repository": "https://github.com/jenkinsci/pull-request-monitoring-plugin",
+      "commit": "c90c8fd408f5f9b6f5760a5e5e0182c8faa73179",
+      "baseCommit": "c90c8fd408f5f9b6f5760a5e5e0182c8faa73179^",
+      "dependency": "io.jenkins.plugins:echarts-api",
+      "fromVersion": "5.1.2-3",
+      "toVersion": "5.2.2-1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c90c8fd408f5f9b6f5760a5e5e0182c8faa73179-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "ENFORCER_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/jenkinsci/pull-request-monitoring-plugin/pull/155",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c90c8fd408f5f9b6f5760a5e5e0182c8faa73179-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c923de11176e4fee34fa01bdb1cb1c90861fd0cf",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c923de11176e4fee34fa01bdb1cb1c90861fd0cf",
+      "repository": "https://github.com/equinor/neqsim",
+      "commit": "c923de11176e4fee34fa01bdb1cb1c90861fd0cf",
+      "baseCommit": "c923de11176e4fee34fa01bdb1cb1c90861fd0cf^",
+      "dependency": "org.apache.logging.log4j:log4j-api",
+      "fromVersion": "2.17.2",
+      "toVersion": "2.18.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c923de11176e4fee34fa01bdb1cb1c90861fd0cf-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "TEST_FAILURE",
+        "versionUpdateType": "minor",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/equinor/neqsim/pull/483",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c923de11176e4fee34fa01bdb1cb1c90861fd0cf-pre"
+      }
+    }
+  },
+  {
+    "caseId": "c9cc7d936dda55c66b41411ba608549061914806",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "c9cc7d936dda55c66b41411ba608549061914806",
+      "repository": "https://github.com/s4u/sign-maven-plugin",
+      "commit": "c9cc7d936dda55c66b41411ba608549061914806",
+      "baseCommit": "c9cc7d936dda55c66b41411ba608549061914806^",
+      "dependency": "org.slf4j:slf4j-api",
+      "fromVersion": "1.7.36",
+      "toVersion": "2.0.3",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:c9cc7d936dda55c66b41411ba608549061914806-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "TEST_FAILURE",
+        "versionUpdateType": "major",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/s4u/sign-maven-plugin/pull/137",
+        "preImage": "ghcr.io/chains-project/breaking-updates:c9cc7d936dda55c66b41411ba608549061914806-pre"
+      }
+    }
+  },
+  {
+    "caseId": "d38182a8a0fe1ec039aed97e103864fce717a0be",
+    "kind": "source-unavailable",
+    "reason": "commit d38182a8a0fe1ec039aed97e103864fce717a0be could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin d38182a8a0fe1ec039aed97e103864fce717a0be\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "d38182a8a0fe1ec039aed97e103864fce717a0be",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "d38182a8a0fe1ec039aed97e103864fce717a0be",
+      "baseCommit": "d38182a8a0fe1ec039aed97e103864fce717a0be^",
+      "dependency": "com.artipie:http",
+      "fromVersion": "v1.1.4",
+      "toVersion": "v1.2.1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:d38182a8a0fe1ec039aed97e103864fce717a0be-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/546",
+        "preImage": "ghcr.io/chains-project/breaking-updates:d38182a8a0fe1ec039aed97e103864fce717a0be-pre"
+      }
+    }
+  },
+  {
+    "caseId": "da616b08bed87397264691470f47638652f0015a",
+    "kind": "source-unavailable",
+    "reason": "commit da616b08bed87397264691470f47638652f0015a could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin da616b08bed87397264691470f47638652f0015a\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "da616b08bed87397264691470f47638652f0015a",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "da616b08bed87397264691470f47638652f0015a",
+      "baseCommit": "da616b08bed87397264691470f47638652f0015a^",
+      "dependency": "com.artipie:asto",
+      "fromVersion": "v1.8.0",
+      "toVersion": "v1.12.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:da616b08bed87397264691470f47638652f0015a-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "WERROR_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/514",
+        "preImage": "ghcr.io/chains-project/breaking-updates:da616b08bed87397264691470f47638652f0015a-pre"
+      }
+    }
+  },
+  {
+    "caseId": "db02c6bcb989a5b0f08861c3344b532769530467",
+    "kind": "source-unavailable",
+    "reason": "commit db02c6bcb989a5b0f08861c3344b532769530467 could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin db02c6bcb989a5b0f08861c3344b532769530467\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "db02c6bcb989a5b0f08861c3344b532769530467",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "db02c6bcb989a5b0f08861c3344b532769530467",
+      "baseCommit": "db02c6bcb989a5b0f08861c3344b532769530467^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.15.3",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:db02c6bcb989a5b0f08861c3344b532769530467-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/542",
+        "preImage": "ghcr.io/chains-project/breaking-updates:db02c6bcb989a5b0f08861c3344b532769530467-pre"
+      }
+    }
+  },
+  {
+    "caseId": "e36118e158965251089da1446777bd699d7473c1",
+    "kind": "source-unavailable",
+    "reason": "commit e36118e158965251089da1446777bd699d7473c1 could not be fetched from artipie/files-adapter: Command failed: git fetch --quiet --depth 2 origin e36118e158965251089da1446777bd699d7473c1\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/files-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "e36118e158965251089da1446777bd699d7473c1",
+      "repository": "https://github.com/artipie/files-adapter",
+      "commit": "e36118e158965251089da1446777bd699d7473c1",
+      "baseCommit": "e36118e158965251089da1446777bd699d7473c1^",
+      "dependency": "com.artipie:http",
+      "fromVersion": "v0.26.1",
+      "toVersion": "v1.0.1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:e36118e158965251089da1446777bd699d7473c1-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/files-adapter/pull/86",
+        "preImage": "ghcr.io/chains-project/breaking-updates:e36118e158965251089da1446777bd699d7473c1-pre"
+      }
+    }
+  },
+  {
+    "caseId": "f78d34b82926216c0f203c0350f646d481c675e3",
+    "kind": "source-unavailable",
+    "reason": "commit f78d34b82926216c0f203c0350f646d481c675e3 could not be fetched from P2P-Develop/PeyangSuperbAntiCheat: Command failed: git fetch --quiet --depth 2 origin f78d34b82926216c0f203c0350f646d481c675e3\nremote: Repository not found.\nfatal: repository 'https://github.com/P2P-Develop/PeyangSuperbAntiCheat.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "f78d34b82926216c0f203c0350f646d481c675e3",
+      "repository": "https://github.com/P2P-Develop/PeyangSuperbAntiCheat",
+      "commit": "f78d34b82926216c0f203c0350f646d481c675e3",
+      "baseCommit": "f78d34b82926216c0f203c0350f646d481c675e3^",
+      "dependency": "com.github.P2P-Develop:PeyangSuperLibrary",
+      "fromVersion": "114.191.9",
+      "toVersion": "114.191.98.10",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:f78d34b82926216c0f203c0350f646d481c675e3-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/P2P-Develop/PeyangSuperbAntiCheat/pull/92",
+        "preImage": "ghcr.io/chains-project/breaking-updates:f78d34b82926216c0f203c0350f646d481c675e3-pre"
+      }
+    }
+  },
+  {
+    "caseId": "fab0f8d4f7322fa6da914c8c9f30baf740d46b99",
+    "kind": "source-unavailable",
+    "reason": "commit fab0f8d4f7322fa6da914c8c9f30baf740d46b99 could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin fab0f8d4f7322fa6da914c8c9f30baf740d46b99\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "fab0f8d4f7322fa6da914c8c9f30baf740d46b99",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "fab0f8d4f7322fa6da914c8c9f30baf740d46b99",
+      "baseCommit": "fab0f8d4f7322fa6da914c8c9f30baf740d46b99^",
+      "dependency": "com.artipie:http",
+      "fromVersion": "v0.25",
+      "toVersion": "v1.1.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:fab0f8d4f7322fa6da914c8c9f30baf740d46b99-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/507",
+        "preImage": "ghcr.io/chains-project/breaking-updates:fab0f8d4f7322fa6da914c8c9f30baf740d46b99-pre"
+      }
+    }
+  },
+  {
+    "caseId": "fafb59e8f1b9ddba4bbabe64818f361e7def7d04",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "fafb59e8f1b9ddba4bbabe64818f361e7def7d04",
+      "repository": "https://github.com/tamtam-chat/tamtam-bot-api",
+      "commit": "fafb59e8f1b9ddba4bbabe64818f361e7def7d04",
+      "baseCommit": "fafb59e8f1b9ddba4bbabe64818f361e7def7d04^",
+      "dependency": "com.fasterxml.jackson.core:jackson-databind",
+      "fromVersion": "2.9.10.3",
+      "toVersion": "2.13.4.1",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:fafb59e8f1b9ddba4bbabe64818f361e7def7d04-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "TEST_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/tamtam-chat/tamtam-bot-api/pull/24",
+        "preImage": "ghcr.io/chains-project/breaking-updates:fafb59e8f1b9ddba4bbabe64818f361e7def7d04-pre"
+      }
+    }
+  },
+  {
+    "caseId": "fb40f5e5fc20ca31cf9fdadd5ace53f7de5ea093",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "fb40f5e5fc20ca31cf9fdadd5ace53f7de5ea093",
+      "repository": "https://github.com/quarkiverse/quarkus-micrometer-registry",
+      "commit": "fb40f5e5fc20ca31cf9fdadd5ace53f7de5ea093",
+      "baseCommit": "fb40f5e5fc20ca31cf9fdadd5ace53f7de5ea093^",
+      "dependency": "io.quarkiverse.googlecloudservices:quarkus-google-cloud-common-grpc",
+      "fromVersion": "1.4.0",
+      "toVersion": "2.2.0",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:fb40f5e5fc20ca31cf9fdadd5ace53f7de5ea093-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "TEST_FAILURE",
+        "versionUpdateType": "major",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/quarkiverse/quarkus-micrometer-registry/pull/314",
+        "preImage": "ghcr.io/chains-project/breaking-updates:fb40f5e5fc20ca31cf9fdadd5ace53f7de5ea093-pre"
+      }
+    }
+  },
+  {
+    "caseId": "fb71d68c62a6b9263ebc5113d97c91535d3106b2",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "fb71d68c62a6b9263ebc5113d97c91535d3106b2",
+      "repository": "https://github.com/International-Data-Spaces-Association/IDS-Messaging-Services",
+      "commit": "fb71d68c62a6b9263ebc5113d97c91535d3106b2",
+      "baseCommit": "fb71d68c62a6b9263ebc5113d97c91535d3106b2^",
+      "dependency": "org.springframework:spring-core",
+      "fromVersion": "5.3.24",
+      "toVersion": "6.0.2",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:fb71d68c62a6b9263ebc5113d97c91535d3106b2-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "major",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/International-Data-Spaces-Association/IDS-Messaging-Services/pull/669",
+        "preImage": "ghcr.io/chains-project/breaking-updates:fb71d68c62a6b9263ebc5113d97c91535d3106b2-pre"
+      }
+    }
+  }
+]
