@@ -129,6 +129,11 @@ describe('walking a repository for source files', () => {
         sourceFilesDiscovered: 24,
         sourceFilesIndexed: 5,
         sourceTruncated: true,
+        // Nothing here is oversized: this budget was exhausted by `maxFiles`,
+        // which is a different gap from a file that could not be read, and
+        // neither of those is build output. See `walk-generated.test.ts`.
+        generatedFilesSkipped: 0,
+        oversizedSourceSkipped: 0,
         runtimeConfigsDiscovered: 2,
         runtimeConfigsIndexed: 2,
         runtimeConfigComplete: true,
