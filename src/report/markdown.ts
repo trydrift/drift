@@ -402,7 +402,10 @@ function renderImpactSites(plan: RemediationPlan): string {
   ];
 
   for (const [file, sites] of [...byFile.entries()].sort()) {
-    lines.push(`**\`${file}\`**`);
+    // See the note in `report/terminal-outdated.ts`: a manifest site is the
+    // line the developer edits, not a place their code calls the changed API.
+    const declarationOnly = sites.every((site) => site.siteKind === 'manifest');
+    lines.push(`**\`${file}\`**${declarationOnly ? ' — the declaration, not a call site' : ''}`);
     lines.push('');
     for (const site of sites.slice(0, 25)) {
       const where = site.enclosingSymbol ? ` (in \`${site.enclosingSymbol}\`)` : '';

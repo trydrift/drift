@@ -620,6 +620,28 @@ describe('rendered output', () => {
     impactSites: [site('src/a.ts')],
   });
 
+  /**
+   * A manifest site is where the developer edits, not where their code calls
+   * the changed API — a dependency-convergence or enforcer break has no call
+   * site at all. Every surface that lists impact sites has to keep the two
+   * apart, or `siteKind` buys nothing.
+   */
+  test('a manifest site is marked as a declaration, not a call site', () => {
+    const declaration = { ...site('pom.xml'), siteKind: 'manifest' as const };
+    const body = renderPullRequestBody(
+      buildPlan({
+        repo,
+        config: DEFAULT_CONFIG,
+        changes: [dependencyChange],
+        evidence,
+        breakingChanges: [breaking()],
+        impactSites: [declaration],
+      }),
+      DEFAULT_CONFIG,
+    );
+    assert.match(body, /the declaration, not a call site/);
+  });
+
   test('the report cites its evidence', () => {
     const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
     assert.match(body, /https:\/\/example\.com\/diff/, 'every claim links to its source');

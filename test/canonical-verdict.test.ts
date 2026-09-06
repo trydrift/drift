@@ -394,3 +394,45 @@ describe('Case H — changes the differ saw but declined to rule on', () => {
     assert.equal(resolvePlanVerdict(clean as never), 'no-incompatible-change-in-checked-surfaces');
   });
 });
+
+/**
+ * A manifest site says "your build breaks, and this is the line you edit". It
+ * is a real answer and a weaker claim than a call site, and every surface that
+ * shows impact sites has to keep the two apart — the CLI table, the markdown
+ * report, `drift explain`, and the MCP tools. Rendering one as an ordinary
+ * impact site would put back exactly the conflation `siteKind` exists to
+ * remove.
+ */
+describe('a manifest site is labelled wherever it is shown', () => {
+  const manifestSite = {
+    breakingChangeId: 'measured:maven|org.example:lib',
+    file: 'pom.xml',
+    line: 42,
+    excerpt: '<artifactId>lib</artifactId>',
+    matchedSymbol: 'org.example:lib',
+    confidence: 'high' as const,
+    siteKind: 'manifest' as const,
+  };
+
+  test('`drift explain` says so', async () => {
+    const { renderExplanation } = await import('../dist/upgrade/explain.js');
+    const candidate = {
+      name: 'org.example:lib',
+      ecosystem: 'maven',
+      manifestPath: 'pom.xml',
+      current: '1.0.0',
+      selected: '2.0.0',
+      status: 'ready',
+      breakingCount: 0,
+      impactCount: 1,
+      impactFiles: 1,
+      impactConfidence: 'high',
+      evidenceCount: 0,
+      gaps: [],
+      risk: 'low',
+      summary: 'x',
+      plan: { breakingChanges: [], impactSites: [manifestSite] },
+    };
+    assert.match(renderExplanation(candidate as never, 'org.example:lib'), /not a call site/);
+  });
+});
