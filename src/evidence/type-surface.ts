@@ -1720,6 +1720,31 @@ function collectExportAssignments(content: string, locals: SurfaceApi, into: Sur
       if (entry.name !== local && !entry.name.startsWith(`${local}.`)) continue;
       if (!into.has(entry.name)) into.set(entry.name, entry);
     }
+    // `export = G` means the module *is* `G`, so `G` is a local identifier and
+    // not a name any consumer can write. `glob@8` calls it `G` and published
+    // `G.sync`, `G.hasMagic` — symbols that appear in no consumer anywhere,
+    // while the code Drift needed to find says `glob.sync(...)`. Republishing
+    // under `default` gives localization the one name the module is reachable
+    // by; `bindingsForOwner` maps it to whatever this file called it.
+    republishAs('default', local, locals, into);
+  }
+}
+
+/**
+ * Copy `local` and its members into `into` under the name consumers reach them
+ * by.
+ *
+ * The local identifier is kept as well, never replaced: it is frequently the
+ * conventional name too (`LRUCache`), and dropping it would lose a real symbol
+ * to gain a synthetic one.
+ */
+function republishAs(published: string, local: string, locals: SurfaceApi, into: SurfaceApi): void {
+  const declared = locals.get(local);
+  if (declared && !into.has(published)) into.set(published, renameEntry(declared, published));
+  for (const entry of locals.values()) {
+    if (!entry.name.startsWith(`${local}.`)) continue;
+    const name = `${published}.${entry.name.slice(local.length + 1)}`;
+    if (!into.has(name)) into.set(name, renameEntry(entry, name));
   }
 }
 
@@ -1739,14 +1764,8 @@ function collectDefaultExports(content: string, locals: SurfaceApi, into: Surfac
     /\bexport\s+default\s+(?:abstract\s+)?(?:class|function|enum|const|let|var)?\s*([A-Za-z_$][\w$]*)/g,
   )) {
     const local = match[1]!;
-    const declared = locals.get(local);
-    if (!declared) continue;
-    if (!into.has('default')) into.set('default', renameEntry(declared, 'default'));
-    for (const entry of locals.values()) {
-      if (!entry.name.startsWith(`${local}.`)) continue;
-      const published = `default.${entry.name.slice(local.length + 1)}`;
-      if (!into.has(published)) into.set(published, renameEntry(entry, published));
-    }
+    if (!locals.has(local)) continue;
+    republishAs('default', local, locals, into);
   }
 }
 

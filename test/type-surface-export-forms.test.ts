@@ -15,13 +15,27 @@ describe('export forms that carry a package API', () => {
     // makes that valid. Requiring one cost the whole package: a `declare
     // class` plus a `declare namespace`, parsed to nothing.
     const api = extractExports('declare class LRU { get(k: string): void }\nexport = LRU\n', 'index.d.ts');
-    assert.deepEqual([...api.keys()], ['LRU']);
+    assert.deepEqual([...api.keys()].sort(), ['LRU', 'default']);
     assert.deepEqual(api.get('LRU')?.members, ['get']);
   });
 
   test('`export =` still works with a semicolon', () => {
     const api = extractExports('declare class LRU { get(k: string): void }\nexport = LRU;\n', 'index.d.ts');
-    assert.deepEqual([...api.keys()], ['LRU']);
+    assert.deepEqual([...api.keys()].sort(), ['LRU', 'default']);
+  });
+
+  test('`export =` republishes members under the name the module is reachable by', () => {
+    // `glob@8` calls its local declaration `G` and published `G.sync`,
+    // `G.hasMagic` — symbols that appear in no consumer anywhere, while the
+    // code to find says `glob.sync(...)`. The local name is kept as well: it
+    // is often the conventional one (`LRUCache`), and dropping it would lose a
+    // real symbol to gain a synthetic one.
+    const api = extractExports(
+      'declare function G(p: string): string[];\ndeclare namespace G { function sync(p: string): string[]; }\nexport = G\n',
+      'index.d.ts',
+    );
+    assert.ok(api.has('G.sync'), 'the local name is kept');
+    assert.ok(api.has('default.sync'), 'and the reachable name is added');
   });
 
   test('a default-exported class publishes its members under `default`', () => {
@@ -67,5 +81,22 @@ describe('expanding a declared types entry', () => {
 
   test('a declaration entry is returned as itself', () => {
     assert.deepEqual(expandTypesEntry('index.d.cts'), ['index.d.cts', 'index.d.ts']);
+  });
+});
+
+describe('binding a default export to what the consumer called it', () => {
+  test('a default import, a require, and a named import are told apart', async () => {
+    const { buildIndex } = await import('../dist/index/metarag.js');
+    const of = (content: string) =>
+      buildIndex([{ path: 'a.ts', language: 'typescript', content }])
+        .files[0]!.imports.map((record) => record.defaultBinding);
+
+    assert.deepEqual(of("import glob from 'glob';"), ['glob']);
+    assert.deepEqual(of("import g, { sync } from 'glob';"), ['g']);
+    assert.deepEqual(of("const g = require('glob');"), ['g']);
+    // A named import binds an export that merely shares the module's name, and
+    // a namespace import binds the namespace — neither is the default.
+    assert.deepEqual(of("import { glob } from 'glob';"), [undefined]);
+    assert.deepEqual(of("import * as glob from 'glob';"), [undefined]);
   });
 });

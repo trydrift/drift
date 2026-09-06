@@ -46,6 +46,18 @@ export interface ImportRecord {
   packageName: string;
   /** Names bound locally by this import. `*` for namespace/wildcard imports. */
   bindings: string[];
+  /**
+   * The name this file gave the module's *default* export, when it took one.
+   *
+   * `import glob from 'glob'` and `const glob = require('glob')` both bind the
+   * module itself; `import { glob } from 'glob'` binds a named export that
+   * happens to share the name. `bindings` cannot tell those apart — both are
+   * `['glob']` — and the difference decides whether a finding about the
+   * default export has anything to match in this file. A package published
+   * through `export =` or `export default` names its API `default`, and this
+   * is the only thing that says what `default` is called here.
+   */
+  defaultBinding?: string;
   line: number;
   /** JavaScript/TypeScript loading form, when this import came from JS syntax. */
   loadStyle?: JsLoadStyle;
@@ -519,10 +531,15 @@ function extractJsImports(content: string): ImportRecord[] {
     const specifier = match[5] ?? match[6];
     if (!specifier || isRelative(specifier)) continue;
     const bindings = importBindings(match[1], match[2], match[3], match[4]);
+    // Group 1 is the default in `import X, { a } from 'p'`; group 4 is the
+    // default in `import X from 'p'`. Group 3 (`* as ns`) is a namespace, not
+    // a default, and group 2 is the named list.
+    const defaultBinding = match[1] ?? match[4];
     out.push({
       specifier,
       packageName: packageNameFromSpecifier(specifier),
       bindings,
+      ...(defaultBinding ? { defaultBinding } : {}),
       line: lineOf(match.index ?? 0),
       loadStyle: 'esm-static',
     });
@@ -533,10 +550,16 @@ function extractJsImports(content: string): ImportRecord[] {
   for (const match of content.matchAll(requireImport)) {
     const specifier = match[2]!;
     if (isRelative(specifier)) continue;
+    // `const glob = require('glob')` binds the module object, which is what
+    // `export =` publishes; `const { glob } = require('glob')` destructures a
+    // named export off it and binds no default.
+    const required = match[1]!;
+    const defaultBinding = required.startsWith('{') ? undefined : required;
     out.push({
       specifier,
       packageName: packageNameFromSpecifier(specifier),
-      bindings: requireBindings(match[1]!),
+      bindings: requireBindings(required),
+      ...(defaultBinding ? { defaultBinding } : {}),
       line: lineOf(match.index ?? 0),
       loadStyle: 'commonjs-require',
     });

@@ -1689,6 +1689,11 @@ function bindingsForOwner(
   const lines = content.split('\n');
   for (const record of imports) {
     if (record.bindings.includes(owner) || record.bindings.includes('*')) bindings.add(owner);
+    // A package published through `export =` or `export default` names its API
+    // `default`, which is not a name anyone writes. The importing file chose
+    // one — `import glob from 'glob'`, `const fs = require('filesize')` — and
+    // that is what `glob.sync(...)` is written against.
+    if (owner === 'default' && record.defaultBinding) bindings.add(record.defaultBinding);
     // Java binds a class by its simple name: `import a.b.Class;` (specifier
     // `a.b.Class`) and `import a.b.*;` (specifier `a.b`, `*` binding) both make
     // `Class` usable for an `owner` of `a.b.Class`. `receiversConstructedFrom`
