@@ -117,3 +117,44 @@ test('SWE-Bump scores normalized semver identity rather than manifest spelling',
   assert.equal(result.provenance.fromVersion, '1.9.4');
   assert.equal(result.provenance.toVersion, '2.0.0');
 });
+
+/**
+ * Six cases in the September re-run scored `localized` while scoring
+ * `identifiedAffected` false — impossible per case, and it let the pooled
+ * localization rate (73.6%) exceed the affected rate (66.0%) it is a subset of.
+ * The Python adapter had already been fixed this way; this one had not.
+ */
+test('SWE-Bump localization never exceeds affected-identification', () => {
+  const hedged = scoreSweBump({
+    task: TASK,
+    prediction: {
+      ...prediction({ from: '1.9.4', to: '2.1.0' }),
+      // Sites found, but Drift did not stand behind "this repository is affected".
+      verdict: 'verification-incomplete',
+      impactSites: [{ file: 'src/x.ts', line: 3, matchedSymbol: 'foo' }],
+    },
+    excluded: null,
+    datasetVersion: 'v',
+    sourceHash: 'hash',
+    durationMs: 1,
+  });
+
+  assert.equal(hedged.outcomes.identifiedAffected, false);
+  assert.equal(hedged.outcomes.localized, false, 'localized cannot be true where affected is false');
+
+  const affected = scoreSweBump({
+    task: TASK,
+    prediction: {
+      ...prediction({ from: '1.9.4', to: '2.1.0' }),
+      verdict: 'locally-affected',
+      impactSites: [{ file: 'src/x.ts', line: 3, matchedSymbol: 'foo' }],
+    },
+    excluded: null,
+    datasetVersion: 'v',
+    sourceHash: 'hash',
+    durationMs: 1,
+  });
+
+  assert.equal(affected.outcomes.identifiedAffected, true);
+  assert.equal(affected.outcomes.localized, true, 'an affected verdict with sites still localizes');
+});

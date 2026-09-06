@@ -396,7 +396,15 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
       )
     : undefined;
   const identifiedAffected = prediction.verdict === 'locally-affected';
-  const localized = prediction.impactSites.length > 0;
+  // Localization is a strict subset of affected-identification: pointing at a
+  // consumer line only counts as a "yes" when Drift also stood behind the
+  // conclusion that the repository is affected. Scored independently, a case
+  // with impact sites but a hedged (`verification-incomplete` /
+  // `insufficient-evidence`) verdict counted as localized while not counting as
+  // affected — impossible per case, and it let the pooled localization rate
+  // exceed the affected rate it is a subset of. The Python adapter already
+  // scored it this way; this one did not, so the two disagreed.
+  const localized = identifiedAffected && prediction.impactSites.length > 0;
   const adjudicated = detectedUpdate !== undefined;
   const unadjudicatedReason =
     'the corpus supplies a manifest range and Drift could not resolve it to a concrete before/after version pair';
