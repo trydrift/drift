@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { readdir, stat } from 'node:fs/promises';
 import type { DependencyChange, Ecosystem, ImpactSite, RemediationPlan, RepoContext } from './types.js';
 import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
@@ -868,7 +869,9 @@ async function verifyPlan(
         confirmedRegressions.push(key);
         // Only an isolated failure earns measured sites: a diagnostic from a
         // multi-dependency group cannot be pinned on this change alone.
-        measuredSites.push(...measuredSitesFrom(verification.introducedDiagnostics ?? [], key, changes[0]!.name, dir));
+        measuredSites.push(
+          ...(await measuredSitesFrom(verification.introducedDiagnostics ?? [], key, changes[0]!.name, dir, workspace)),
+        );
       }
     }
     verifiedPlan = applyVerificationToPlan(verifiedPlan, verification, dir);
@@ -930,17 +933,86 @@ async function verifyPlan(
  * consumer source the compiler itself named as broken by this change, which is
  * `high` confidence by construction: it is measured, not matched.
  */
-function measuredSitesFrom(
+/**
+ * Source roots a JVM stack frame's package path can sit under.
+ *
+ * A frame prints `(FooTest.java:42)` and the class's package supplies
+ * `com/example/`, but neither says which source root holds it. These are the
+ * Maven/Gradle conventions, tried in order; a frame that matches none of them
+ * is dropped rather than guessed at.
+ */
+const JVM_SOURCE_ROOTS = [
+  '',
+  'src/test/java/',
+  'src/main/java/',
+  'src/test/kotlin/',
+  'src/main/kotlin/',
+  'src/test/scala/',
+  'src/main/scala/',
+];
+
+/**
+ * Turn a stack frame's inferred package path into a path that exists.
+ *
+ * Tried under the changed workspace member first, then under each immediate
+ * subdirectory — a multi-module Maven build reports its modules' failures in
+ * one output, and the module a test belongs to is not recoverable from the
+ * frame. Returns `undefined` when nothing matches, which is the point: a
+ * measured site has to name a file the developer can open.
+ */
+async function resolveStackFrameFile(
+  workspace: string,
+  dir: string,
+  file: string,
+  modules: readonly string[],
+): Promise<string | undefined> {
+  for (const base of [dir, ...modules]) {
+    for (const root of JVM_SOURCE_ROOTS) {
+      const candidate = [base, root + file].filter(Boolean).join('/').replace(/\/{2,}/g, '/');
+      try {
+        const info = await stat(join(workspace, candidate));
+        if (info.isFile()) return candidate;
+      } catch {
+        // Not there; try the next root.
+      }
+    }
+  }
+  return undefined;
+}
+
+async function measuredSitesFrom(
   diagnostics: readonly VerificationDiagnostic[],
   breakingChangeKey: string,
   dependencyName: string,
   dir: string,
-): ImpactSite[] {
+  workspace: string,
+): Promise<ImpactSite[]> {
   const sites: ImpactSite[] = [];
   const seen = new Set<string>();
+
+  // Only read the directory when a stack frame actually needs resolving.
+  let modules: string[] | undefined;
+  const moduleDirs = async (): Promise<string[]> => {
+    if (modules) return modules;
+    try {
+      const entries = await readdir(workspace, { withFileTypes: true });
+      modules = entries
+        .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'target')
+        .map((entry) => entry.name);
+    } catch {
+      modules = [];
+    }
+    return modules;
+  };
+
   for (const diagnostic of diagnostics) {
     if (/(^|\/)(node_modules|\.venv|venv|site-packages|target\/|dist\/|build\/)/.test(diagnostic.file)) continue;
-    const file = dir && !diagnostic.file.startsWith(`${dir}/`) ? `${dir}/${diagnostic.file}` : diagnostic.file;
+    let file = dir && !diagnostic.file.startsWith(`${dir}/`) ? `${dir}/${diagnostic.file}` : diagnostic.file;
+    if (diagnostic.origin === 'stack-frame') {
+      const resolved = await resolveStackFrameFile(workspace, dir, diagnostic.file, await moduleDirs());
+      if (!resolved) continue;
+      file = resolved;
+    }
     const dedupeKey = `${file}:${diagnostic.line}:${diagnostic.column ?? ''}`;
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);

@@ -28,6 +28,18 @@ export interface VerificationDiagnostic {
   /** The message text, trimmed and capped. */
   message: string;
   severity: 'error' | 'warning';
+  /**
+   * Set when this came from a JVM stack frame rather than a `file:line:`
+   * diagnostic.
+   *
+   * A frame prints only a basename, so `file` here is the package path the
+   * class implies (`com/example/FooTest.java`) and not a path any tool
+   * actually printed. Callers must resolve it against the repository before
+   * showing it to anyone — see `measuredSitesFrom` in `analysis.ts`, which
+   * drops the diagnostic when no such file exists rather than pointing a
+   * reader at a path that was inferred.
+   */
+  origin?: 'stack-frame';
 }
 
 const MESSAGE_CAP = 300;
@@ -50,6 +62,27 @@ const JAVAC_COLON = /^\s*(?:\[(?:ERROR|WARNING)\]\s*)?(\/?[^\s:]+\.(?:java|kt|sc
 
 /** Last-resort generic `path:line:col: message` / `path:line: message`. */
 const GENERIC = /^\s*([^\s:][^:]*\.\w+):(\d+)(?::(\d+))?:\s*(.*)$/;
+
+/**
+ * A Maven Surefire / Failsafe failure header, both layouts it has shipped:
+ *
+ *   [ERROR] testFoo(com.example.FooTest)  Time elapsed: 0.01 s  <<< FAILURE!
+ *   [ERROR] com.example.FooTest.testFoo  Time elapsed: 0.01 s  <<< ERROR!
+ */
+const SUREFIRE_HEADER =
+  /^\s*(?:\[ERROR\]\s*)?(?:(\w+)\((\S+?)\)|([\w.$]+)\.(\w+))\s+Time elapsed:.*<<<\s*(FAILURE|ERROR)!/;
+
+/** A JVM stack frame: `\tat com.example.FooTest.testFoo(FooTest.java:42)`. */
+const STACK_FRAME = /^\s*at\s+([\w.$]+)\.[\w$<>]+\((\w[\w$]*\.(?:java|kt|scala)):(\d+)\)/;
+
+/**
+ * Frames reported per failing test.
+ *
+ * The frame that matches the test class is the one a developer opens; deeper
+ * matches are the same test's helpers and worth keeping, but a long recursive
+ * trace should not become fifty impact sites for one failure.
+ */
+const MAX_FRAMES_PER_FAILURE = 3;
 
 function clean(text: string): string {
   return text
@@ -88,12 +121,67 @@ export function parseVerificationDiagnostics(output: string, root?: string): Ver
     found.push(diagnostic);
   };
 
+  /**
+   * The failing test whose stack trace is currently being read.
+   *
+   * A test failure names its location in a stack frame rather than in a
+   * `file:line:` diagnostic, so it needs the header for context: the frames
+   * worth reporting are the ones belonging to the class the header named, and
+   * everything below them is JUnit, Surefire and the JDK.
+   */
+  let failure: { testClass: string; testName: string; message: string | null; frames: number } | null = null;
+
   for (const rawLineWithAnsi of output.split('\n')) {
     // Strip ANSI once, up front: `tsc --pretty` and Maven colour output wrap
     // the filename, the line number and the severity word individually, and a
     // regex that tries to tolerate escape codes between every token is
     // unreadable and still misses cases.
     const rawLine = rawLineWithAnsi.replace(/\x1b\[[0-9;]*m/g, '');
+
+    const header = SUREFIRE_HEADER.exec(rawLine);
+    if (header) {
+      // Layout one puts the method first (`testFoo(com.example.FooTest)`),
+      // layout two puts it last (`com.example.FooTest.testFoo`).
+      failure = {
+        testClass: header[2] ?? header[3]!,
+        testName: header[1] ?? header[4]!,
+        message: null,
+        frames: 0,
+      };
+      continue;
+    }
+
+    if (failure) {
+      const frame = STACK_FRAME.exec(rawLine);
+      if (frame) {
+        // Only the frames inside the class the header named. A stack trace is
+        // mostly JUnit, Surefire and JDK internals, and pointing a developer at
+        // `ReflectiveMethodInvocation.java:186` is worse than pointing nowhere.
+        const frameClass = frame[1]!;
+        const owner = frameClass.split('$')[0]!;
+        if (owner === failure.testClass.split('$')[0] && failure.frames < MAX_FRAMES_PER_FAILURE) {
+          failure.frames++;
+          // The frame prints only the basename; the class's package is what
+          // turns it into a path. `resolveAgainstRepository` matches the
+          // result by suffix against files that actually exist, so a source
+          // root of `src/test/java` never has to be guessed at here.
+          const packagePath = owner.includes('.')
+            ? `${owner.slice(0, owner.lastIndexOf('.')).replace(/\./g, '/')}/`
+            : '';
+          push({
+            file: `${packagePath}${frame[2]!}`,
+            line: Number(frame[3]),
+            message: clean(failure.message ?? `${failure.testName} failed`),
+            severity: 'error',
+            origin: 'stack-frame',
+          });
+        }
+        continue;
+      }
+      // The exception line sits between the header and the first frame.
+      if (failure.message === null && rawLine.trim().length > 0) failure.message = clean(rawLine);
+    }
+
     const ts = TS_LINE.exec(rawLine);
     if (ts) {
       const line = Number(ts[2] ?? ts[4]);
