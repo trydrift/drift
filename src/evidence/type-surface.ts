@@ -1355,7 +1355,17 @@ export function expandTypesEntry(declared: string): string[] {
   // computed diff, which is the strongest evidence Drift has. That is exactly
   // how zod 4 was reported as having no breaking changes.
   const base = declared.replace(/\.(c|m)?[jt]s$/, '').replace(/\/$/, '');
-  return [`${base}.d.ts`, `${base}.d.cts`, `${base}.d.mts`, `${base}/index.d.ts`, declared];
+  const candidates = [`${base}.d.ts`, `${base}.d.cts`, `${base}.d.mts`, `${base}/index.d.ts`];
+
+  // A JavaScript file is never a declaration file, so it must not survive as
+  // the last-resort candidate. `uuid@9` publishes no `types` field and an
+  // `exports` map whose only reachable string is `./dist/esm-browser/index.js`;
+  // that path exists, so it was selected as the types entry, parsed as
+  // TypeScript to zero exported symbols, and the package was reported as
+  // having no public surface — while `@types/uuid@9` sat unread, because the
+  // DefinitelyTyped fallback only runs when *no* entry was found at all.
+  if (!/\.(c|m)?js$/.test(declared)) candidates.push(declared);
+  return candidates;
 }
 
 export function typesFromExports(exportsField: unknown): string | null {
@@ -1594,6 +1604,7 @@ export function extractExports(
 
   collectExportSpecifiers(content, locals, into, aliases);
   collectExportAssignments(content, locals, into);
+  collectDefaultExports(content, locals, into);
   // Within one file, bases are already all known. A surface assembled from
   // several files resolves again in `fetchTypeSurface`, once every source has
   // been read; doing it here as well is what makes `extractExports` usable on
@@ -1698,11 +1709,43 @@ function resolveAliases(api: SurfaceApi, aliases: readonly ExportAlias[]): void 
  * fetch Phaser's `.d.ts` successfully and still report "no declarations".
  */
 function collectExportAssignments(content: string, locals: SurfaceApi, into: SurfaceApi): void {
-  for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$]*)\s*;/g)) {
+  // The trailing semicolon is optional. `export = LRUCache` with no semicolon
+  // is valid TypeScript and is what `lru-cache@7` ships; requiring one meant
+  // its entire API — a `declare class` plus a `declare namespace`, the whole
+  // package — parsed to zero exported symbols, and the version pair was
+  // reported as having no comparable surface at all.
+  for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$.]*)\s*(?:;|$)/gm)) {
     const local = match[1]!;
     for (const entry of locals.values()) {
       if (entry.name !== local && !entry.name.startsWith(`${local}.`)) continue;
       if (!into.has(entry.name)) into.set(entry.name, entry);
+    }
+  }
+}
+
+/**
+ * `export default class Telnet { … }`, and the other default-export forms.
+ *
+ * A default export's *published* name is `default` — it is the only name an
+ * importer can reach it by, and the local identifier is the package's own
+ * business. So the declaration is republished under that name, which is also
+ * what keeps a purely local rename from reading as a removal plus an addition.
+ *
+ * Its members come with it, and they are the part that matters: a consumer
+ * writes `client.exec(…)`, so `default.exec` is what localization has to have.
+ */
+function collectDefaultExports(content: string, locals: SurfaceApi, into: SurfaceApi): void {
+  for (const match of content.matchAll(
+    /\bexport\s+default\s+(?:abstract\s+)?(?:class|function|enum|const|let|var)?\s*([A-Za-z_$][\w$]*)/g,
+  )) {
+    const local = match[1]!;
+    const declared = locals.get(local);
+    if (!declared) continue;
+    if (!into.has('default')) into.set('default', renameEntry(declared, 'default'));
+    for (const entry of locals.values()) {
+      if (!entry.name.startsWith(`${local}.`)) continue;
+      const published = `default.${entry.name.slice(local.length + 1)}`;
+      if (!into.has(published)) into.set(published, renameEntry(entry, published));
     }
   }
 }
