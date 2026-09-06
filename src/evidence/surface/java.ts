@@ -6,6 +6,11 @@ import { readZip } from '../../util/archive.js';
 import type { SurfaceChange } from '../type-surface.js';
 import { ensureHelperArtifact } from './helper-artifact.js';
 import {
+  detectPackageMigrations,
+  parseMemberSignature,
+  type MemberSignature,
+} from './java-migration.js';
+import {
   unavailable,
   type SurfaceProvider,
   type SurfaceRequest,
@@ -594,6 +599,10 @@ async function downloadJar(
 export function parseJapicmp(output: string): SurfaceChange[] {
   const changes: SurfaceChange[] = [];
   let currentClass: string | null = null;
+  // Collected for `detectPackageMigrations`, which needs the added members too
+  // — the only place in this parser where a `NEW` line carries information.
+  const removedMembers: MemberSignature[] = [];
+  const addedMembers: MemberSignature[] = [];
 
   for (const raw of output.split('\n')) {
     const line = raw.trim();
@@ -621,6 +630,18 @@ export function parseJapicmp(output: string): SurfaceChange[] {
 
     if (isClass) currentClass = name;
 
+    // Signature collection happens before the `!`-only gate below, because a
+    // migration is witnessed by a *pair* and the added half is never flagged.
+    // `detectPackageMigrations` re-imposes the gate itself, requiring at least
+    // one binary-incompatible removal behind every migration it reports.
+    if (!isClass && currentClass && (kind === 'METHOD' || kind === 'CONSTRUCTOR')) {
+      const signature = parseMemberSignature(rest!, currentClass, flag === '!');
+      if (signature) {
+        if (verb === 'REMOVED') removedMembers.push(signature);
+        else if (verb === 'NEW') addedMembers.push(signature);
+      }
+    }
+
     if (verb === 'NEW' || flag !== '!') continue;
 
     const symbol = isClass || !currentClass ? name : `${currentClass}.${name}`;
@@ -641,6 +662,26 @@ export function parseJapicmp(output: string): SurfaceChange[] {
           ? `The declaration of \`${symbol}\` changed in a way an existing compiled caller may not be binary-compatible with.`
           : `The signature of \`${symbol}\` changed.`,
         after: rest!.trim(),
+      });
+    }
+  }
+
+  for (const migration of detectPackageMigrations(removedMembers, addedMembers)) {
+    for (const type of migration.types) {
+      changes.push({
+        kind: 'export-removed',
+        // The *old* fully-qualified name, because that is what a consumer
+        // wrote and what has to be found in its source. `javaImportRootsFromSymbols`
+        // turns it into both the `import javax.servlet.http.HttpServletRequest;`
+        // and the `import javax.servlet.http.*;` form.
+        symbol: type.from,
+        detail:
+          `\`${type.from}\` is no longer part of this library's API: ` +
+          `\`${migration.fromPackage}\` moved to \`${migration.toPackage}\`. ` +
+          `Code that imports \`${type.from}\` no longer compiles against this version — ` +
+          `import \`${type.to}\` instead.`,
+        before: type.from,
+        after: type.to,
       });
     }
   }
