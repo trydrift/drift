@@ -204,11 +204,7 @@ function renderExplanation(candidate: UpgradeCandidate | undefined, name: string
     for (const change of breaking.slice(0, 25)) {
       const shown = change.symbols.slice(0, 3).map((symbol) => humanizeSymbol(symbol, candidate.name));
       lines.push(`  [${change.kind}] ${shown.join(', ') || change.summary}`);
-      // The provider wrote the summary before anyone knew which package it was
-      // about, so `default` is still spelled that way inside it.
-      if (change.summary && change.symbols.length > 0) {
-        lines.push(`      ${change.summary.replace(/\bdefault\./g, `${candidate.name}.`)}`);
-      }
+      if (change.summary && change.symbols.length > 0) lines.push(`      ${change.summary}`);
     }
     if (breaking.length > 25) lines.push(`  … and ${breaking.length - 25} more.`);
     lines.push('');

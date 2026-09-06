@@ -121,6 +121,30 @@ function analyzeDependency(
   return out;
 }
 
+/**
+ * `default` is the name a module published through `export =` or
+ * `export default` is reachable by, and it is the only name localization can
+ * bind — an importing file chooses its own, and `ImportRecord.defaultBinding`
+ * is what maps between them.
+ *
+ * It is not, however, a name any developer has ever typed. A surface provider
+ * writes its detail text before anyone knows which package the finding is
+ * about, so `glob@8`'s removals read "`default.sync` is no longer exported",
+ * which is unreadable in a report. Here the package is known, so the sentence
+ * can say what the developer wrote: `glob.sync`.
+ *
+ * Only the prose is rewritten. `symbols` keeps `default.*`, because that is
+ * what the localizer binds through.
+ */
+function withPublishedName(detail: string, dependency: string): string {
+  return detail
+    .replace(/`default\.([\w$]+)`/g, `\`${dependency}.$1\``)
+    // The bare form needs the whole clause rewritten, not just the name:
+    // "the default export of `glob` is no longer exported" says it twice.
+    .replace(/`default` is no longer exported/g, `\`${dependency}\` no longer has a default export`)
+    .replace(/`default`/g, `the default export of \`${dependency}\``);
+}
+
 /** Computed findings map one-to-one onto breaking changes; no inference needed. */
 function fromComputedEvidence(record: Evidence): BreakingChange[] {
   return (record.findings ?? []).map((finding) => {
@@ -143,7 +167,7 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
       dependency: record.dependency,
       workspace: record.workspace,
       kind,
-      summary: finding.detail,
+      summary: withPublishedName(finding.detail, record.dependency),
       before: finding.before,
       after: finding.after,
       ...(finding.fromKind ? { fromKind: finding.fromKind } : {}),
