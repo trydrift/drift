@@ -15,27 +15,31 @@ describe('export forms that carry a package API', () => {
     // makes that valid. Requiring one cost the whole package: a `declare
     // class` plus a `declare namespace`, parsed to nothing.
     const api = extractExports('declare class LRU { get(k: string): void }\nexport = LRU\n', 'index.d.ts');
-    assert.deepEqual([...api.keys()].sort(), ['LRU', 'default']);
-    assert.deepEqual(api.get('LRU')?.members, ['get']);
+    assert.deepEqual([...api.keys()], ['default']);
+    assert.deepEqual(api.get('default')?.members, ['get']);
   });
 
   test('`export =` still works with a semicolon', () => {
     const api = extractExports('declare class LRU { get(k: string): void }\nexport = LRU;\n', 'index.d.ts');
-    assert.deepEqual([...api.keys()].sort(), ['LRU', 'default']);
+    assert.deepEqual([...api.keys()], ['default']);
   });
 
-  test('`export =` republishes members under the name the module is reachable by', () => {
-    // `glob@8` calls its local declaration `G` and published `G.sync`,
-    // `G.hasMagic` — symbols that appear in no consumer anywhere, while the
-    // code to find says `glob.sync(...)`. The local name is kept as well: it
-    // is often the conventional one (`LRUCache`), and dropping it would lose a
-    // real symbol to gain a synthetic one.
+  test('`export =` publishes members only under the name the module is reachable by', () => {
+    // `glob@8` calls its local declaration `G`, so Drift reported `G.sync` and
+    // `G.hasMagic` — symbols that appear in no consumer anywhere and read as
+    // gibberish in a report — while the line to find says `glob.sync(...)`.
+    //
+    // Keeping the local name *as well* was tried and is worse in both
+    // directions: it puts `G` in front of a reader, and it reports every change
+    // twice, once under each name (26 findings for glob 8 -> 13, where there
+    // are 13). A named import off an `export =` namespace still matches,
+    // because `default.Glob` contributes the bare leaf `Glob`.
     const api = extractExports(
       'declare function G(p: string): string[];\ndeclare namespace G { function sync(p: string): string[]; }\nexport = G\n',
       'index.d.ts',
     );
-    assert.ok(api.has('G.sync'), 'the local name is kept');
-    assert.ok(api.has('default.sync'), 'and the reachable name is added');
+    assert.deepEqual([...api.keys()].sort(), ['default', 'default.sync']);
+    assert.ok(!api.has('G.sync'), 'the package-internal name is not a consumer-visible symbol');
   });
 
   test('a default-exported class publishes its members under `default`', () => {

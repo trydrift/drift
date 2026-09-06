@@ -331,7 +331,7 @@ export function clearTypeSurfaceCache(): void {
  * cannot change, so the only way this cache can be wrong is an unbumped parser
  * change, not staleness.
  */
-const SURFACE_PARSER_VERSION = 2;
+const SURFACE_PARSER_VERSION = 3;
 
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
@@ -1796,18 +1796,21 @@ function collectExportAssignments(content: string, locals: SurfaceApi, into: Sur
   // package — parsed to zero exported symbols, and the version pair was
   // reported as having no comparable surface at all.
   for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$.]*)\s*(?:;|$)/gm)) {
-    const local = match[1]!;
-    for (const entry of locals.values()) {
-      if (entry.name !== local && !entry.name.startsWith(`${local}.`)) continue;
-      if (!into.has(entry.name)) into.set(entry.name, entry);
-    }
-    // `export = G` means the module *is* `G`, so `G` is a local identifier and
-    // not a name any consumer can write. `glob@8` calls it `G` and published
-    // `G.sync`, `G.hasMagic` — symbols that appear in no consumer anywhere,
-    // while the code Drift needed to find says `glob.sync(...)`. Republishing
-    // under `default` gives localization the one name the module is reachable
-    // by; `bindingsForOwner` maps it to whatever this file called it.
-    republishAs('default', local, locals, into);
+    // `export = G` means the module *is* `G`, so `G` is an identifier internal
+    // to the package and not a name any consumer can write: an importer binds
+    // the module to a name of its own choosing. `glob@8` calls it `G`, so Drift
+    // reported `G.sync` and `G.hasMagic` -- symbols that appear in no consumer
+    // anywhere, and read as gibberish in a report -- while the line to find
+    // says `glob.sync(...)`.
+    //
+    // So the declarations are published *only* under `default`, the one name
+    // the module is reachable by. Keeping the local name as well was tried and
+    // is worse in both directions: it puts `G` in front of a reader, and it
+    // reports every change twice, once under each name (26 findings for glob
+    // 8 -> 13, where there are 13). Nothing is lost -- a named import off an
+    // `export =` namespace (`import { Glob } from 'glob'`) still matches,
+    // because `default.Glob` contributes the bare leaf `Glob`.
+    republishAs('default', match[1]!, locals, into);
   }
 }
 
