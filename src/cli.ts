@@ -242,6 +242,9 @@ Usage:
                               Not nuget or a C/C++ ecosystem — neither has a
                               single fetchable archive of actual source
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
+  drift mcp                   Serve Drift to a coding agent over MCP (stdio).
+                              Runs locally; your editor spawns it. Add it with
+                              \`claude mcp add drift -- npx -y @usedrift/cli mcp\`
   drift serve                 Run the self-hosted webhook server
   drift telemetry print       Print the exact telemetry event shape
   drift --version             Print the version
@@ -480,6 +483,12 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       // Awaited: the queue is opened asynchronously, and a failure there must
       // surface as an exit code rather than an unhandled rejection.
       return await serveWebhook();
+    case 'mcp': {
+      // Loaded on demand: the MCP SDK is only needed by this one subcommand,
+      // and `drift outdated` should not pay to parse it.
+      const { runMcpServer } = await import('./mcp/server.js');
+      return await runMcpServer();
+    }
     case 'diff':
       return diffCommand(rest);
     case 'telemetry':
