@@ -54,6 +54,17 @@ export interface BenchmarkNarrative {
     bump: { affectedFraction: string; falseSafePercent: string; detectionFraction: string };
   };
   kong: {
+    /**
+     * The binary question, and the only npm run with negative controls at
+     * scale — 16k of them. That denominator is the whole reason a precision
+     * means anything here, so it is a field rather than a sentence.
+     */
+    rq1: {
+      dataset: BenchmarkDataset;
+      negativeControls: string;
+      precisionPercent: string;
+      recallPercent: string;
+    };
     rq2: {
       dataset: BenchmarkDataset;
       overallPercent: string;
@@ -88,6 +99,8 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
   const timeMachine = requireDataset(datasets, "timemachine-verified");
   const bump = bumpSubset;
 
+  const kongRq1 = requireDataset(datasets, "kong-rq1-documented");
+  const kongRq1Classification = requireClassification(kongRq1);
   const kongRq2 = requireDataset(datasets, "kong-rq2-category");
   const kongRq2Overall = requireRate(kongRq2, "breaking-change detection recall");
   const kongRq2WithDetail = requireBreakdownRate(kongRq2, "messageStatesDetail: true", "breaking-change detection recall");
@@ -143,6 +156,12 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
       },
     },
     kong: {
+      rq1: {
+        dataset: kongRq1,
+        negativeControls: kongRq1.negativeControls.toLocaleString("en-US"),
+        precisionPercent: percent(kongRq1Classification.precision),
+        recallPercent: percent(kongRq1Classification.recall),
+      },
       rq2: {
         dataset: kongRq2,
         overallPercent: percent(kongRq2Overall),

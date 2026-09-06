@@ -108,19 +108,35 @@ export default function Home() {
             </a>
           </div>
 
-          <p className="mt-5 font-mono text-xs text-muted">
+          <div className="mt-5 flex flex-col items-center gap-2 font-mono text-xs text-muted">
             <CopyCommand text="npm install -g @usedrift/cli">
               <span className="text-faint">$</span> npm install -g @usedrift/cli
             </CopyCommand>
-          </p>
+            {/*
+              The agent path, given equal weight to the CLI. It is the one
+              install here that changes what the tool *is* — an agent that
+              would otherwise answer about a version pair from memory.
+            */}
+            <CopyCommand text="claude mcp add drift -- npx -y @usedrift/cli mcp">
+              <span className="text-faint">$</span> claude mcp add drift -- npx -y @usedrift/cli mcp
+            </CopyCommand>
+          </div>
 
+          {/*
+            The credibility line, above the fold. Precision is the number a
+            skeptical reader wants and almost nothing in this category
+            publishes, because it needs negatives — and this one has 16k.
+          */}
           <p className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-faint">
+            <span>
+              <span className="text-foreground">{narrative.kong.rq1.precisionPercent}</span> precision against{" "}
+              <span className="text-foreground">{narrative.kong.rq1.negativeControls}</span> negative controls
+            </span>
+            <span aria-hidden>·</span>
             <span>{proof.ecosystems} package ecosystems</span>
             <span aria-hidden>·</span>
-            <span>{proof.recordings} recorded analyses</span>
-            <span aria-hidden>·</span>
             <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
-              Public benchmarks
+              Every number, and every one refused
             </Link>
           </p>
         </section>
