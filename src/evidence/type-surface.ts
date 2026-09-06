@@ -261,7 +261,7 @@ const surfaces = new Map<string, Promise<TypeSurface | null>>();
 export function fetchTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean; traversal?: ReexportTraversal } = {},
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal; subpath?: string } = {},
 ): Promise<TypeSurface | null> {
   // A traversal-scoped fetch depends on the path that reached it (visited set,
   // remaining budget), so it is not safe to share through the process-wide
@@ -276,7 +276,9 @@ export function fetchTypeSurface(
     return measure('surface', packageName, () => computeTypeSurface(packageName, version, options));
   }
 
-  const key = `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}`;
+  const key =
+    `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}` +
+    (options.subpath ? `#${options.subpath}` : '');
   const cached = surfaces.get(key);
   if (cached) {
     count('surface.cache.hit');
@@ -334,17 +336,73 @@ const SURFACE_PARSER_VERSION = 2;
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
 
-function diskCacheKey(packageName: string, version: string, followDependencies: boolean): string {
-  return `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}`;
+function diskCacheKey(
+  packageName: string,
+  version: string,
+  followDependencies: boolean,
+  subpath?: string,
+): string {
+  return (
+    `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}` +
+    (subpath ? `#${subpath}` : '')
+  );
+}
+
+/**
+ * The declaration file a dependency publishes at one of its subpaths.
+ *
+ * `export * from 'lit-element/lit-element.js'` names an entry point, and the
+ * package's `exports` map is what says which declaration file serves it. The
+ * map is consulted first — it is the package's own answer — and the raw path is
+ * expanded as a fallback for packages that publish subpaths without one.
+ * `null` when the version publishes no such declaration, which is a hole in
+ * the parent's surface and is reported as one rather than guessed past.
+ */
+async function resolveSubpathTypesEntry(
+  packageName: string,
+  version: string,
+  pkg: Manifest | null,
+  subpath: string,
+): Promise<string | null> {
+  const declared = typesFromExports(subpathExport(pkg?.exports, subpath));
+  const candidates = [
+    ...(declared ? expandTypesEntry(normalizePath(declared)) : []),
+    ...expandTypesEntry(normalizePath(subpath)),
+  ];
+
+  const wanted = [...new Set(candidates)];
+  const published = await firstPublished(packageName, version, wanted);
+  if (published !== undefined) return published;
+  for (const candidate of wanted) {
+    if (await exists(packageName, version, candidate)) return candidate;
+  }
+  return null;
+}
+
+/** `@scope/pkg/sub` -> `@scope/pkg`; `lit-element/lit-element.js` -> `lit-element`. */
+function packageOfSpecifier(specifier: string): string {
+  const parts = specifier.split('/');
+  if (specifier.startsWith('@')) return parts.slice(0, 2).join('/');
+  return parts[0] ?? specifier;
+}
+
+/** The `exports` entry for `./<subpath>`, however the package spells the key. */
+function subpathExport(exportsField: unknown, subpath: string): unknown {
+  if (!exportsField || typeof exportsField !== 'object') return undefined;
+  const record = exportsField as Record<string, unknown>;
+  for (const key of [`./${subpath}`, subpath]) {
+    if (key in record) return record[key];
+  }
+  return undefined;
 }
 
 async function computeTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean; traversal?: ReexportTraversal },
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal; subpath?: string },
 ): Promise<TypeSurface | null> {
   const followDependencies = options.followDependencies !== false;
-  const key = diskCacheKey(packageName, version, followDependencies);
+  const key = diskCacheKey(packageName, version, followDependencies, options.subpath);
   const remembered = await readComputed<StoredSurface>(key);
   if (remembered) {
     count('surface.diskCache.hit');
@@ -353,7 +411,11 @@ async function computeTypeSurface(
   count('surface.diskCache.miss');
 
   let manifest = await fetchManifest(packageName, version);
-  let entryPath = await resolveOwnTypesEntry(packageName, version, manifest);
+  // A subpath edge names one of the package's entry points, not its root, so
+  // the root `types` field is the wrong file to read.
+  let entryPath = options.subpath
+    ? await resolveSubpathTypesEntry(packageName, version, manifest, options.subpath)
+    : await resolveOwnTypesEntry(packageName, version, manifest);
   let sources = entryPath
     ? await measure('surface-sources', packageName, () =>
         collectDeclarationSources(packageName, version, entryPath!),
@@ -946,7 +1008,20 @@ async function mergeDependencySurfaces(
   const budget = traversal?.budget ?? { remaining: MAX_TOTAL_FOLLOWED_PACKAGES };
   const visited = new Set<string>([...(traversal?.visited ?? []), selfNode]);
 
-  const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
+  // A re-export can name a *subpath* of a dependency rather than the
+  // dependency itself: `lit@2` publishes nothing of its own and is entirely
+  // `export * from 'lit-element/lit-element.js'`. Matching the specifier
+  // against `dependencies` verbatim never found `lit-element`, so the edge was
+  // dropped, no symbols were merged, and the whole package resolved to "no
+  // public surface". The package is what carries the version range; the
+  // subpath is which of its entry points to read.
+  const wanted = [...externalReferences(sources, api)]
+    .map(([specifier, reference]) => {
+      const pkg = packageOfSpecifier(specifier);
+      const subpath = specifier.length > pkg.length ? specifier.slice(pkg.length + 1) : undefined;
+      return { specifier, reference, pkg, subpath };
+    })
+    .filter((edge) => declared[edge.pkg]);
   const attempted = wanted.length > 0;
   if (!attempted) return { followed: [], attempted: false, incomplete: false };
 
@@ -967,13 +1042,17 @@ async function mergeDependencySurfaces(
   //      deterministic depth-first order rather than a race between subtrees.
 
   // Phase 1 — versions.
-  const resolvedVersions = await mapWithConcurrency(wanted, DEPENDENCY_FETCH_WIDTH, ([specifier]) =>
-    resolveDependencyVersion(specifier, declared[specifier]!),
+  const resolvedVersions = await mapWithConcurrency(wanted, DEPENDENCY_FETCH_WIDTH, (edge) =>
+    resolveDependencyVersion(edge.pkg, declared[edge.pkg]!),
   );
 
   // Phase 2 — plan.
   interface EdgePlan {
     specifier: string;
+    /** The dependency that carries the version range. */
+    pkg: string;
+    /** Which of its entry points this edge names, when not the root. */
+    subpath: string | undefined;
     reference: ExternalReference;
     resolved: string;
     /** A genuine `export * from` / `export { x } from` edge. */
@@ -983,7 +1062,7 @@ async function mergeDependencySurfaces(
   }
   const plan: EdgePlan[] = [];
   let implementationFollows = 0;
-  for (const [index, [specifier, reference]] of wanted.entries()) {
+  for (const [index, { specifier, reference, pkg, subpath }] of wanted.entries()) {
     const resolved = resolvedVersions[index];
     const publicEdge = isPublicReexportEdge(reference);
 
@@ -1003,7 +1082,7 @@ async function mergeDependencySurfaces(
       // bound is acceptable — it cannot hide part of this package's own API.
       if (implementationFollows >= MAX_IMPLEMENTATION_DEPENDENCIES) continue;
       implementationFollows += 1;
-      plan.push({ specifier, reference, resolved, publicEdge, recurse: false });
+      plan.push({ specifier, pkg, subpath, reference, resolved, publicEdge, recurse: false });
       continue;
     }
 
@@ -1016,7 +1095,7 @@ async function mergeDependencySurfaces(
     const canRecurse = !cycle && depth < MAX_REEXPORT_DEPTH && budget.remaining > 0;
     if (canRecurse) budget.remaining -= 1;
     else if (!cycle) incomplete = true;
-    plan.push({ specifier, reference, resolved, publicEdge, recurse: canRecurse });
+    plan.push({ specifier, pkg, subpath, reference, resolved, publicEdge, recurse: canRecurse });
   }
 
   // Phase 3 — fetch and merge.
@@ -1026,15 +1105,17 @@ async function mergeDependencySurfaces(
     DEPENDENCY_FETCH_WIDTH,
     async ({ entry, index }) => {
       if (entry.recurse) return; // fetched in the sequential pass below
-      fetchedSurfaces[index] = await fetchTypeSurface(entry.specifier, entry.resolved, {
+      fetchedSurfaces[index] = await fetchTypeSurface(entry.pkg, entry.resolved, {
         followDependencies: false,
+        ...(entry.subpath ? { subpath: entry.subpath } : {}),
       }).catch(() => null);
     },
   );
   for (const [index, entry] of plan.entries()) {
     if (!entry.recurse) continue;
-    fetchedSurfaces[index] = await fetchTypeSurface(entry.specifier, entry.resolved, {
+    fetchedSurfaces[index] = await fetchTypeSurface(entry.pkg, entry.resolved, {
       followDependencies: true,
+      ...(entry.subpath ? { subpath: entry.subpath } : {}),
       traversal: {
         depth: depth + 1,
         visited: new Set([...visited, `${entry.specifier}@${entry.resolved}`]),

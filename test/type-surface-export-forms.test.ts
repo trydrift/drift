@@ -100,3 +100,16 @@ describe('binding a default export to what the consumer called it', () => {
     assert.deepEqual(of("import * as glob from 'glob';"), [undefined]);
   });
 });
+
+describe('following a re-export that names a subpath', () => {
+  test('the package carries the version and the subpath picks the entry', async () => {
+    const { typesFromExports, expandTypesEntry: expand } = await import('../dist/evidence/type-surface.js');
+    // `lit@2` publishes nothing of its own: its entry is four lines of
+    // `export * from 'lit-element/lit-element.js'`. Matching that specifier
+    // against `dependencies` verbatim never found `lit-element`, so the edge
+    // was dropped and the whole package resolved to "no public surface".
+    // These pin the two halves the fix depends on.
+    assert.equal(typesFromExports({ '.': { types: './development/index.d.ts', default: './index.js' } }), './development/index.d.ts');
+    assert.ok(expand('lit-element.js').includes('lit-element.d.ts'));
+  });
+});
