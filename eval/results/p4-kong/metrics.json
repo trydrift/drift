@@ -1,0 +1,118 @@
+{
+  "datasetId": "kong",
+  "datasetClass": "upstream-bc-detection",
+  "available": 16333,
+  "selected": 16333,
+  "attempted": 16333,
+  "notRun": 0,
+  "scored": 16333,
+  "excluded": {},
+  "missingRequirements": {},
+  "rates": {
+    "breaking-change detection recall": {
+      "numerator": 161,
+      "denominator": 165,
+      "value": 0.9757575757575757
+    }
+  },
+  "adjudication": {
+    "breaking-change detection recall": {
+      "adjudicated": 165,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
+  "refusals": [],
+  "negativeControls": 16168,
+  "confusion": {
+    "tp": 161,
+    "fp": 31,
+    "tn": 16137,
+    "fn": 4
+  },
+  "classification": {
+    "precision": {
+      "numerator": 161,
+      "denominator": 192,
+      "value": 0.8385416666666666
+    },
+    "recall": {
+      "numerator": 161,
+      "denominator": 165,
+      "value": 0.9757575757575757
+    },
+    "f1": 0.9019607843137254
+  },
+  "baseline": {
+    "name": "conventional-commits marker",
+    "description": "Predicts \"breaking\" whenever the commit message contains a literal BREAKING CHANGE annotation. Not Drift, and not presented as Drift — it is here so a reader can see how much of this task is reachable without reading the text.",
+    "confusion": {
+      "tp": 164,
+      "fp": 29,
+      "tn": 16139,
+      "fn": 1
+    },
+    "precision": {
+      "numerator": 164,
+      "denominator": 193,
+      "value": 0.8497409326424871
+    },
+    "recall": {
+      "numerator": 164,
+      "denominator": 165,
+      "value": 0.9939393939393939
+    }
+  },
+  "breakdown": {
+    "label: documents-breaking-change": {
+      "breaking-change detection recall": {
+        "numerator": 161,
+        "denominator": 165,
+        "value": 0.9757575757575757
+      }
+    },
+    "markerBaselinePredictsBreaking: true": {
+      "breaking-change detection recall": {
+        "numerator": 161,
+        "denominator": 164,
+        "value": 0.9817073170731707
+      }
+    },
+    "markerBaselinePredictsBreaking: false": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "value": 0
+      }
+    },
+    "messageStatesDetail: false": {
+      "breaking-change detection recall": {
+        "numerator": 47,
+        "denominator": 48,
+        "value": 0.9791666666666666
+      }
+    },
+    "messageStatesDetail: true": {
+      "breaking-change detection recall": {
+        "numerator": 114,
+        "denominator": 117,
+        "value": 0.9743589743589743
+      }
+    }
+  },
+  "intervals": {
+    "breaking-change detection recall": {
+      "low": 0.9515151515151515,
+      "high": 0.9939393939393939,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "exact": 16333
+  },
+  "affectedMisses": {
+    "total": 165,
+    "byReason": {},
+    "unclassified": 165
+  }
+}
