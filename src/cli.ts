@@ -242,6 +242,9 @@ Usage:
                               Not nuget or a C/C++ ecosystem — neither has a
                               single fetchable archive of actual source
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
+  drift explain <package>     What changed in one upgrade, and every place in
+                              this repository it reaches. Add --verify to run
+                              this project's own checks against it first
   drift mcp                   Serve Drift to a coding agent over MCP (stdio).
                               Runs locally; your editor spawns it. Add it with
                               \`claude mcp add drift -- npx -y @usedrift/cli mcp\`
@@ -483,6 +486,23 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       // Awaited: the queue is opened asynchronously, and a failure there must
       // surface as an exit code rather than an unhandled rejection.
       return await serveWebhook();
+    case 'explain': {
+      const flags = parseFlags(rest);
+      const target = rest.find((argument) => !argument.startsWith('-'));
+      if (!target) {
+        process.stderr.write('Usage: drift explain <package> [--dir <path>] [--verify]\n');
+        return 2;
+      }
+      const { runScan, renderExplanation } = await import('./upgrade/explain.js');
+      const candidates = await runScan({
+        directory: typeof flags.dir === 'string' ? flags.dir : process.cwd(),
+        only: target,
+        includeDev: true,
+        verify: Boolean(flags.verify),
+      });
+      process.stdout.write(`${renderExplanation(candidates[0], target)}\n`);
+      return 0;
+    }
     case 'mcp': {
       // Loaded on demand: the MCP SDK is only needed by this one subcommand,
       // and `drift outdated` should not pay to parse it.
