@@ -359,7 +359,7 @@ export function pinBeforeVersions(
 export interface TimemachinePrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' }[];
   verdict: string;
   summary: string;
   /** What the harness actually repinned, so the constructed upgrade is inspectable. `fromSource` records where the before-version came from (`requirement-pin`, `poetry.lock`, …). */
@@ -554,7 +554,12 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({ name: change.name, from: change.from, to: change.to })),
       breakingChanges: (plan?.breakingChanges ?? []).map((change) => ({ kind: String(change.kind), symbols: change.symbols ?? [] })),
-      impactSites: (plan?.impactSites ?? []).map((site) => ({ file: site.file, line: site.line, matchedSymbol: site.matchedSymbol })),
+      impactSites: (plan?.impactSites ?? []).map((site) => ({
+        file: site.file,
+        line: site.line,
+        matchedSymbol: site.matchedSymbol,
+        ...(site.siteKind ? { siteKind: site.siteKind } : {}),
+      })),
       verdict,
       summary: result.summary,
       repinned,
@@ -664,7 +669,9 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
     ...(projectAdjudicated
       ? {
           identifiedAffected,
-          localized: identifiedAffected && prediction.impactSites.length > 0,
+          // Source sites only — see the note on the same rule in `bump.ts`.
+          localized:
+            identifiedAffected && prediction.impactSites.some((site) => site.siteKind !== 'manifest'),
           falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
         }
       : {}),

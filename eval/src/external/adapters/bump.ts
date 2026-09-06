@@ -144,7 +144,7 @@ export class BumpUnavailable extends Error {
 export interface BumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' }[];
   verdict: string;
   summary: string;
   checkedSurfaces: { surface: string; dependency?: string; ecosystem?: string; workspace?: string; status: string; detail: string }[];
@@ -240,7 +240,12 @@ export async function predictBump(record: BumpRecord, signal?: AbortSignal): Pro
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({ name: change.name, from: change.from, to: change.to })),
       breakingChanges: (plan?.breakingChanges ?? []).map((change) => ({ kind: String(change.kind), symbols: change.symbols ?? [] })),
-      impactSites: (plan?.impactSites ?? []).map((site) => ({ file: site.file, line: site.line, matchedSymbol: site.matchedSymbol })),
+      impactSites: (plan?.impactSites ?? []).map((site) => ({
+        file: site.file,
+        line: site.line,
+        matchedSymbol: site.matchedSymbol,
+        ...(site.siteKind ? { siteKind: site.siteKind } : {}),
+      })),
       verdict,
       summary: result.summary,
       checkedSurfaces: (plan?.checkedSurfaces ?? []).map((surface) => ({ ...surface })),
@@ -337,7 +342,18 @@ export function scoreBump(input: ScoreBumpInput): ExternalCaseResult {
         (change) => change.name === dependency || change.name.endsWith(`:${record.updatedDependency.dependencyArtifactID}`),
       ),
       identifiedAffected: prediction.verdict === 'locally-affected',
-      localized: prediction.impactSites.length > 0,
+      /*
+       * Source sites only.
+       *
+       * This corpus carries no line-level ground truth, so "localized" is
+       * already only "Drift produced a site" — which makes it exactly the
+       * metric a change could inflate without getting anything right. A
+       * manifest site (`siteKind: 'manifest'`) is a real answer to "where do I
+       * go", but it is not a claim about where the code breaks, and counting
+       * it here would turn every confirmed regression into a localization
+       * whether or not anything was located.
+       */
+      localized: prediction.impactSites.some((site) => site.siteKind !== 'manifest'),
       falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
       // Deliberately no `repaired` key. Repair cannot be judged without the
       // Maven oracle, and the oracle needs the published image. An absent key

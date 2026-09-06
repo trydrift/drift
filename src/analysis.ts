@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { readdir, stat } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import type { DependencyChange, Ecosystem, ImpactSite, RemediationPlan, RepoContext } from './types.js';
 import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
@@ -869,9 +869,21 @@ async function verifyPlan(
         confirmedRegressions.push(key);
         // Only an isolated failure earns measured sites: a diagnostic from a
         // multi-dependency group cannot be pinned on this change alone.
-        measuredSites.push(
-          ...(await measuredSitesFrom(verification.introducedDiagnostics ?? [], key, changes[0]!.name, dir, workspace)),
+        const fromDiagnostics = await measuredSitesFrom(
+          verification.introducedDiagnostics ?? [],
+          key,
+          changes[0]!.name,
+          dir,
+          workspace,
         );
+        measuredSites.push(...fromDiagnostics);
+        // Nothing in the output named a source location: the break is in the
+        // dependency graph or the build policy, not in a line of code. The
+        // declaration is still somewhere real to send the developer.
+        if (fromDiagnostics.length === 0) {
+          const site = await manifestSiteFor(workspace, changes[0]!, key);
+          if (site) measuredSites.push(site);
+        }
       }
     }
     verifiedPlan = applyVerificationToPlan(verifiedPlan, verification, dir);
@@ -978,6 +990,69 @@ async function resolveStackFrameFile(
     }
   }
   return undefined;
+}
+
+/**
+ * The line in a manifest that declares this dependency.
+ *
+ * Coordinate-shaped ecosystems name the artifact separately from the group, so
+ * a Maven POM is matched on `<artifactId>`; everywhere else the package name
+ * appears verbatim on its own declaration line. Returns `undefined` rather
+ * than guessing when nothing matches — an unfound declaration is better than
+ * a wrong line.
+ */
+async function locateDeclaration(
+  workspace: string,
+  manifestPath: string,
+  name: string,
+): Promise<{ line: number; excerpt: string } | undefined> {
+  let text: string;
+  try {
+    text = await readFile(join(workspace, manifestPath), 'utf8');
+  } catch {
+    return undefined;
+  }
+
+  const artifact = name.includes(':') ? name.slice(name.indexOf(':') + 1) : name;
+  const escaped = artifact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const patterns = [
+    new RegExp(`<artifactId>\\s*${escaped}\\s*</artifactId>`),
+    new RegExp(`["'\`]${escaped}["'\`]\\s*[:=]`),
+    new RegExp(`(^|\\s)${escaped}\\s*(==|>=|<=|~=|=|:|$)`),
+  ];
+
+  const lines = text.split('\n');
+  for (const pattern of patterns) {
+    const index = lines.findIndex((line) => pattern.test(line));
+    if (index !== -1) return { line: index + 1, excerpt: lines[index]!.trim().slice(0, 200) };
+  }
+  return undefined;
+}
+
+/**
+ * Where to send a developer when the build broke but no source line is wrong.
+ *
+ * A Maven Enforcer rule, a dependency-convergence error or a failed lock
+ * resolution is a real, measured break with no consumer call site to point at
+ * — the fix is in the declaration. Marked `siteKind: 'manifest'` so neither a
+ * report nor a benchmark mistakes it for source-level localization.
+ */
+async function manifestSiteFor(
+  workspace: string,
+  change: DependencyChange,
+  breakingChangeKey: string,
+): Promise<ImpactSite | undefined> {
+  const declaration = await locateDeclaration(workspace, change.manifestPath, change.name);
+  if (!declaration) return undefined;
+  return {
+    breakingChangeId: `measured:${breakingChangeKey}`,
+    file: change.manifestPath,
+    line: declaration.line,
+    excerpt: declaration.excerpt,
+    matchedSymbol: change.name,
+    confidence: 'high',
+    siteKind: 'manifest',
+  };
 }
 
 async function measuredSitesFrom(

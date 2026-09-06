@@ -120,7 +120,7 @@ export function sweBumpSelectables(tasks: readonly SweBumpTask[]): Selectable[] 
 export interface SweBumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' }[];
   verdict: string;
   summary: string;
   /**
@@ -291,6 +291,7 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
         file: site.file,
         line: site.line,
         matchedSymbol: site.matchedSymbol,
+        ...(site.siteKind ? { siteKind: site.siteKind } : {}),
       })),
       verdict,
       summary: result.summary,
@@ -404,7 +405,9 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
   // affected — impossible per case, and it let the pooled localization rate
   // exceed the affected rate it is a subset of. The Python adapter already
   // scored it this way; this one did not, so the two disagreed.
-  const localized = identifiedAffected && prediction.impactSites.length > 0;
+  // Source sites only — see the note on the same rule in `bump.ts`.
+  const localized =
+    identifiedAffected && prediction.impactSites.some((site) => site.siteKind !== 'manifest');
   const adjudicated = detectedUpdate !== undefined;
   const unadjudicatedReason =
     'the corpus supplies a manifest range and Drift could not resolve it to a concrete before/after version pair';

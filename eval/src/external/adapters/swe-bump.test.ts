@@ -158,3 +158,46 @@ test('SWE-Bump localization never exceeds affected-identification', () => {
   assert.equal(affected.outcomes.identifiedAffected, true);
   assert.equal(affected.outcomes.localized, true, 'an affected verdict with sites still localizes');
 });
+
+/**
+ * A manifest site says "your build breaks, here is the declaration you edit".
+ * That is a real answer, but it is not a claim about where the *code* breaks,
+ * and these corpora carry no line-level truth to check such a claim against —
+ * so counting it would let every confirmed regression score as a localization
+ * without anything having been located.
+ */
+test('a manifest-only site is not a localization', () => {
+  const manifestOnly = scoreSweBump({
+    task: TASK,
+    prediction: {
+      ...prediction({ from: '1.9.4', to: '2.1.0' }),
+      verdict: 'locally-affected',
+      impactSites: [{ file: 'package.json', line: 12, matchedSymbol: 'foo', siteKind: 'manifest' }],
+    },
+    excluded: null,
+    datasetVersion: 'v',
+    sourceHash: 'hash',
+    durationMs: 1,
+  });
+
+  assert.equal(manifestOnly.outcomes.identifiedAffected, true);
+  assert.equal(manifestOnly.outcomes.localized, false);
+
+  // One real source site alongside it is still a localization.
+  const mixed = scoreSweBump({
+    task: TASK,
+    prediction: {
+      ...prediction({ from: '1.9.4', to: '2.1.0' }),
+      verdict: 'locally-affected',
+      impactSites: [
+        { file: 'package.json', line: 12, matchedSymbol: 'foo', siteKind: 'manifest' },
+        { file: 'src/x.ts', line: 3, matchedSymbol: 'foo' },
+      ],
+    },
+    excluded: null,
+    datasetVersion: 'v',
+    sourceHash: 'hash',
+    durationMs: 1,
+  });
+  assert.equal(mixed.outcomes.localized, true);
+});
