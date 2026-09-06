@@ -88,6 +88,16 @@ export interface SurfaceDiff {
   changes: SurfaceChange[];
   /** Additive API, when the provider can distinguish it. Never breaking. */
   additions?: SurfaceAddition[];
+  /**
+   * Changes this provider observed but is not confident enough to report —
+   * source-incompatible where the differ reads binary compatibility, say.
+   *
+   * Never findings, and never counted as breaking. Their only job is to stop a
+   * verdict claiming that a surface the provider did not check is unchanged:
+   * "no incompatible change in the checked surfaces" is a false sentence when
+   * the provider saw eighteen changes it declined to rule on.
+   */
+  sourceIncompatibleCount?: number;
   /** Named in the citation, because "computed" without saying by what is a claim. */
   tool: string;
   /**

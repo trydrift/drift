@@ -234,9 +234,11 @@ export const javaSurface: SurfaceProvider = {
       );
     }
 
+    const sourceIncompatibleCount = countSourceIncompatibleChanges(result.stdout);
     return {
       available: true,
       changes: parseJapicmp(result.stdout),
+      ...(sourceIncompatibleCount > 0 ? { sourceIncompatibleCount } : {}),
       tool: TOOL,
       weight: 1.0,
       locator: `${request.name} ${request.from} → ${request.to} (classfiles)`,
@@ -687,6 +689,31 @@ export function parseJapicmp(output: string): SurfaceChange[] {
   }
 
   return changes;
+}
+
+/**
+ * Changes japicmp flagged `*` — source-incompatible, binary-compatible.
+ *
+ * These are deliberately not reported as breaking changes: this differ reads
+ * classfiles, and emitting them collapsed precision on `benchmarks/roseau`
+ * from 91.1% to 70.3%, because that corpus's negatives are disproportionately
+ * exactly this class of change. See the note on {@link parseJapicmp}.
+ *
+ * But "not confident enough to report" is not "did not happen", and the two
+ * were being conflated into a *safety* claim. `commons-io 2.7 -> 2.11.0` has
+ * zero binary-incompatible changes and eighteen source-incompatible ones;
+ * Drift found nothing, and said "no incompatible change in the checked
+ * surfaces" — a sentence about a surface it never checked. Counting them lets
+ * the verdict say so instead.
+ */
+export function countSourceIncompatibleChanges(output: string): number {
+  let count = 0;
+  for (const raw of output.split('\n')) {
+    if (/^([-+*])\1\1\*\s+\w+\s+(CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS)/.test(raw.trim())) {
+      count += 1;
+    }
+  }
+  return count;
 }
 
 /**

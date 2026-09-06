@@ -218,6 +218,10 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // whether it found anything — `additions` alone cannot answer that, because
   // a clean diff and "never computed" both leave it without an entry.
   const surfaceComputed = new Set<string>();
+  // Changes a provider saw and declined to rule on — see
+  // `SurfaceDiff.sourceIncompatibleCount`. Not findings; they exist only to
+  // stop a verdict claiming an unchecked surface is unchanged.
+  const sourceIncompatible = new Map<string, number>();
   // Contract documents (OpenAPI, protobuf, GraphQL) are keyed by path rather
   // than by dependency, and recorded whether or not the comparison worked: a
   // spec that was configured and could not be diffed must not look like one
@@ -241,6 +245,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       // `judgeConfidence` gives any dependency it believes had a real
       // computed API diff — see `CONFIDENT_SURFACE_WEIGHT`.
       if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceComputed.add(key);
+      if (diff.sourceIncompatibleCount) sourceIncompatible.set(key, diff.sourceIncompatibleCount);
       additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
     },
     onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
@@ -616,6 +621,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       ecosystem: change.ecosystem,
       workspace: change.workspace,
       status: gap ? 'unavailable' : computed ? 'checked' : 'unavailable',
+      ...(sourceIncompatible.get(key) ? { unruledChanges: sourceIncompatible.get(key) } : {}),
       detail: gap
         ? gap.reason
         : computed
