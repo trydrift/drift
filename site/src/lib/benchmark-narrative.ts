@@ -40,7 +40,7 @@ export interface BenchmarkNarrative {
     fn: number;
     fp: number;
   };
-  bumpSubset: {
+  bumpFull: {
     dataset: BenchmarkDataset;
     selected: number;
     detectionFraction: string;
@@ -89,15 +89,15 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
   const roseauClassification = requireClassification(roseau);
   const roseauConfusion = requireConfusion(roseau);
 
-  const bumpSubset = requireDataset(datasets, "bump-subset-40");
-  const bumpFalseSafe = falseSafeRate(bumpSubset);
-  const bumpFailureCategories = Object.keys(bumpSubset.breakdown)
+  const bumpFull = requireDataset(datasets, "bump-full-571");
+  const bumpFalseSafe = falseSafeRate(bumpFull);
+  const bumpFailureCategories = Object.keys(bumpFull.breakdown)
     .filter((slice) => slice.startsWith("label: "))
     .sort();
 
   const sweBump = requireDataset(datasets, "swe-bump-detection");
   const timeMachine = requireDataset(datasets, "timemachine-verified");
-  const bump = bumpSubset;
+  const bump = bumpFull;
 
   const kongRq1 = requireDataset(datasets, "kong-rq1-documented");
   const kongRq1Classification = requireClassification(kongRq1);
@@ -127,15 +127,15 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
       fn: roseauConfusion.fn,
       fp: roseauConfusion.fp,
     },
-    bumpSubset: {
-      dataset: bumpSubset,
-      selected: bumpSubset.selected,
-      detectionFraction: fraction(requireRate(bumpSubset, "dependency-update detection rate")),
+    bumpFull: {
+      dataset: bumpFull,
+      selected: bumpFull.selected,
+      detectionFraction: fraction(requireRate(bumpFull, "dependency-update detection rate")),
       falseSafeFraction: fraction(bumpFalseSafe),
       falseSafePercent: percent(bumpFalseSafe),
       affectedByCategory: bumpFailureCategories.map((slice) => ({
         slice,
-        rate: formatRate(requireBreakdownRate(bumpSubset, slice, "affected-repository identification rate")),
+        rate: formatRate(requireBreakdownRate(bumpFull, slice, "affected-repository identification rate")),
       })),
     },
     javaVsTypeScript: {

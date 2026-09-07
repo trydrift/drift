@@ -184,22 +184,29 @@ export default function Benchmarks() {
               </p>
             </Weakness>
 
-            <Weakness title="On Java, Drift finds the upstream change and then fails to find it in your code — beta, not launch-ready">
+            <Weakness title="On Java, Drift still calls some broken upgrades safe — beta, not general availability">
               <p>
-                In BUMP&rsquo;s {narrative.bumpSubset.selected}-case Java subset, Drift detected the update in {narrative.bumpSubset.detectionFraction} cases.
-                It still returned a false-safe verdict for {narrative.bumpSubset.falseSafeFraction} of them ({narrative.bumpSubset.falseSafePercent}).
-                That is the number this page treats as blocking a general-availability claim for Java consumer-impact —
-                it is published as beta, tracked for improvement, not presented as equivalent to the TypeScript result above.
+                Over BUMP&rsquo;s Java consumer breakages in full — all {narrative.bumpFull.selected} records, of
+                which {narrative.bumpFull.dataset.scored} scored — Drift detected the update in{" "}
+                {narrative.bumpFull.detectionFraction} cases and still returned a false-safe verdict for{" "}
+                {narrative.bumpFull.falseSafeFraction} of them ({narrative.bumpFull.falseSafePercent}).
+                That is the number this page treats as blocking a general-availability claim for Java
+                consumer-impact — published as beta, tracked, and not presented as equivalent to the TypeScript
+                result above.
               </p>
               <p className="mt-3">
-                Some of the hardest failures live outside a public API surface entirely — build-plugin rules and
-                behavioural test failures an API diff cannot see by itself. One specific localization gap has since
-                been fixed: the Maven coordinate a dependency is fetched under is frequently not the Java package it
-                ships (a Jenkins plugin&rsquo;s <code className="font-mono text-[12px]">groupId</code> is nothing like its <code className="font-mono text-[12px]">hudson.*</code> packages),
-                so a consumer file that plainly imported and used the changed type was never searched. Re-running
-                this exact subset after that fix left the numbers on this card unmoved, which says the fix does not
-                reach this particular corpus&rsquo; packages — not that nothing changed. The remaining gap is still
-                unidentified.
+                Three causes were identified and two of them fixed. A raised minimum JDK was invisible: japicmp
+                reports it as <code className="font-mono text-[12px]">CLASS FILE FORMAT VERSION</code> on every
+                recompiled class, which Drift&rsquo;s line grammar did not match, so a jOOQ upgrade requiring Java 17
+                read as having no incompatible change at all. Signatures were also being cut at the first
+                parenthesis, discarding the parameter types that carry a <code className="font-mono text-[12px]">javax</code>{" "}
+                to <code className="font-mono text-[12px]">jakarta</code> migration — the break lands on the
+                consumer&rsquo;s own import and names nothing the changed library owns.
+              </p>
+              <p className="mt-3">
+                What remains is mostly the class no static analysis reaches: a behavioural change with no signature
+                change and no changelog sentence describing it. Drift finds those in prose when upstream wrote them
+                down, and refuses to claim they reach your code without running your tests.
               </p>
             </Weakness>
 
