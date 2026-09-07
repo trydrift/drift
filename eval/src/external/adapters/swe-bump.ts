@@ -120,7 +120,7 @@ export function sweBumpSelectables(tasks: readonly SweBumpTask[]): Selectable[] 
 export interface SweBumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' | 'runtime-declaration' }[];
   verdict: string;
   summary: string;
   /**
@@ -407,7 +407,7 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
   // scored it this way; this one did not, so the two disagreed.
   // Source sites only — see the note on the same rule in `bump.ts`.
   const localized =
-    identifiedAffected && prediction.impactSites.some((site) => site.siteKind !== 'manifest');
+    identifiedAffected && prediction.impactSites.some((site) => site.siteKind === undefined);
   const adjudicated = detectedUpdate !== undefined;
   const unadjudicatedReason =
     'the corpus supplies a manifest range and Drift could not resolve it to a concrete before/after version pair';

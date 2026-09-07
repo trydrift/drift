@@ -359,7 +359,7 @@ export function pinBeforeVersions(
 export interface TimemachinePrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' | 'runtime-declaration' }[];
   verdict: string;
   summary: string;
   /** What the harness actually repinned, so the constructed upgrade is inspectable. `fromSource` records where the before-version came from (`requirement-pin`, `poetry.lock`, …). */
@@ -671,7 +671,7 @@ export function scoreTimemachine(input: ScoreTimemachineInput): ExternalCaseResu
           identifiedAffected,
           // Source sites only — see the note on the same rule in `bump.ts`.
           localized:
-            identifiedAffected && prediction.impactSites.some((site) => site.siteKind !== 'manifest'),
+            identifiedAffected && prediction.impactSites.some((site) => site.siteKind === undefined),
           falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
         }
       : {}),

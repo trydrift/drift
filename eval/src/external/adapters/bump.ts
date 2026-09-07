@@ -144,7 +144,7 @@ export class BumpUnavailable extends Error {
 export interface BumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' | 'runtime-declaration' }[];
   verdict: string;
   summary: string;
   checkedSurfaces: { surface: string; dependency?: string; ecosystem?: string; workspace?: string; status: string; detail: string }[];
@@ -348,12 +348,14 @@ export function scoreBump(input: ScoreBumpInput): ExternalCaseResult {
        * This corpus carries no line-level ground truth, so "localized" is
        * already only "Drift produced a site" — which makes it exactly the
        * metric a change could inflate without getting anything right. A
-       * manifest site (`siteKind: 'manifest'`) is a real answer to "where do I
-       * go", but it is not a claim about where the code breaks, and counting
-       * it here would turn every confirmed regression into a localization
-       * whether or not anything was located.
+       * declaration site — a `pom.xml` dependency line, or the `ci.yml` line
+       * stating this project's Java version — is a real answer to "where do I
+       * go" and a false answer to "where does my code break". Any `siteKind`
+       * marks one, so source localization is exactly the unmarked sites.
+       * Without the split, a raised JDK floor would score as a localization on
+       * every project that declares a Java version anywhere.
        */
-      localized: prediction.impactSites.some((site) => site.siteKind !== 'manifest'),
+      localized: prediction.impactSites.some((site) => site.siteKind === undefined),
       falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
       // Deliberately no `repaired` key. Repair cannot be judged without the
       // Maven oracle, and the oracle needs the published image. An absent key

@@ -528,8 +528,14 @@ export interface ImpactSite {
    * breaks" would overstate it, and counting it as source-level localization
    * would overstate it twice. Consumers that report or measure localization
    * should treat a `manifest` site as a weaker claim than an unmarked one.
+   *
+   * `runtime-declaration` is the same distinction for the same reason: the
+   * line where this project states its Node or Java version is where a raised
+   * floor is *fixed*, and it is never a use of the changed API. A
+   * `.github/workflows/ci.yml` line is a real answer to "where do I go" and
+   * would be a false answer to "where does my code break".
    */
-  siteKind?: 'manifest';
+  siteKind?: 'manifest' | 'runtime-declaration';
 }
 
 /** Canonical downstream meaning of one localized breaking change. */
