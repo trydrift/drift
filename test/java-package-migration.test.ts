@@ -196,3 +196,20 @@ describe('a raised bytecode floor', () => {
     assert.equal(javaReleaseOf(44), null);
   });
 });
+
+describe('what a reader is told to do about a raised floor', () => {
+  test('names the build settings, not the call sites', async () => {
+    const { remediationForFinding } = await import('../dist/analyze/rules.js');
+    const text = remediationForFinding(
+      { code: 'runtime-requirement-raised', symbol: 'Java', detail: 'x', after: '17' },
+      'org.jooq:jooq-meta',
+    );
+    // The generic ending ("review usages of X and update them") is actively
+    // wrong here: there is no call site, and there is no source change that
+    // avoids it.
+    assert.ok(!/review usages/i.test(text));
+    assert.match(text, /Java 17/);
+    assert.match(text, /maven\.compiler\.release/);
+    assert.match(text, /no source change that avoids this/);
+  });
+});
