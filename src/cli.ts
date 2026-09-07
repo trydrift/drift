@@ -231,7 +231,11 @@ drift — dependency changes, proven and fixed
 Usage:
   drift analyze [options]     Analyse a local repository and print the report
   drift outdated [options]    Scan for available upgrades, not just past ones
-  drift upgrade [options]     Install every upgrade proven safe for this code
+  drift upgrade [options]     Install every upgrade *measured* safe for this
+                              code: each one is installed in a throwaway
+                              worktree and this project's own checks are run
+                              against it first. --no-verify installs on the
+                              static verdict alone, which is a prediction
   drift fix [options]         Analyse, then apply the fixes and push a branch
   drift pr [options]          Push the current branch and open a pull request
   drift diff <eco> <pkg> <from> <to>
@@ -912,7 +916,16 @@ async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } 
   // project's own typecheck/build/test). `config.verify.enabled` stays a
   // hard ceiling above that: a repository with verification switched off in
   // drift.yml stays off regardless of the flag.
-  const deepVerifyRequested = Boolean(flags.verify) && config.verify.enabled;
+  //
+  // `drift upgrade` inverts that default. Auto-installing on a static
+  // prediction is the one place in this tool where being wrong edits somebody
+  // else's repository, and BUMP measures that prediction wrong on 3.1% of real
+  // Java breakages -- so the dangerous action is gated on a measurement rather
+  // than a forecast. `--no-verify` opts back out, for someone who has decided
+  // they want the old behaviour and said so.
+  const deepVerifyRequested =
+    (Boolean(flags.verify) || (options.installSafe === true && flags['no-verify'] !== true)) &&
+    config.verify.enabled;
 
   let settledCount = 0;
   let toAnalyse = 0;
@@ -1078,7 +1091,18 @@ async function upgradeCommand(flags: Flags): Promise<number> {
 export function safeUpgradeCandidates(candidates: readonly UpgradeCandidate[]): UpgradeCandidate[] {
   return candidates.filter((candidate) => {
     const severity = severityOf(candidate);
-    return severity === 'clean' || severity === 'upstream-only';
+    if (severity !== 'clean' && severity !== 'upstream-only') return false;
+    // A clean *prediction* is not a clean *result*. `verifiedUnaffected` is set
+    // only where this project's own compile-capable checks were installed
+    // against the upgrade and passed, which is the whole difference between "no
+    // incompatible change was found in the surfaces Drift checked" and "your
+    // build still works". Only the second is grounds for editing a manifest
+    // without being asked again.
+    //
+    // A candidate whose verification was skipped -- no checks to run, a tool
+    // missing, a baseline already red -- is still reported and still
+    // installable by name. It is only excluded from the unattended batch.
+    return candidate.verifiedUnaffected === true;
   });
 }
 

@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { commitWorkingTreeManifests } from '../dist/repo/local-git.js';
+import { severityOf } from '../dist/upgrade/severity.js';
 import {
   groupUpgradeCandidates,
   main,
@@ -248,7 +249,10 @@ describe('CLI safe bulk upgrade selection', () => {
           severity === 'upstream-only'
           ? { status: 'passed', checks: [{ label: 'typecheck', status: 'passed', compileCapable: true }], measuredWith: 1 }
           : undefined,
-    ...(severity === 'upstream-only' ? { verifiedUnaffected: true } : {}),
+    // A `clean` candidate is only installable unattended once its checks have
+    // actually run and passed — see `safeUpgradeCandidates`. Both severities
+    // that reach the batch therefore carry the reconciled flag.
+    ...(severity === 'upstream-only' || severity === 'clean' ? { verifiedUnaffected: true } : {}),
   }) as never;
 
   test('selects only candidates Drift proved safe for this repository', () => {
@@ -265,6 +269,25 @@ describe('CLI safe bulk upgrade selection', () => {
     ];
 
     assert.deepEqual(safeUpgradeCandidates(candidates).map((entry) => entry.name), ['clean', 'verified-upstream']);
+  });
+
+  /**
+   * A clean *prediction* is not a clean *result*.
+   *
+   * BUMP measures the prediction wrong on 3.1% of real Java breakages, and
+   * `drift upgrade` is the one place where being wrong edits somebody's
+   * repository without asking again. So the unattended batch is gated on
+   * `verifiedUnaffected` — this project's own compile-capable checks
+   * installed against the upgrade and passing — not on the static verdict.
+   */
+  test('a clean verdict whose checks never ran is not installed unattended', () => {
+    const unverified = candidateWithSeverity('clean-but-unchecked', 'clean');
+    delete (unverified as unknown as { verifiedUnaffected?: boolean }).verifiedUnaffected;
+
+    assert.deepEqual(safeUpgradeCandidates([unverified]), []);
+    // Still a clean verdict, and still installable by name — only the
+    // unattended batch is refused.
+    assert.equal(severityOf(unverified as never), 'clean');
   });
 
   test('groups one manifest and manager into one batch without reordering groups', () => {
