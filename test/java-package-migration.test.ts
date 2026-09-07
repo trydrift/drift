@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { parseJapicmp } from '../dist/evidence/surface/java.js';
 import {
   detectPackageMigrations,
+  detectRuntimeFloorRaise,
+  javaReleaseOf,
   parseMemberSignature,
   splitParameters,
 } from '../dist/evidence/surface/java-migration.js';
@@ -141,5 +143,56 @@ describe('reading a japicmp member signature', () => {
 
   test('a line with no parameter list is not a signature', () => {
     assert.equal(parseMemberSignature('PUBLIC static final int MAX', 'Owner', true), null);
+  });
+});
+
+/**
+ * The break that was invisible to every other signal here.
+ *
+ * `jooq-meta 3.16.6 -> 3.17.5` produces 292 binary-incompatible changes and
+ * every one of them is `CLASS FILE FORMAT VERSION: 61.0 <- 55.0` — jOOQ 3.17
+ * requires JDK 17. `parseJapicmp`'s line grammar expects `VERB KIND`, and that
+ * line is neither, so Drift derived nothing from any of them and reported the
+ * upgrade as having no incompatible change in the checked surfaces. It was
+ * six of BUMP's thirty-six false-safes.
+ */
+describe('a raised bytecode floor', () => {
+  const report = (...versions: [number, number][]) =>
+    [
+      'Comparing binary compatibility of new.jar against old.jar',
+      ...versions.map(([to, from]) => `\t***! CLASS FILE FORMAT VERSION: ${to}.0 <- ${from}.0`),
+    ].join('\n');
+
+  test('is reported once, not once per class', () => {
+    const changes = parseJapicmp(report([61, 55], [61, 55], [61, 55]));
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0]?.kind, 'runtime-requirement-raised');
+    assert.equal(changes[0]?.before, '11');
+    assert.equal(changes[0]?.after, '17');
+    assert.match(changes[0]!.detail, /UnsupportedClassVersionError/);
+  });
+
+  test('the newest class in the jar sets the floor', () => {
+    // A multi-release or shaded jar carries older classes too; the floor is
+    // the highest, never the lowest.
+    assert.deepEqual(detectRuntimeFloorRaise(report([61, 55], [52, 52])), { from: 11, to: 17 });
+  });
+
+  test('an unchanged floor is not a finding', () => {
+    assert.equal(detectRuntimeFloorRaise(report([55, 55])), null);
+    assert.deepEqual(parseJapicmp(report([55, 55])), []);
+  });
+
+  test('a lowered floor is not a finding either', () => {
+    // Recompiling for an *older* target widens what can consume the artifact.
+    assert.equal(detectRuntimeFloorRaise(report([52, 61])), null);
+  });
+
+  test('class file versions map to their Java release', () => {
+    assert.equal(javaReleaseOf(52), 8);
+    assert.equal(javaReleaseOf(55), 11);
+    assert.equal(javaReleaseOf(61), 17);
+    assert.equal(javaReleaseOf(65), 21);
+    assert.equal(javaReleaseOf(44), null);
   });
 });

@@ -151,7 +151,18 @@ export type SurfaceChangeKind =
   | 'constant-value-changed'
   | 'commonjs-entry-removed'
   | 'exports-require-condition-removed'
-  | 'package-type-changed';
+  | 'package-type-changed'
+  /**
+   * The artifact now needs a newer language runtime than it did.
+   *
+   * Not an API change and not localizable to a call site: every consumer is
+   * affected or none is, depending on one fact about their toolchain. Carried
+   * here because the differ is what observes it — japicmp reads the class file
+   * format version out of the bytecode — and `analyze` turns it into the
+   * `runtime-requirement` breaking change the rest of the pipeline already
+   * knows how to reason about.
+   */
+  | 'runtime-requirement-raised';
 
 export interface SurfaceChange {
   kind: SurfaceChangeKind;

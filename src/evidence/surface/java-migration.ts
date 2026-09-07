@@ -239,3 +239,51 @@ export function detectPackageMigrations(
   }
   return bounded;
 }
+
+/**
+ * The Java release a class file format version belongs to.
+ *
+ * 52 is Java 8, 55 is 11, 61 is 17, 65 is 21 — the major number has been
+ * `release + 44` since Java 5, which is far enough back that nothing Drift
+ * will meet predates it.
+ */
+export function javaReleaseOf(classFileVersion: number): number | null {
+  const release = classFileVersion - 44;
+  return release >= 5 && release <= 99 ? release : null;
+}
+
+/**
+ * The minimum JDK this artifact now needs, when the upgrade raised it.
+ *
+ * japicmp prints `***! CLASS FILE FORMAT VERSION: 61.0 <- 55.0` for every
+ * class recompiled at a newer bytecode level, and that line is authoritative
+ * evidence of a floor a consumer must meet: a project on Java 11 loading a
+ * class compiled for 17 gets `UnsupportedClassVersionError` at runtime, and
+ * javac refuses it at build time. It is one of the most common ways a Java
+ * upgrade breaks a project, and it is invisible to every other signal here —
+ * `parseJapicmp`'s line grammar expects `VERB KIND`, and this line is neither.
+ *
+ * `jooq-meta 3.16.6 -> 3.17.5` is the shape: 292 binary-incompatible changes,
+ * every one of them this, and Drift derived nothing from any of them and
+ * called the upgrade safe.
+ *
+ * The *maximum* on each side is what matters. A jar routinely carries a few
+ * classes at an older level (a multi-release jar, or a shaded dependency), and
+ * the floor is set by the newest class in it, not the oldest.
+ */
+export function detectRuntimeFloorRaise(output: string): { from: number; to: number } | null {
+  let highestBefore = 0;
+  let highestAfter = 0;
+
+  for (const raw of output.split('\n')) {
+    const match = /CLASS FILE FORMAT VERSION:\s*(\d+)(?:\.\d+)?\s*<-\s*(\d+)(?:\.\d+)?/.exec(raw);
+    if (!match) continue;
+    highestAfter = Math.max(highestAfter, Number(match[1]));
+    highestBefore = Math.max(highestBefore, Number(match[2]));
+  }
+
+  if (highestAfter <= highestBefore) return null;
+  const from = javaReleaseOf(highestBefore);
+  const to = javaReleaseOf(highestAfter);
+  return from !== null && to !== null ? { from, to } : null;
+}

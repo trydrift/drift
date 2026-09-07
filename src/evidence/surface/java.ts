@@ -7,6 +7,7 @@ import type { SurfaceChange } from '../type-surface.js';
 import { ensureHelperArtifact } from './helper-artifact.js';
 import {
   detectPackageMigrations,
+  detectRuntimeFloorRaise,
   parseMemberSignature,
   type MemberSignature,
 } from './java-migration.js';
@@ -666,6 +667,22 @@ export function parseJapicmp(output: string): SurfaceChange[] {
         after: rest!.trim(),
       });
     }
+  }
+
+  // A raised bytecode floor affects every consumer or none, depending on one
+  // fact about their toolchain — so it is one finding, never one per class.
+  const floor = detectRuntimeFloorRaise(output);
+  if (floor) {
+    changes.push({
+      kind: 'runtime-requirement-raised',
+      symbol: 'Java',
+      detail:
+        `This version is compiled for Java ${floor.to}; the previous one was Java ${floor.from}. ` +
+        `A project building or running on Java ${floor.from} cannot use it — javac rejects it at build time ` +
+        `and the JVM raises \`UnsupportedClassVersionError\` at runtime.`,
+      before: String(floor.from),
+      after: String(floor.to),
+    });
   }
 
   for (const migration of detectPackageMigrations(removedMembers, addedMembers)) {

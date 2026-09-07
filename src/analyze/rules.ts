@@ -48,6 +48,8 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
     case 'exports-require-condition-removed':
     case 'package-type-changed':
       return 'module-system-change';
+    case 'runtime-requirement-raised':
+      return 'runtime-requirement';
 
     default:
       return 'unknown';

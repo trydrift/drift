@@ -168,6 +168,22 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
       workspace: record.workspace,
       kind,
       summary: withPublishedName(finding.detail, record.dependency),
+      // A computed runtime floor is a real `RuntimeRequirement`, not prose to
+      // be re-parsed: the differ read it out of the bytecode and put the two
+      // releases in `before`/`after`. Building it here lets
+      // `completeRuntimeAnalyses` answer it against this repository's own
+      // declared toolchain, exactly as it does for a floor found in a
+      // changelog.
+      ...(kind === 'runtime-requirement' && finding.after
+        ? {
+            runtime: {
+              kind: 'minimum-runtime' as const,
+              runtime: 'java' as const,
+              requirement: `>=${finding.after}`,
+              sourceText: finding.detail,
+            },
+          }
+        : {}),
       before: finding.before,
       after: finding.after,
       ...(finding.fromKind ? { fromKind: finding.fromKind } : {}),
