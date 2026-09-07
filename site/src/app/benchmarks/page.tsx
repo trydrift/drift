@@ -124,12 +124,13 @@ export default function Benchmarks() {
             </p>
             {group.datasetClass === "consumer-impact" && (
               <p className="mt-3 max-w-2xl rounded-lg border border-border bg-surface-hover/50 px-3.5 py-2.5 text-sm leading-6 text-muted">
-                <strong className="font-medium text-foreground">TypeScript is where this is furthest along.</strong>{" "}
-                swe-bump-bench&rsquo;s {narrative.javaVsTypeScript.sweBump.affectedFraction} affected-repository rate
-                and {narrative.javaVsTypeScript.sweBump.falseSafePercent} false-safe rate are the numbers behind that.
-                The Java (BUMP) and Python (TimeMachine) consumer-impact results below are earlier and weaker on the
-                same questions — see the two Java cards under &ldquo;Known weaknesses&rdquo; — and are published as
-                beta results, not a claim that they are launch-ready in the way the TypeScript numbers are.
+                <strong className="font-medium text-foreground">Read these three together, not against each other.</strong>{" "}
+                All three are run against the same engine build — comparing rates across runs of different vintages
+                is unsound, so they move together whenever the engine does. What they do not support is a ranking:
+                swe-bump-bench and TimeMachine are an order of magnitude smaller than BUMP, so their rates carry
+                intervals wide enough to swallow the differences between them. BUMP is the only one of the three
+                precise enough to argue about, and the Java cards under &ldquo;Known weaknesses&rdquo; are where
+                that argument is made.
               </p>
             )}
             <div className="mt-5 space-y-5">

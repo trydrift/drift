@@ -32,9 +32,9 @@
       "why": "The binary form of the same question, published mainly for its trivial-marker baseline: the labels are close to regex-recoverable, and the comparison says so."
     },
     {
-      "runId": "swe-bump-detection",
+      "runId": "swe-bump-full",
       "headline": false,
-      "why": "Real TypeScript projects at historical commits whose build a dependency upgrade breaks."
+      "why": "Every task in swe-bump-bench, run against the same engine as the Java and Python corpora here. Comparing rates across runs of different vintages is unsound, so the three consumer-impact corpora are re-run together whenever the engine moves."
     },
     {
       "runId": "bump-full-571",
@@ -42,9 +42,9 @@
       "why": "BUMP's Java consumer breakages in full \u2014 every record in the corpus, evaluated on the real historical commit pair, not a stratified subset. Replaces the 40-case sample: a false-safe rate is the number this page treats as blocking a general-availability claim, and it deserves the whole corpus behind it rather than a sample that invites the question of which 40."
     },
     {
-      "runId": "timemachine-verified",
+      "runId": "timemachine-full",
       "headline": false,
-      "why": "TimeMachine's human-verified Python subset, on the weakest manifest-pair construction in this benchmark."
+      "why": "TimeMachine's human-verified migration failures, run against the same engine as the Java and TypeScript corpora here \u2014 see the note on swe-bump-full."
     }
   ]
 }

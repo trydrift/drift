@@ -1,6 +1,6 @@
 {
   "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
-  "generatedAt": "2026-09-07T11:20:24.156Z",
+  "generatedAt": "2026-09-07T20:19:56.217Z",
   "datasets": [
     {
       "runId": "roseau-accuracy",
@@ -729,9 +729,9 @@
       ]
     },
     {
-      "runId": "swe-bump-detection",
+      "runId": "swe-bump-full",
       "headline": false,
-      "why": "Real TypeScript projects at historical commits whose build a dependency upgrade breaks.",
+      "why": "Every task in swe-bump-bench, run against the same engine as the Java and Python corpora here. Comparing rates across runs of different vintages is unsound, so the three consumer-impact corpora are re-run together whenever the engine moves.",
       "title": "swe-bump-bench",
       "ecosystem": "npm",
       "datasetClass": "consumer-impact",
@@ -751,21 +751,22 @@
           "false-safe-count"
         ]
       },
-      "driftCommit": "12e8415bc9eed274bbcffeb14c5de31e92ac83e4",
-      "driftTreeDirty": false,
-      "runDate": "2026-09-03T05:29:44.664Z",
+      "driftCommit": "0de69bc20a560df43f0b21b6f9c5387c4d3b2cd1",
+      "driftTreeDirty": true,
+      "runDate": "2026-09-07T18:06:16.797Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- swe-bump",
-      "platform": "linux/x64, Node v22.23.2",
+      "platform": "darwin/x64, Node v24.20.0",
       "notes": "Detection only. Every task here is a known-breaking upgrade — the corpus was collected by bumping packages until `tsc` failed — so there is no negative population and no precision or false-positive rate can be computed from it. The questions it does answer are whether Drift sees the update, decides the repository is affected, points at consumer code, and above all whether it ever tells a developer with a broken build that they are fine.\n\nInstallation and the `tsc` oracle are not run in this track. These projects pin four different Node majors and three package managers against lockfiles from 2022–2024, and a `yarn install` that fails in 2026 is a fact about the registry and this machine rather than about Drift. Keeping the oracle separate lets an install failure exclude a case from repair questions without discarding the detection answer.",
       "available": 63,
       "selected": 63,
       "attempted": 63,
       "notRun": 0,
-      "scored": 61,
+      "scored": 53,
       "excluded": {
-        "source-unavailable": 2
+        "source-unavailable": 2,
+        "reproduction-failed": 8
       },
       "missingRequirements": {},
       "negativeControls": 0,
@@ -774,24 +775,24 @@
       "selectionLimit": null,
       "rates": {
         "dependency-update detection rate": {
-          "numerator": 61,
-          "denominator": 61,
+          "numerator": 53,
+          "denominator": 53,
           "value": 1
         },
         "affected-repository identification rate": {
-          "numerator": 41,
-          "denominator": 61,
-          "value": 0.6721311475409836
+          "numerator": 33,
+          "denominator": 53,
+          "value": 0.6226415094339622
         },
         "consumer localization rate": {
-          "numerator": 36,
-          "denominator": 61,
-          "value": 0.5901639344262295
+          "numerator": 30,
+          "denominator": 53,
+          "value": 0.5660377358490566
         },
         "false-safe verdicts": {
-          "numerator": 6,
-          "denominator": 61,
-          "value": 0.09836065573770492
+          "numerator": 0,
+          "denominator": 53,
+          "value": 0
         }
       },
       "confusion": null,
@@ -817,36 +818,36 @@
       "breakdown": {
         "label: known-breaking-upgrade": {
           "dependency-update detection rate": {
-            "numerator": 61,
-            "denominator": 61,
+            "numerator": 53,
+            "denominator": 53,
             "value": 1
           },
           "affected-repository identification rate": {
-            "numerator": 41,
-            "denominator": 61,
-            "value": 0.6721311475409836
+            "numerator": 33,
+            "denominator": 53,
+            "value": 0.6226415094339622
           },
           "consumer localization rate": {
-            "numerator": 36,
-            "denominator": 61,
-            "value": 0.5901639344262295
+            "numerator": 30,
+            "denominator": 53,
+            "value": 0.5660377358490566
           }
         },
         "versionToIsRange: true": {
           "dependency-update detection rate": {
-            "numerator": 58,
-            "denominator": 58,
+            "numerator": 50,
+            "denominator": 50,
             "value": 1
           },
           "affected-repository identification rate": {
-            "numerator": 38,
-            "denominator": 58,
-            "value": 0.6551724137931034
+            "numerator": 30,
+            "denominator": 50,
+            "value": 0.6
           },
           "consumer localization rate": {
-            "numerator": 33,
-            "denominator": 58,
-            "value": 0.5689655172413793
+            "numerator": 28,
+            "denominator": 50,
+            "value": 0.56
           }
         },
         "versionToIsRange: false": {
@@ -861,26 +862,26 @@
             "value": 1
           },
           "consumer localization rate": {
-            "numerator": 3,
+            "numerator": 2,
             "denominator": 3,
-            "value": 1
+            "value": 0.6666666666666666
           }
         },
         "exactVersionAdjudicated: true": {
           "dependency-update detection rate": {
-            "numerator": 61,
-            "denominator": 61,
+            "numerator": 53,
+            "denominator": 53,
             "value": 1
           },
           "affected-repository identification rate": {
-            "numerator": 41,
-            "denominator": 61,
-            "value": 0.6721311475409836
+            "numerator": 33,
+            "denominator": 53,
+            "value": 0.6226415094339622
           },
           "consumer localization rate": {
-            "numerator": 36,
-            "denominator": 61,
-            "value": 0.5901639344262295
+            "numerator": 30,
+            "denominator": 53,
+            "value": 0.5660377358490566
           }
         }
       },
@@ -891,18 +892,18 @@
           "iterations": 2000
         },
         "affected-repository identification rate": {
-          "low": 0.5573770491803278,
-          "high": 0.7868852459016393,
+          "low": 0.49056603773584906,
+          "high": 0.7547169811320755,
           "iterations": 2000
         },
         "consumer localization rate": {
-          "low": 0.47540983606557374,
-          "high": 0.7049180327868853,
+          "low": 0.4339622641509434,
+          "high": 0.6981132075471698,
           "iterations": 2000
         },
         "false-safe verdicts": {
-          "low": 0.03278688524590164,
-          "high": 0.18032786885245902,
+          "low": 0,
+          "high": 0,
           "iterations": 2000
         }
       },
@@ -910,43 +911,43 @@
         {
           "tool": "node",
           "available": true,
-          "version": "v22.23.2",
+          "version": "v24.20.0",
           "neededFor": "every npm/TypeScript case, and Drift itself"
         },
         {
           "tool": "npm",
           "available": true,
-          "version": "10.9.8",
+          "version": "11.12.1",
           "neededFor": "installing a TypeScript consumer before its build oracle can run"
         },
         {
           "tool": "git",
           "available": true,
-          "version": "git version 2.55.0",
+          "version": "git version 2.50.1 (Apple Git-155)",
           "neededFor": "checking out an original repository at the exact evaluated commit"
         },
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"17.0.20.1\" 2026-08-18",
+          "version": "openjdk version \"19\" 2022-09-20",
           "neededFor": "any Java case"
         },
         {
           "tool": "mvn",
           "available": true,
-          "version": "Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5)",
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
           "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
         },
         {
           "tool": "docker",
           "available": true,
-          "version": "Docker version 28.0.4, build b8034c0",
+          "version": "Docker version 29.7.2, build a7dcaa6",
           "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
         },
         {
           "tool": "python3",
           "available": true,
-          "version": "Python 3.12.3",
+          "version": "Python 3.12.14",
           "neededFor": "any Python case"
         },
         {
@@ -957,8 +958,8 @@
         },
         {
           "tool": "japicmp",
-          "available": false,
-          "version": "unavailable",
+          "available": true,
+          "version": "installed (version unknown)",
           "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
         }
       ]
@@ -1233,9 +1234,9 @@
       ]
     },
     {
-      "runId": "timemachine-verified",
+      "runId": "timemachine-full",
       "headline": false,
-      "why": "TimeMachine's human-verified Python subset, on the weakest manifest-pair construction in this benchmark.",
+      "why": "TimeMachine's human-verified migration failures, run against the same engine as the Java and TypeScript corpora here — see the note on swe-bump-full.",
       "title": "TimeMachine-bench (human-verified subset)",
       "ecosystem": "pypi",
       "datasetClass": "consumer-impact",
@@ -1255,21 +1256,21 @@
           "false-safe-count"
         ]
       },
-      "driftCommit": "12e8415bc9eed274bbcffeb14c5de31e92ac83e4",
-      "driftTreeDirty": false,
-      "runDate": "2026-09-03T04:50:57.956Z",
+      "driftCommit": "0de69bc20a560df43f0b21b6f9c5387c4d3b2cd1",
+      "driftTreeDirty": true,
+      "runDate": "2026-09-07T20:19:56.217Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- timemachine",
-      "platform": "linux/x64, Node v22.23.2",
+      "platform": "darwin/x64, Node v24.20.0",
       "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed.\n\n**Not installed here: `uv`.** TimeMachine's own reproduction is a container per task built against a date-filtered PyPI index, which is what preserves the historical resolution each task depends on. Without it the oracle was not run and no repair question was asked — those outcomes are absent from every case record rather than recorded as failures, because Drift was never asked and did not fail.",
       "available": 100,
       "selected": 100,
       "attempted": 100,
       "notRun": 0,
-      "scored": 69,
+      "scored": 68,
       "excluded": {
-        "reproduction-failed": 31
+        "reproduction-failed": 32
       },
       "missingRequirements": {},
       "negativeControls": 0,
@@ -1278,23 +1279,23 @@
       "selectionLimit": null,
       "rates": {
         "dependency-update detection rate": {
-          "numerator": 32,
-          "denominator": 34,
-          "value": 0.9411764705882353
+          "numerator": 66,
+          "denominator": 68,
+          "value": 0.9705882352941176
         },
         "affected-repository identification rate": {
-          "numerator": 17,
-          "denominator": 26,
-          "value": 0.6538461538461539
+          "numerator": 39,
+          "denominator": 68,
+          "value": 0.5735294117647058
         },
         "consumer localization rate": {
-          "numerator": 17,
-          "denominator": 26,
-          "value": 0.6538461538461539
+          "numerator": 33,
+          "denominator": 68,
+          "value": 0.4852941176470588
         },
         "false-safe verdicts": {
           "numerator": 0,
-          "denominator": 26,
+          "denominator": 68,
           "value": 0
         }
       },
@@ -1321,60 +1322,70 @@
       "breakdown": {
         "label: migration-failure-easy": {
           "dependency-update detection rate": {
-            "numerator": 22,
-            "denominator": 24,
-            "value": 0.9166666666666666
+            "numerator": 41,
+            "denominator": 43,
+            "value": 0.9534883720930233
           },
           "affected-repository identification rate": {
-            "numerator": 11,
-            "denominator": 20,
-            "value": 0.55
+            "numerator": 20,
+            "denominator": 43,
+            "value": 0.46511627906976744
           },
           "consumer localization rate": {
-            "numerator": 11,
-            "denominator": 20,
-            "value": 0.55
+            "numerator": 17,
+            "denominator": 43,
+            "value": 0.3953488372093023
           }
         },
         "label: migration-failure-medium": {
           "dependency-update detection rate": {
-            "numerator": 9,
-            "denominator": 9,
+            "numerator": 23,
+            "denominator": 23,
             "value": 1
           },
           "affected-repository identification rate": {
-            "numerator": 6,
-            "denominator": 6,
-            "value": 1
+            "numerator": 17,
+            "denominator": 23,
+            "value": 0.7391304347826086
           },
           "consumer localization rate": {
-            "numerator": 6,
-            "denominator": 6,
-            "value": 1
+            "numerator": 14,
+            "denominator": 23,
+            "value": 0.6086956521739131
           }
         },
         "label: migration-failure-hard": {
           "dependency-update detection rate": {
-            "numerator": 1,
-            "denominator": 1,
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "consumer localization rate": {
+            "numerator": 2,
+            "denominator": 2,
             "value": 1
           }
         }
       },
       "intervals": {
         "dependency-update detection rate": {
-          "low": 0.8529411764705882,
+          "low": 0.9264705882352942,
           "high": 1,
           "iterations": 2000
         },
         "affected-repository identification rate": {
-          "low": 0.46153846153846156,
-          "high": 0.8076923076923077,
+          "low": 0.45588235294117646,
+          "high": 0.6911764705882353,
           "iterations": 2000
         },
         "consumer localization rate": {
-          "low": 0.46153846153846156,
-          "high": 0.8076923076923077,
+          "low": 0.36764705882352944,
+          "high": 0.6029411764705882,
           "iterations": 2000
         },
         "false-safe verdicts": {
@@ -1387,43 +1398,43 @@
         {
           "tool": "node",
           "available": true,
-          "version": "v22.23.2",
+          "version": "v24.20.0",
           "neededFor": "every npm/TypeScript case, and Drift itself"
         },
         {
           "tool": "npm",
           "available": true,
-          "version": "10.9.8",
+          "version": "11.12.1",
           "neededFor": "installing a TypeScript consumer before its build oracle can run"
         },
         {
           "tool": "git",
           "available": true,
-          "version": "git version 2.55.0",
+          "version": "git version 2.50.1 (Apple Git-155)",
           "neededFor": "checking out an original repository at the exact evaluated commit"
         },
         {
           "tool": "java",
           "available": true,
-          "version": "openjdk version \"17.0.20.1\" 2026-08-18",
+          "version": "openjdk version \"19\" 2022-09-20",
           "neededFor": "any Java case"
         },
         {
           "tool": "mvn",
           "available": true,
-          "version": "Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5)",
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
           "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
         },
         {
           "tool": "docker",
           "available": true,
-          "version": "Docker version 28.0.4, build b8034c0",
+          "version": "Docker version 29.7.2, build a7dcaa6",
           "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
         },
         {
           "tool": "python3",
           "available": true,
-          "version": "Python 3.12.3",
+          "version": "Python 3.12.14",
           "neededFor": "any Python case"
         },
         {
@@ -1434,8 +1445,8 @@
         },
         {
           "tool": "japicmp",
-          "available": false,
-          "version": "unavailable",
+          "available": true,
+          "version": "installed (version unknown)",
           "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
         }
       ]

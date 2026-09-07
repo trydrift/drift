@@ -1,0 +1,165 @@
+{
+  "datasetId": "timemachine",
+  "datasetClass": "consumer-impact",
+  "available": 100,
+  "selected": 100,
+  "attempted": 100,
+  "notRun": 0,
+  "scored": 68,
+  "excluded": {
+    "reproduction-failed": 32
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 66,
+      "denominator": 68,
+      "value": 0.9705882352941176
+    },
+    "affected-repository identification rate": {
+      "numerator": 39,
+      "denominator": 68,
+      "value": 0.5735294117647058
+    },
+    "consumer localization rate": {
+      "numerator": 33,
+      "denominator": 68,
+      "value": 0.4852941176470588
+    },
+    "false-safe verdicts": {
+      "numerator": 0,
+      "denominator": 68,
+      "value": 0
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 68,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 68,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "consumer localization rate": {
+      "adjudicated": 68,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "false-safe verdicts": {
+      "adjudicated": 68,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: migration-failure-easy": {
+      "dependency-update detection rate": {
+        "numerator": 41,
+        "denominator": 43,
+        "value": 0.9534883720930233
+      },
+      "affected-repository identification rate": {
+        "numerator": 20,
+        "denominator": 43,
+        "value": 0.46511627906976744
+      },
+      "consumer localization rate": {
+        "numerator": 17,
+        "denominator": 43,
+        "value": 0.3953488372093023
+      }
+    },
+    "label: migration-failure-medium": {
+      "dependency-update detection rate": {
+        "numerator": 23,
+        "denominator": 23,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 17,
+        "denominator": 23,
+        "value": 0.7391304347826086
+      },
+      "consumer localization rate": {
+        "numerator": 14,
+        "denominator": 23,
+        "value": 0.6086956521739131
+      }
+    },
+    "label: migration-failure-hard": {
+      "dependency-update detection rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      }
+    }
+  },
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 0.9264705882352942,
+      "high": 1,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.45588235294117646,
+      "high": 0.6911764705882353,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.36764705882352944,
+      "high": 0.6029411764705882,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0,
+      "high": 0,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "compatible": 100
+  },
+  "affectedMisses": {
+    "total": 29,
+    "byReason": {
+      "consumer-usage-not-found": 9,
+      "upstream-surface-unavailable": 3,
+      "consumer-match-insufficient-confidence": 6,
+      "dependency-import-not-found": 7,
+      "breaking-change-low-confidence": 2,
+      "dependency-update-not-detected": 2
+    },
+    "unclassified": 0
+  }
+}

@@ -101,8 +101,8 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
     .filter((slice) => slice.startsWith("label: "))
     .sort();
 
-  const sweBump = requireDataset(datasets, "swe-bump-detection");
-  const timeMachine = requireDataset(datasets, "timemachine-verified");
+  const sweBump = requireDataset(datasets, "swe-bump-full");
+  const timeMachine = requireDataset(datasets, "timemachine-full");
   const bump = bumpFull;
 
   const kongRq1 = requireDataset(datasets, "kong-rq1-documented");
