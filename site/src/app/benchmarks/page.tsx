@@ -184,29 +184,37 @@ export default function Benchmarks() {
               </p>
             </Weakness>
 
-            <Weakness title="On Java, Drift still calls some broken upgrades safe — beta, not general availability">
+            <Weakness title="On Java, Drift still calls some broken upgrades safe — and Java is the only ecosystem measured well enough to say so">
               <p>
                 Over BUMP&rsquo;s Java consumer breakages in full — all {narrative.bumpFull.selected} records, of
                 which {narrative.bumpFull.dataset.scored} scored — Drift detected the update in{" "}
                 {narrative.bumpFull.detectionFraction} cases and still returned a false-safe verdict for{" "}
-                {narrative.bumpFull.falseSafeFraction} of them ({narrative.bumpFull.falseSafePercent}).
-                That is the number this page treats as blocking a general-availability claim for Java
-                consumer-impact — published as beta, tracked, and not presented as equivalent to the TypeScript
-                result above.
+                {narrative.bumpFull.falseSafeFraction} of them ({narrative.bumpFull.falseSafePercent},{" "}
+                {narrative.bumpFull.falseSafeInterval}).
               </p>
               <p className="mt-3">
-                Three causes were identified and two of them fixed. A raised minimum JDK was invisible: japicmp
-                reports it as <code className="font-mono text-[12px]">CLASS FILE FORMAT VERSION</code> on every
-                recompiled class, which Drift&rsquo;s line grammar did not match, so a jOOQ upgrade requiring Java 17
-                read as having no incompatible change at all. Signatures were also being cut at the first
-                parenthesis, discarding the parameter types that carry a <code className="font-mono text-[12px]">javax</code>{" "}
-                to <code className="font-mono text-[12px]">jakarta</code> migration — the break lands on the
+                It is also the only rate here precise enough to argue about. The npm and Python consumer corpora
+                are an order of magnitude smaller, and their intervals are correspondingly wide — reaching{" "}
+                {narrative.bumpFull.peerCeilings.npm} and {narrative.bumpFull.peerCeilings.python} respectively,
+                both far above Java&rsquo;s. Ranking the ecosystems against each other from these three numbers
+                would be reading noise: what separates them is how much evidence each has, not how well Drift does.
+              </p>
+              <p className="mt-3">
+                Two of the three causes behind it are fixed. A raised minimum JDK was invisible: japicmp reports it
+                as <code className="font-mono text-[12px]">CLASS FILE FORMAT VERSION</code> on every recompiled
+                class, which Drift&rsquo;s line grammar did not match, so a jOOQ upgrade requiring Java 17 read as
+                having no incompatible change at all. Signatures were also cut at the first parenthesis, discarding
+                the parameter types that carry a <code className="font-mono text-[12px]">javax</code> to{" "}
+                <code className="font-mono text-[12px]">jakarta</code> migration — a break that lands on the
                 consumer&rsquo;s own import and names nothing the changed library owns.
               </p>
               <p className="mt-3">
                 What remains is mostly the class no static analysis reaches: a behavioural change with no signature
-                change and no changelog sentence describing it. Drift finds those in prose when upstream wrote them
-                down, and refuses to claim they reach your code without running your tests.
+                change and no changelog sentence describing it. Drift finds those in prose where upstream wrote them
+                down, flags the call sites it can see, and refuses to claim a search that found nothing proves
+                anything. And <code className="font-mono text-[12px]">drift upgrade</code> installs nothing on this
+                verdict alone — the unattended batch requires the project&rsquo;s own checks to have run against the
+                upgrade and passed.
               </p>
             </Weakness>
 

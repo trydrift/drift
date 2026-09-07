@@ -1,5 +1,7 @@
 import {
   falseSafeRate,
+  formatInterval,
+  formatIntervalCeiling,
   fraction,
   formatRate,
   hasRealNegatives,
@@ -46,6 +48,10 @@ export interface BenchmarkNarrative {
     detectionFraction: string;
     falseSafeFraction: string;
     falseSafePercent: string;
+    /** The 95% Wilson span, because these corpora differ in size by 10x. */
+    falseSafeInterval: string;
+    /** The ceiling the smaller positives-only corpora reach, which is what stops a false comparison. */
+    peerCeilings: { npm: string; python: string };
     affectedByCategory: { slice: string; rate: string }[];
   };
   javaVsTypeScript: {
@@ -133,6 +139,11 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
       detectionFraction: fraction(requireRate(bumpFull, "dependency-update detection rate")),
       falseSafeFraction: fraction(bumpFalseSafe),
       falseSafePercent: percent(bumpFalseSafe),
+      falseSafeInterval: formatInterval(bumpFalseSafe) ?? "n/a",
+      peerCeilings: {
+        npm: formatIntervalCeiling(falseSafeRate(sweBump)) ?? "n/a",
+        python: formatIntervalCeiling(falseSafeRate(timeMachine)) ?? "n/a",
+      },
       affectedByCategory: bumpFailureCategories.map((slice) => ({
         slice,
         rate: formatRate(requireBreakdownRate(bumpFull, slice, "affected-repository identification rate")),
