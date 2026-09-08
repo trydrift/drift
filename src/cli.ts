@@ -49,7 +49,7 @@ import {
 } from './upgrade/scan.js';
 import { opensPullRequestAsDraft, type DriftConfig, type ExplicitAgentProvider } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
-import { ask } from './util/prompt.js';
+import { ask, confirm, text as promptText, type ChoiceInput } from './util/prompt.js';
 import { createBranchForTarget, createIssueAndBranchForTarget, createIssueForTarget } from './actions/cli-actions.js';
 import { groupForAction, type IssueBranchAction, type IssueBranchOutcome } from './actions/issue-branch.js';
 import type { RemediationPlan } from './types.js';
@@ -236,29 +236,81 @@ Usage:
   drift pr [options]          Push the current branch and open a pull request
   drift diff <eco> <pkg> <from> <to>
                               Print a real \`git diff\` between two published
-                              versions of a package's source. eco is one of:
-                              npm, cargo, pypi, go, pub, hex, maven (best-
-                              effort: only when Central has a sources jar).
-                              Not nuget or a C/C++ ecosystem — neither has a
-                              single fetchable archive of actual source
+                              versions of a package's source
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
   drift serve                 Run the self-hosted webhook server
   drift telemetry print       Print the exact telemetry event shape
+  drift help [topic]          Everything about one command
   drift --version             Print the version
 
-Options shared by \`outdated\` and \`upgrade\`:
+Start here:
+  drift outdated              What could change, and what it would break here
+  drift analyze               What a manifest change already in this checkout does
+  drift fix                   Apply the fixes and open a pull request
+
+Common options:
+  --dir <path>                Local checkout to act on.  Default: cwd
   --repo <owner/name>         Repository label for output. Default: git remote
-  --dir <path>                Local checkout to scan.    Default: cwd
-  --no-dev                    Skip dev/optional/peer dependencies (checked by
-                              default alongside runtime ones)
-  --token <token>             Optional, only to raise the public API rate
-                              limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
   --config <path>             Config file. Default: .github/drift.yml
+  --verify                    Deep Verification: install the change in a
+                              throwaway worktree and run this project's own
+                              checks before reporting. Off by default
+  --json                      Emit the result as JSON (\`analyze\`, \`outdated\`)
+  --token <token>             GitHub token. Default: \$GITHUB_TOKEN, then
+                              \`gh auth token\`
+  --log-level <level>         debug | info | warn | error. Default: info
+  --log                       Persist a redacted diagnostic run log under
+                              .git/drift for this run. Off by default
+  --help                      Every option for the command in front of it
+
+Interactive prompts (a menu after a scan, an agent to pick, a fix plan to
+approve) are drawn as arrow-key menus: ↑/↓ to move, enter to pick, a row's
+number to jump to it, / to filter a long list, esc to decline. A pipe, a
+redirect, or CI never sees them — those runs take the default and carry on.
+Set DRIFT_NO_TUI=1 for the plain numbered prompts.
+
+\`drift help <command>\` has every option and what the command does with it.
+\`drift help environment\` lists the environment variables Drift reads.
+`.trim();
+
+/**
+ * Per-command help.
+ *
+ * Split out of one long usage dump because they were never read the same way:
+ * the overview answers "which command do I want", and this answers "what does
+ * *this* command do to my repository" — a question a developer asks with a
+ * specific command already in mind, and used to have to find in eighty lines
+ * about five other ones.
+ *
+ * These are also the source of truth for which flags a command accepts:
+ * `knownFlags` reads the \`--flag\` tokens straight out of this text, so an
+ * option that is real but undocumented is a typo warning waiting to happen,
+ * and the two can never drift apart.
+ */
+const TOPICS: Record<string, string> = {
+  analyze: `
+drift analyze — what a dependency change already in this checkout does to it
+
+Usage:
+  drift analyze [options]
+
+Options:
+  --repo <owner/name>         Repository to analyse. Default: the git remote
+  --before <sha>              Commit before the change. Default: auto-detected
+  --after <sha>               Commit after the change.  Default: auto-detected
+                              — an uncommitted manifest edit, else the most
+                              recent commit that touched one
+  --dir <path>                Local checkout to index.  Default: cwd
+  --token <token>             GitHub token, only to raise the public API rate
+                              limit for release notes/changelogs. Optional —
+                              default: \$GITHUB_TOKEN, then \`gh auth token\`
+  --config <path>             Config file. Default: .github/drift.yml
+  --json                      Emit the plan as JSON instead of markdown
   --verify                    Deep Verification: after the static (Quick
-                              Scan) report, install each candidate in a
+                              Scan) report, install this change in a
                               throwaway worktree and run this project's own
                               checks before reporting it. Off by default —
-                              a scan without it reports static predictions
+                              a run without it reports static predictions
                               only, clearly labelled as not deeply verified.
                               Requires verify.enabled: true in drift.yml
                               (the default)
@@ -266,7 +318,35 @@ Options shared by \`outdated\` and \`upgrade\`:
   --log                       Persist a redacted diagnostic run log under
                               .git/drift for this run. Off by default
 
-Additional options for \`outdated\`:
+\`analyze\` never writes anything: no branches, no issues, no agent tasks — and
+reads the local checkout directly, like the VS Code extension, so it never
+needs a token. It exists so a team can see exactly what Drift would do to their
+repository before granting it any write access at all.
+
+When it finds breaking changes and there is a terminal to ask in, it offers to
+file an issue or cut a branch per finding, and then to start fixing.
+`.trim(),
+
+  outdated: `
+drift outdated — what could change, and what it would break here
+
+Usage:
+  drift outdated [options]
+
+Options:
+  --repo <owner/name>         Repository label for output. Default: git remote
+  --dir <path>                Local checkout to scan.    Default: cwd
+  --no-dev                    Skip dev/optional/peer dependencies (checked by
+                              default alongside runtime ones)
+  --token <token>             Optional, only to raise the public API rate
+                              limit. Default: \$GITHUB_TOKEN, then \`gh auth token\`
+  --config <path>             Config file. Default: .github/drift.yml
+  --verify                    Deep Verification: after the static (Quick
+                              Scan) report, install each candidate in a
+                              throwaway worktree and run this project's own
+                              checks before reporting it. Off by default.
+                              Requires verify.enabled: true in drift.yml
+                              (the default)
   --upgrade <selector>        Install the recommended version for one package
                               found by the scan (writes the manifest/lockfile
                               locally — run \`drift fix\` afterwards). The
@@ -282,32 +362,54 @@ Additional options for \`outdated\`:
                               NOT change which version is installed; only
                               --latest does that. Alias: --force
   --json                      Emit the full scan result as JSON
-
-Options for \`analyze\`:
-  --repo <owner/name>         Repository to analyse. Default: the git remote
-  --before <sha>              Commit before the change. Default: auto-detected
-  --after <sha>               Commit after the change.  Default: auto-detected
-                              — an uncommitted manifest edit, else the most
-                              recent commit that touched one
-  --dir <path>                Local checkout to index.  Default: cwd
-  --token <token>             GitHub token, only to raise the public API rate
-                              limit for release notes/changelogs. Optional —
-                              default: $GITHUB_TOKEN, then \`gh auth token\`
-  --config <path>             Config file. Default: .github/drift.yml
-  --json                      Emit the plan as JSON instead of markdown
-  --verify                    Deep Verification: after the static (Quick
-                              Scan) report, install this change in a
-                              throwaway worktree and run this project's own
-                              checks before reporting it. Off by default —
-                              a run without it reports static predictions
-                              only, clearly labelled as not deeply verified.
-                              Requires verify.enabled: true in drift.yml
-                              (the default)
   --log-level <level>         debug | info | warn | error. Default: info
   --log                       Persist a redacted diagnostic run log under
                               .git/drift for this run. Off by default
 
-Options for \`fix\` (accepts every \`analyze\` option too):
+Instead of a commit range that already changed a manifest, this checks every
+direct dependency against its registry for a version that could — the same
+"Scan Dependencies" check the extension runs. It never writes, except when
+given --upgrade, and even then only a local manifest/lockfile edit.
+
+Afterwards, in a terminal, it offers the scan's own candidates as a menu: pick
+one and Drift installs the version it selected, exactly as --upgrade would.
+
+Exit code 1 when any candidate is affected or failed verification.
+`.trim(),
+
+  upgrade: `
+drift upgrade — install every upgrade proven safe for this code
+
+Usage:
+  drift upgrade [options]
+
+Options:
+  --repo <owner/name>         Repository label for output. Default: git remote
+  --dir <path>                Local checkout to scan.    Default: cwd
+  --no-dev                    Skip dev/optional/peer dependencies
+  --token <token>             Optional, only to raise the public API rate limit
+  --config <path>             Config file. Default: .github/drift.yml
+  --verify                    Deep Verification before anything is installed
+  --log-level <level>         debug | info | warn | error. Default: info
+  --log                       Persist a redacted diagnostic run log
+
+Runs the same scan as \`drift outdated\`, then makes the local manifest/lockfile
+edits for every upgrade Drift proved safe for this repository: clean upstream
+changes, and upstream breaking changes this repository does not use. It leaves
+affected and unchecked packages alone — this is deliberately not an
+unrestricted alias for \`npm update\`.
+
+For one package, --latest, or --force-install, use \`drift outdated --upgrade
+<selector>\`; for JSON, \`drift outdated --json\`.
+`.trim(),
+
+  fix: `
+drift fix — apply the fixes and open a pull request
+
+Usage:
+  drift fix [options]
+
+Accepts every \`drift analyze\` option, plus:
   --plan                      Print every deterministic fix plan and stop.
                               Writes nothing: no worktree edit, no commit, no
                               branch, no agent. This is the review step — each
@@ -320,7 +422,7 @@ Options for \`fix\` (accepts every \`analyze\` option too):
                               the same decision the GitHub Action makes for the
                               same config (this is the default outside a TTY)
   --copilot-token <token>     User-scoped token for commits that need an
-                              agent. Default: $DRIFT_COPILOT_TOKEN
+                              agent. Default: \$DRIFT_COPILOT_TOKEN
   --agent <provider>          Registered agent provider for unresolved edits.
                               In non-interactive auto mode Drift only chooses
                               automatically when exactly one provider is usable
@@ -329,29 +431,6 @@ Options for \`fix\` (accepts every \`analyze\` option too):
   --agent-timeout-seconds <n> Local agent timeout. Default: drift.yml
   --draft                     Open the pull request as a draft
 
-Options for \`pr\`:
-  --dir <path>                Repository to act on.     Default: cwd
-  --base <branch>             Merge into this branch.   Default: what this
-                              branch was created from, per drift.yml
-  --title <text>              Pull request title.       Default: proposed
-  --draft                     Open as a draft
-  --yes                       Do not ask; use the proposed title as-is
-  --token <token>             GitHub token, only needed if signing in isn't
-                              possible. Default: $GITHUB_TOKEN, then
-                              \`gh auth token\`, then an interactive
-                              \`gh auth login\` browser sign-in
-  --log                       Persist a redacted diagnostic run log under
-                              .git/drift for this run. Off by default
-
-\`analyze\` never writes anything: no branches, no issues, no agent tasks — and
-reads the local checkout directly, like the VS Code extension, so it never
-needs a token. \`outdated\` is the same idea aimed the other direction: instead
-of a commit range that already changed a manifest, it checks every direct
-dependency against its registry for a version that could — the same "Scan
-Dependencies" check the extension runs. It never writes either, except when
-given --upgrade, and even then only a local manifest/lockfile edit. \`upgrade\`
-does the same scan, then makes those local edits for every upgrade Drift proved
-safe for this repository; it leaves affected and unchecked packages alone.
 \`fix\` applies the plan in an isolated git worktree — your working tree is
 never touched — using, per commit, Drift's own deterministic codemod, then a
 validated fix plan, then an AI agent, in that order; it pushes a branch and
@@ -366,26 +445,219 @@ name it introduces appears in cited evidence, and that it converges and
 preserves lines. Community recipes are a proposal source, not an execution
 path: a recipe's own edits are never committed. Run \`drift fix --plan\` to
 read every plan before any of it happens.
-\`pr\` pushes the current branch and opens a pull request. It never merges,
-never force-pushes, and never touches the base branch.
+`.trim(),
 
-\`fix\` and \`pr\` need write access to open a pull request. In order of
-preference: $GITHUB_TOKEN or --token, then \`gh auth token\` if the GitHub CLI
-is already signed in, then — in an interactive terminal, with \`gh\` installed
-but not yet signed in — a browser-based \`gh auth login\`. Pasting a token is
-the last resort, not the first.
+  pr: `
+drift pr — push this branch and open a pull request
 
-Environment:
+Usage:
+  drift pr [options]
+
+Options:
+  --dir <path>                Repository to act on.     Default: cwd
+  --base <branch>             Merge into this branch.   Default: what this
+                              branch was created from, per drift.yml
+  --title <text>              Pull request title.       Default: proposed
+  --draft                     Open as a draft
+  --yes                       Do not ask; use the proposed title as-is
+  --token <token>             GitHub token, only needed if signing in isn't
+                              possible. Default: \$GITHUB_TOKEN, then
+                              \`gh auth token\`, then an interactive
+                              \`gh auth login\` browser sign-in
+  --log                       Persist a redacted diagnostic run log under
+                              .git/drift for this run. Off by default
+
+The proposed title is editable at the prompt — press enter to take it. \`pr\`
+never merges, never force-pushes, and never touches the base branch.
+`.trim(),
+
+  diff: `
+drift diff — a real \`git diff\` between two published versions
+
+Usage:
+  drift diff <ecosystem> <package> <from-version> <to-version>
+
+Prints exactly what \`git diff\` prints, because it is one: run \`--no-index\`
+across the two extracted archives rather than against any repository history.
+It exists for the one evidence source that is a claim rather than an
+observation — the semver heuristic.
+
+<ecosystem> is one of: npm, cargo, pypi, go, pub, hex, maven (best-effort:
+only when Central has a sources jar). Not nuget or a C/C++ ecosystem — neither
+has a single fetchable archive of actual source.
+`.trim(),
+
+  action: `
+drift action — run as a GitHub Action
+
+Usage:
+  drift action
+
+Reads its inputs from INPUT_* environment variables, the way the Action
+runtime provides them, and writes its report to the job summary and to SARIF.
+Not meant to be run by hand; \`drift analyze\` is the local equivalent.
+`.trim(),
+
+  serve: `
+drift serve — the self-hosted webhook server
+
+Usage:
+  drift serve
+
+Runs the webhook receiver that drives Drift from repository events instead of
+from a workflow. Configuration is read from the environment; see docs/.
+`.trim(),
+
+  telemetry: `
+drift telemetry — what Drift would send, printed
+
+Usage:
+  drift telemetry print
+
+Prints one sample event, in full, with the exact shape and field names Drift
+uses. Telemetry is off unless configured, and DRIFT_TELEMETRY_DISABLED=1 or
+DO_NOT_TRACK=1 disables it outright.
+`.trim(),
+
+  environment: `
+Environment variables Drift reads
+
   GITHUB_TOKEN                Token for repository reads/writes. \`fix\` and
-                              \`pr\` need write access from somewhere; \`analyze\`
-                              never does. Prefer signing in with \`gh auth
-                              login\` over minting one of these. Create one at
-                              ${CREATE_TOKEN_URL}
+                              \`pr\` need write access from somewhere;
+                              \`analyze\` never does. Prefer signing in with
+                              \`gh auth login\` over minting one of these.
+                              Create one at ${CREATE_TOKEN_URL}
   DRIFT_COPILOT_TOKEN         User-scoped token for the Copilot agent API
   DRIFT_TELEMETRY_DISABLED    1/true disables telemetry even if configured
   DO_NOT_TRACK                1 disables telemetry
   ANTHROPIC_API_KEY           Only if llm.enabled is true in drift.yml
-`.trim();
+  DRIFT_CACHE_DIR             Where fetched registry metadata and artifacts
+                              are kept. DRIFT_NO_CACHE=1 disables the cache
+  DRIFT_NO_TUI                1 draws prompts as plain numbered lists
+  NO_COLOR / FORCE_COLOR      Turn colour off, or force it on for a CI log
+  DRIFT_ASCII                 1 replaces box drawing and status glyphs with
+                              ASCII
+
+\`fix\` and \`pr\` need write access to open a pull request. In order of
+preference: \$GITHUB_TOKEN or --token, then \`gh auth token\` if the GitHub CLI
+is already signed in, then — in an interactive terminal, with \`gh\` installed
+but not yet signed in — a browser-based \`gh auth login\`. Pasting a token is
+the last resort, not the first.
+`.trim(),
+};
+
+/** Topics that are commands, in the order the overview lists them. */
+const COMMANDS = ['analyze', 'outdated', 'upgrade', 'fix', 'pr', 'diff', 'action', 'serve', 'telemetry', 'help'];
+
+/**
+ * Help, with the headings and flags picked out.
+ *
+ * Colour is emphasis only: every word survives \`NO_COLOR\`, a pipe, and a CI
+ * log, because the text is the same text either way.
+ */
+function renderHelp(body: string, stream: NodeJS.WriteStream = process.stdout): string {
+  const palette = paletteFor(stream);
+  if (!palette.color) return body;
+
+  return body
+    .split('\n')
+    .map((line) => {
+      if (/^[^\s].*:$/.test(line)) return palette('bold', line);
+      const option = /^(\s+)(--?[a-z][\w-]*)(.*)$/.exec(line);
+      if (option) return `${option[1]}${palette('cyan', option[2]!)}${option[3]}`;
+      const command = /^(\s+)(drift)(\s+)([a-z-]+)(.*)$/.exec(line);
+      if (command) return `${command[1]}${palette('gray', 'drift')}${command[3]}${palette('cyan', command[4]!)}${command[5]}`;
+      return line;
+    })
+    .join('\n');
+}
+
+/** Print the overview, or one topic. Unknown topics get a suggestion. */
+function helpCommand(topic: string | undefined): number {
+  if (!topic || topic === 'help') {
+    console.log(renderHelp(USAGE));
+    return 0;
+  }
+
+  const canonical = topic === 'analyse' ? 'analyze' : topic.replace(/^-+/, '');
+  const body = TOPICS[canonical];
+  if (body) {
+    console.log(renderHelp(body));
+    return 0;
+  }
+
+  console.error(`No help for \`${canonical}\`.${suggestion(canonical, Object.keys(TOPICS))}`);
+  console.error(`Topics: ${Object.keys(TOPICS).join(', ')}`);
+  return 1;
+}
+
+/**
+ * "Did you mean" for a mistyped command or flag.
+ *
+ * One edit distance per three characters, so \`analze\` finds \`analyze\` and
+ * \`serve\` never "finds" \`fix\` — a wrong suggestion is worse than none.
+ */
+function suggestion(typed: string, candidates: readonly string[], prefix = ''): string {
+  let best: { name: string; distance: number } | null = null;
+  for (const candidate of candidates) {
+    const distance = editDistance(typed, candidate);
+    if (!best || distance < best.distance) best = { name: candidate, distance };
+  }
+  const budget = Math.max(1, Math.floor(typed.length / 3));
+  return best && best.distance <= budget ? ` Did you mean \`${prefix}${best.name}\`?` : '';
+}
+
+function editDistance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      current[j] = Math.min(
+        previous[j]! + 1,
+        current[j - 1]! + 1,
+        previous[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    previous = current;
+  }
+  return previous[b.length]!;
+}
+
+/**
+ * Every flag a command documents — read out of its own help text, so the two
+ * can never disagree.
+ */
+function knownFlags(command: string): Set<string> {
+  const sources = [USAGE, TOPICS[command] ?? ''];
+  // `fix` takes every `analyze` option too, and says so rather than repeating
+  // them.
+  if (command === 'fix') sources.push(TOPICS.analyze ?? '');
+  const flags = new Set<string>();
+  for (const source of sources) {
+    for (const match of source.matchAll(/(?:^|\s)--([a-z][\w-]*)/g)) flags.add(match[1]!);
+  }
+  // `upgrade` refuses these by name, with a message that says which command
+  // takes them instead. Calling them typos first would bury that.
+  if (command === 'upgrade') for (const flag of ['upgrade', 'latest', 'force-install', 'force']) flags.add(flag);
+  return flags;
+}
+
+/**
+ * Warn about a flag no command reads.
+ *
+ * A warning, never a refusal: an unknown flag has always been ignored, and a
+ * run that was going to work should not start failing because Drift learned to
+ * proofread. Silently ignoring `--dry-run` is what made a typo look like a
+ * feature that did nothing.
+ */
+function warnAboutUnknownFlags(command: string, flags: Flags): void {
+  const known = knownFlags(command);
+  if (known.size === 0) return;
+  for (const flag of Object.keys(flags)) {
+    if (known.has(flag)) continue;
+    console.error(`drift: unknown option \`--${flag}\` (ignored).${suggestion(flag, [...known], '--')}`);
+  }
+}
 
 /**
  * Where fetched registry metadata, changelogs, release notes, and downloaded
@@ -462,18 +734,24 @@ export async function main(argv: string[]): Promise<number> {
 }
 
 async function runCommand(command: string | undefined, rest: string[]): Promise<number> {
+  // `drift outdated --help` used to run a scan. A flag asking what a command
+  // does must never be the command doing it.
+  if (command && command !== 'help' && wantsHelp(rest)) {
+    return helpCommand(command === 'analyse' ? 'analyze' : command);
+  }
+
   switch (command) {
     case 'analyze':
     case 'analyse':
-      return analyzeCommand(parseFlags(rest));
+      return withFlagCheck('analyze', rest, analyzeCommand);
     case 'outdated':
-      return outdatedCommand(parseFlags(rest));
+      return withFlagCheck('outdated', rest, outdatedCommand);
     case 'upgrade':
-      return upgradeCommand(parseFlags(rest));
+      return withFlagCheck('upgrade', rest, upgradeCommand);
     case 'fix':
-      return fixCommand(parseFlags(rest));
+      return withFlagCheck('fix', rest, fixCommand);
     case 'pr':
-      return prCommand(parseFlags(rest));
+      return withFlagCheck('pr', rest, prCommand);
     case 'action':
       return runAction();
     case 'serve':
@@ -484,6 +762,8 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       return diffCommand(rest);
     case 'telemetry':
       return telemetryCommand(rest);
+    case 'help':
+      return helpCommand(rest.find((arg) => !arg.startsWith('-')));
     case '--version':
     case '-v':
       console.log(await packageVersion());
@@ -491,13 +771,36 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
     case '--help':
     case '-h':
     case undefined:
-      console.log(USAGE);
-      return 0;
+      return helpCommand(undefined);
     default:
-      console.error(`Unknown command: ${command}\n`);
-      console.log(USAGE);
+      // A wrong guess printed eighty lines of usage and left the reader to
+      // find the one word that was wrong in it. Say what was wrong, offer the
+      // command it was probably meant to be, and stop there.
+      console.error(`drift: unknown command \`${command}\`.${suggestion(command, COMMANDS)}`);
+      console.error(`Commands: ${COMMANDS.join(', ')}. Run \`drift help\` for what each one does.`);
       return 1;
   }
+}
+
+/**
+ * Whether these arguments are asking what a command does, not for it to run.
+ *
+ * `help` counts only in the first position — `drift outdated --upgrade help`
+ * names a package, however unlikely, and must stay a scan.
+ */
+function wantsHelp(args: readonly string[]): boolean {
+  return args[0] === 'help' || args.some((arg) => arg === '--help' || arg === '-h');
+}
+
+/** Parse, proofread the flags, then run — the same three steps for every command. */
+async function withFlagCheck(
+  command: string,
+  rest: readonly string[],
+  body: (flags: Flags) => Promise<number>,
+): Promise<number> {
+  const flags = parseFlags(rest);
+  warnAboutUnknownFlags(command, flags);
+  return body(flags);
 }
 
 /**
@@ -510,6 +813,7 @@ async function diffCommand(args: readonly string[]): Promise<number> {
   const [ecosystem, name, from, to] = args;
   if (!ecosystem || !name || !from || !to) {
     console.error('Usage: drift diff <ecosystem> <package> <from-version> <to-version>');
+    console.error('Run `drift help diff` for the ecosystems this can fetch source for.');
     return 1;
   }
 
@@ -532,6 +836,7 @@ async function telemetryCommand(args: readonly string[]): Promise<number> {
   const [subcommand] = args;
   if (subcommand !== 'print') {
     console.error('Usage: drift telemetry print');
+    console.error('Run `drift help telemetry` for what the event contains.');
     return 1;
   }
 
@@ -672,6 +977,16 @@ const ACTION_LABEL: Record<IssueBranchAction, string> = {
   both: 'File an issue and a branch',
 };
 
+/** What each action actually does, so the menu is readable without the docs. */
+const ACTION_HINT: Record<IssueBranchAction, string> = {
+  issue: 'one issue, with the evidence Drift found',
+  branch: 'branch off here, nothing pushed',
+  both: 'the issue, and a branch linked to it',
+};
+
+/** The value the issue/branch menu returns for "leave this one alone". */
+const SKIP = '\u0000skip';
+
 /**
  * The interactive side of the one-click issue/branch action: offered once
  * per group (per package or per breaking change, per `issueCreation.
@@ -700,17 +1015,23 @@ async function offerIssueBranchActions(args: {
     config.issueCreation.default,
     ...(['issue', 'branch', 'both'] as const).filter((action) => action !== config.issueCreation.default),
   ];
-  const options = [...order.map((action) => ACTION_LABEL[action]), 'Skip'];
+  const options: ChoiceInput[] = [
+    ...order.map((action) => ({ value: action, label: ACTION_LABEL[action], hint: ACTION_HINT[action] })),
+    { value: SKIP, label: 'Skip', hint: 'nothing is written for this one' },
+  ];
 
   let filedSomething = false;
 
-  for (const target of targets) {
-    const label =
+  for (const [index, target] of targets.entries()) {
+    const headline =
       target.changes.length === 1
         ? `${target.dependency}: ${target.changes[0]!.summary}`
         : `${target.dependency} (${target.changes.length} breaking changes)`;
-    const answer = await ask(label, options, 'Skip');
-    const chosen = order.find((action) => ACTION_LABEL[action] === answer);
+    // Which of how many, so a run with eight findings reads as progress rather
+    // than as the same question asked over and over.
+    const label = targets.length > 1 ? `[${index + 1}/${targets.length}] ${headline}` : headline;
+    const answer = await ask(label, options, SKIP);
+    const chosen = order.find((action) => action === answer);
     if (!chosen) continue;
     filedSomething = true;
 
@@ -745,12 +1066,11 @@ async function offerToStartFixing(args: {
   flags: Flags;
 }): Promise<void> {
   const { plan, config, repo, workspace, logger, flags } = args;
-  const answer = await ask(
+  const start = await confirm(
     `Start fixing now? Drift will work through all ${plan.commits.length} commit(s) it planned, push a branch, and open a pull request.`,
-    ['Yes, start fixing', 'Not now'],
-    'Not now',
+    false,
   );
-  if (answer !== 'Yes, start fixing') return;
+  if (!start) return;
 
   const token = await resolveGitHubToken(flags);
   const ghSignedIn = token ? false : (await hasGitHubCli()) || (await tryBrowserSignIn(logger));
@@ -998,10 +1318,21 @@ async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } 
 
   if (result.candidates.length > 0 && process.stdin.isTTY) {
     // Labelled, not bare names: two workspace members can both depend on
-    // `react`, and a menu with `react` twice offers no way to say which.
-    const labels = result.candidates.map((c) => candidateLabel(c, result.candidates));
-    const choice = await ask('Upgrade one of these now?', [...labels, 'Skip'], 'Skip');
-    const picked = result.candidates[labels.indexOf(choice)];
+    // `react`, and a menu with `react` twice offers no way to say which. The
+    // hint carries the two facts the choice actually turns on — which versions,
+    // and what the scan concluded — so the menu says the same thing the table
+    // above it does rather than making the reader hold a row in their head.
+    const rows: ChoiceInput[] = result.candidates.map((candidate, index) => ({
+      value: String(index),
+      label: candidateLabel(candidate, result.candidates),
+      hint: `${candidate.current} ${palette.glyph('arrow')} ${candidate.selected} · ${describeSeverity(candidate)}`,
+    }));
+    const choice = await ask(
+      'Upgrade one of these now?',
+      [...rows, { value: SKIP, label: 'Skip', hint: 'leave every manifest as it is' }],
+      SKIP,
+    );
+    const picked = choice === SKIP ? undefined : result.candidates[Number(choice)];
     if (picked) {
       return performUpgrade({
         workspace,
@@ -1292,6 +1623,13 @@ async function resolveManagerForWrite(
 
   const options = ambiguity.candidates.map((c) => c.manager.id);
   const where = dir || 'this repository';
+  const rows: ChoiceInput[] = ambiguity.candidates.map((c) => ({
+    value: c.manager.id,
+    label: c.manager.id,
+    // What made Drift think this manager owns the directory — a lockfile is a
+    // much stronger claim than a manifest both managers can read.
+    hint: c.evidence.length > 0 ? `${c.fromLockfile ? 'lockfile' : 'found'}: ${c.evidence.join(', ')}` : '',
+  }));
 
   if (!process.stdin.isTTY) {
     logger.error(
@@ -1304,7 +1642,7 @@ async function resolveManagerForWrite(
 
   const chosen = await ask(
     `More than one package manager claims ${candidate.ecosystem} in ${where}. Which one should Drift use?`,
-    options,
+    rows,
     options[0]!,
   );
   logger.info(`Using ${chosen} for ${where}.`);
@@ -1672,10 +2010,13 @@ async function resolveCliAgentSelection(args: {
   if (selection.source !== 'unresolved') return selection;
 
   if (!args.nonInteractive && process.stdin.isTTY && eligibleProviders.length > 1) {
-    const labels = eligibleProviders.map((provider) => labelForAgentProvider(provider, registry));
-    const answer = await ask('Choose the agent Drift should use for unresolved edits.', labels);
-    const index = labels.indexOf(answer);
-    const provider = eligibleProviders[index];
+    const rows: ChoiceInput[] = eligibleProviders.map((candidate) => ({
+      value: candidate,
+      label: labelForAgentProvider(candidate, registry),
+      hint: registry.get(candidate)?.description ?? '',
+    }));
+    const answer = await ask('Choose the agent Drift should use for unresolved edits.', rows);
+    const provider = eligibleProviders.find((candidate) => candidate === answer);
     if (provider) {
       return {
         provider,
@@ -1886,16 +2227,7 @@ async function prCommand(flags: Flags): Promise<number> {
  * ever answer.
  */
 async function promptForTitle(proposed: string): Promise<string | null> {
-  if (!process.stdin.isTTY) return proposed;
-
-  const { createInterface } = await import('node:readline/promises');
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answer = await rl.question(`Title [${proposed}]: `);
-    return answer.trim() || proposed;
-  } finally {
-    rl.close();
-  }
+  return promptText('Pull request title', proposed);
 }
 
 /**
