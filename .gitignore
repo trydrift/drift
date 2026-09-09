@@ -68,3 +68,9 @@ eval/results/*/evidence/
 # as a CI artifact, never committed — the recording is the output, this is the
 # evidence about why one did not arrive.
 site/capture-hang-*.json
+
+# Packaged extension. `npm run package` writes extension/drift.vsix, and
+# `gh release download` drops one here when checking a release — neither is
+# source, and a 650KB binary committed by a stray `git add -A` is not obvious
+# in a diff until it is in the history.
+*.vsix
