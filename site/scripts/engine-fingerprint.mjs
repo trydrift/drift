@@ -148,8 +148,41 @@ export async function engineFingerprint(repoRoot) {
     const content = await readFile(join(repoRoot, path), 'utf8');
     hash.update(path);
     hash.update('\0');
-    hash.update(createHash('sha256').update(content).digest('hex'));
+    hash.update(createHash('sha256').update(normalize(path, content)).digest('hex'));
     hash.update('\n');
   }
   return hash.digest('hex').slice(0, 16);
+}
+
+/**
+ * A lockfile's contents, minus the one field in it that says nothing about the
+ * engine: the version of the package that owns the lockfile.
+ *
+ * Lockfiles are hashed because Drift's *resolved dependencies* decide what a
+ * capture detects — a different tree-sitter grammar or semver parser is a
+ * different analyzer. The root package's own `version` is not one of those. It
+ * changes on every release, by definition without changing a byte of analysis
+ * behaviour, and hashing it meant `npm version` alone marked all seventeen
+ * recordings stale and sent them through an hour of re-analysis to reproduce
+ * byte-identical output. That is the exact cost this module's own header says
+ * it exists to avoid, and it fell due on every release.
+ *
+ * Only the two root `version` fields npm writes are dropped — the top-level one
+ * and `packages[""].version`. Every dependency, integrity hash and resolved URL
+ * still counts, so a real dependency move is as visible as it ever was.
+ */
+function normalize(path, content) {
+  if (!path.endsWith('package-lock.json')) return content;
+
+  try {
+    const lock = JSON.parse(content);
+    delete lock.version;
+    if (lock.packages?.['']) delete lock.packages[''].version;
+    return JSON.stringify(lock);
+  } catch {
+    // An unparseable lockfile is hashed as-is rather than silently skipped: a
+    // fingerprint that quietly ignores a file it cannot read is worse than one
+    // that moves for a reason nobody expected.
+    return content;
+  }
 }

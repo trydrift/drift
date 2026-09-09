@@ -85,6 +85,52 @@ describe('recording refresh triggers stay in lockstep with fingerprint inputs', 
     }
   });
 
+  test('bumping the release version does not move the fingerprint', async () => {
+    // Lockfiles are hashed because Drift's *resolved dependencies* decide what
+    // a capture detects. The root package's own `version` is not one of those:
+    // it changes on every release without changing a byte of analysis
+    // behaviour. Hashing it meant `npm version` alone marked all seventeen
+    // recordings stale and sent them through an hour of re-analysis to
+    // reproduce byte-identical output — on every release.
+    const lockPath = join(repoRoot, 'package-lock.json');
+    const original = await readFile(lockPath, 'utf8');
+    const lock = JSON.parse(original);
+
+    lock.version = '99.98.97';
+    if (lock.packages?.['']) lock.packages[''].version = '99.98.97';
+
+    try {
+      await writeFile(lockPath, JSON.stringify(lock, null, 2) + '\n');
+      assert.equal(
+        await engineFingerprint(repoRoot),
+        CURRENT,
+        'a version bump must not invalidate every recording',
+      );
+    } finally {
+      await writeFile(lockPath, original);
+    }
+  });
+
+  test('a real dependency change still moves the fingerprint', async () => {
+    // The other half of the claim: narrowing what the lockfile contributes must
+    // not have turned it into dead weight.
+    const lockPath = join(repoRoot, 'package-lock.json');
+    const original = await readFile(lockPath, 'utf8');
+    const lock = JSON.parse(original);
+    lock.packages['node_modules/drift-fingerprint-probe'] = { version: '1.0.0' };
+
+    try {
+      await writeFile(lockPath, JSON.stringify(lock, null, 2) + '\n');
+      assert.notEqual(
+        await engineFingerprint(repoRoot),
+        CURRENT,
+        'a changed dependency tree is a changed analyzer',
+      );
+    } finally {
+      await writeFile(lockPath, original);
+    }
+  });
+
   test('the engine fingerprint reads from the shared manifest, not a private copy', async () => {
     const src = await readFile(join(repoRoot, 'site/scripts/engine-fingerprint.mjs'), 'utf8');
     assert.match(src, /RECORDING_ENGINE_PATHS/);
