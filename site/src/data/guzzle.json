@@ -6,10 +6,10 @@
   "language": "PHP",
   "repo": "https://github.com/guzzle/guzzle",
   "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
-  "capturedAt": "2026-09-09T00:57:38.135Z",
+  "capturedAt": "2026-09-09T09:40:21.485Z",
   "commit": "93939470950a9b11e2e84204166ef5e048c55fe4",
-  "engine": "96ac152ce8c89dac",
-  "durationMs": 914,
+  "engine": "923bbc0bc2bbd9b3",
+  "durationMs": 1709,
   "packagesChecked": 4,
   "manifests": [
     "composer.json",
@@ -21,7 +21,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 20,
+      "at": 63,
       "phase": "Looking for manifests",
       "detail": "guzzle/guzzle",
       "done": 0,
@@ -29,7 +29,7 @@
     },
     {
       "type": "progress",
-      "at": 22,
+      "at": 65,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -37,7 +37,7 @@
     },
     {
       "type": "progress",
-      "at": 22,
+      "at": 65,
       "phase": "Reading manifest",
       "detail": "composer.json",
       "done": 0,
@@ -45,7 +45,7 @@
     },
     {
       "type": "progress",
-      "at": 23,
+      "at": 66,
       "phase": "Reading manifest",
       "detail": "vendor-bin/composer-normalize/composer.json",
       "done": 0,
@@ -53,7 +53,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 23,
+      "at": 67,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -97,7 +97,7 @@
     },
     {
       "type": "progress",
-      "at": 23,
+      "at": 67,
       "phase": "Reading manifest",
       "detail": "vendor-bin/php-cs-fixer/composer.json",
       "done": 0,
@@ -105,7 +105,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 23,
+      "at": 67,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -149,7 +149,7 @@
     },
     {
       "type": "progress",
-      "at": 23,
+      "at": 67,
       "phase": "Reading manifest",
       "detail": "vendor-bin/phpstan/composer.json",
       "done": 0,
@@ -157,7 +157,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 23,
+      "at": 67,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -201,7 +201,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 23,
+      "at": 67,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -245,7 +245,7 @@
     },
     {
       "type": "progress",
-      "at": 23,
+      "at": 67,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -253,7 +253,7 @@
     },
     {
       "type": "progress",
-      "at": 23,
+      "at": 67,
       "phase": "Checking registries",
       "detail": "4 direct dependencies",
       "done": 0,
@@ -261,7 +261,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 23,
+      "at": 67,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -305,7 +305,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 24,
+      "at": 67,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -349,7 +349,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 24,
+      "at": 67,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -393,7 +393,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 24,
+      "at": 68,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -436,16 +436,8 @@
       }
     },
     {
-      "type": "progress",
-      "at": 49,
-      "phase": "Indexing your code",
-      "detail": "140 files indexed · 4 direct dependencies to check",
-      "done": 0,
-      "total": 4
-    },
-    {
       "type": "candidate-upsert",
-      "at": 152,
+      "at": 711,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -491,15 +483,28 @@
     },
     {
       "type": "progress",
-      "at": 152,
+      "at": 712,
       "phase": "Outdated",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
       "total": 4
     },
     {
+      "type": "candidate-drop",
+      "at": 896,
+      "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0"
+    },
+    {
+      "type": "progress",
+      "at": 896,
+      "phase": "Up to date",
+      "detail": "ergebnis/composer-normalize@2.52.0",
+      "done": 2,
+      "total": 4
+    },
+    {
       "type": "candidate-upsert",
-      "at": 171,
+      "at": 992,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -559,15 +564,15 @@
     },
     {
       "type": "progress",
-      "at": 171,
+      "at": 992,
       "phase": "Outdated",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
-      "done": 2,
+      "done": 3,
       "total": 4
     },
     {
       "type": "candidate-upsert",
-      "at": 183,
+      "at": 1041,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -630,28 +635,15 @@
     },
     {
       "type": "progress",
-      "at": 183,
+      "at": 1041,
       "phase": "Outdated",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-drop",
-      "at": 226,
-      "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0"
-    },
-    {
-      "type": "progress",
-      "at": 226,
-      "phase": "Up to date",
-      "detail": "ergebnis/composer-normalize@2.52.0",
       "done": 4,
       "total": 4
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 1042,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
@@ -659,7 +651,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 228,
+      "at": 1042,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -703,7 +695,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 1042,
       "phase": "Checking package metadata",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
@@ -711,7 +703,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 228,
+      "at": 1042,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -755,7 +747,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 1042,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -763,7 +755,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 228,
+      "at": 1042,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -807,7 +799,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 1042,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -815,7 +807,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 228,
+      "at": 1042,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -859,7 +851,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 1042,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -867,7 +859,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 228,
+      "at": 1042,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -911,7 +903,7 @@
     },
     {
       "type": "progress",
-      "at": 228,
+      "at": 1042,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -919,7 +911,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 228,
+      "at": 1042,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -963,7 +955,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 1046,
       "phase": "Checking repository status",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
@@ -971,7 +963,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 234,
+      "at": 1046,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1015,7 +1007,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 1046,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1023,7 +1015,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 234,
+      "at": 1046,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1067,7 +1059,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 1046,
       "phase": "Checking security advisories",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1075,7 +1067,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 234,
+      "at": 1046,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1119,7 +1111,7 @@
     },
     {
       "type": "progress",
-      "at": 234,
+      "at": 1046,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1127,7 +1119,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 234,
+      "at": 1046,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1171,7 +1163,15 @@
     },
     {
       "type": "progress",
-      "at": 433,
+      "at": 1120,
+      "phase": "Indexing your code",
+      "detail": "140 files indexed · 4 direct dependencies to check",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "type": "progress",
+      "at": 1288,
       "phase": "Checking license",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1179,7 +1179,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 433,
+      "at": 1288,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1223,7 +1223,7 @@
     },
     {
       "type": "progress",
-      "at": 434,
+      "at": 1288,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1231,7 +1231,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 1288,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1275,7 +1275,7 @@
     },
     {
       "type": "progress",
-      "at": 434,
+      "at": 1288,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13 · 1 evidence source",
       "done": 0,
@@ -1283,7 +1283,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 1288,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1327,7 +1327,7 @@
     },
     {
       "type": "progress",
-      "at": 434,
+      "at": 1288,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1335,7 +1335,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 1288,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1379,7 +1379,7 @@
     },
     {
       "type": "progress",
-      "at": 434,
+      "at": 1288,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1387,7 +1387,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 434,
+      "at": 1288,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1431,7 +1431,7 @@
     },
     {
       "type": "progress",
-      "at": 455,
+      "at": 1298,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1439,7 +1439,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 455,
+      "at": 1298,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1483,7 +1483,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 462,
+      "at": 1300,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1562,7 +1562,7 @@
     },
     {
       "type": "progress",
-      "at": 462,
+      "at": 1300,
       "phase": "Checked",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13 · evidence missing · drift could not obtain enough upstream evidence to decide",
       "done": 1,
@@ -1570,7 +1570,7 @@
     },
     {
       "type": "progress",
-      "at": 470,
+      "at": 1342,
       "phase": "Checking security advisories",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 1,
@@ -1578,7 +1578,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 470,
+      "at": 1342,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1622,7 +1622,7 @@
     },
     {
       "type": "progress",
-      "at": 470,
+      "at": 1342,
       "phase": "Checking license",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 1,
@@ -1630,7 +1630,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 470,
+      "at": 1342,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1674,7 +1674,7 @@
     },
     {
       "type": "progress",
-      "at": 487,
+      "at": 1342,
       "phase": "Checking security advisories",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
@@ -1682,7 +1682,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 487,
+      "at": 1342,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1726,7 +1726,7 @@
     },
     {
       "type": "progress",
-      "at": 487,
+      "at": 1342,
       "phase": "Checking license",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
@@ -1734,7 +1734,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 487,
+      "at": 1342,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1778,7 +1778,7 @@
     },
     {
       "type": "progress",
-      "at": 608,
+      "at": 1556,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
@@ -1786,7 +1786,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 608,
+      "at": 1556,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1830,7 +1830,7 @@
     },
     {
       "type": "progress",
-      "at": 608,
+      "at": 1556,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
       "done": 1,
@@ -1838,7 +1838,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 608,
+      "at": 1556,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1882,7 +1882,7 @@
     },
     {
       "type": "progress",
-      "at": 608,
+      "at": 1556,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
@@ -1890,7 +1890,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 608,
+      "at": 1556,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1934,7 +1934,7 @@
     },
     {
       "type": "progress",
-      "at": 608,
+      "at": 1556,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
@@ -1942,7 +1942,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 608,
+      "at": 1556,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1986,7 +1986,7 @@
     },
     {
       "type": "progress",
-      "at": 625,
+      "at": 1566,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
@@ -1994,7 +1994,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 625,
+      "at": 1566,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2038,7 +2038,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 626,
+      "at": 1567,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2103,7 +2103,7 @@
     },
     {
       "type": "progress",
-      "at": 626,
+      "at": 1567,
       "phase": "Checked",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found — not deeply verified",
       "done": 2,
@@ -2111,7 +2111,7 @@
     },
     {
       "type": "progress",
-      "at": 905,
+      "at": 1678,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 2,
@@ -2119,7 +2119,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 905,
+      "at": 1678,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2163,7 +2163,7 @@
     },
     {
       "type": "progress",
-      "at": 905,
+      "at": 1678,
       "phase": "Comparing the public API surface",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25 · 1 evidence source",
       "done": 2,
@@ -2171,7 +2171,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 905,
+      "at": 1678,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2215,7 +2215,7 @@
     },
     {
       "type": "progress",
-      "at": 905,
+      "at": 1678,
       "phase": "No breaking changes to look for",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 2,
@@ -2223,7 +2223,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 905,
+      "at": 1678,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2267,7 +2267,7 @@
     },
     {
       "type": "progress",
-      "at": 905,
+      "at": 1678,
       "phase": "Weighing what this upgrade is worth",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 2,
@@ -2275,7 +2275,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 905,
+      "at": 1678,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2319,7 +2319,7 @@
     },
     {
       "type": "progress",
-      "at": 912,
+      "at": 1706,
       "phase": "Checking maintenance signals",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 2,
@@ -2327,7 +2327,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 912,
+      "at": 1706,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2371,7 +2371,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 913,
+      "at": 1709,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2453,7 +2453,7 @@
     },
     {
       "type": "progress",
-      "at": 913,
+      "at": 1709,
       "phase": "Checked",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
