@@ -584,11 +584,17 @@
           "markdownDescription": "Flag affected lines in the editor and the Problems panel, with the upstream change that caused each one.",
           "order": 20
         },
+        "drift.ui.openOnStartup": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Open the Drift panel automatically when a window opens, instead of waiting for the startup notification. Off by default, because a tool that seizes the sidebar on every window is a tool people disable; useful for demos, walkthroughs, and prepared environments.",
+          "order": 21
+        },
         "drift.ui.showManifestCodeLens": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Show Drift CodeLens prompts above dependency manifests. Turn this off when the dependency tree and report are enough.",
-          "order": 21
+          "order": 22
         },
         "drift.fix.customInstructions": {
           "type": "string",

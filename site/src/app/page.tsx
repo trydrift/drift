@@ -3,6 +3,7 @@ import { instrumentSerif } from "@/lib/fonts";
 import { Backdrop } from "@/components/backdrop";
 import { CopyCommand } from "@/components/copy-command";
 import { Demo } from "@/components/demo";
+import { BrowserDemo } from "@/components/browser-demo";
 import { EcosystemsSummary } from "@/components/ecosystems";
 import { Pipeline } from "@/components/pipeline";
 import { ActionSummary, ActionFlow } from "@/components/action-flow";
@@ -99,6 +100,17 @@ export default function Home() {
               className="rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-200"
             >
               Install the VS Code extension
+            </a>
+            {/*
+              The strongest thing this page can offer a sceptic: not a recording
+              of Drift working, but Drift working, on their ecosystem, in a
+              browser tab, in about a minute.
+            */}
+            <a
+              href="#try"
+              className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+            >
+              Try it in your browser
             </a>
             <a
               href="#demo"
@@ -326,6 +338,30 @@ export default function Home() {
                 </p>
               </Link>
             </div>
+          </div>
+        </section>
+
+        {/* ── Try it yourself ─────────────────────────────────────────── */}
+        {/*
+          Placed immediately after the recorded run, because that is where the
+          reader's scepticism peaks: they have just been shown a demo that
+          worked, and the next honest move is to hand them the controls.
+        */}
+        <section id="try" className="scroll-mt-8 pt-14 sm:pt-20">
+          <div className="flex flex-col gap-1">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Run it yourself</p>
+            <h2 className={`${instrumentSerif.className} mt-2 text-2xl text-landing sm:text-3xl`}>
+              Try Drift in your browser, on your ecosystem.
+            </h2>
+            <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-muted">
+              Each demo is a small project pinned to an old version of a real dependency, using an API the newer
+              version breaks. Opening it upgrades the manifest and leaves the code alone, so Drift analyses an
+              ordinary uncommitted change — and has no idea it is a demo.
+            </p>
+          </div>
+
+          <div className="mt-6">
+            <BrowserDemo />
           </div>
         </section>
 
