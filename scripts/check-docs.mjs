@@ -165,8 +165,10 @@ for (const path of await documents()) {
 
     for (const match of span.matchAll(/\bdrift\.[a-zA-Z][a-zA-Z0-9]*(?:\.[a-zA-Z][a-zA-Z0-9]*)*/g)) {
       const id = match[0];
-      // `drift.yml` is a config file, `drift.drift` the Marketplace item id.
-      if (/\.(yml|yaml|json|js|ts|tsx|md)$/.test(id) || id === 'drift.drift') continue;
+      // A filename is not a command id: `drift.yml` is the config file,
+      // `drift.fish` the completion script a user saves, `drift.drift` the
+      // Marketplace item id.
+      if (/\.(yml|yaml|json|js|ts|tsx|md|fish|bash|zsh)$/.test(id) || id === 'drift.drift') continue;
       if (!contributed.has(id)) {
         failures.push(`${where}: names \`${id}\`, which the extension manifest does not declare.`);
       }

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough, Writable } from 'node:stream';
 
-import { ask, confirm, type PromptIO } from '../dist/util/prompt.js';
+import { ask, confirm, text, type PromptIO } from '../dist/util/prompt.js';
 import { stripAnsi } from '../dist/util/terminal.js';
 
 /**
@@ -58,6 +58,8 @@ function withDrawableTerminal<T>(body: () => Promise<T>): Promise<T> {
 }
 
 const DOWN = '\u001b[B';
+/** The sentinel `cli.ts` uses for a row that means "do nothing". */
+const NONE = '\u0000skip';
 const UP = '\u001b[A';
 const ENTER = '\r';
 const ESCAPE = '\u001b';
@@ -280,4 +282,75 @@ test('a piped stdin answers with the fallback and draws nothing', async () => {
   assert.equal(await ask('Pick one', ['alpha', 'beta'], 'beta', term.io), 'beta');
   assert.equal(await confirm('Start fixing now?', false, term.io), false);
   assert.equal(term.screen(), '');
+});
+
+test('a menu whose terminal goes away answers with the fallback instead of hanging', async () => {
+  await withDrawableTerminal(async () => {
+    const term = fakeTerminal();
+    const answer = ask('Upgrade one of these now?', ['alpha', 'beta', 'Skip'], 'Skip', term.io);
+
+    // The far side of the terminal closed — a shut tab, a detached session, a
+    // harness that ended its side of the pipe. A menu resolves on a keypress
+    // and nothing else, so without this the run would hold open forever on a
+    // question nobody can answer.
+    (term.io.input as unknown as { end: () => void }).end();
+
+    assert.equal(await answer, 'Skip');
+  });
+});
+
+test('the free-text default is editable rather than retyped', async () => {
+  await withDrawableTerminal(async () => {
+    const term = fakeTerminal();
+    const answered = text('Pull request title', 'Bump lodash to 4.17.21', term.io);
+    await term.press('\n');
+
+    // Enter alone keeps the proposal, and the proposal was written into the
+    // line editor — that is what makes changing one word of it cost one word.
+    assert.equal(await answered, 'Bump lodash to 4.17.21');
+
+    const screen = term.screen();
+    assert.match(screen, /Bump lodash to 4\.17\.21/, 'the proposal reaches the terminal');
+    // Written into the buffer, not printed beside the question: a bracketed
+    // default is the rendering for terminals that cannot erase what they echo,
+    // and it is the one thing a developer cannot edit.
+    assert.doesNotMatch(screen, /\[Bump lodash to 4\.17\.21\]/, 'the default is not merely displayed');
+  });
+});
+
+test('a terminal that cannot redraw shows the default it cannot pre-fill', async () => {
+  const term = fakeTerminal();
+  process.env.DRIFT_NO_TUI = '1';
+  process.env.CI = '1';
+  try {
+    const answered = text('Pull request title', 'Bump lodash', term.io);
+    await term.press('\n');
+    assert.equal(await answered, 'Bump lodash');
+    // No cursor to erase what `rl.write` would echo, so the honest rendering is
+    // the bracketed default and an empty answer that accepts it.
+    assert.match(term.screen(), /\[Bump lodash\]/);
+  } finally {
+    delete process.env.DRIFT_NO_TUI;
+    delete process.env.CI;
+  }
+});
+
+test('a menu given an explicit decline never answers with a real choice', async () => {
+  await withDrawableTerminal(async () => {
+    const term = fakeTerminal();
+    // The shape the agent picker uses: real options, then a row that means
+    // "none of these", passed as the fallback so escape cannot pick an agent.
+    const answer = ask(
+      'Choose the agent Drift should use for unresolved edits.',
+      [
+        { value: 'claude', label: 'Claude Code' },
+        { value: 'codex', label: 'Codex' },
+        { value: NONE, label: 'None of these', hint: 'leave the edits unresolved' },
+      ],
+      NONE,
+      term.io,
+    );
+    await term.press(ESCAPE);
+    assert.equal(await answer, NONE);
+  });
 });

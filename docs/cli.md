@@ -20,6 +20,7 @@ Requires Node.js 22.6 or newer.
 | `drift diff <eco> <pkg> <from> <to>` | Show the published source diff for supported ecosystems. |
 | `drift explain <package>` | What changed in one upgrade, and every place it reaches this repository. |
 | `drift mcp` | Serve Drift to a coding agent over MCP (stdio). |
+| `drift completion <shell>` | Print a bash, zsh or fish completion script. |
 | `drift help [topic]` | Everything about one command, including every option. |
 
 `drift --help` is the overview; `drift help <command>` (or `drift <command> --help`)
@@ -62,12 +63,29 @@ Anything Drift asks in a terminal is an arrow-key menu:
 | `enter` | Pick the highlighted row |
 | a row number | Jump to that row (`12` then `enter` picks row 12) |
 | `/` | Filter a long list, `esc` to clear the filter |
-| `esc`, `q` | Decline — the same answer a non-interactive run gives |
+| `esc`, `q` | Decline — the same answer a non-interactive run gives, never a choice picked for you |
 | `y`/`n` | Answer a yes/no question outright |
 
 Prompts are drawn only when stdin and stderr are a terminal. A pipe, a
 redirect, or CI takes the default and carries on, so scripts never hang. Set
 `DRIFT_NO_TUI=1` for plain numbered prompts, or `NO_COLOR=1` to drop colour.
+
+## Shell completion
+
+```bash
+eval "$(drift completion bash)"   # ~/.bashrc
+eval "$(drift completion zsh)"    # ~/.zshrc
+drift completion fish > ~/.config/fish/completions/drift.fish
+```
+
+Completes commands, the options each one takes, and `drift help` topics; offers
+a directory after `--dir` and a file after `--config`. The command prints the
+script and installs nothing itself, so what goes into a shell profile is a line
+you can read first.
+
+The names come out of the same help text the CLI reads to decide whether an
+argument is a typo, so the options a shell offers are the options the CLI
+accepts — there is no second list to fall behind.
 
 ## Typical workflow
 

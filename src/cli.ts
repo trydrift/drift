@@ -50,6 +50,12 @@ import {
 import { opensPullRequestAsDraft, type DriftConfig, type ExplicitAgentProvider } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
 import { ask, confirm, text as promptText, type ChoiceInput } from './util/prompt.js';
+import {
+  COMPLETION_SHELLS,
+  completionScript,
+  isCompletionShell,
+  type CompletionSpec,
+} from './completion.js';
 import { createBranchForTarget, createIssueAndBranchForTarget, createIssueForTarget } from './actions/cli-actions.js';
 import { groupForAction, type IssueBranchAction, type IssueBranchOutcome } from './actions/issue-branch.js';
 import type { RemediationPlan } from './types.js';
@@ -253,6 +259,7 @@ Usage:
                               \`claude mcp add drift -- npx -y @usedrift/cli mcp\`
   drift serve                 Run the self-hosted webhook server
   drift telemetry print       Print the exact telemetry event shape
+  drift completion <shell>    Print a bash, zsh or fish completion script
   drift help [topic]          Everything about one command
   drift --version             Print the version
 
@@ -338,6 +345,10 @@ repository before granting it any write access at all.
 
 When it finds breaking changes and there is a terminal to ask in, it offers to
 file an issue or cut a branch per finding, and then to start fixing.
+
+Exit code 0 even when it finds breaking changes — the report is the result, and
+a finding is not a failure. Exit code 1 only when the run could not be made:
+an unreadable repository, an invalid --repo, a config that does not parse.
 `.trim(),
 
   outdated: `
@@ -387,7 +398,10 @@ given --upgrade, and even then only a local manifest/lockfile edit.
 Afterwards, in a terminal, it offers the scan's own candidates as a menu: pick
 one and Drift installs the version it selected, exactly as --upgrade would.
 
-Exit code 1 when any candidate is affected or failed verification.
+Exit code 1 when any candidate is affected or failed verification, so a CI job
+can gate on it directly. Exit code 0 when every candidate is safe or unchecked,
+and when there is nothing to check at all. A run that could not be made — an
+unreadable repository, a config that does not parse — is also 1.
 `.trim(),
 
   upgrade: `
@@ -414,6 +428,12 @@ unrestricted alias for \`npm update\`.
 
 For one package, --latest, or --force-install, use \`drift outdated --upgrade
 <selector>\`; for JSON, \`drift outdated --json\`.
+
+Exit codes are \`outdated\`'s, because this runs the same scan: 1 when any
+candidate is affected or failed verification — the packages it deliberately
+left alone — and 0 when none is. Installing is not what decides the code, so a
+run that upgraded nothing because nothing was provably safe still reports what
+the scan found.
 `.trim(),
 
   fix: `
@@ -458,6 +478,11 @@ name it introduces appears in cited evidence, and that it converges and
 preserves lines. Community recipes are a proposal source, not an execution
 path: a recipe's own edits are never committed. Run \`drift fix --plan\` to
 read every plan before any of it happens.
+
+Exit code 0 when the run finished, whether or not it had anything to fix; 1
+when it could not finish — no write access, a branch that could not be pushed,
+a repository it could not read. Unresolved findings are reported in the output,
+not in the exit code: use \`drift analyze --json\` to gate on them.
 `.trim(),
 
   pr: `
@@ -482,6 +507,10 @@ Options:
 
 The proposed title is editable at the prompt — press enter to take it. \`pr\`
 never merges, never force-pushes, and never touches the base branch.
+
+Exit code 0 once the pull request is open, or when one for this branch already
+was; 1 when it could not be opened — nothing committed to push, no write
+access, no base branch to merge into.
 `.trim(),
 
   diff: `
@@ -568,6 +597,31 @@ uses. Telemetry is off unless configured, and DRIFT_TELEMETRY_DISABLED=1 or
 DO_NOT_TRACK=1 disables it outright.
 `.trim(),
 
+  completion: `
+drift completion — print a shell completion script
+
+Usage:
+  drift completion <bash | zsh | fish>
+
+Prints the script to stdout; it installs nothing on its own. Writing to a shell
+profile is not something a dependency scanner should do uninvited, and a line
+you can read before you run it is the point:
+
+  bash    eval "$(drift completion bash)"        in ~/.bashrc
+  zsh     eval "$(drift completion zsh)"         in ~/.zshrc
+  fish    drift completion fish > ~/.config/fish/completions/drift.fish
+
+Completes commands, the options each one actually takes, and the topics
+\`drift help\` answers for. A directory is offered after --dir, a file after
+--config, and nothing after an option that wants a value of its own.
+
+The command and option names come out of this help text, the same place the
+unknown-argument check reads them from — so an option that exists is an option
+that completes, and neither list can quietly fall behind the CLI.
+
+Exit code 1 when the shell is missing or is not one Drift can write for.
+`.trim(),
+
   environment: `
 Environment variables Drift reads
 
@@ -610,6 +664,7 @@ const COMMANDS = [
   'mcp',
   'serve',
   'telemetry',
+  'completion',
   'help',
 ];
 
@@ -634,6 +689,62 @@ function renderHelp(body: string, stream: NodeJS.WriteStream = process.stdout): 
       return line;
     })
     .join('\n');
+}
+
+/**
+ * What the shells need, derived from the help text rather than restated.
+ *
+ * `knownFlags` is the same function the unknown-argument check uses, so the
+ * options a shell offers are exactly the options the CLI will accept — the two
+ * cannot disagree, because there is only one list.
+ */
+function completionSpec(): CompletionSpec {
+  const flagsByCommand: Record<string, string[]> = {};
+  for (const command of COMMANDS) {
+    flagsByCommand[command] = [...knownFlags(command)].sort();
+  }
+
+  // An option written as `--flag <value>` in help is one the shell should offer
+  // a value for, not another flag.
+  const valueFlags = new Set<string>();
+  for (const body of [USAGE, ...Object.values(TOPICS)]) {
+    for (const match of body.matchAll(/--([a-z][\w-]*) <[^>]+>/g)) valueFlags.add(match[1]!);
+  }
+
+  return {
+    commands: COMMANDS,
+    topics: Object.keys(TOPICS),
+    flagsByCommand,
+    valueFlags: [...valueFlags].sort(),
+    directoryFlags: ['dir'],
+    fileFlags: ['config'],
+  };
+}
+
+/** Print a completion script for one shell. */
+function completionCommand(rest: readonly string[]): number {
+  const refusal = refuseUnknownArguments('completion', rest, 1);
+  if (refusal !== null) return refusal;
+
+  const shell = rest.find((arg) => !arg.startsWith('-'));
+  if (!shell) {
+    return refuse([`\`completion\` needs a shell: ${COMPLETION_SHELLS.join(', ')}.`], [
+      'Nothing ran, so nothing here changed.',
+      'How to install it:  drift help completion',
+    ]);
+  }
+  if (!isCompletionShell(shell)) {
+    return refuse(
+      [`there are no completions for \`${shell}\`.${suggestion(shell, COMPLETION_SHELLS)}`],
+      [
+        'Nothing ran, so nothing here changed.',
+        `Shells Drift can write for: ${COMPLETION_SHELLS.join(', ')}.`,
+      ],
+    );
+  }
+
+  console.log(completionScript(shell, completionSpec()));
+  return 0;
 }
 
 /** Print the overview, or one topic. Unknown topics get a suggestion. */
@@ -948,6 +1059,8 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       const { runMcpServer } = await import('./mcp/server.js');
       return await runMcpServer();
     }
+    case 'completion':
+      return completionCommand(rest);
     case 'diff':
       return diffCommand(rest);
     case 'telemetry':
@@ -2247,7 +2360,17 @@ async function resolveCliAgentSelection(args: {
       label: labelForAgentProvider(candidate, registry),
       hint: registry.get(candidate)?.description ?? '',
     }));
-    const answer = await ask('Choose the agent Drift should use for unresolved edits.', rows);
+    // Declining has to be a row of its own. `ask` falls back to the *last*
+    // option when it is given no explicit one, so escape used to hand back a
+    // real provider — the menu offered "esc <name of the last agent>", and the
+    // guard below could never be false. Nobody who backs out of a question
+    // about which agent to trust with their code meant to pick the one at the
+    // bottom of the list.
+    const answer = await ask(
+      'Choose the agent Drift should use for unresolved edits.',
+      [...rows, { value: SKIP, label: 'None of these', hint: 'leave the edits unresolved' }],
+      SKIP,
+    );
     const provider = eligibleProviders.find((candidate) => candidate === answer);
     if (provider) {
       return {
