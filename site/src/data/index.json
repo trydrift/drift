@@ -151,7 +151,7 @@
     "repo": "https://github.com/layoutBox/FlexLayout",
     "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
     "commit": "320a19f1e842f335f0d636dd810e07498eae9f0b",
-    "capturedAt": "2026-09-09T00:58:05.084Z",
+    "capturedAt": "2026-09-09T15:41:27.815Z",
     "packagesChecked": 5,
     "candidates": 3
   },
