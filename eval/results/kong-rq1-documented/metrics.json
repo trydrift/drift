@@ -109,5 +109,10 @@
   },
   "mappingCoverage": {
     "exact": 16333
+  },
+  "affectedMisses": {
+    "total": 165,
+    "byReason": {},
+    "unclassified": 165
   }
 }
