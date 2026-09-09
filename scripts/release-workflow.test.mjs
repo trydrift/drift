@@ -81,6 +81,21 @@ test('privileged publishing neither checks out nor executes repository validatio
  * This is checked rather than remembered because the failure is invisible until
  * a real tag, and a real tag is the one run that cannot be repeated.
  */
+test('the CLI is published from a path npm cannot mistake for a git repository', () => {
+  // `npm publish release-artifacts/pkg.tgz` does not publish that file: npm
+  // reads a bare slash-separated spec as a GitHub shorthand and tries to clone
+  // `owner/repo`. v0.1.0's first release attempt failed exactly there, after
+  // validation had passed, so the shape of the argument is pinned here.
+  const publishRuns = workflow.jobs.publish.steps.map((step) => step.run ?? '').join('\n');
+  const tarballOutput = /cli_tarball=(\S+)/.exec(publishRuns);
+  assert.ok(tarballOutput, 'the publish job names the tarball it publishes');
+  assert.match(
+    tarballOutput[1],
+    /^(\.\/|\/|\$)/,
+    `npm would read "${tarballOutput?.[1]}" as a GitHub owner/repo shorthand; use an explicit "./" path`,
+  );
+});
+
 test('the privileged job never publishes to a second registry after npm', () => {
   const publishRuns = workflow.jobs.publish.steps.map((step) => step.run ?? '').join('\n');
 
