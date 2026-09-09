@@ -400,9 +400,15 @@ function detailedEntry(
     for (const file of shown) {
       const sites = (candidate.plan?.impactSites ?? []).filter((site) => site.file === file);
       const first = sites[0];
+      // A manifest site is where the developer edits, not where their code
+      // calls the changed API — a dependency-convergence or enforcer break has
+      // no call site at all. Saying so is the whole reason `siteKind` exists;
+      // rendering it as an ordinary impact site would put the distinction back.
+      const declarationOnly = sites.every((site) => site.siteKind === 'manifest');
       line(
         `    ${c('cyan', first ? `${file}:${first.line}` : file)}` +
-          c('gray', sites.length > 1 ? `  (${sites.length} sites)` : ''),
+          c('gray', sites.length > 1 ? `  (${sites.length} sites)` : '') +
+          (declarationOnly ? c('gray', '  — the declaration, not a call site') : ''),
       );
     }
     if (files.length > shown.length) {

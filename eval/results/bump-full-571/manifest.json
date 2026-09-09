@@ -1,0 +1,15 @@
+{
+  "version": "drift-external-run-v1",
+  "runId": "p9-bump",
+  "datasetId": "bump",
+  "createdAt": "2026-09-07T11:20:24.156Z",
+  "driftCommit": "65686d9a777678e2c43e6049b7024f2230e399cc",
+  "driftTreeDirty": true,
+  "harnessVersion": "65686d9a777678e2c43e6049b7024f2230e399cc",
+  "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /private/tmp/claude-501/-Users-rudy-Desktop-Developer-Drift/430aba2d-72ba-44fc-9d6a-07ffdc20243f/scratchpad/wt-bump/eval/src/external/cli.ts bump --run-id p9-bump --concurrency 3 --benchmarks /Users/rudy/Desktop/Developer/Drift/benchmarks",
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against."
+}

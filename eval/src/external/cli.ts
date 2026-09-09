@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
 import type { EvidenceMode } from './evidence-snapshot.ts';
 import { probeEnvironment } from './environment.ts';
+import { DEFAULT_CASE_TIMEOUT_MS } from './deadline.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
 import { driftRevision, newRunId, resultsDir, writeJson, writeProvisionalManifest, writeRun, type RunManifest } from './results.ts';
@@ -75,6 +76,24 @@ export interface ExternalRunOptions {
    * to reproduce an old one.
    */
   evidenceMode?: EvidenceMode;
+  /**
+   * How many cases may be in flight at once.
+   *
+   * Cases are independent — each clones into its own directory — and almost
+   * all of a case is waiting on a network or a build. Left at 1 the whole
+   * corpus is a single queue, which is what made BUMP a 22.7-hour run.
+   */
+  concurrency?: number;
+  /**
+   * Per-case wall-clock budget, in milliseconds.
+   *
+   * Lower is faster and biased: a case cut short is recorded as a failed
+   * reproduction and leaves the scored denominator, so a tighter budget quietly
+   * samples toward repositories that build quickly. The default is deliberately
+   * generous for that reason; this exists so the trade can be made on purpose
+   * and stated, rather than discovered in a number.
+   */
+  caseTimeoutMs?: number;
 }
 
 export interface RunnerOutput {
@@ -121,6 +140,10 @@ export interface RunnerContext {
   evidenceRoot: string;
   /** Capture, replay, or deliberate fresh evidence retrieval. */
   evidenceMode: EvidenceMode;
+  /** How many cases this runner may have in flight at once. Always >= 1. */
+  concurrency: number;
+  /** Per-case wall-clock budget handed to `withDeadline`. */
+  caseTimeoutMs: number;
 }
 
 type Runner = (context: RunnerContext) => Promise<RunnerOutput>;
@@ -132,6 +155,16 @@ type Runner = (context: RunnerContext) => Promise<RunnerOutput>;
  * harness can name but not run, and asking for it says so rather than
  * producing an empty result set that would read as "Drift scored nothing".
  */
+/**
+ * Cases in flight by default.
+ *
+ * Four rather than the core count: a case's heaviest moment is the project's
+ * own build, which is itself parallel, and oversubscribing turns a benchmark
+ * into a machine that finishes nothing. Raise it for a network-bound corpus,
+ * drop it to 1 for a control run.
+ */
+const DEFAULT_CONCURRENCY = 4;
+
 const RUNNERS: Record<string, Runner> = {
   kong: runKong,
   'swe-bump': runSweBump,
@@ -285,6 +318,8 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
   }
 
   let selection = select([], { seed: options.seed ?? 20260819 });
+  /** Serializes checkpoint appends; see `checkpoint` below. */
+  let checkpointChain: Promise<void> = Promise.resolve();
   const context: RunnerContext = {
     dataset,
     datasetRoot,
@@ -292,8 +327,21 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
     alreadyRecorded,
     evidenceRoot: join(resultsDir(runId, options.outRoot), 'evidence'),
     evidenceMode: options.evidenceMode ?? 'capture',
-    checkpoint: async (result) => {
-      await appendFile(partialPath, `${JSON.stringify(result)}\n`, 'utf8');
+    concurrency: Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY),
+    caseTimeoutMs: options.caseTimeoutMs ?? DEFAULT_CASE_TIMEOUT_MS,
+    /*
+     * Serialized, because a case record is far larger than the 4 KB a POSIX
+     * append is atomic up to. Two workers finishing together would interleave
+     * their bytes and leave a line no reader can parse — and the checkpoint
+     * exists precisely so an interrupted run keeps what it got through, so a
+     * corrupt one is worse than none. The chain is the whole mechanism: each
+     * append waits for the previous to land, whatever order the cases finish.
+     */
+    checkpoint: (result) => {
+      checkpointChain = checkpointChain.then(() =>
+        appendFile(partialPath, `${JSON.stringify(result)}\n`, 'utf8'),
+      );
+      return checkpointChain;
     },
     choose: (candidates) => {
       selection = select(candidates, {
@@ -376,7 +424,7 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
 
   if (!datasetId && !rescoring) {
     throw new Error(
-      `Usage: npm run eval:external -- <dataset> [--ids a,b] [--limit N] [--seed N] [--experiment NAME] [--evidence capture|replay|fresh]\n` +
+      `Usage: npm run eval:external -- <dataset> [--ids a,b] [--limit N] [--seed N] [--experiment NAME] [--evidence capture|replay|fresh] [--concurrency N] [--case-timeout SECONDS]\n` +
         `       npm run eval:external -- <dataset> --run-id <id> --resume\n` +
         `       npm run eval:external -- --rescore <run-id>\n` +
         `Datasets: ${Object.keys(DATASETS).sort().join(', ')}`,
@@ -425,6 +473,24 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
         options.notes = value;
         index += 1;
         break;
+      case '--case-timeout': {
+        const seconds = Number(value);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+          throw new Error(`--case-timeout must be a positive number of seconds, got "${value}".`);
+        }
+        options.caseTimeoutMs = Math.round(seconds * 1000);
+        index += 1;
+        break;
+      }
+      case '--concurrency': {
+        const parsed = Number(value);
+        if (!Number.isInteger(parsed) || parsed < 1) {
+          throw new Error(`--concurrency must be a positive integer, got "${value}".`);
+        }
+        options.concurrency = parsed;
+        index += 1;
+        break;
+      }
       case '--evidence':
         if (value !== 'capture' && value !== 'replay' && value !== 'fresh') {
           throw new Error(`--evidence must be capture, replay or fresh, got "${value}".`);

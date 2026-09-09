@@ -506,7 +506,7 @@ export class GitHubClient {
   async listIssueComments(
     repo: RepoContext,
     issueNumber: number,
-  ): Promise<{ body: string | null; authorLogin: string | null }[]> {
+  ): Promise<{ id: number; body: string | null; authorLogin: string | null }[]> {
     try {
       const response = await this.octokit.issues.listComments({
         owner: repo.owner,
@@ -514,7 +514,7 @@ export class GitHubClient {
         issue_number: issueNumber,
         per_page: 100,
       });
-      return response.data.map((c) => ({ body: c.body ?? null, authorLogin: c.user?.login ?? null }));
+      return response.data.map((c) => ({ id: c.id, body: c.body ?? null, authorLogin: c.user?.login ?? null }));
     } catch (err) {
       this.logger.warn(`Could not list comments on #${issueNumber}: ${(err as Error).message}`);
       // An empty list would read as "never dispatched" and permit a duplicate
@@ -622,6 +622,26 @@ export class GitHubClient {
       await this.octokit.issues.update({ owner: repo.owner, repo: repo.repo, issue_number: issueNumber, body });
     } catch (err) {
       this.logger.warn(`Could not update issue #${issueNumber}: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * Replace one comment Drift already left.
+   *
+   * An update bot rebases its branches and re-runs the workflow, so appending
+   * would leave a pull request carrying nine stale verdicts — worse than
+   * carrying none, because the reader has to work out which one is current.
+   */
+  async updateIssueComment(repo: RepoContext, commentId: number, body: string): Promise<void> {
+    try {
+      await this.octokit.issues.updateComment({
+        owner: repo.owner,
+        repo: repo.repo,
+        comment_id: commentId,
+        body,
+      });
+    } catch (err) {
+      this.logger.warn(`Could not update comment ${commentId}: ${(err as Error).message}`);
     }
   }
 

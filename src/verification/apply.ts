@@ -274,6 +274,15 @@ export function combineVerifications(
 
   const failed = present.filter((part) => part.status === 'failed');
   if (failed.length > 0) {
+    const introduced = failed.flatMap((part) => part.introducedDiagnostics ?? []);
+    const deduped: typeof introduced = [];
+    const seen = new Set<string>();
+    for (const diagnostic of introduced) {
+      const key = `${diagnostic.file}|${diagnostic.line}|${diagnostic.column ?? ''}|${diagnostic.code ?? ''}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(diagnostic);
+    }
     return {
       status: 'failed',
       checks,
@@ -282,6 +291,7 @@ export function combineVerifications(
         .filter((text): text is string => Boolean(text))
         .join('\n\n'),
       failedFiles: [...new Set(failed.flatMap((part) => part.failedFiles))],
+      ...(deduped.length > 0 ? { introducedDiagnostics: deduped } : {}),
     };
   }
 

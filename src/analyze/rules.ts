@@ -48,6 +48,8 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
     case 'exports-require-condition-removed':
     case 'package-type-changed':
       return 'module-system-change';
+    case 'runtime-requirement-raised':
+      return 'runtime-requirement';
 
     default:
       return 'unknown';
@@ -72,6 +74,15 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
   }
 
   switch (code) {
+    case 'runtime-requirement-raised':
+      // Nothing about this is a call site, so the generic "review usages"
+      // ending is actively wrong: there is one edit, and it is to the build.
+      return (
+        `\`${dependency}\` is now compiled for Java ${finding.after ?? 'a newer release'}. ` +
+        `Raise this project's Java toolchain to match — the compiler release and target in the build ` +
+        `(\`maven.compiler.release\`, \`sourceCompatibility\`/\`targetCompatibility\`), the JDK used in CI, ` +
+        `and any runtime base image — or stay on the previous version. There is no source change that avoids this.`
+      );
     case 'export-removed':
       return `Every use of \`${symbol}\` from \`${dependency}\` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub \`${symbol}\` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.`;
     case 'member-removed':

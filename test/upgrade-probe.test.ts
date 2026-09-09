@@ -1648,6 +1648,19 @@ describe('one verdict for a plan built from several', () => {
     assert.match(combined?.diagnostics ?? '', /TS2554/);
   });
 
+  test('a failure carries its introduced diagnostics forward, de-duplicated', () => {
+    const withDiagnostics = {
+      ...failed,
+      introducedDiagnostics: [
+        { file: 'src/a.ts', line: 1, column: 0, code: 'TS2554', message: 'Expected 1 arguments.', severity: 'error' as const },
+      ],
+    };
+    const combined = combineVerifications([passed('tsc'), withDiagnostics, { ...withDiagnostics }]);
+    assert.equal(combined?.status, 'failed');
+    assert.equal(combined?.introducedDiagnostics?.length, 1, 'the same diagnostic from two parts collapses to one');
+    assert.equal(combined?.introducedDiagnostics?.[0]?.file, 'src/a.ts');
+  });
+
   test('a part nobody measured makes the whole plan unmeasured, with the reason', () => {
     const combined = combineVerifications([passed('tsc'), skipped]);
     assert.equal(combined?.status, 'skipped', 'half-verified is not verified');

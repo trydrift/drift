@@ -1,0 +1,218 @@
+{
+  "datasetId": "bump",
+  "datasetClass": "consumer-impact",
+  "available": 571,
+  "selected": 571,
+  "attempted": 571,
+  "notRun": 0,
+  "scored": 414,
+  "excluded": {
+    "reproduction-failed": 64,
+    "source-unavailable": 93
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 344,
+      "denominator": 414,
+      "value": 0.8309178743961353
+    },
+    "affected-repository identification rate": {
+      "numerator": 191,
+      "denominator": 414,
+      "value": 0.4613526570048309
+    },
+    "consumer localization rate": {
+      "numerator": 135,
+      "denominator": 414,
+      "value": 0.32608695652173914
+    },
+    "false-safe verdicts": {
+      "numerator": 32,
+      "denominator": 414,
+      "value": 0.07729468599033816
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 414,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 414,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "consumer localization rate": {
+      "adjudicated": 414,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "false-safe verdicts": {
+      "adjudicated": 414,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: COMPILATION_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 155,
+        "denominator": 170,
+        "value": 0.9117647058823529
+      },
+      "affected-repository identification rate": {
+        "numerator": 97,
+        "denominator": 170,
+        "value": 0.5705882352941176
+      },
+      "consumer localization rate": {
+        "numerator": 93,
+        "denominator": 170,
+        "value": 0.5470588235294118
+      }
+    },
+    "label: ENFORCER_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 68,
+        "denominator": 85,
+        "value": 0.8
+      },
+      "affected-repository identification rate": {
+        "numerator": 21,
+        "denominator": 85,
+        "value": 0.24705882352941178
+      },
+      "consumer localization rate": {
+        "numerator": 4,
+        "denominator": 85,
+        "value": 0.047058823529411764
+      }
+    },
+    "label: TEST_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 116,
+        "denominator": 144,
+        "value": 0.8055555555555556
+      },
+      "affected-repository identification rate": {
+        "numerator": 71,
+        "denominator": 144,
+        "value": 0.4930555555555556
+      },
+      "consumer localization rate": {
+        "numerator": 38,
+        "denominator": 144,
+        "value": 0.2638888888888889
+      }
+    },
+    "label: WERROR_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 3,
+        "denominator": 4,
+        "value": 0.75
+      },
+      "affected-repository identification rate": {
+        "numerator": 1,
+        "denominator": 4,
+        "value": 0.25
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0
+      }
+    },
+    "label: DEPENDENCY_RESOLUTION_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 1,
+        "denominator": 4,
+        "value": 0.25
+      },
+      "affected-repository identification rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0
+      }
+    },
+    "label: DEPENDENCY_LOCK_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 1,
+        "denominator": 7,
+        "value": 0.14285714285714285
+      },
+      "affected-repository identification rate": {
+        "numerator": 1,
+        "denominator": 7,
+        "value": 0.14285714285714285
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 7,
+        "value": 0
+      }
+    }
+  },
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 0.7946859903381642,
+      "high": 0.8671497584541062,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.41545893719806765,
+      "high": 0.5120772946859904,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.28502415458937197,
+      "high": 0.3743961352657005,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0.050724637681159424,
+      "high": 0.10386473429951691,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "compatible": 571
+  },
+  "affectedMisses": {
+    "total": 223,
+    "byReason": {
+      "verification-inconclusive": 9,
+      "dependency-update-not-detected": 70,
+      "upstream-surface-unavailable": 53,
+      "no-breaking-change-derived": 22,
+      "consumer-usage-not-found": 33,
+      "breaking-change-low-confidence": 10,
+      "dependency-import-not-found": 26
+    },
+    "unclassified": 0
+  }
+}

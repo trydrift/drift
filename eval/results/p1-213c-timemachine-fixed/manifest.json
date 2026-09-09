@@ -1,0 +1,15 @@
+{
+  "version": "drift-external-run-v1",
+  "runId": "p1-213c-timemachine-fixed",
+  "datasetId": "timemachine",
+  "createdAt": "2026-09-04T21:05:44.279Z",
+  "driftCommit": "a8757c68985ab23e5d8125b54463eaf8decd1052",
+  "driftTreeDirty": true,
+  "harnessVersion": "a8757c68985ab23e5d8125b54463eaf8decd1052",
+  "datasetVersion": "9928dbf1af1405433d2c2e40227f39fd831d3863",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --run-id p1-213c-timemachine-fixed",
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed."
+}

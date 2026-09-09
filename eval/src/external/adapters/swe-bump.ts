@@ -20,6 +20,7 @@ import {
 // Not part of the public package surface — see the note in
 // `eval/src/adapters/end-to-end.ts`.
 import { deepVerify } from '../../../../dist/analysis.js';
+import { buildImpactFunnel, type ImpactFunnel } from '../impact-funnel.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -119,7 +120,7 @@ export function sweBumpSelectables(tasks: readonly SweBumpTask[]): Selectable[] 
 export interface SweBumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' | 'runtime-declaration' }[];
   verdict: string;
   summary: string;
   /**
@@ -132,6 +133,8 @@ export interface SweBumpPrediction {
   manifestVersionTo: string;
   versionFrom: string | null;
   exactVersionPair: { from: string; to: string } | null;
+  /** Which pipeline stage a miss was lost at, plus secondary diagnostics. See `impact-funnel.ts`. */
+  impactFunnel: ImpactFunnel;
 }
 
 /**
@@ -261,6 +264,19 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
     const resolvedTo = applied?.to && semver.valid(applied.to) ? semver.valid(applied.to) : null;
     const exactVersionPair = resolvedFrom && resolvedTo ? { from: resolvedFrom, to: resolvedTo } : null;
 
+    const verdict = verdictFromPlan(plan);
+    const impactFunnel = buildImpactFunnel({
+      plan,
+      localizationDiagnostics: result.localizationDiagnostics,
+      isTargetDependency: (name) => name === task.package,
+      updateDetected: Boolean(applied),
+      // The corpus states a range; when Drift could not pin it to a concrete
+      // pair the version questions are unadjudicated, and the funnel says so
+      // with the same distinction rather than charging localization for it.
+      exactVersionResolved: Boolean(exactVersionPair),
+      identifiedAffected: verdict === 'locally-affected',
+    });
+
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({
         name: change.name,
@@ -275,12 +291,14 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
         file: site.file,
         line: site.line,
         matchedSymbol: site.matchedSymbol,
+        ...(site.siteKind ? { siteKind: site.siteKind } : {}),
       })),
-      verdict: verdictFromPlan(plan),
+      verdict,
       summary: result.summary,
       manifestVersionTo: task.versionTo,
       versionFrom,
       exactVersionPair,
+      impactFunnel,
     };
   } finally {
     await cleanupTemporaryDirectory(work);
@@ -379,7 +397,17 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
       )
     : undefined;
   const identifiedAffected = prediction.verdict === 'locally-affected';
-  const localized = prediction.impactSites.length > 0;
+  // Localization is a strict subset of affected-identification: pointing at a
+  // consumer line only counts as a "yes" when Drift also stood behind the
+  // conclusion that the repository is affected. Scored independently, a case
+  // with impact sites but a hedged (`verification-incomplete` /
+  // `insufficient-evidence`) verdict counted as localized while not counting as
+  // affected — impossible per case, and it let the pooled localization rate
+  // exceed the affected rate it is a subset of. The Python adapter already
+  // scored it this way; this one did not, so the two disagreed.
+  // Source sites only — see the note on the same rule in `bump.ts`.
+  const localized =
+    identifiedAffected && prediction.impactSites.some((site) => site.siteKind === undefined);
   const adjudicated = detectedUpdate !== undefined;
   const unadjudicatedReason =
     'the corpus supplies a manifest range and Drift could not resolve it to a concrete before/after version pair';
@@ -387,6 +415,7 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
+    impactFunnel: prediction.impactFunnel,
     outcomes: adjudicated
       ? {
           detectedUpdate,

@@ -36,10 +36,21 @@ export const mavenParser: ManifestParser = {
  * `<properties>` block and `dependencyManagement`. An unresolved property
  * yields `null`, which downstream treats as "version unknown" rather than
  * inventing one.
+ *
+ * `dependencyManagement` is read as what it is — the place the version is
+ * *stated* — rather than as one more `<dependency>` among the rest. Declaring
+ * the version once under management and referencing it without one is the
+ * ordinary Maven idiom, and a flat scan reads those two blocks in file order:
+ * the version-less direct declaration comes second and overwrote the managed
+ * version with `null`. The dependency then had no version on either side of a
+ * commit, so a real bump read as *"manifests changed, but no dependency
+ * versions moved"* and never reached analysis at all — 29 of BUMP's Java cases
+ * were lost here, before any surface diff or localization could run.
  */
 function parsePom(content: string): DependencyMap {
   const out: DependencyMap = new Map();
   const properties = parseProperties(content);
+  const managed = managedVersions(content, properties);
 
   for (const match of content.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)) {
     const block = match[1]!;
@@ -47,7 +58,9 @@ function parsePom(content: string): DependencyMap {
     const artifactId = tag(block, 'artifactId');
     if (!groupId || !artifactId) continue;
 
-    const version = resolveProperties(tag(block, 'version'), properties);
+    const key = `${groupId}:${artifactId}`;
+    const declared = resolveProperties(tag(block, 'version'), properties);
+    const version = declared ?? managed.get(key) ?? null;
     const scope = tag(block, 'scope');
     const optional = tag(block, 'optional') === 'true';
 
@@ -57,10 +70,35 @@ function parsePom(content: string): DependencyMap {
         ? 'dev'
         : 'runtime';
 
-    out.set(`${groupId}:${artifactId}`, { version, kind });
+    // Whichever block is read second, a known version outranks an absent one:
+    // the two declarations describe one dependency, and only one of them says
+    // what version it resolves to.
+    const existing = out.get(key);
+    out.set(key, { version: version ?? existing?.version ?? null, kind });
   }
 
   return out;
+}
+
+/**
+ * The versions stated under `<dependencyManagement>`, by `groupId:artifactId`.
+ *
+ * These are the versions a direct declaration inherits when it states none of
+ * its own. Read separately from the direct blocks so the two cannot overwrite
+ * each other by file order.
+ */
+function managedVersions(content: string, properties: Map<string, string>): Map<string, string> {
+  const managed = new Map<string, string>();
+  for (const section of content.matchAll(/<dependencyManagement>([\s\S]*?)<\/dependencyManagement>/g)) {
+    for (const match of section[1]!.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)) {
+      const block = match[1]!;
+      const groupId = tag(block, 'groupId');
+      const artifactId = tag(block, 'artifactId');
+      const version = resolveProperties(tag(block, 'version'), properties);
+      if (groupId && artifactId && version) managed.set(`${groupId}:${artifactId}`, version);
+    }
+  }
+  return managed;
 }
 
 function parseProperties(content: string): Map<string, string> {

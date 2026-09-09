@@ -1,0 +1,168 @@
+{
+  "datasetId": "timemachine",
+  "datasetClass": "consumer-impact",
+  "available": 100,
+  "selected": 100,
+  "attempted": 100,
+  "notRun": 0,
+  "scored": 66,
+  "excluded": {
+    "source-unavailable": 3,
+    "reproduction-failed": 31
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 31,
+      "denominator": 33,
+      "value": 0.9393939393939394
+    },
+    "affected-repository identification rate": {
+      "numerator": 11,
+      "denominator": 25,
+      "value": 0.44
+    },
+    "consumer localization rate": {
+      "numerator": 11,
+      "denominator": 25,
+      "value": 0.44
+    },
+    "false-safe verdicts": {
+      "numerator": 0,
+      "denominator": 25,
+      "value": 0
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 33,
+      "notAdjudicated": 33,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 33
+      }
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 25,
+      "notAdjudicated": 41,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 33,
+        "the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset": 8
+      }
+    },
+    "consumer localization rate": {
+      "adjudicated": 25,
+      "notAdjudicated": 41,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 33,
+        "the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset": 8
+      }
+    },
+    "false-safe verdicts": {
+      "adjudicated": 25,
+      "notAdjudicated": 41,
+      "reasons": {
+        "the historical requirement is a range and the corpus does not supply its exact resolved before version": 33,
+        "the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset": 8
+      }
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: migration-failure-easy": {
+      "dependency-update detection rate": {
+        "numerator": 22,
+        "denominator": 24,
+        "value": 0.9166666666666666
+      },
+      "affected-repository identification rate": {
+        "numerator": 8,
+        "denominator": 20,
+        "value": 0.4
+      },
+      "consumer localization rate": {
+        "numerator": 8,
+        "denominator": 20,
+        "value": 0.4
+      }
+    },
+    "label: migration-failure-medium": {
+      "dependency-update detection rate": {
+        "numerator": 8,
+        "denominator": 8,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 3,
+        "denominator": 5,
+        "value": 0.6
+      },
+      "consumer localization rate": {
+        "numerator": 3,
+        "denominator": 5,
+        "value": 0.6
+      }
+    },
+    "label: migration-failure-hard": {
+      "dependency-update detection rate": {
+        "numerator": 1,
+        "denominator": 1,
+        "value": 1
+      }
+    }
+  },
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 0.8484848484848485,
+      "high": 1,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.28,
+      "high": 0.64,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.28,
+      "high": 0.64,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0,
+      "high": 0,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "compatible": 100
+  },
+  "affectedMisses": {
+    "total": 55,
+    "byReason": {
+      "exact-version-unresolved": 38,
+      "upstream-surface-unavailable": 1,
+      "consumer-usage-not-found": 6,
+      "consumer-match-insufficient-confidence": 3,
+      "breaking-change-low-confidence": 1,
+      "dependency-update-not-detected": 2,
+      "dependency-import-not-found": 1
+    },
+    "unclassified": 3
+  }
+}

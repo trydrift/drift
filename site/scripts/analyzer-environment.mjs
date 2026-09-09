@@ -50,6 +50,58 @@
  * separately pinned it — a repository-wide CI change this fix does not make.
  * Enrolling them is a natural follow-up once they are pinned the same way.
  */
+/**
+ * Which enrolled analyzers disagree with the version this repository pins.
+ *
+ * Returns one entry per mismatch, `[]` when everything matches. Deliberately
+ * *not* called from `engineFingerprint()` — see the contract above: every
+ * context that computes a fingerprint would then hard-fail on a machine that
+ * has not pinned the tool, which is most of them, and reading a fingerprint
+ * is not the operation that can go wrong.
+ *
+ * Capturing is. A recording is an artifact, it is stamped with the
+ * environment that produced it, and CI validates it against the pin — so a
+ * capture under a different interpreter produces work that is silently
+ * rejected later, after the expensive part is already done. That failure took
+ * two full re-captures to diagnose the first time it happened, because the
+ * symptom ("stale engine fingerprint") names the recording rather than the
+ * interpreter that made it stale.
+ */
+export async function analyzerPinMismatches(
+  manifest = RECORDING_ANALYZER_ENVIRONMENT,
+  runVersionCommand,
+) {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const run = runVersionCommand ?? promisify(execFile);
+
+  const mismatches = [];
+  for (const [tool, spec] of Object.entries(manifest)) {
+    let actual = null;
+    try {
+      const { stdout, stderr } = await run(spec.executable, spec.versionArgs, { timeout: 5000 });
+      actual = spec.normalize(`${stdout ?? ''}${stderr ?? ''}`);
+    } catch {
+      actual = null;
+    }
+    if (actual !== spec.declared) {
+      mismatches.push({ tool, executable: spec.executable, declared: spec.declared, actual });
+    }
+  }
+  return mismatches;
+}
+
+/** The sentence a capture prints when {@link analyzerPinMismatches} is non-empty. */
+export function describeAnalyzerPinMismatch(mismatch) {
+  const found = mismatch.actual === null ? 'not runnable' : mismatch.actual;
+  return (
+    `${mismatch.tool}: this repository records with ${mismatch.declared}, but \`${mismatch.executable}\` here is ${found}.\n` +
+    `  A recording captured now would be stamped with a different analyzer identity and CI would reject it as stale.\n` +
+    `  Put ${mismatch.declared} first on PATH — e.g. \`ln -s "$(command -v python${mismatch.declared})" /tmp/pin/${mismatch.executable}\` ` +
+    `then \`PATH=/tmp/pin:$PATH\` — and run this again.`
+  );
+}
+
 export const RECORDING_ANALYZER_ENVIRONMENT = {
   python: {
     declared: '3.12',

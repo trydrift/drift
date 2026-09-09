@@ -1,0 +1,408 @@
+[
+  {
+    "caseId": "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
+    "kind": "source-unavailable",
+    "reason": "commit 3d80009b32c9fe6bfe93f67ffcf396013949afaa could not be fetched from https://github.com/ayocodingit/boilerplate-express-service.git: Command failed: git fetch --quiet --depth 1 origin 3d80009b32c9fe6bfe93f67ffcf396013949afaa\nremote: Repository not found.\nfatal: repository 'https://github.com/ayocodingit/boilerplate-express-service.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
+      "repository": "https://github.com/ayocodingit/boilerplate-express-service",
+      "commit": "3d80009b32c9fe6bfe93f67ffcf396013949afaa",
+      "baseCommit": null,
+      "dependency": "express-jwt",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "Minds__mobile-native-i18n-js__^4.4.3",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "Minds__mobile-native-i18n-js__^4.4.3",
+      "repository": "https://github.com/Minds/mobile-native",
+      "commit": "d48b3b20a759bad7a1512bb5db0dfb353c6998b7",
+      "baseCommit": null,
+      "dependency": "i18n-js",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "v18.18",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "Minds__mobile-native-react-native-localize__^3.1.0",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "Minds__mobile-native-react-native-localize__^3.1.0",
+      "repository": "https://github.com/Minds/mobile-native",
+      "commit": "d48b3b20a759bad7a1512bb5db0dfb353c6998b7",
+      "baseCommit": null,
+      "dependency": "react-native-localize",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "v18.18",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "Minds__mobile-native-react-native-reanimated-hooks__^4.0.0",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "Minds__mobile-native-react-native-reanimated-hooks__^4.0.0",
+      "repository": "https://github.com/Minds/mobile-native",
+      "commit": "d48b3b20a759bad7a1512bb5db0dfb353c6998b7",
+      "baseCommit": null,
+      "dependency": "react-native-reanimated-hooks",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "v18.18",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "chriscareycode__nagiostv-react-clipboard-polyfill__^4.0.2",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "chriscareycode__nagiostv-react-clipboard-polyfill__^4.0.2",
+      "repository": "https://github.com/chriscareycode/nagiostv-react",
+      "commit": "f6685c1060065b00ab1ea2af896802ba9d6f2981",
+      "baseCommit": null,
+      "dependency": "clipboard-polyfill",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "chriscareycode__nagiostv-react-react-router-dom__^6.22.3",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "chriscareycode__nagiostv-react-react-router-dom__^6.22.3",
+      "repository": "https://github.com/chriscareycode/nagiostv-react",
+      "commit": "f6685c1060065b00ab1ea2af896802ba9d6f2981",
+      "baseCommit": null,
+      "dependency": "react-router-dom",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "chriscareycode__nagiostv-react-react-tooltip__^5.26.3",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "chriscareycode__nagiostv-react-react-tooltip__^5.26.3",
+      "repository": "https://github.com/chriscareycode/nagiostv-react",
+      "commit": "f6685c1060065b00ab1ea2af896802ba9d6f2981",
+      "baseCommit": null,
+      "dependency": "react-tooltip",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "getflywheel__local-components-react-markdown__^9.0.1",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "getflywheel__local-components-react-markdown__^9.0.1",
+      "repository": "https://github.com/getflywheel/local-components",
+      "commit": "c22d6a83084ea43b22e356e38fcaee2a91d169d9",
+      "baseCommit": null,
+      "dependency": "react-markdown",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "v18.15.0",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "lodeapp__lode-glob__^10.3.12",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "lodeapp__lode-glob__^10.3.12",
+      "repository": "https://github.com/lodeapp/lode",
+      "commit": "cccb49784ca199db00deca5520560890681c0dad",
+      "baseCommit": null,
+      "dependency": "glob",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "18.16.1",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "edgardmessias__vscode.clipboard-manager-clipboardy__^4.0.0",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "edgardmessias__vscode.clipboard-manager-clipboardy__^4.0.0",
+      "repository": "https://github.com/edgardmessias/vscode.clipboard-manager",
+      "commit": "c234ff91f88f1bb738808b2a1b2213c1dc8fc0e4",
+      "baseCommit": null,
+      "dependency": "clipboardy",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "edgardmessias__vscode.clipboard-manager-glob__^10.3.12",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "edgardmessias__vscode.clipboard-manager-glob__^10.3.12",
+      "repository": "https://github.com/edgardmessias/vscode.clipboard-manager",
+      "commit": "c234ff91f88f1bb738808b2a1b2213c1dc8fc0e4",
+      "baseCommit": null,
+      "dependency": "glob",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "bufferapp__ui-styled-components__^6.1.8",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "bufferapp__ui-styled-components__^6.1.8",
+      "repository": "https://github.com/bufferapp/ui",
+      "commit": "05aba391f701d6507b79587a9986fe7b7b32a8c0",
+      "baseCommit": null,
+      "dependency": "styled-components",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "bufferapp__ui-markdown-to-jsx__^7.4.7",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "bufferapp__ui-markdown-to-jsx__^7.4.7",
+      "repository": "https://github.com/bufferapp/ui",
+      "commit": "05aba391f701d6507b79587a9986fe7b7b32a8c0",
+      "baseCommit": null,
+      "dependency": "markdown-to-jsx",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
+    "caseId": "karrioapi__karrio-dashboard-axios__^1.6.8",
+    "kind": "source-unavailable",
+    "reason": "commit 00ef3e6f7f4e368310b1ce3ae99284a07734ae84 could not be fetched from https://github.com/karrioapi/karrio-dashboard.git: Command failed: git fetch --quiet --depth 1 origin 00ef3e6f7f4e368310b1ce3ae99284a07734ae84\nremote: Repository not found.\nfatal: repository 'https://github.com/karrioapi/karrio-dashboard.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "karrioapi__karrio-dashboard-axios__^1.6.8",
+      "repository": "https://github.com/karrioapi/karrio-dashboard",
+      "commit": "00ef3e6f7f4e368310b1ce3ae99284a07734ae84",
+      "baseCommit": null,
+      "dependency": "axios",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  }
+]

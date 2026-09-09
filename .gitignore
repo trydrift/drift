@@ -60,3 +60,6 @@ eval/results/*/cases.partial.jsonl
 eval/results/*/evidence/
 
 *.cpuprofile.txt
+
+# Logs from scripts/run-baselines.sh — a local run record, not an artifact.
+.baseline-logs/

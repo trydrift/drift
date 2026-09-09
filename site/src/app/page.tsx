@@ -108,19 +108,35 @@ export default function Home() {
             </a>
           </div>
 
-          <p className="mt-5 font-mono text-xs text-muted">
+          <div className="mt-5 flex flex-col items-center gap-2 font-mono text-xs text-muted">
             <CopyCommand text="npm install -g @usedrift/cli">
               <span className="text-faint">$</span> npm install -g @usedrift/cli
             </CopyCommand>
-          </p>
+            {/*
+              The agent path, given equal weight to the CLI. It is the one
+              install here that changes what the tool *is* — an agent that
+              would otherwise answer about a version pair from memory.
+            */}
+            <CopyCommand text="claude mcp add drift -- npx -y @usedrift/cli mcp">
+              <span className="text-faint">$</span> claude mcp add drift -- npx -y @usedrift/cli mcp
+            </CopyCommand>
+          </div>
 
+          {/*
+            The credibility line, above the fold. Precision is the number a
+            skeptical reader wants and almost nothing in this category
+            publishes, because it needs negatives — and this one has 16k.
+          */}
           <p className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-faint">
+            <span>
+              <span className="text-foreground">{narrative.kong.rq1.precisionPercent}</span> precision against{" "}
+              <span className="text-foreground">{narrative.kong.rq1.negativeControls}</span> negative controls
+            </span>
+            <span aria-hidden>·</span>
             <span>{proof.ecosystems} package ecosystems</span>
             <span aria-hidden>·</span>
-            <span>{proof.recordings} recorded analyses</span>
-            <span aria-hidden>·</span>
             <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
-              Public benchmarks
+              Every number, and every one refused
             </Link>
           </p>
         </section>
@@ -178,6 +194,91 @@ export default function Home() {
                 {MAVEN_BREAKING_CHANGE_STUDY.clientBreakRateValue} broke a client, per the same study
               </span>
             </p>
+          </div>
+        </section>
+
+        {/* ── What each tool in this space actually answers ───────────── */}
+        {/*
+          The first question every reader has is "isn't this Renovate?", and
+          the second is "isn't this OpenRewrite?". Answering both in three
+          short columns is cheaper than letting someone leave to find out —
+          and conceding what OpenRewrite is better at is what makes the rest
+          of the comparison worth believing.
+        */}
+        <section className="pt-16 sm:pt-24">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Not an update bot</p>
+          <h2 className={`${instrumentSerif.className} mt-2 text-2xl text-landing sm:text-3xl`}>
+            Three tools, three different questions.
+          </h2>
+
+          <div className="mt-6 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
+            {[
+              {
+                who: "Dependabot · Renovate",
+                answers: "“A newer version exists.”",
+                then: "Opens the PR. Says nothing about whether it breaks you.",
+              },
+              {
+                who: "OpenRewrite · Moderne",
+                answers: "“I will rewrite your code for this migration.”",
+                then: "Only where somebody wrote a recipe. Needs a build to parse.",
+              },
+              {
+                who: "Drift",
+                answers: "“Here is what changed, where it lands, and what I could not check.”",
+                then: "Any version pair, computed from the published artifacts.",
+                accent: true,
+              },
+            ].map((column) => (
+              <div key={column.who} className={`bg-surface px-5 py-5 ${column.accent ? "bg-surface-hover" : ""}`}>
+                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">{column.who}</p>
+                <p className={`mt-2 text-[15px] leading-6 ${column.accent ? "text-foreground" : "text-muted"}`}>
+                  {column.answers}
+                </p>
+                <p className="mt-2 text-[12.5px] leading-5 text-faint">{column.then}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-4 max-w-2xl text-[13px] leading-6 text-muted">
+            OpenRewrite is the better tool once you have <em>decided</em> to migrate — it rewrites the code, and
+            Drift does not. Drift answers the question before that one: which of these upgrades can I take, and
+            what will the rest cost me?
+          </p>
+        </section>
+
+        {/* ── The agent path ──────────────────────────────────────────── */}
+        {/*
+          The differentiator that is hardest to copy, and the one install line
+          that changes what the tool is. Kept to a claim, a command and the two
+          tool names — an agent user does not need a tour.
+        */}
+        <section className="pt-16 sm:pt-24">
+          <div className="rounded-2xl border border-border bg-surface/75 px-6 py-8 sm:px-10 sm:py-10">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">For coding agents</p>
+            <h2 className={`${instrumentSerif.className} mt-2 max-w-2xl text-2xl text-landing sm:text-3xl`}>
+              Your agent recalls what a package changed. Drift makes it check.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
+              Ask an agent to upgrade a repository and it answers from memory — about a version pair it never
+              looked at. Drift gives it the computed diff instead, and a verdict it is told not to soften.
+            </p>
+
+            <div className="mt-5 font-mono text-xs text-muted">
+              <CopyCommand text="claude mcp add drift -- npx -y @usedrift/cli mcp">
+                <span className="text-faint">$</span> claude mcp add drift -- npx -y @usedrift/cli mcp
+              </CopyCommand>
+            </div>
+
+            <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[12.5px] text-faint">
+              <li>
+                <code className="text-foreground">check_upgrades</code> — every pending upgrade, by verdict
+              </li>
+              <li>
+                <code className="text-foreground">explain_upgrade</code> — what changed, and the exact lines
+              </li>
+              <li>Local stdio. No service, no account, nothing leaves the machine.</li>
+            </ul>
           </div>
         </section>
 

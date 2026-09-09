@@ -149,6 +149,50 @@ export function falseSafeRate(dataset: BenchmarkDataset): Rate {
   return requireRate(dataset, "false-safe verdicts");
 }
 
+/**
+ * A 95% Wilson score interval for a rate, formatted for prose.
+ *
+ * Needed because these corpora differ in size by an order of magnitude, and a
+ * bare point estimate invites a comparison the data does not support. BUMP
+ * observes 17 false-safes in 551 Java cases; SWE-Bump observes none in 53.
+ * Reading that as "npm is better than Java" is wrong — 0/53 is consistent with
+ * a true rate well above BUMP's measured one, and the interval is what says so.
+ *
+ * Wilson rather than the normal approximation because the normal one is
+ * useless at exactly the values here: it gives a zero-width interval for 0/53,
+ * which would assert perfection from an absence of evidence.
+ */
+export function wilsonInterval(rate: Rate): { low: number; high: number } | null {
+  const n = rate.denominator;
+  if (n === 0) return null;
+  const z = 1.96;
+  const p = rate.numerator / n;
+  const denominator = 1 + (z * z) / n;
+  const centre = (p + (z * z) / (2 * n)) / denominator;
+  const spread = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denominator;
+  return { low: Math.max(0, centre - spread), high: Math.min(1, centre + spread) };
+}
+
+/**
+ * `95% CI 1.9-4.9%`, or `null` when there is no denominator.
+ *
+ * The confidence level is part of the returned string rather than written
+ * beside it in the page, because `check-benchmark-copy` cannot tell a
+ * hand-typed `95%` apart from a hand-typed measurement — and it is right not
+ * to try. Everything metric-shaped on the page comes from here.
+ */
+export function formatInterval(rate: Rate): string | null {
+  const interval = wilsonInterval(rate);
+  if (!interval) return null;
+  return `95% CI ${(interval.low * 100).toFixed(1)}\u2013${(interval.high * 100).toFixed(1)}%`;
+}
+
+/** The upper bound alone, for a rate whose point estimate is zero and therefore says little. */
+export function formatIntervalCeiling(rate: Rate): string | null {
+  const interval = wilsonInterval(rate);
+  return interval ? `${(interval.high * 100).toFixed(1)}%` : null;
+}
+
 /** Whether a dataset's confusion matrix reflects real negative controls (as opposed to positives-only). */
 export function hasRealNegatives(dataset: BenchmarkDataset): boolean {
   return dataset.confusion !== null && dataset.negativeControls > 0;

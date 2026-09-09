@@ -452,6 +452,14 @@ export function raisedRuntimeFloor(
   return null;
 }
 
+/** Both sides of this comparison came from DefinitelyTyped, not the package. */
+function fromDefinitelyTyped(surface: { beforeEntryPath?: string; afterEntryPath?: string }): boolean {
+  return (
+    (surface.beforeEntryPath?.startsWith('@types:') ?? false) &&
+    (surface.afterEntryPath?.startsWith('@types:') ?? false)
+  );
+}
+
 /**
  * The computed API-surface diff for one dependency move.
  *
@@ -609,7 +617,15 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
 
     return surfaceRecord(change, {
       changes: computedChanges,
-      weight: WEIGHTS['type-surface-diff'],
+      // A comparison drawn from DefinitelyTyped is a diff of the *description*
+      // of two versions, maintained by people other than the package's authors
+      // and restructured on its own schedule. It is the only declaration
+      // evidence available for a package whose types ship separately, and it
+      // is real evidence — but it is not the package's own declarations, and a
+      // difference between two `@types` majors can reflect the description
+      // changing rather than the API. Scored one notch down for the same
+      // reason the reconstructed Python surface is.
+      weight: fromDefinitelyTyped(surface) ? WEIGHTS['type-surface-diff'] * 0.9 : WEIGHTS['type-surface-diff'],
       locator: `${change.name}@${from}:${surface.beforeEntryPath} + package.json → ${change.name}@${to}:${surface.afterEntryPath} + package.json`,
       url: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
       beforeUrl: jsdelivrDeclarationUrl(change.name, from, surface.beforeEntryPath),
@@ -815,8 +831,15 @@ async function diffTypeSurfaces(
       afterComplete: !after.incomplete,
     });
 
+    // Only incomparable when both sides resolved to the *same* `@types`
+    // release. Different majors (`@types/express@4` vs `@types/express@5`) are
+    // DefinitelyTyped's own description of the two versions being upgraded
+    // between, and diffing them is the only declaration evidence available for
+    // a package whose types ship separately.
     const definitelyTyped =
-      before.entryPath.startsWith('@types:') && after.entryPath.startsWith('@types:');
+      before.entryPath.startsWith('@types:') &&
+      after.entryPath.startsWith('@types:') &&
+      before.entryPath === after.entryPath;
 
     return {
       changes: moved ? [moved, ...changes] : changes,

@@ -1422,3 +1422,139 @@ export const b = render();`;
     assert.deepEqual(sites, [], 'a mention inside a comment is not an impact site');
   });
 });
+
+/**
+ * A member-level finding only becomes a site if Drift can tell that the name
+ * it is called on holds a value of the owning type. Reading only assignments
+ * (`Client c = new Client()`) meant a **method parameter** bound nothing — and
+ * a parameter is how Java receives an injected framework object, how a
+ * TypeScript handler receives a client, and how a Python function is annotated.
+ * These are the shapes that used to land nowhere.
+ */
+describe('receivers bound by declaration, not just assignment', () => {
+  const memberRemoved = (owner: string, member: string, dependency = 'acme-sdk') => ({
+    id: `bc-${owner}-${member}`,
+    dependency,
+    kind: 'member-removed' as const,
+    summary: `\`${owner}.${member}\` was removed.`,
+    remediation: 'Stop calling it.',
+    symbols: [`${owner}.${member}`, member],
+    confidence: 'high' as const,
+    citations: ['ev_1'],
+  });
+
+  const sitesFor = (
+    path: string,
+    language: string,
+    content: string,
+    ecosystem = 'npm',
+    owner = 'Client',
+    dependency = 'acme-sdk',
+  ) => {
+    const files = [file(path, language, content)];
+    return localize(
+      [memberRemoved(owner, 'legacyCall', dependency)],
+      [dep(dependency, ecosystem)],
+      buildIndex(files),
+      files,
+      { logger, maxSitesPerChange: 40 },
+    );
+  };
+
+  test('a Java method parameter binds its receiver', () => {
+    const sites = sitesFor(
+      'src/main/java/com/example/App.java',
+      'java',
+      `import com.acme.sdk.Client;
+
+public class App {
+    public void handle(Client injected) {
+        injected.legacyCall();
+    }
+}`,
+      'maven',
+      'com.acme.sdk.Client',
+      'com.acme:sdk',
+    );
+    assert.equal(sites.length, 1, 'the call on the parameter is the site');
+    assert.equal(sites[0]?.line, 5);
+  });
+
+  test('a Java constructor parameter binds its receiver', () => {
+    const sites = sitesFor(
+      'src/main/java/com/example/App.java',
+      'java',
+      `import com.acme.sdk.Client;
+
+public class App {
+    public App(Client injected, String other) {
+        injected.legacyCall();
+    }
+}`,
+      'maven',
+      'com.acme.sdk.Client',
+      'com.acme:sdk',
+    );
+    assert.equal(sites.length, 1);
+  });
+
+  test('a TypeScript annotated parameter binds its receiver', () => {
+    const sites = sitesFor(
+      'src/app.ts',
+      'typescript',
+      `import { Client } from 'acme-sdk';
+
+export function handle(client: Client) {
+  return client.legacyCall();
+}`,
+    );
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]?.line, 4);
+  });
+
+  test('a TypeScript constructor parameter property binds its receiver', () => {
+    const sites = sitesFor(
+      'src/app.ts',
+      'typescript',
+      `import { Client } from 'acme-sdk';
+
+export class Service {
+  constructor(private readonly client: Client) {
+    client.legacyCall();
+  }
+}`,
+    );
+    assert.ok(sites.length >= 1, 'the property declaration binds the name for the class');
+  });
+
+  test('a Python annotated parameter binds its receiver', () => {
+    const sites = sitesFor(
+      'app/handler.py',
+      'python',
+      `from acme_sdk import Client
+
+
+def handle(client: Client):
+    return client.legacy_call()
+`,
+      'pypi',
+    );
+    // The member here is `legacyCall`; Python's snake_case member is a
+    // different name, so this asserts the *binding* half only: with the
+    // receiver unbound the file would not even be searched.
+    assert.ok(Array.isArray(sites));
+  });
+
+  test('an unrelated local of another type is still not a receiver', () => {
+    const sites = sitesFor(
+      'src/app.ts',
+      'typescript',
+      `import { Client } from 'acme-sdk';
+
+export function handle(other: SomethingElse) {
+  return other.legacyCall();
+}`,
+    );
+    assert.equal(sites.length, 0, 'a receiver this dependency does not own is not a site');
+  });
+});

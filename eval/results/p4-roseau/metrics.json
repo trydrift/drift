@@ -1,0 +1,87 @@
+{
+  "datasetId": "roseau",
+  "datasetClass": "upstream-bc-detection",
+  "available": 267,
+  "selected": 267,
+  "attempted": 267,
+  "notRun": 0,
+  "scored": 255,
+  "excluded": {
+    "ground-truth-contested": 12
+  },
+  "missingRequirements": {},
+  "rates": {
+    "breaking-change detection recall": {
+      "numerator": 98,
+      "denominator": 98,
+      "value": 1
+    }
+  },
+  "adjudication": {
+    "breaking-change detection recall": {
+      "adjudicated": 98,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
+  "refusals": [],
+  "negativeControls": 157,
+  "confusion": {
+    "tp": 98,
+    "fp": 1,
+    "tn": 156,
+    "fn": 0
+  },
+  "classification": {
+    "precision": {
+      "numerator": 98,
+      "denominator": 99,
+      "value": 0.98989898989899
+    },
+    "recall": {
+      "numerator": 98,
+      "denominator": 98,
+      "value": 1
+    },
+    "f1": 0.9949238578680203
+  },
+  "baseline": null,
+  "breakdown": {
+    "label: binary-breaking": {
+      "breaking-change detection recall": {
+        "numerator": 98,
+        "denominator": 98,
+        "value": 1
+      }
+    },
+    "groundTruthSourceBreaking: true": {
+      "breaking-change detection recall": {
+        "numerator": 78,
+        "denominator": 78,
+        "value": 1
+      }
+    },
+    "groundTruthSourceBreaking: false": {
+      "breaking-change detection recall": {
+        "numerator": 20,
+        "denominator": 20,
+        "value": 1
+      }
+    }
+  },
+  "intervals": {
+    "breaking-change detection recall": {
+      "low": 1,
+      "high": 1,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "exact": 267
+  },
+  "affectedMisses": {
+    "total": 98,
+    "byReason": {},
+    "unclassified": 98
+  }
+}

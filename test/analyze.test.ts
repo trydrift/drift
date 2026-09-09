@@ -896,6 +896,39 @@ describe('analysis', () => {
     assert.ok(result[0]?.symbols.includes('createClient'));
   });
 
+  /**
+   * `default` is the name a module published through `export =` or
+   * `export default` is reachable by, and the only name localization can bind
+   * — an importing file picks its own, and `ImportRecord.defaultBinding` maps
+   * between them. It is not a name any developer has typed, and a surface
+   * provider writes its detail text before it knows which package the finding
+   * is about, so `glob@8`'s removals read "`default.sync` is no longer
+   * exported". Here the package is known.
+   */
+  test('a default export is described by the name the developer wrote', async () => {
+    const evidence = [
+      {
+        id: 'ev_default',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'surface',
+        weight: 1,
+        findings: [
+          { code: 'export-removed', symbol: 'default.sync', detail: '`default.sync` is no longer exported (was a function).' },
+          { code: 'export-removed', symbol: 'default', detail: '`default` is no longer exported (was a function).' },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.equal(result[0]?.summary, '`acme-sdk.sync` is no longer exported (was a function).');
+    // The bare form needs the clause rewritten, not just the name.
+    assert.equal(result[1]?.summary, '`acme-sdk` no longer has a default export (was a function).');
+    // Only the prose is rewritten: the symbol stays bindable.
+    assert.ok(result[0]?.symbols.includes('default.sync'));
+  });
+
   test('module-system dedupe preserves package-wide, exact, and wildcard scopes', async () => {
     const evidence = [
       {

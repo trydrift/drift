@@ -67,6 +67,8 @@
  *   node site/scripts/capture.mjs --if-stale    # only what has moved
  *   node site/scripts/capture.mjs --check       # report staleness, record nothing
  *   node site/scripts/capture.mjs --no-cache    # ignore the clone cache
+ *   node site/scripts/capture.mjs --any-analyzer # record under an unpinned
+ *                                                # interpreter; CI will reject
  */
 
 import { execFile, execFileSync } from 'node:child_process';
@@ -77,6 +79,7 @@ import { availableParallelism, tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { engineFingerprint } from './engine-fingerprint.mjs';
+import { analyzerPinMismatches, describeAnalyzerPinMismatch } from './analyzer-environment.mjs';
 
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -709,6 +712,25 @@ const onlyStale = has('if-stale') || has('check');
 const checkOnly = has('check');
 
 await mkdir(outDir, { recursive: true });
+
+// Refuse to record under an analyzer this repository does not pin.
+//
+// The fingerprint folds in the analyzer's version, so a capture under a
+// different interpreter produces recordings CI rejects as stale — and the
+// rejection names the recording, not the interpreter, so the diagnosis costs
+// a full re-capture to reach. Checked here rather than in
+// `engineFingerprint()` because reading a fingerprint is not the operation
+// that can go wrong; producing an artifact is. `--check` only reports, so it
+// stays allowed.
+if (!checkOnly) {
+  const mismatches = await analyzerPinMismatches();
+  if (mismatches.length > 0 && !has('any-analyzer')) {
+    console.error('Refusing to record: the analyzer environment does not match the one this repository pins.\n');
+    for (const mismatch of mismatches) console.error(`  ${describeAnalyzerPinMismatch(mismatch)}\n`);
+    console.error('  Pass --any-analyzer to record anyway. Those recordings will not pass CI.');
+    process.exit(1);
+  }
+}
 
 /** What produced the recordings that are already committed, and what would produce new ones. */
 const fingerprint = await engineFingerprint(repoRoot);
