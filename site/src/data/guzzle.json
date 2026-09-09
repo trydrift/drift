@@ -6,10 +6,10 @@
   "language": "PHP",
   "repo": "https://github.com/guzzle/guzzle",
   "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
-  "capturedAt": "2026-09-07T13:40:37.118Z",
+  "capturedAt": "2026-09-09T00:57:38.135Z",
   "commit": "93939470950a9b11e2e84204166ef5e048c55fe4",
-  "engine": "5eb2193d9a542873",
-  "durationMs": 3226,
+  "engine": "96ac152ce8c89dac",
+  "durationMs": 914,
   "packagesChecked": 4,
   "manifests": [
     "composer.json",
@@ -21,7 +21,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 135,
+      "at": 20,
       "phase": "Looking for manifests",
       "detail": "guzzle/guzzle",
       "done": 0,
@@ -29,7 +29,7 @@
     },
     {
       "type": "progress",
-      "at": 144,
+      "at": 22,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -37,7 +37,7 @@
     },
     {
       "type": "progress",
-      "at": 146,
+      "at": 22,
       "phase": "Reading manifest",
       "detail": "composer.json",
       "done": 0,
@@ -45,7 +45,7 @@
     },
     {
       "type": "progress",
-      "at": 146,
+      "at": 23,
       "phase": "Reading manifest",
       "detail": "vendor-bin/composer-normalize/composer.json",
       "done": 0,
@@ -53,7 +53,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 147,
+      "at": 23,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -97,7 +97,7 @@
     },
     {
       "type": "progress",
-      "at": 147,
+      "at": 23,
       "phase": "Reading manifest",
       "detail": "vendor-bin/php-cs-fixer/composer.json",
       "done": 0,
@@ -105,7 +105,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 147,
+      "at": 23,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -149,7 +149,7 @@
     },
     {
       "type": "progress",
-      "at": 147,
+      "at": 23,
       "phase": "Reading manifest",
       "detail": "vendor-bin/phpstan/composer.json",
       "done": 0,
@@ -157,7 +157,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 147,
+      "at": 23,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -201,7 +201,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 147,
+      "at": 23,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -245,7 +245,7 @@
     },
     {
       "type": "progress",
-      "at": 147,
+      "at": 23,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -253,7 +253,7 @@
     },
     {
       "type": "progress",
-      "at": 147,
+      "at": 23,
       "phase": "Checking registries",
       "detail": "4 direct dependencies",
       "done": 0,
@@ -261,7 +261,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 147,
+      "at": 23,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -305,7 +305,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 147,
+      "at": 24,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -349,7 +349,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 148,
+      "at": 24,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -393,7 +393,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 148,
+      "at": 24,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -436,8 +436,16 @@
       }
     },
     {
+      "type": "progress",
+      "at": 49,
+      "phase": "Indexing your code",
+      "detail": "140 files indexed · 4 direct dependencies to check",
+      "done": 0,
+      "total": 4
+    },
+    {
       "type": "candidate-upsert",
-      "at": 1130,
+      "at": 152,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -483,99 +491,15 @@
     },
     {
       "type": "progress",
-      "at": 1130,
+      "at": 152,
       "phase": "Outdated",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
       "total": 4
     },
     {
-      "type": "candidate-drop",
-      "at": 1132,
-      "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0"
-    },
-    {
-      "type": "progress",
-      "at": 1132,
-      "phase": "Up to date",
-      "detail": "ergebnis/composer-normalize@2.52.0",
-      "done": 2,
-      "total": 4
-    },
-    {
       "type": "candidate-upsert",
-      "at": 1138,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "v3.95.24",
-        "selected": "v3.95.24",
-        "safeLatest": null,
-        "publishedVersions": [
-          "v3.95.24",
-          "v3.95.23",
-          "v3.95.22",
-          "v3.95.21",
-          "v3.95.20",
-          "v3.95.19",
-          "v3.95.18",
-          "v3.95.17",
-          "v3.95.16",
-          "v3.95.15",
-          "v3.95.14",
-          "v3.95.13",
-          "v3.95.12",
-          "v3.95.11",
-          "v3.95.10",
-          "v3.95.9",
-          "v3.95.8",
-          "v3.95.7"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1138,
-      "phase": "Outdated",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1143,
+      "at": 171,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -635,23 +559,107 @@
     },
     {
       "type": "progress",
-      "at": 1143,
+      "at": 171,
       "phase": "Outdated",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
+      "done": 2,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 183,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "v3.95.25",
+        "selected": "v3.95.25",
+        "safeLatest": null,
+        "publishedVersions": [
+          "v3.95.25",
+          "v3.95.24",
+          "v3.95.23",
+          "v3.95.22",
+          "v3.95.21",
+          "v3.95.20",
+          "v3.95.19",
+          "v3.95.18",
+          "v3.95.17",
+          "v3.95.16",
+          "v3.95.15",
+          "v3.95.14",
+          "v3.95.13",
+          "v3.95.12",
+          "v3.95.11",
+          "v3.95.10",
+          "v3.95.9",
+          "v3.95.8"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 183,
+      "phase": "Outdated",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "type": "candidate-drop",
+      "at": 226,
+      "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0"
+    },
+    {
+      "type": "progress",
+      "at": 226,
+      "phase": "Up to date",
+      "detail": "ergebnis/composer-normalize@2.52.0",
       "done": 4,
       "total": 4
     },
     {
       "type": "progress",
-      "at": 1143,
+      "at": 228,
       "phase": "Reading release notes and changelog",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1143,
+      "at": 228,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -695,15 +703,15 @@
     },
     {
       "type": "progress",
-      "at": 1143,
+      "at": 228,
       "phase": "Checking package metadata",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1143,
+      "at": 228,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -747,7 +755,7 @@
     },
     {
       "type": "progress",
-      "at": 1144,
+      "at": 228,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -755,7 +763,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1144,
+      "at": 228,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -799,7 +807,7 @@
     },
     {
       "type": "progress",
-      "at": 1144,
+      "at": 228,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -807,7 +815,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1144,
+      "at": 228,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -851,7 +859,7 @@
     },
     {
       "type": "progress",
-      "at": 1144,
+      "at": 228,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -859,7 +867,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1144,
+      "at": 228,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -903,7 +911,7 @@
     },
     {
       "type": "progress",
-      "at": 1144,
+      "at": 228,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -911,7 +919,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1144,
+      "at": 228,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -955,15 +963,15 @@
     },
     {
       "type": "progress",
-      "at": 1147,
+      "at": 234,
       "phase": "Checking repository status",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1147,
+      "at": 234,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1007,7 +1015,7 @@
     },
     {
       "type": "progress",
-      "at": 1147,
+      "at": 234,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1015,7 +1023,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1147,
+      "at": 234,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1059,7 +1067,7 @@
     },
     {
       "type": "progress",
-      "at": 1147,
+      "at": 234,
       "phase": "Checking security advisories",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1067,7 +1075,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1147,
+      "at": 234,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1111,7 +1119,7 @@
     },
     {
       "type": "progress",
-      "at": 1147,
+      "at": 234,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1119,7 +1127,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1147,
+      "at": 234,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1163,171 +1171,7 @@
     },
     {
       "type": "progress",
-      "at": 1189,
-      "phase": "Checking security advisories",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1189,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1189,
-      "phase": "Checking security advisories",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1189,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1565,
-      "phase": "Indexing your code",
-      "detail": "140 files indexed · 4 direct dependencies to check",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "progress",
-      "at": 1834,
-      "phase": "Checking license",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1834,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1834,
+      "at": 433,
       "phase": "Checking license",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1335,7 +1179,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1834,
+      "at": 433,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1379,59 +1223,7 @@
     },
     {
       "type": "progress",
-      "at": 1834,
-      "phase": "Checking license",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1834,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1834,
+      "at": 434,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1439,7 +1231,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1834,
+      "at": 434,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1483,7 +1275,7 @@
     },
     {
       "type": "progress",
-      "at": 1834,
+      "at": 434,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13 · 1 evidence source",
       "done": 0,
@@ -1491,7 +1283,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1834,
+      "at": 434,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1535,7 +1327,7 @@
     },
     {
       "type": "progress",
-      "at": 1834,
+      "at": 434,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1543,7 +1335,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1834,
+      "at": 434,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1587,7 +1379,7 @@
     },
     {
       "type": "progress",
-      "at": 1834,
+      "at": 434,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1595,7 +1387,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1834,
+      "at": 434,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1639,7 +1431,7 @@
     },
     {
       "type": "progress",
-      "at": 1843,
+      "at": 455,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13",
       "done": 0,
@@ -1647,7 +1439,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1843,
+      "at": 455,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1691,7 +1483,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1845,
+      "at": 462,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1770,7 +1562,7 @@
     },
     {
       "type": "progress",
-      "at": 1845,
+      "at": 462,
       "phase": "Checked",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.13 · evidence missing · drift could not obtain enough upstream evidence to decide",
       "done": 1,
@@ -1778,15 +1570,15 @@
     },
     {
       "type": "progress",
-      "at": 2948,
-      "phase": "Reading release notes and changelog",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
+      "at": 470,
+      "phase": "Checking security advisories",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 470,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1804,7 +1596,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Reading release notes and changelog",
+        "phase": "Checking security advisories",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1830,15 +1622,15 @@
     },
     {
       "type": "progress",
-      "at": 2948,
-      "phase": "Comparing the public API surface",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24 · 1 evidence source",
+      "at": 470,
+      "phase": "Checking license",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 470,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1856,7 +1648,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Comparing the public API surface",
+        "phase": "Checking license",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1882,25 +1674,25 @@
     },
     {
       "type": "progress",
-      "at": 2948,
-      "phase": "No breaking changes to look for",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
+      "at": 487,
+      "phase": "Checking security advisories",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 487,
       "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
         "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
         "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1908,7 +1700,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "No breaking changes to look for",
+        "phase": "Checking security advisories",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1934,25 +1726,25 @@
     },
     {
       "type": "progress",
-      "at": 2948,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
+      "at": 487,
+      "phase": "Checking license",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2948,
+      "at": 487,
       "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
         "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
         "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1960,7 +1752,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
+        "phase": "Checking license",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -1986,157 +1778,15 @@
     },
     {
       "type": "progress",
-      "at": 2955,
-      "phase": "Checking maintenance signals",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2956,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2957,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "v3.95.24",
-        "selected": "v3.95.24",
-        "safeLatest": null,
-        "publishedVersions": [
-          "v3.95.24",
-          "v3.95.23",
-          "v3.95.22",
-          "v3.95.21",
-          "v3.95.20",
-          "v3.95.19",
-          "v3.95.18",
-          "v3.95.17",
-          "v3.95.16",
-          "v3.95.15",
-          "v3.95.14",
-          "v3.95.13",
-          "v3.95.12",
-          "v3.95.11",
-          "v3.95.10",
-          "v3.95.9",
-          "v3.95.8",
-          "v3.95.7"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 22 sets of release notes ([v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.24 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "recommendation": "safe-to-upgrade",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "clean",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": {
-          "localizationRan": true,
-          "localizationComplete": true,
-          "sourceFilesDiscovered": 137,
-          "sourceFilesIndexed": 137,
-          "sourceTruncated": false,
-          "generatedFilesSkipped": 0,
-          "oversizedSourceSkipped": 0,
-          "runtimeConfigsDiscovered": 3,
-          "runtimeConfigsIndexed": 3,
-          "runtimeConfigComplete": true
-        },
-        "surfaceAssessment": {
-          "available": false,
-          "reason": "unsupported-ecosystem",
-          "inspection": "failed",
-          "tool": "none",
-          "detail": "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone."
-        },
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 22 sets of release notes ([v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.24 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2957,
-      "phase": "Checked",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.24 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "type": "progress",
-      "at": 3218,
+      "at": 608,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3218,
+      "at": 608,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2180,15 +1830,15 @@
     },
     {
       "type": "progress",
-      "at": 3218,
+      "at": 608,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3218,
+      "at": 608,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2232,15 +1882,15 @@
     },
     {
       "type": "progress",
-      "at": 3218,
+      "at": 608,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3218,
+      "at": 608,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2284,15 +1934,15 @@
     },
     {
       "type": "progress",
-      "at": 3218,
+      "at": 608,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3218,
+      "at": 608,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2336,15 +1986,15 @@
     },
     {
       "type": "progress",
-      "at": 3226,
+      "at": 625,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 2,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 3226,
+      "at": 625,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2388,7 +2038,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3226,
+      "at": 626,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -2453,9 +2103,359 @@
     },
     {
       "type": "progress",
-      "at": 3226,
+      "at": 626,
       "phase": "Checked",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "progress",
+      "at": 905,
+      "phase": "Reading release notes and changelog",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 905,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 905,
+      "phase": "Comparing the public API surface",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25 · 1 evidence source",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 905,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 905,
+      "phase": "No breaking changes to look for",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 905,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 905,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 905,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 912,
+      "phase": "Checking maintenance signals",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 912,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 913,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "v3.95.25",
+        "selected": "v3.95.25",
+        "safeLatest": null,
+        "publishedVersions": [
+          "v3.95.25",
+          "v3.95.24",
+          "v3.95.23",
+          "v3.95.22",
+          "v3.95.21",
+          "v3.95.20",
+          "v3.95.19",
+          "v3.95.18",
+          "v3.95.17",
+          "v3.95.16",
+          "v3.95.15",
+          "v3.95.14",
+          "v3.95.13",
+          "v3.95.12",
+          "v3.95.11",
+          "v3.95.10",
+          "v3.95.9",
+          "v3.95.8"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 23 sets of release notes ([v3.95.25 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.25), [v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.25 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "recommendation": "safe-to-upgrade",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "clean",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": {
+          "localizationRan": true,
+          "localizationComplete": true,
+          "sourceFilesDiscovered": 137,
+          "sourceFilesIndexed": 137,
+          "sourceTruncated": false,
+          "generatedFilesSkipped": 0,
+          "oversizedSourceSkipped": 0,
+          "runtimeConfigsDiscovered": 3,
+          "runtimeConfigsIndexed": 3,
+          "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": false,
+          "reason": "unsupported-ecosystem",
+          "inspection": "failed",
+          "tool": "none",
+          "detail": "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone."
+        },
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 23 sets of release notes ([v3.95.25 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.25), [v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.25 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 913,
+      "phase": "Checked",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
       "total": 3
     }
@@ -2469,10 +2469,11 @@
       "workspace": "vendor-bin/php-cs-fixer",
       "workspaceName": null,
       "current": "3.95.2",
-      "latest": "v3.95.24",
-      "selected": "v3.95.24",
+      "latest": "v3.95.25",
+      "selected": "v3.95.25",
       "safeLatest": null,
       "publishedVersions": [
+        "v3.95.25",
         "v3.95.24",
         "v3.95.23",
         "v3.95.22",
@@ -2489,8 +2490,7 @@
         "v3.95.11",
         "v3.95.10",
         "v3.95.9",
-        "v3.95.8",
-        "v3.95.7"
+        "v3.95.8"
       ],
       "provenance": {
         "kind": "runtime",
@@ -2499,7 +2499,7 @@
       "status": "clean",
       "phase": null,
       "risk": "none",
-      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 22 sets of release notes ([v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.24 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 23 sets of release notes ([v3.95.25 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.25), [v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.25 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
       "runtimeCompatibility": null,
@@ -2535,7 +2535,7 @@
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 22 sets of release notes ([v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.24 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 23 sets of release notes ([v3.95.25 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.25), [v3.95.24 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.24), [v3.95.23 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.23), [v3.95.22 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.22), [v3.95.21 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.21), [v3.95.20 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.20), [v3.95.19 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.19), [v3.95.18 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.18), [v3.95.17 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.17), [v3.95.16 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.16), [v3.95.15 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.15), [v3.95.14 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.14), [v3.95.13 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.13), [v3.95.12 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.12), [v3.95.11 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.11), [v3.95.10 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.10), [v3.95.9 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.9), [v3.95.8 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.8), [v3.95.7 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.7), [v3.95.6 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.6), [v3.95.5 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.5), [v3.95.4 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.4), [v3.95.3 Adalbertus release notes](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/tag/v3.95.3)) and the changelog ([CHANGELOG.md](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/CHANGELOG.md)) for friendsofphp/php-cs-fixer v3.95.25 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },

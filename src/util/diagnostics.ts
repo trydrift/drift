@@ -41,7 +41,11 @@ const SECRET_LIKE_PATTERNS: RegExp[] = [
   /\bBearer\s+\S+/gi,
   /\bgh[oprsu]_[A-Za-z0-9]{10,}\b/g,
   /\bgithub_pat_[A-Za-z0-9_]{10,}\b/g,
-  /\bsk-[A-Za-z0-9]{10,}\b/g,
+  // `sk-ant-api03-…` and `sk-proj-…` carry their segment separators inside the
+  // key, so a tail restricted to alphanumerics stopped at the first hyphen and
+  // matched neither — leaving a live Anthropic key (a documented Drift input,
+  // via `ANTHROPIC_API_KEY`) readable in a run log that exists to be shared.
+  /\bsk-[A-Za-z0-9][A-Za-z0-9_-]{9,}/g,
 ];
 
 export function redactText(text: string): string {

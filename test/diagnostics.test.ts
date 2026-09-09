@@ -94,6 +94,30 @@ describe('secret redaction', () => {
     assert.ok(!redactText('token was ghp_abcdefghijklmnopqrstuvwxyz012345').includes('ghp_abcdefghijklmnopqrstuvwxyz012345'));
   });
 
+  /**
+   * A run log exists to be handed to somebody else, so a key that survives
+   * redaction is a key that gets shared. Both live model-key shapes carry their
+   * segment separators inside the key itself, and a tail restricted to
+   * alphanumerics stopped at the first hyphen — matching the legacy flat form
+   * and neither of the two anyone actually holds today.
+   */
+  test('redacts model API keys whose own shape contains separators', () => {
+    for (const key of [
+      'sk-ant-api03-Rm9vYmFyQmF6UXV1eDEyMzQ1Njc4OTBhYmNkZWY',
+      'sk-proj-Rm9vYmFyQmF6UXV1eDEyMzQ1Njc4OTA',
+      'sk-abcdefghijklmnopqrstuvwxyz',
+    ]) {
+      const redacted = redactText(`the run failed with ${key} in the message`);
+      assert.ok(!redacted.includes(key), `${key.slice(0, 12)}… survived redaction`);
+    }
+  });
+
+  test('redaction does not swallow ordinary hyphenated words', () => {
+    // The pattern needs a real key's length to fire; `sk-` alone is not a key.
+    assert.equal(redactText('the sdk-name package'), 'the sdk-name package');
+    assert.equal(redactText('a sk-short thing'), 'a sk-short thing');
+  });
+
   test('sanitizeArgs never leaks a sensitive flag value positionally', () => {
     const args = sanitizeArgs(['--dir', '/repo', '--token', 'sek', '--verify']);
     assert.deepEqual(args, ['--dir', '/repo', '--token', '[REDACTED]', '--verify']);

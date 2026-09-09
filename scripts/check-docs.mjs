@@ -176,6 +176,30 @@ for (const path of await documents()) {
   }
 }
 
+/**
+ * The reverse direction: a command the CLI has, missing from the reference.
+ *
+ * Everything above asks whether a documented thing exists. That leaves the
+ * other way round unguarded, and a table under a heading that says "Commands"
+ * reads as the complete list whether or not it is one — `action`, `serve` and
+ * `telemetry` were in the CLI's own overview and in three other pages, and out
+ * of the one page a reader goes to for the full set.
+ */
+{
+  const reference = await readFile(join(repoRoot, 'docs', 'cli.md'), 'utf8');
+  for (const command of [...cli].sort()) {
+    // `drift --version` is an option, not a command; the usage block lists it
+    // in the same shape and it is picked up alongside the real ones.
+    if (command.startsWith('-')) continue;
+    if (!new RegExp(`\\bdrift ${command}\\b`).test(reference)) {
+      failures.push(
+        `docs/cli.md: the CLI has a \`${command}\` command that this reference never mentions. ` +
+          'Add a row for it, even one that points at the page which covers it.',
+      );
+    }
+  }
+}
+
 if (failures.length > 0) {
   console.error(`check-docs: ${failures.length} stale claim(s)\n`);
   for (const failure of [...new Set(failures)]) console.error(`  ${failure}`);

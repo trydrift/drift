@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { isAvailable } from '../../util/exec.js';
 import { fetchArchive } from '../../util/http.js';
 import { readZip } from '../../util/archive.js';
+import { withArticle } from '../../util/prose.js';
 import type { SurfaceChange } from '../type-surface.js';
 import { ensureHelperArtifact } from './helper-artifact.js';
 import {
@@ -654,7 +655,7 @@ export function parseJapicmp(output: string): SurfaceChange[] {
         kind: isClass ? 'export-removed' : 'member-removed',
         symbol,
         detail: isClass
-          ? `\`${symbol}\` is no longer published (was a ${kind.toLowerCase()}).`
+          ? `\`${symbol}\` is no longer published (was ${withArticle(kind.toLowerCase())}).`
           : `\`${symbol}\` was removed.`,
       });
     } else if (verb === 'MODIFIED') {

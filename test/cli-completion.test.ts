@@ -99,6 +99,27 @@ test('a command is never offered another command’s options', async () => {
   assert.ok(optionsFor('fix').includes('--before'), 'fix inherits analyze’s options, as its help says');
 });
 
+/**
+ * fish is rarely installed on the machines this suite runs on, so its script
+ * cannot be handed to the shell to judge the way bash's and zsh's are. The one
+ * thing that has actually gone wrong here is checkable without it: an unquoted
+ * command substitution that produces nothing disappears before `test` sees it,
+ * so `test (__drift_command) = analyze` becomes `test = analyze` on an empty
+ * command line — not an expression, and fish says so on every tab press.
+ */
+test('the fish conditions survive an empty command line', async () => {
+  const { out } = await run(['completion', 'fish']);
+
+  const conditions = out.split('\n').filter((line) => line.trim().startsWith('test '));
+  assert.ok(conditions.length >= 2, `expected the two condition functions, got ${JSON.stringify(conditions)}`);
+  for (const line of conditions) {
+    assert.ok(
+      !/\(\s*__drift_/.test(line),
+      `\`${line.trim()}\` passes a bare command substitution to test; capture it into a quoted variable first`,
+    );
+  }
+});
+
 test('a missing shell is refused with the list of the ones that exist', async () => {
   const { code, err } = await run(['completion']);
 

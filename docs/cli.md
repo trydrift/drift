@@ -21,6 +21,9 @@ Requires Node.js 22.6 or newer.
 | `drift explain <package>` | What changed in one upgrade, and every place it reaches this repository. |
 | `drift mcp` | Serve Drift to a coding agent over MCP (stdio). |
 | `drift completion <shell>` | Print a bash, zsh or fish completion script. |
+| `drift action` | The entrypoint the GitHub Action runs — see [deployment](deployment.md). |
+| `drift serve` | The self-hosted webhook server — see [deployment](deployment.md). |
+| `drift telemetry print` | Print the exact telemetry event shape — see [telemetry](telemetry.md). |
 | `drift help [topic]` | Everything about one command, including every option. |
 
 `drift --help` is the overview; `drift help <command>` (or `drift <command> --help`)

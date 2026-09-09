@@ -726,14 +726,57 @@ describe('runtime prose: `||` disjunctions survive parsing and evaluate per bran
     assert.equal(analysis?.state, 'partial', '`>=23` covers 23.x (unsupported) and 24+ (via `>=24.0.0`)');
   });
 
+  /**
+   * glob@13's own `engines.node`, verbatim. Every branch here is a bare version
+   * — which in semver is the series, `18.x`, and not a floor. Rewriting each
+   * one to `>=18` turned a requirement with deliberate holes in it into
+   * `>=18`, so a repository pinned to Node 21 (a line glob does not support at
+   * all, not even partially) was told it was compatible. A widened requirement
+   * can only ever produce a false *safe*, which is the one direction Drift is
+   * not allowed to be wrong in.
+   */
+  const GLOB_ENGINES = '18 || 20 || >=22';
+
+  test('bare `||` branches stay version series rather than becoming floors', () => {
+    const runtime = matchProse(`glob@13.0.6 requires Node.js ${GLOB_ENGINES}.`).find(
+      (m) => m.kind === 'runtime-requirement',
+    )?.runtime;
+
+    assert.equal(runtime?.requirement, '18.x || 20.x || >=22');
+    assert.equal(runtime?.rangeParseStatus, undefined, 'semver defines `||`, so this is parsed and evaluated');
+  });
+
+  test('a Node line the bare branches exclude is not called compatible', () => {
+    const excluded = analyzeRuntimeRequirement(
+      runtimeChange('node', '18.x || 20.x || >=22'),
+      files({ '.nvmrc': '21.6.0\n' }),
+    );
+    assert.equal(excluded?.state, 'incompatible', 'Node 21 is between the 20 and 22 branches');
+
+    const inside = analyzeRuntimeRequirement(
+      runtimeChange('node', '18.x || 20.x || >=22'),
+      files({ '.nvmrc': '20.11.0\n' }),
+    );
+    assert.equal(inside?.state, 'compatible', 'Node 20 satisfies the `20.x` branch');
+  });
+
+  test('the summary of a disjunction does not call it a minimum', () => {
+    const match = matchProse(`glob@13.0.6 requires Node.js ${GLOB_ENGINES}.`).find(
+      (m) => m.kind === 'runtime-requirement',
+    );
+    // `18.x || 20.x || >=22` has holes in it; "minimum" tells a reader the
+    // opposite of what upstream wrote.
+    assert.match(match!.summary, /^Supported node versions are now 18\.x \|\| 20\.x \|\| >=22$/);
+  });
+
   test('a `||` against a runtime whose grammar has no disjunction is carried whole but left unknown', () => {
     // RubyGems has no `||`; PEP 440 has no `||`. The requirement text is
     // preserved in full — never truncated — but its compatibility state is
     // honestly `unknown`, exactly as a caret against Python is, rather than
     // guessed from a branch Drift cannot evaluate.
     for (const [runtime, text, expected] of [
-      ['ruby', 'Requires Ruby 3.1 || 3.2', '>=3.1 || >=3.2'],
-      ['python', 'Requires Python 3.9 || 3.10', '>=3.9 || >=3.10'],
+      ['ruby', 'Requires Ruby 3.1 || 3.2', '3.1.x || 3.2.x'],
+      ['python', 'Requires Python 3.9 || 3.10', '3.9.x || 3.10.x'],
     ] as const) {
       const parsed = matchProse(text).find((m) => m.kind === 'runtime-requirement')?.runtime;
       assert.equal(parsed?.requirement, expected, `${runtime}: full disjunction preserved`);
