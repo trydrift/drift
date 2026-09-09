@@ -5,7 +5,7 @@ import { cpSync, mkdtempSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { findVersionMismatches } from './check-release-version.mjs';
+import { findVersionMismatches, findLicenseMismatch } from './check-release-version.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const aligned = {
@@ -16,6 +16,30 @@ const aligned = {
   extLock: '0.1.0',
   extLockPackage: '0.1.0',
 };
+
+/**
+ * The VSIX cannot reach a file at the repository root, so the extension keeps
+ * its own copy of the license. Nothing regenerates it and nothing reads it, so
+ * the two drift in silence — and the first symptom would be a published
+ * extension carrying different terms from the published CLI.
+ */
+test('identical license copies -> passes', () => {
+  assert.equal(findLicenseMismatch('PolyForm Shield\n', 'PolyForm Shield\n'), null);
+});
+
+test('a license copy that drifted -> fails, and says how to fix it', () => {
+  const problem = findLicenseMismatch(
+    'Required Notice: Copyright A Person\n',
+    'Required Notice: Copyright Somebody Else\n',
+  );
+  assert.ok(problem, 'a difference is reported');
+  assert.match(problem, /extension\/LICENSE\.md/);
+  assert.match(problem, /cp LICENSE\.md extension\/LICENSE\.md/, 'names the fix, not just the problem');
+});
+
+test('a whitespace-only difference still fails, because the shipped bytes differ', () => {
+  assert.ok(findLicenseMismatch('PolyForm Shield\n', 'PolyForm Shield\n\n'));
+});
 
 test('all six version fields match, no tag given -> passes', () => {
   assert.deepEqual(findVersionMismatches(aligned), []);
@@ -120,6 +144,10 @@ test('CLI executes when invoked from a path containing spaces', () => {
       'package-lock.json',
       'extension/package.json',
       'extension/package-lock.json',
+      // The script compares these two, so a fixture without them is not a
+      // repository this script can run against.
+      'LICENSE.md',
+      'extension/LICENSE.md',
     ]) {
       cpSync(join(repoRoot, path), join(tempRoot, path));
     }

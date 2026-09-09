@@ -129,10 +129,35 @@ function isDirectExecution() {
 }
 
 // Only runs the CLI when this file is executed directly, not when imported by tests.
+/**
+ * The VSIX ships its own copy of the license, because a Marketplace package
+ * cannot reach a file at the repository root. Two copies of a legal document
+ * are two copies that drift, and this one drifts silently: nothing rebuilds
+ * `extension/LICENSE.md`, nothing reads it, and the first sign of a mismatch
+ * would be a published extension whose license differs from the published
+ * CLI's. Adding the licensor's `Required Notice:` line to one of them is
+ * exactly the kind of edit that does it.
+ */
+export function findLicenseMismatch(rootLicense, extensionLicense) {
+  if (rootLicense === extensionLicense) return null;
+  return (
+    'LICENSE.md and extension/LICENSE.md differ. The VSIX ships its own copy, so ' +
+    'the two must be byte-identical or the extension publishes different terms ' +
+    'from the CLI. Copy the root file over it:\n' +
+    '  cp LICENSE.md extension/LICENSE.md'
+  );
+}
+
 if (isDirectExecution()) {
   const tag = parseTag(process.argv.slice(2));
   const versions = readVersions(repoRoot);
   const problems = findVersionMismatches({ ...versions, tag });
+
+  const licenseProblem = findLicenseMismatch(
+    readFileSync(join(repoRoot, 'LICENSE.md'), 'utf8'),
+    readFileSync(join(repoRoot, 'extension', 'LICENSE.md'), 'utf8'),
+  );
+  if (licenseProblem) problems.push(licenseProblem);
 
   if (problems.length > 0) {
     console.error('check-release-version: FAILED\n');
