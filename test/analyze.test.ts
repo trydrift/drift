@@ -458,6 +458,34 @@ describe('type surface diffing', () => {
     assert.ok(changes.some((c) => c.kind === 'member-now-required'));
   });
 
+  /**
+   * Evidence text is the product. "`Options` is no longer exported (was a
+   * interface)" is the same finding as the correct sentence and reads like
+   * output nobody looked at, which is the wrong impression for a tool whose
+   * claim is that every line came from somewhere real. The kinds that need
+   * "an" — interface, enum — are decided from a parsed artifact at runtime,
+   * so the article cannot be written into the template beside them.
+   */
+  test('a removed declaration takes the article its kind actually needs', () => {
+    const before = extractExports('export interface Options {}\nexport enum Mode { A }\nexport function go(): void;', 'a.d.ts');
+    const after = extractExports('export declare const nothing: number;', 'a.d.ts');
+
+    const details = diffSurfaces(before, after).map((change) => change.detail);
+    assert.ok(details.some((d) => d.includes('was an interface')), `expected "an interface" in ${JSON.stringify(details)}`);
+    assert.ok(details.some((d) => d.includes('was an enum')), `expected "an enum" in ${JSON.stringify(details)}`);
+    assert.ok(details.some((d) => d.includes('was a function')), `expected "a function" in ${JSON.stringify(details)}`);
+    assert.ok(!details.some((d) => /\bwas a (?:interface|enum)\b/.test(d)), 'no "a interface" survives');
+  });
+
+  test('a declaration that changes kind takes both articles', () => {
+    const before = extractExports('export interface Shape { a: number }', 'a.d.ts');
+    const after = extractExports('export declare class Shape { a: number }', 'a.d.ts');
+
+    const changed = diffSurfaces(before, after).find((change) => change.kind === 'kind-changed');
+    assert.ok(changed, 'the kind change is reported');
+    assert.match(changed.detail, /changed from an interface to a class/);
+  });
+
   test('reports nothing when the surface only grows', () => {
     const before = extractExports('export function a(): void;', 'a.d.ts');
     const after = extractExports('export function a(): void;\nexport function b(): void;', 'a.d.ts');

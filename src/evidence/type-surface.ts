@@ -2,6 +2,7 @@ import { fetchArchive, fetchJson, fetchText, mapWithConcurrency } from '../util/
 import { count, measure } from '../util/profile.js';
 import { readComputed, writeComputed } from '../util/artifact-cache.js';
 import { readArchive, type ArchiveEntry } from '../util/archive.js';
+import { withArticle } from '../util/prose.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
@@ -2490,7 +2491,7 @@ export function diffSurfaces(
         symbol: name,
         detail: oldEntry.shapeUnknown
           ? `\`${name}\` is no longer exported${origin}.`
-          : `\`${name}\` is no longer exported (was a ${oldEntry.kind})${origin}.`,
+          : `\`${name}\` is no longer exported (was ${withArticle(oldEntry.kind)})${origin}.`,
         before: oldEntry.signature,
         ...(oldEntry.shapeUnknown ? {} : { fromKind: oldEntry.kind }),
       });
@@ -2509,7 +2510,7 @@ export function diffSurfaces(
       changes.push({
         kind: 'kind-changed',
         symbol: name,
-        detail: `\`${name}\` changed from a ${oldEntry.kind} to a ${newEntry.kind}${origin}.`,
+        detail: `\`${name}\` changed from ${withArticle(oldEntry.kind)} to ${withArticle(newEntry.kind)}${origin}.`,
         before: oldEntry.signature,
         after: newEntry.signature,
         fromKind: oldEntry.kind,

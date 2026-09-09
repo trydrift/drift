@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -154,9 +154,15 @@ test('extra arguments past a command\u2019s positionals are refused', async () =
 test('a real option is still accepted in either spelling', async () => {
   // An empty directory, so this exercises the proofreader and not the scanner.
   const empty = await mkdtemp(join(tmpdir(), 'drift-cli-args-'));
-  for (const argv of [['outdated', '--dir', empty, '--json'], ['outdated', `--dir=${empty}`, '--json']]) {
-    const { err } = await run(argv);
-    assert.ok(!/has no|isn't an option|doesn't take/.test(err), `${argv.join(' ')} is a valid command line`);
+  try {
+    for (const argv of [['outdated', '--dir', empty, '--json'], ['outdated', `--dir=${empty}`, '--json']]) {
+      const { err } = await run(argv);
+      assert.ok(!/has no|isn't an option|doesn't take/.test(err), `${argv.join(' ')} is a valid command line`);
+    }
+  } finally {
+    // Otherwise every run of this suite leaves one more empty directory in the
+    // system temp folder, for the lifetime of the machine.
+    await rm(empty, { recursive: true, force: true });
   }
 });
 

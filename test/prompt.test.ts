@@ -320,7 +320,6 @@ test('the free-text default is editable rather than retyped', async () => {
 
 test('a terminal that cannot redraw shows the default it cannot pre-fill', async () => {
   const term = fakeTerminal();
-  process.env.DRIFT_NO_TUI = '1';
   process.env.CI = '1';
   try {
     const answered = text('Pull request title', 'Bump lodash', term.io);
@@ -330,9 +329,30 @@ test('a terminal that cannot redraw shows the default it cannot pre-fill', async
     // the bracketed default and an empty answer that accepts it.
     assert.match(term.screen(), /\[Bump lodash\]/);
   } finally {
-    delete process.env.DRIFT_NO_TUI;
     delete process.env.CI;
   }
+});
+
+/**
+ * `DRIFT_NO_TUI=1` is the switch for a session where taking over the cursor
+ * goes wrong, and a pre-filled line editor takes over the cursor: `rl.write`
+ * echoes the text and expects to be able to erase it again. Honouring the
+ * switch only in the menu left the one prompt that types into the buffer still
+ * doing it — on a drawable terminal, where nothing else would reveal the gap.
+ */
+test('DRIFT_NO_TUI alone turns the pre-filled default back into a bracketed one', async () => {
+  await withDrawableTerminal(async () => {
+    const term = fakeTerminal();
+    process.env.DRIFT_NO_TUI = '1';
+    try {
+      const answered = text('Pull request title', 'Bump lodash', term.io);
+      await term.press('\n');
+      assert.equal(await answered, 'Bump lodash');
+      assert.match(term.screen(), /\[Bump lodash\]/, 'the default is displayed, not typed into the buffer');
+    } finally {
+      delete process.env.DRIFT_NO_TUI;
+    }
+  });
 });
 
 test('a menu given an explicit decline never answers with a real choice', async () => {

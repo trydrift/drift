@@ -72,11 +72,24 @@ function oneLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Whether Drift may take over the cursor on this terminal at all.
+ *
+ * `DRIFT_NO_TUI=1` is the switch for a session where that goes wrong — a
+ * harness that records the bytes, a terminal that mishandles a redraw — so it
+ * has to cover every prompt that moves the cursor, not only the menu. A
+ * pre-filled line editor is one of those: it works by writing text and then
+ * erasing it again.
+ */
+function canRedraw(output: NodeJS.WriteStream): boolean {
+  if (process.env.DRIFT_NO_TUI === '1') return false;
+  return supportsRedraw(output);
+}
+
 /** Whether an arrow-key menu can be drawn on these streams. */
 function canDraw(input: NodeJS.ReadStream, output: NodeJS.WriteStream): boolean {
-  if (process.env.DRIFT_NO_TUI === '1') return false;
   if (!input.isTTY || typeof input.setRawMode !== 'function') return false;
-  return supportsRedraw(output);
+  return canRedraw(output);
 }
 
 /**
@@ -162,7 +175,7 @@ export async function text(question: string, initial: string, io: PromptIO = {})
   if (!input.isTTY) return initial;
 
   const palette = paletteFor(output);
-  const editable = supportsRedraw(output);
+  const editable = canRedraw(output);
   const { createInterface } = await import('node:readline/promises');
   const rl = createInterface({ input, output });
   try {
