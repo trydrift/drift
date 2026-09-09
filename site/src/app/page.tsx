@@ -30,7 +30,7 @@ import {
 
 const GITHUB = "https://github.com/trydrift/Drift";
 const FEATURE_BOARD = "/features/";
-const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=drift.drift";
+const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=drift.usedrift";
 
 export default function Home() {
   const recordings = loadRecordings();

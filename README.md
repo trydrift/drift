@@ -87,7 +87,7 @@ drift outdated
 claude mcp add drift -- npx -y @usedrift/cli mcp
 ```
 
-**VS Code** — install *Drift — Safe Dependency Upgrades* (`drift.drift`) · [docs](extension/README.md)
+**VS Code** — install *Drift — Safe Dependency Upgrades* (`drift.usedrift`) · [docs](extension/README.md)
 
 **GitHub Action** — copy [`examples/workflows/drift.yml`](examples/workflows/drift.yml); approval mode is the default.
 
