@@ -50,6 +50,12 @@ import {
 import { opensPullRequestAsDraft, type DriftConfig, type ExplicitAgentProvider } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
 import { ask, confirm, text as promptText, type ChoiceInput } from './util/prompt.js';
+import {
+  COMPLETION_SHELLS,
+  completionScript,
+  isCompletionShell,
+  type CompletionSpec,
+} from './completion.js';
 import { createBranchForTarget, createIssueAndBranchForTarget, createIssueForTarget } from './actions/cli-actions.js';
 import { groupForAction, type IssueBranchAction, type IssueBranchOutcome } from './actions/issue-branch.js';
 import type { RemediationPlan } from './types.js';
@@ -253,6 +259,7 @@ Usage:
                               \`claude mcp add drift -- npx -y @usedrift/cli mcp\`
   drift serve                 Run the self-hosted webhook server
   drift telemetry print       Print the exact telemetry event shape
+  drift completion <shell>    Print a bash, zsh or fish completion script
   drift help [topic]          Everything about one command
   drift --version             Print the version
 
@@ -590,6 +597,31 @@ uses. Telemetry is off unless configured, and DRIFT_TELEMETRY_DISABLED=1 or
 DO_NOT_TRACK=1 disables it outright.
 `.trim(),
 
+  completion: `
+drift completion — print a shell completion script
+
+Usage:
+  drift completion <bash | zsh | fish>
+
+Prints the script to stdout; it installs nothing on its own. Writing to a shell
+profile is not something a dependency scanner should do uninvited, and a line
+you can read before you run it is the point:
+
+  bash    eval "$(drift completion bash)"        in ~/.bashrc
+  zsh     eval "$(drift completion zsh)"         in ~/.zshrc
+  fish    drift completion fish > ~/.config/fish/completions/drift.fish
+
+Completes commands, the options each one actually takes, and the topics
+\`drift help\` answers for. A directory is offered after --dir, a file after
+--config, and nothing after an option that wants a value of its own.
+
+The command and option names come out of this help text, the same place the
+unknown-argument check reads them from — so an option that exists is an option
+that completes, and neither list can quietly fall behind the CLI.
+
+Exit code 1 when the shell is missing or is not one Drift can write for.
+`.trim(),
+
   environment: `
 Environment variables Drift reads
 
@@ -632,6 +664,7 @@ const COMMANDS = [
   'mcp',
   'serve',
   'telemetry',
+  'completion',
   'help',
 ];
 
@@ -656,6 +689,62 @@ function renderHelp(body: string, stream: NodeJS.WriteStream = process.stdout): 
       return line;
     })
     .join('\n');
+}
+
+/**
+ * What the shells need, derived from the help text rather than restated.
+ *
+ * `knownFlags` is the same function the unknown-argument check uses, so the
+ * options a shell offers are exactly the options the CLI will accept — the two
+ * cannot disagree, because there is only one list.
+ */
+function completionSpec(): CompletionSpec {
+  const flagsByCommand: Record<string, string[]> = {};
+  for (const command of COMMANDS) {
+    flagsByCommand[command] = [...knownFlags(command)].sort();
+  }
+
+  // An option written as `--flag <value>` in help is one the shell should offer
+  // a value for, not another flag.
+  const valueFlags = new Set<string>();
+  for (const body of [USAGE, ...Object.values(TOPICS)]) {
+    for (const match of body.matchAll(/--([a-z][\w-]*) <[^>]+>/g)) valueFlags.add(match[1]!);
+  }
+
+  return {
+    commands: COMMANDS,
+    topics: Object.keys(TOPICS),
+    flagsByCommand,
+    valueFlags: [...valueFlags].sort(),
+    directoryFlags: ['dir'],
+    fileFlags: ['config'],
+  };
+}
+
+/** Print a completion script for one shell. */
+function completionCommand(rest: readonly string[]): number {
+  const refusal = refuseUnknownArguments('completion', rest, 1);
+  if (refusal !== null) return refusal;
+
+  const shell = rest.find((arg) => !arg.startsWith('-'));
+  if (!shell) {
+    return refuse([`\`completion\` needs a shell: ${COMPLETION_SHELLS.join(', ')}.`], [
+      'Nothing ran, so nothing here changed.',
+      'How to install it:  drift help completion',
+    ]);
+  }
+  if (!isCompletionShell(shell)) {
+    return refuse(
+      [`there are no completions for \`${shell}\`.${suggestion(shell, COMPLETION_SHELLS)}`],
+      [
+        'Nothing ran, so nothing here changed.',
+        `Shells Drift can write for: ${COMPLETION_SHELLS.join(', ')}.`,
+      ],
+    );
+  }
+
+  console.log(completionScript(shell, completionSpec()));
+  return 0;
 }
 
 /** Print the overview, or one topic. Unknown topics get a suggestion. */
@@ -970,6 +1059,8 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       const { runMcpServer } = await import('./mcp/server.js');
       return await runMcpServer();
     }
+    case 'completion':
+      return completionCommand(rest);
     case 'diff':
       return diffCommand(rest);
     case 'telemetry':
