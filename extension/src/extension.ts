@@ -238,6 +238,16 @@ async function initialise(state: DriftState, home: DriftHomeView): Promise<void>
 
   state.set({ kind: 'idle' });
 
+  // Prepared environments — demos, walkthroughs, a Codespace someone opened to
+  // see what this does — need the panel visible without a click. Revealing
+  // happens *before* the startup analysis rather than after it, so the visitor
+  // watches the work happen instead of arriving at a finished verdict with no
+  // idea what produced it. Off by default: seizing the sidebar of every window
+  // is how an extension gets uninstalled.
+  if (vscode.workspace.getConfiguration('drift').get<boolean>('ui.openOnStartup', false)) {
+    await home.reveal().then(undefined, () => {});
+  }
+
   if (!vscode.workspace.getConfiguration('drift').get<boolean>('analysis.runOnStartup', true)) {
     return;
   }
