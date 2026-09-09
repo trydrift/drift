@@ -144,9 +144,17 @@ export async function confirm(question: string, defaultAnswer = false, io: Promp
 /**
  * A free-text answer with an editable default.
  *
- * Enter on its own keeps `initial`, so the common case is one keystroke, and a
- * non-interactive run takes the default rather than hanging on a line nobody
- * will type.
+ * `initial` is written into the line editor rather than printed beside it, so
+ * changing one word of a proposed pull request title costs one word rather
+ * than retyping the whole thing — which is the difference between a default a
+ * developer can change and a good one they cannot. Enter on its own keeps it,
+ * so the common case is still one keystroke, and a non-interactive run takes
+ * the default rather than hanging on a line nobody will type.
+ *
+ * The pre-fill needs a terminal that can erase what it wrote: `rl.write` puts
+ * the text in the buffer *and* echoes it, so where there is no cursor to move
+ * (a CI log, `TERM=dumb`) the old rendering is the honest one — the default is
+ * shown in brackets and an empty answer accepts it.
  */
 export async function text(question: string, initial: string, io: PromptIO = {}): Promise<string> {
   const input = io.input ?? process.stdin;
@@ -154,12 +162,16 @@ export async function text(question: string, initial: string, io: PromptIO = {})
   if (!input.isTTY) return initial;
 
   const palette = paletteFor(output);
+  const editable = supportsRedraw(output);
   const { createInterface } = await import('node:readline/promises');
   const rl = createInterface({ input, output });
   try {
-    const answer = await rl.question(
-      `${palette('cyan', '?')} ${palette('bold', question)} ${palette('gray', `[${initial}]`)} `,
-    );
+    const prompt = editable
+      ? `${palette('cyan', '?')} ${palette('bold', question)} `
+      : `${palette('cyan', '?')} ${palette('bold', question)} ${palette('gray', `[${initial}]`)} `;
+    const answered = rl.question(prompt);
+    if (editable) rl.write(initial);
+    const answer = await answered;
     return answer.trim() || initial;
   } finally {
     rl.close();
@@ -331,10 +343,28 @@ function selectInteractive(args: SelectArgs): Promise<string> {
     const wasRaw = Boolean(input.isRaw);
     const cleanup = (): void => {
       input.off('keypress', onKeypress);
+      input.off('end', onEnd);
+      input.off('close', onEnd);
       if (typeof input.setRawMode === 'function') input.setRawMode(wasRaw);
       input.pause();
       output.write(SHOW_CURSOR);
     };
+
+    /**
+     * Input ended while the menu was open.
+     *
+     * A menu resolves on a keypress, and nothing else — so a terminal that goes
+     * away mid-question (a closed tab, a detached session, a harness that ends
+     * its side of the pipe) would leave this promise pending for the lifetime
+     * of the process, holding the run open on a question nobody can answer. The
+     * answer to a question that can no longer be asked is the same as the answer
+     * to one that was declined.
+     */
+    function onEnd(): void {
+      cleanup();
+      erase();
+      resolvePromise(decline);
+    }
 
     const finish = (value: string, picked: boolean): void => {
       cleanup();
@@ -471,6 +501,8 @@ function selectInteractive(args: SelectArgs): Promise<string> {
     input.resume();
     output.write(HIDE_CURSOR);
     input.on('keypress', onKeypress);
+    input.once('end', onEnd);
+    input.once('close', onEnd);
     render();
   });
 }

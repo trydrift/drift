@@ -213,3 +213,52 @@ test('a command that stops on an unexpected error says so kindly', async () => {
   assert.match(err, /github\.com\/trydrift\/drift\/issues/, 'says where a real bug goes');
   assert.ok(!/ at .*cli\.ts/.test(err), 'no stack trace unless it was asked for');
 });
+
+/**
+ * Every menu says what declining means, rather than inheriting it.
+ *
+ * `ask` falls back to its *last* option when given no explicit one, which is a
+ * fine default for a list that ends in "Skip" and a silent bug for one that
+ * does not: the agent picker used to hand back a real provider when the user
+ * pressed escape, so backing out of "which agent should Drift use" chose the
+ * one at the bottom of the list. Nothing about the call site showed it — the
+ * argument that would have said so was the one missing.
+ */
+test('every prompt says what declining means instead of inheriting it', async () => {
+  const source = await readFile(new URL('../src/cli.ts', import.meta.url), 'utf8');
+
+  /** The arguments of the `ask(` call starting at `open`, split at depth 1. */
+  const argumentsAt = (open: number): string[] => {
+    const args: string[] = [];
+    let depth = 0;
+    let start = open + 1;
+    for (let at = open; at < source.length; at++) {
+      const character = source[at]!;
+      if ('([{'.includes(character)) depth += 1;
+      else if (')]}'.includes(character)) {
+        depth -= 1;
+        if (depth === 0) {
+          args.push(source.slice(start, at));
+          break;
+        }
+      } else if (character === ',' && depth === 1) {
+        args.push(source.slice(start, at));
+        start = at + 1;
+      }
+    }
+    return args;
+  };
+
+  const calls = [...source.matchAll(/\bawait ask\(/g)];
+  assert.ok(calls.length > 0, 'the CLI still asks questions');
+  for (const call of calls) {
+    const open = call.index! + call[0].length - 1;
+    const args = argumentsAt(open);
+    const line = source.slice(0, call.index).split('\n').length;
+    assert.ok(
+      args.length >= 3,
+      `the ask() at src/cli.ts:${line} leaves declining to fall through to its last option — ` +
+        'pass the value that means "no" explicitly',
+    );
+  }
+});

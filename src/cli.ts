@@ -338,6 +338,10 @@ repository before granting it any write access at all.
 
 When it finds breaking changes and there is a terminal to ask in, it offers to
 file an issue or cut a branch per finding, and then to start fixing.
+
+Exit code 0 even when it finds breaking changes — the report is the result, and
+a finding is not a failure. Exit code 1 only when the run could not be made:
+an unreadable repository, an invalid --repo, a config that does not parse.
 `.trim(),
 
   outdated: `
@@ -387,7 +391,10 @@ given --upgrade, and even then only a local manifest/lockfile edit.
 Afterwards, in a terminal, it offers the scan's own candidates as a menu: pick
 one and Drift installs the version it selected, exactly as --upgrade would.
 
-Exit code 1 when any candidate is affected or failed verification.
+Exit code 1 when any candidate is affected or failed verification, so a CI job
+can gate on it directly. Exit code 0 when every candidate is safe or unchecked,
+and when there is nothing to check at all. A run that could not be made — an
+unreadable repository, a config that does not parse — is also 1.
 `.trim(),
 
   upgrade: `
@@ -414,6 +421,12 @@ unrestricted alias for \`npm update\`.
 
 For one package, --latest, or --force-install, use \`drift outdated --upgrade
 <selector>\`; for JSON, \`drift outdated --json\`.
+
+Exit codes are \`outdated\`'s, because this runs the same scan: 1 when any
+candidate is affected or failed verification — the packages it deliberately
+left alone — and 0 when none is. Installing is not what decides the code, so a
+run that upgraded nothing because nothing was provably safe still reports what
+the scan found.
 `.trim(),
 
   fix: `
@@ -458,6 +471,11 @@ name it introduces appears in cited evidence, and that it converges and
 preserves lines. Community recipes are a proposal source, not an execution
 path: a recipe's own edits are never committed. Run \`drift fix --plan\` to
 read every plan before any of it happens.
+
+Exit code 0 when the run finished, whether or not it had anything to fix; 1
+when it could not finish — no write access, a branch that could not be pushed,
+a repository it could not read. Unresolved findings are reported in the output,
+not in the exit code: use \`drift analyze --json\` to gate on them.
 `.trim(),
 
   pr: `
@@ -482,6 +500,10 @@ Options:
 
 The proposed title is editable at the prompt — press enter to take it. \`pr\`
 never merges, never force-pushes, and never touches the base branch.
+
+Exit code 0 once the pull request is open, or when one for this branch already
+was; 1 when it could not be opened — nothing committed to push, no write
+access, no base branch to merge into.
 `.trim(),
 
   diff: `
@@ -2247,7 +2269,17 @@ async function resolveCliAgentSelection(args: {
       label: labelForAgentProvider(candidate, registry),
       hint: registry.get(candidate)?.description ?? '',
     }));
-    const answer = await ask('Choose the agent Drift should use for unresolved edits.', rows);
+    // Declining has to be a row of its own. `ask` falls back to the *last*
+    // option when it is given no explicit one, so escape used to hand back a
+    // real provider — the menu offered "esc <name of the last agent>", and the
+    // guard below could never be false. Nobody who backs out of a question
+    // about which agent to trust with their code meant to pick the one at the
+    // bottom of the list.
+    const answer = await ask(
+      'Choose the agent Drift should use for unresolved edits.',
+      [...rows, { value: SKIP, label: 'None of these', hint: 'leave the edits unresolved' }],
+      SKIP,
+    );
     const provider = eligibleProviders.find((candidate) => candidate === answer);
     if (provider) {
       return {

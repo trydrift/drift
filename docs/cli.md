@@ -62,7 +62,7 @@ Anything Drift asks in a terminal is an arrow-key menu:
 | `enter` | Pick the highlighted row |
 | a row number | Jump to that row (`12` then `enter` picks row 12) |
 | `/` | Filter a long list, `esc` to clear the filter |
-| `esc`, `q` | Decline — the same answer a non-interactive run gives |
+| `esc`, `q` | Decline — the same answer a non-interactive run gives, never a choice picked for you |
 | `y`/`n` | Answer a yes/no question outright |
 
 Prompts are drawn only when stdin and stderr are a terminal. A pipe, a
