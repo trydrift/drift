@@ -653,20 +653,67 @@ function knownFlags(command: string): Set<string> {
 }
 
 /**
- * Warn about a flag no command reads.
+ * Every argument a command cannot make sense of: an option it does not read,
+ * a short flag Drift has no long form of, or a stray word left over after the
+ * options are parsed.
  *
- * A warning, never a refusal: an unknown flag has always been ignored, and a
- * run that was going to work should not start failing because Drift learned to
- * proofread. Silently ignoring `--dry-run` is what made a typo look like a
- * feature that did nothing.
+ * A refusal, not a warning. An argument that is ignored is an argument whose
+ * effect the caller believes they got: `drift outdated --dry-run` that
+ * upgrades anyway, or `--jsom` that prints a human report into a script
+ * parsing JSON, is a worse outcome than a run that never starts. The message
+ * has to be enough to fix the command line, so it names the argument and,
+ * where one is close enough, the option that was probably meant.
+ *
+ * `positionals` is how many bare words the command takes — `diff` takes four,
+ * `explain` one, and the scanning commands none at all.
+ *
+ * The walk mirrors `parseFlags` exactly, in particular which argument gets
+ * eaten as a flag's value: a checker that disagrees with the parser would
+ * refuse command lines that work, which is the one failure worse than the
+ * silence this replaces.
  */
-function warnAboutUnknownFlags(command: string, flags: Flags): void {
+function unknownArguments(command: string, args: readonly string[], positionals: number): string[] {
   const known = knownFlags(command);
-  if (known.size === 0) return;
-  for (const flag of Object.keys(flags)) {
-    if (known.has(flag)) continue;
-    console.error(`drift: unknown option \`--${flag}\` (ignored).${suggestion(flag, [...known], '--')}`);
+  if (known.size === 0) return [];
+
+  const problems: string[] = [];
+  let bare = 0;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+
+    if (arg.startsWith('--')) {
+      const [key] = arg.slice(2).split('=');
+      if (!known.has(key!)) {
+        problems.push(`drift: unknown option \`--${key}\`.${suggestion(key!, [...known], '--')}`);
+      }
+      const next = args[i + 1];
+      if (!arg.includes('=') && next && !next.startsWith('--')) i += 1;
+      continue;
+    }
+
+    // Drift spells every option in full, so a single dash is never a real
+    // option — say so rather than suggesting a long form it may not be.
+    if (arg.startsWith('-') && arg !== '-') {
+      problems.push(`drift: unknown option \`${arg}\`. Drift's options are long form, like \`--dir\`.`);
+      continue;
+    }
+
+    bare += 1;
+    if (bare > positionals) problems.push(`drift: unexpected argument \`${arg}\`.`);
   }
+  return problems;
+}
+
+/**
+ * Print what is wrong with these arguments and refuse, or return `null` to
+ * let the command run.
+ */
+function refuseUnknownArguments(command: string, args: readonly string[], positionals = 0): number | null {
+  const problems = unknownArguments(command, args, positionals);
+  if (problems.length === 0) return null;
+  for (const problem of problems) console.error(problem);
+  console.error(`Run \`drift help ${command}\` for the arguments it takes.`);
+  return 1;
 }
 
 /**
@@ -763,12 +810,14 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
     case 'pr':
       return withFlagCheck('pr', rest, prCommand);
     case 'action':
-      return runAction();
+      return refuseUnknownArguments('action', rest) ?? runAction();
     case 'serve':
       // Awaited: the queue is opened asynchronously, and a failure there must
       // surface as an exit code rather than an unhandled rejection.
-      return await serveWebhook();
+      return refuseUnknownArguments('serve', rest) ?? (await serveWebhook());
     case 'explain': {
+      const refusal = refuseUnknownArguments('explain', rest, 1);
+      if (refusal !== null) return refusal;
       const flags = parseFlags(rest);
       const target = rest.find((argument) => !argument.startsWith('-'));
       if (!target) {
@@ -786,6 +835,8 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       return 0;
     }
     case 'mcp': {
+      const refusal = refuseUnknownArguments('mcp', rest);
+      if (refusal !== null) return refusal;
       // Loaded on demand: the MCP SDK is only needed by this one subcommand,
       // and `drift outdated` should not pay to parse it.
       const { runMcpServer } = await import('./mcp/server.js');
@@ -825,15 +876,17 @@ function wantsHelp(args: readonly string[]): boolean {
   return args[0] === 'help' || args.some((arg) => arg === '--help' || arg === '-h');
 }
 
-/** Parse, proofread the flags, then run — the same three steps for every command. */
+/** Proofread the arguments, then parse and run — the same three steps for every command. */
 async function withFlagCheck(
   command: string,
   rest: readonly string[],
   body: (flags: Flags) => Promise<number>,
 ): Promise<number> {
-  const flags = parseFlags(rest);
-  warnAboutUnknownFlags(command, flags);
-  return body(flags);
+  // None of the scanning commands take a bare word: what looks like one is a
+  // typo (`drift outdated lodahs`) or an option that lost its dashes.
+  const refusal = refuseUnknownArguments(command, rest);
+  if (refusal !== null) return refusal;
+  return body(parseFlags(rest));
 }
 
 /**
@@ -843,6 +896,9 @@ async function withFlagCheck(
  * the two extracted archives rather than against a repository's history.
  */
 async function diffCommand(args: readonly string[]): Promise<number> {
+  const refusal = refuseUnknownArguments('diff', args, 4);
+  if (refusal !== null) return refusal;
+
   const [ecosystem, name, from, to] = args;
   if (!ecosystem || !name || !from || !to) {
     console.error('Usage: drift diff <ecosystem> <package> <from-version> <to-version>');
@@ -866,6 +922,9 @@ async function diffCommand(args: readonly string[]): Promise<number> {
 }
 
 async function telemetryCommand(args: readonly string[]): Promise<number> {
+  const refusal = refuseUnknownArguments('telemetry', args, 1);
+  if (refusal !== null) return refusal;
+
   const [subcommand] = args;
   if (subcommand !== 'print') {
     console.error('Usage: drift telemetry print');
@@ -886,6 +945,15 @@ function parseFlags(args: readonly string[]): Flags {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
     if (!arg.startsWith('--')) continue;
+
+    // `--dir=/path` and `--dir /path` are the same option. Without this the
+    // whole `dir=/path` was the flag's *name*, so the run quietly acted on the
+    // current directory instead of the named one.
+    const equals = arg.indexOf('=');
+    if (equals !== -1) {
+      flags[arg.slice(2, equals)] = arg.slice(equals + 1);
+      continue;
+    }
 
     const key = arg.slice(2);
     const next = args[i + 1];

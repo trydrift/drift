@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { main } from '../dist/cli.js';
 
@@ -93,4 +95,63 @@ test('every flag the CLI reads is documented somewhere in its help', async () =>
   for (const flag of read) {
     assert.ok(documented.includes(`--${flag}`), `\`--${flag}\` is read by the CLI but documented nowhere`);
   }
+});
+
+/**
+ * An ignored argument is an argument whose effect the caller believes they
+ * got. These are the shapes that used to run anyway.
+ */
+test('an unknown option stops the run instead of being ignored', async () => {
+  const { code, err } = await run(['outdated', '--dry-run', '--dir', '.']);
+
+  assert.equal(code, 1);
+  assert.match(err, /unknown option `--dry-run`/);
+  assert.match(err, /drift help outdated/);
+});
+
+test('a mistyped option names the one that was meant', async () => {
+  const { code, err } = await run(['outdated', '--jsom']);
+
+  assert.equal(code, 1);
+  assert.match(err, /Did you mean `--json`\?/);
+});
+
+test('a short flag is refused, because Drift has none', async () => {
+  const { code, err } = await run(['outdated', '-z']);
+
+  assert.equal(code, 1);
+  assert.match(err, /unknown option `-z`/);
+});
+
+test('a stray word after a scanning command is refused', async () => {
+  const { code, err } = await run(['outdated', '--dir', '.', 'lodash']);
+
+  assert.equal(code, 1);
+  assert.match(err, /unexpected argument `lodash`/);
+});
+
+test('extra arguments past a command\u2019s positionals are refused', async () => {
+  const diff = await run(['diff', 'npm', 'lodash', '4.17.20', '4.17.21', 'extra']);
+  assert.equal(diff.code, 1);
+  assert.match(diff.err, /unexpected argument `extra`/);
+
+  const telemetry = await run(['telemetry', 'print', '--nonsense']);
+  assert.equal(telemetry.code, 1);
+  assert.match(telemetry.err, /unknown option `--nonsense`/);
+});
+
+test('a real option is still accepted in either spelling', async () => {
+  // An empty directory, so this exercises the proofreader and not the scanner.
+  const empty = await mkdtemp(join(tmpdir(), 'drift-cli-args-'));
+  for (const argv of [['outdated', '--dir', empty, '--json'], ['outdated', `--dir=${empty}`, '--json']]) {
+    const { err } = await run(argv);
+    assert.ok(!/unknown option|unexpected argument/.test(err), `${argv.join(' ')} is a valid command line`);
+  }
+});
+
+test('`--help` still explains rather than being proofread', async () => {
+  const { code, out } = await run(['fix', '--help']);
+
+  assert.equal(code, 0);
+  assert.match(out, /drift fix \u2014/);
 });
