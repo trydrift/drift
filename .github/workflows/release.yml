@@ -161,7 +161,14 @@ jobs:
           test "$VSIX_PUBLISHER.$VSIX_NAME" = 'drift.drift'
           test "$VSIX_VERSION" = "$EXPECTED_VERSION"
 
-          echo "cli_tarball=release-artifacts/${CLI_TARBALL#./}" >> "$GITHUB_OUTPUT"
+          # The "./" is load-bearing. Given a bare slash-separated argument,
+          # npm reads it as a GitHub shorthand (owner/repo) and tries to clone
+          # it instead of reading the local tarball — v0.1.0's first release
+          # attempt died on
+          # `git ls-remote ssh://git@github.com/release-artifacts/...git`,
+          # after validation had already passed. An explicit relative path is
+          # unambiguous, and the release workflow tests pin its shape.
+          echo "cli_tarball=./release-artifacts/${CLI_TARBALL#./}" >> "$GITHUB_OUTPUT"
           echo "vsix=release-artifacts/drift.vsix" >> "$GITHUB_OUTPUT"
 
       # No NODE_AUTH_TOKEN or NPM_TOKEN: npm Trusted Publishing exchanges this
