@@ -19,9 +19,34 @@ function log(msg) {
   console.log(`[smoke] ${msg}`);
 }
 
+/**
+ * Run the installed binary and read what it said, not how it said it.
+ *
+ * The CLI colours its output wherever the terminal renders ANSI, and a CI
+ * runner is one of those places — `GITHUB_ACTIONS=true` is enough. So on the
+ * runner `drift analyze` leaves the packed binary as
+ * `ESC[90mdriftESC[0m ESC[36manalyzeESC[0m`, and an assertion written against
+ * the raw bytes fails on wording that is perfectly correct. Every assertion
+ * here is about what the CLI said, so styling is stripped once, here, rather
+ * than forcing `NO_COLOR` — which would leave the coloured path, the one a CI
+ * user actually sees, untested in the packed artifact.
+ */
 function run(cmd, args, opts = {}) {
   const result = spawnSync(cmd, args, { encoding: 'utf8', ...opts });
-  return result;
+  return { ...result, stdout: stripAnsi(result.stdout), stderr: stripAnsi(result.stderr) };
+}
+
+/**
+ * Drop CSI/OSC escape sequences.
+ *
+ * A copy of `ANSI_PATTERN` in `src/util/terminal.ts`, deliberately: this script
+ * imports nothing from the source tree, because its whole job is to exercise
+ * the installed package rather than this checkout.
+ */
+const ANSI_PATTERN = /\u001b\][0-9]*;;[\s\S]*?(?:\u0007|\u001b\\)|\u001b\[[0-9;?]*[A-Za-z]/g;
+
+function stripAnsi(text) {
+  return typeof text === 'string' ? text.replace(ANSI_PATTERN, '') : text;
 }
 
 function assert(cond, message) {
