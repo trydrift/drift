@@ -5,10 +5,10 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 
 const run = promisify(execFile);
-import { RECORDING_ENGINE_PATHS } from '../site/scripts/recording-engine-manifest.mjs';
+import { RECORDING_ENGINE_PATHS, RECORDING_ENGINE_EXCLUDES } from '../site/scripts/recording-engine-manifest.mjs';
 import {
   validateAuditInvariants,
   freshRecordingNames,
@@ -31,6 +31,56 @@ describe('recording refresh triggers stay in lockstep with fingerprint inputs', 
       assert.ok(
         triggers.includes(input) || triggers.includes(`${input}/**`),
         `${input} changes the recording fingerprint but does not trigger refresh-recordings.yml`,
+      );
+    }
+  });
+
+  test('every RECORDING_ENGINE_EXCLUDES entry is negated in the workflow too', async () => {
+    const workflow = await readFile(join(repoRoot, '.github/workflows/refresh-recordings.yml'), 'utf8');
+    const triggers = [...workflow.matchAll(/^\s+- '([^']+)'\s*$/gm)].map((m) => m[1]!);
+    for (const excluded of RECORDING_ENGINE_EXCLUDES) {
+      assert.ok(
+        triggers.includes(`!${excluded}`),
+        `${excluded} is excluded from the fingerprint but still triggers a recapture`,
+      );
+    }
+  });
+
+  /**
+   * The exclusion list is a claim about the import graph: these files cannot
+   * reach a recording, so hashing them would only cost an hour of re-analysis
+   * for byte-identical output. A claim that nothing re-checks is a claim that
+   * quietly stops being true, and the failure it would cause is the worst kind
+   * — recordings that pass validation while carrying an engine that no longer
+   * produced them. So this walks the real imports out of the capture
+   * pipeline's own entry points and fails the moment an excluded file becomes
+   * reachable.
+   */
+  test('nothing excluded from the fingerprint is reachable from a capture', async () => {
+    // The modules `site/scripts/capture.mjs` loads to run a scan.
+    const entryPoints = ['src/upgrade/scan.ts', 'src/config/schema.ts', 'src/util/logger.ts', 'src/util/http.ts'];
+
+    const reached = new Set<string>();
+    const pending = [...entryPoints];
+    while (pending.length > 0) {
+      const current = pending.pop()!;
+      if (reached.has(current)) continue;
+      reached.add(current);
+
+      const source = await readFile(join(repoRoot, current), 'utf8').catch(() => '');
+      for (const match of source.matchAll(/from\s+['"](\.[^'"]+)['"]|import\(\s*['"](\.[^'"]+)['"]\s*\)/g)) {
+        const specifier = match[1] ?? match[2]!;
+        // TypeScript sources import the emitted `.js` name of a sibling `.ts`.
+        const resolved = join(dirname(current), specifier).split(sep).join('/').replace(/\.js$/, '.ts');
+        pending.push(resolved);
+      }
+    }
+
+    for (const excluded of RECORDING_ENGINE_EXCLUDES) {
+      assert.ok(
+        !reached.has(excluded),
+        `${excluded} is excluded from the engine fingerprint but a capture can now reach it, ` +
+          'so a change to it would leave every recording stamped with an engine that did not produce it',
       );
     }
   });

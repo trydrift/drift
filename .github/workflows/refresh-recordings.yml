@@ -49,6 +49,10 @@ on:
       - 'src/pipeline.ts'
       - 'src/types.ts'
       - 'src/util/**'
+      # Not the engine: a capture calls `scanUpgrades` directly and never
+      # draws a terminal. Kept in lockstep with RECORDING_ENGINE_EXCLUDES.
+      - '!src/util/prompt.ts'
+      - '!src/util/terminal.ts'
       - 'package-lock.json'
       - 'site/package-lock.json'
       - 'site/scripts/capture.mjs'

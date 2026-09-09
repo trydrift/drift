@@ -5,8 +5,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { main } from '../dist/cli.js';
+import { stripAnsi } from '../dist/util/terminal.js';
 
-/** Run the CLI with stdout/stderr captured, the way a user would read them. */
+/**
+ * Run the CLI with stdout/stderr captured, the way a user would read them.
+ *
+ * Styling is stripped: help is coloured whenever the terminal renders ANSI —
+ * including on a CI runner, where `GITHUB_ACTIONS` says the log viewer does —
+ * so an assertion against the raw bytes would pass locally and fail in exactly
+ * the place these tests run. What is asserted here is the wording, which is the
+ * same either way.
+ */
 async function run(argv: string[]): Promise<{ code: number; out: string; err: string }> {
   const log = console.log;
   const error = console.error;
@@ -16,7 +25,7 @@ async function run(argv: string[]): Promise<{ code: number; out: string; err: st
   console.error = (...args: unknown[]) => void (err += `${args.join(' ')}\n`);
   try {
     const code = await main(argv);
-    return { code, out, err };
+    return { code, out: stripAnsi(out), err: stripAnsi(err) };
   } finally {
     console.log = log;
     console.error = error;
