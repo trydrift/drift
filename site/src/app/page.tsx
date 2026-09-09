@@ -415,6 +415,19 @@ export default function Home() {
             Talk to us
           </a>
           <Link href={FEATURE_BOARD} className="transition-colors hover:text-foreground">Feature requests</Link>
+          {/*
+            Free to use, modify and build on; not OSI open source. Someone
+            deciding whether to depend on Drift should be able to learn that
+            here rather than from the licence file after they have installed it.
+          */}
+          <a
+            href={`${GITHUB}/blob/main/LICENSE.md`}
+            target="_blank"
+            rel="noreferrer"
+            className="transition-colors hover:text-foreground"
+          >
+            Source-available (PolyForm Shield)
+          </a>
           <span className="ml-auto">
             Every sample on this page is a real run against the linked commit.
           </span>

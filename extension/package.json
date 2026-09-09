@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "publisher": "drift",
   "license": "SEE LICENSE IN LICENSE.md",
+  "author": "Drift (https://github.com/trydrift/drift)",
   "engines": {
     "vscode": "^1.95.0"
   },
