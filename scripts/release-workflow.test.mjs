@@ -62,5 +62,44 @@ test('privileged publishing neither checks out nor executes repository validatio
   assert.doesNotMatch(publishRuns, /\bnpm (?:ci|test|run|pack)\b/);
   assert.doesNotMatch(publishRuns, /scripts\//);
   assert.match(publishRuns, /npm publish "\$\{\{ steps\.artifacts\.outputs\.cli_tarball \}\}"/);
-  assert.match(publishRuns, /--packagePath "\$\{\{ steps\.artifacts\.outputs\.vsix \}\}"/);
+  // The VSIX is attached to the release, not published from here — see the
+  // long comment in `release.yml` where the `vsce` step used to be.
+  assert.match(publishRuns, /gh release create[\s\S]*steps\.artifacts\.outputs\.vsix/);
+});
+
+/**
+ * `vsce publish --oidc` was in this workflow for months and never worked. The
+ * flag is documented on `vscode-vsce`'s main branch but has not shipped in any
+ * release — 3.9.1, 3.9.2 and the 3.9.3 prereleases all answer `error: unknown
+ * option '--oidc'` — so the step could only ever fail.
+ *
+ * What made that fatal instead of merely broken is where it sat: after
+ * `npm publish`. npm versions are immutable, so the first tag would have
+ * published `@usedrift/cli` and then died, and that version number could never
+ * be used again.
+ *
+ * This is checked rather than remembered because the failure is invisible until
+ * a real tag, and a real tag is the one run that cannot be repeated.
+ */
+test('the privileged job never publishes to a second registry after npm', () => {
+  const publishRuns = workflow.jobs.publish.steps.map((step) => step.run ?? '').join('\n');
+
+  assert.doesNotMatch(
+    publishRuns,
+    /--oidc\b/,
+    '`vsce --oidc` does not exist in any released version; check `vsce publish --help`, not the README',
+  );
+
+  const lines = publishRuns.split('\n');
+  const npmPublishAt = lines.findIndex((line) => /\bnpm publish\b/.test(line));
+  assert.ok(npmPublishAt >= 0, 'the CLI is published from this job');
+
+  const laterRegistryPublish = lines
+    .slice(npmPublishAt + 1)
+    .find((line) => /\bvsce\b.*\bpublish\b|\bnpm publish\b/.test(line));
+  assert.equal(
+    laterRegistryPublish,
+    undefined,
+    `an immutable publish runs after npm publish and could strand it: ${laterRegistryPublish}`,
+  );
 });
