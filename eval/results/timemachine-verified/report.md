@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T04:50:57.956Z |
+| Drift commit | `843ae3c98d55489f4d609f78b0938f7b3b16de61` |
+| Run date | 2026-09-09T02:05:32.360Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -40,36 +40,32 @@ Every exclusion, with its reason:
 
 ## Results
 
-### Adjudication coverage
-
-Unadjudicated cases remain in the corpus and artifacts, but do not enter the metric denominator.
-
-| Question | Adjudicated | Not adjudicated |
-| --- | ---: | ---: |
-| affected-repository identification rate | 26 | 43 |
-| consumer localization rate | 26 | 43 |
-| dependency-update detection rate | 34 | 35 |
-| false-safe verdicts | 26 | 43 |
-
-Reasons:
-
-- affected-repository identification rate: 8 — the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset
-- affected-repository identification rate: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
-- consumer localization rate: 8 — the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset
-- consumer localization rate: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
-- dependency-update detection rate: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
-- false-safe verdicts: 8 — the constructed migration includes direct dependencies without authoritative exact before versions, so the corpus whole-project failure cannot adjudicate the exact subset
-- false-safe verdicts: 35 — the historical requirement is a range and the corpus does not supply its exact resolved before version
-
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 17/26 (65.4%) | 46.2–80.8% |
-| consumer localization rate | 17/26 (65.4%) | 46.2–80.8% |
-| dependency-update detection rate | 32/34 (94.1%) | 85.3–100.0% |
-| false-safe verdicts | 0/26 (0.0%) | 0.0–0.0% |
+| affected-repository identification rate | 47/69 (68.1%) | 56.5–79.7% |
+| consumer localization rate | 40/69 (58.0%) | 46.4–69.6% |
+| dependency-update detection rate | 67/69 (97.1%) | 92.8–100.0% |
+| false-safe verdicts | 0/69 (0.0%) | 0.0–0.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
+
+### Affected-repository misses by stage
+
+Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer
+was lost at. This is where affected-repository recall is going — read it before proposing an engine change,
+since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.
+
+| Stage | Cases |
+| --- | ---: |
+| `consumer-usage-not-found` | 10 |
+| `dependency-import-not-found` | 5 |
+| `consumer-match-insufficient-confidence` | 2 |
+| `dependency-update-not-detected` | 2 |
+| `consumer-symbol-not-resolved` | 1 |
+| `breaking-change-low-confidence` | 1 |
+| `upstream-surface-unavailable` | 1 |
+| **Total** | **22** |
 
 ### Breakdown
 
@@ -78,9 +74,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: migration-failure-easy | 11/20 (55.0%) | 11/20 (55.0%) | 22/24 (91.7%) |
-| label: migration-failure-hard | — | — | 1/1 (100.0%) |
-| label: migration-failure-medium | 6/6 (100.0%) | 6/6 (100.0%) | 9/9 (100.0%) |
+| label: migration-failure-easy | 26/44 (59.1%) | 23/44 (52.3%) | 42/44 (95.5%) |
+| label: migration-failure-hard | 2/2 (100.0%) | 2/2 (100.0%) | 2/2 (100.0%) |
+| label: migration-failure-medium | 19/23 (82.6%) | 15/23 (65.2%) | 23/23 (100.0%) |
 
 ## What is deliberately not reported
 
