@@ -167,9 +167,9 @@ for (const path of await documents()) {
       const id = match[0];
       // A filename is not a command id: `drift.yml` is the config file,
       // `drift.fish` the completion script a user saves, `drift.vsix` the
-      // packaged extension a release attaches, `drift.drift` the Marketplace
+      // packaged extension a release attaches, `drift.usedrift` the Marketplace
       // item id.
-      if (/\.(yml|yaml|json|js|ts|tsx|md|fish|bash|zsh|vsix)$/.test(id) || id === 'drift.drift') continue;
+      if (/\.(yml|yaml|json|js|ts|tsx|md|fish|bash|zsh|vsix)$/.test(id) || id === 'drift.usedrift') continue;
       if (!contributed.has(id)) {
         failures.push(`${where}: names \`${id}\`, which the extension manifest does not declare.`);
       }

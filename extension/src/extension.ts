@@ -381,7 +381,7 @@ function registerCommands(
   register('drift.showLog', () => output.show());
 
   register('drift.openSettings', () =>
-    vscode.commands.executeCommand('workbench.action.openSettings', '@ext:drift.drift'),
+    vscode.commands.executeCommand('workbench.action.openSettings', '@ext:drift.usedrift'),
   );
 
   register('drift.signInToGitHub', async () => {

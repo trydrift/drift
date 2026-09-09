@@ -158,7 +158,7 @@ jobs:
 
           test "$CLI_NAME" = '@usedrift/cli'
           test "$CLI_VERSION" = "$EXPECTED_VERSION"
-          test "$VSIX_PUBLISHER.$VSIX_NAME" = 'drift.drift'
+          test "$VSIX_PUBLISHER.$VSIX_NAME" = 'drift.usedrift'
           test "$VSIX_VERSION" = "$EXPECTED_VERSION"
 
           # The "./" is load-bearing. Given a bare slash-separated argument,

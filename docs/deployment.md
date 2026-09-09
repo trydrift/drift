@@ -278,7 +278,7 @@ account-level settings only a maintainer with the right access can create —
 | --- | --- | --- |
 | The repository is **public** | GitHub → Settings → General | `uses: trydrift/drift@v0` cannot resolve from a private repository, and the Marketplace listing links to it |
 | npm **Trusted Publisher** configured for `@usedrift/cli` | [npmjs.com](https://www.npmjs.com) → package → Settings → Trusted Publisher | Lets `npm publish` succeed with no token, authenticated as GitHub owner `trydrift`, repository `drift`, workflow `release.yml`. **The package must already exist** — see bootstrap below |
-| VS Code Marketplace **publisher `drift`** exists | [Marketplace publisher management](https://marketplace.visualstudio.com/manage) | The publisher id must match `"publisher": "drift"` in `extension/package.json`. The extension itself need not pre-exist — the first `vsce publish` creates `drift.drift` |
+| VS Code Marketplace **publisher `drift`** exists | [Marketplace publisher management](https://marketplace.visualstudio.com/manage) | The publisher id must match `"publisher": "drift"` in `extension/package.json`. The extension itself need not pre-exist — the first `vsce publish` creates `drift.usedrift` |
 | **GitHub Pages enabled**, source **GitHub Actions** | GitHub → Settings → Pages | `pages.yml` deploys the site with `actions/deploy-pages`, which fails outright if the source is still set to a branch |
 
 ### The npm bootstrap problem
@@ -311,7 +311,7 @@ tags only:
 
 The VS Code Marketplace has no equivalent bootstrap problem: the `drift`
 publisher can be registered ahead of the first release, and the first
-`vsce publish` creates the `drift.drift` extension id.
+`vsce publish` creates the `drift.usedrift` extension id.
 
 ### Why the extension is published by hand
 

@@ -268,10 +268,14 @@ export async function commitWorkingTreeManifests(
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
 
-  const git = async (args: string[], env?: NodeJS.ProcessEnv): Promise<string | null> => {
+  const gitIn = async (
+    at: string,
+    args: string[],
+    env?: NodeJS.ProcessEnv,
+  ): Promise<string | null> => {
     try {
       const { stdout } = await run('git', args, {
-        cwd,
+        cwd: at,
         windowsHide: true,
         maxBuffer: 32 * 1024 * 1024,
         ...(env ? { env: { ...process.env, ...env } } : {}),
@@ -281,6 +285,23 @@ export async function commitWorkingTreeManifests(
       return null;
     }
   };
+
+  // Everything below runs from the repository root rather than from `cwd`.
+  //
+  // `git status --porcelain` reports paths relative to the root, and those same
+  // strings are handed straight back to `git add` as pathspecs — which git
+  // resolves relative to the process's working directory. Running the pair from
+  // different directories silently staged nothing whenever the analysed project
+  // sat below the root: for a project in `demos/npm`, `demos/npm/package.json`
+  // was looked for at `demos/npm/demos/npm/package.json`, `git add` failed, the
+  // scratch commit came out identical to HEAD minus its manifests, and every
+  // dependency then read as *removed* rather than upgraded. That is the whole
+  // monorepo case, so the two commands have to agree on what a path is.
+  const root = (await gitIn(cwd, ['rev-parse', '--show-toplevel']))?.trim();
+  if (!root) return null;
+
+  const git = async (args: string[], env?: NodeJS.ProcessEnv): Promise<string | null> =>
+    gitIn(root, args, env);
 
   const status = await git(['status', '--porcelain']);
   if (!status) return null;
