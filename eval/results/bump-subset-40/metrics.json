@@ -171,8 +171,8 @@
     "total": 11,
     "byReason": {
       "dependency-update-not-detected": 3,
-      "dependency-import-not-found": 2,
       "consumer-usage-not-found": 2,
+      "dependency-import-not-found": 2,
       "no-breaking-change-derived": 1,
       "verification-inconclusive": 2,
       "upstream-surface-unavailable": 1

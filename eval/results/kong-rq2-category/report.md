@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T04:46:04.150Z |
+| Drift commit | `c45d9d01ede15838d924fe9f5eb51c66632623b4` |
+| Run date | 2026-09-09T10:56:26.438Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -43,6 +43,17 @@ Intervals are a case-level bootstrap, resampled over cases rather than trials, a
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
 
 **category classification accuracy** is scored on 134 of 1511 cases — the rest have a label this corpus does not record precisely enough to check (1375 ambiguous, 2 unsupported), not cases that were skipped. See "Label mapping coverage" below.
+
+### Affected-repository misses by stage
+
+Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer
+was lost at. This is where affected-repository recall is going — read it before proposing an engine change,
+since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.
+
+| Stage | Cases |
+| --- | ---: |
+| _(no funnel recorded)_ | 1511 |
+| **Total** | **1511** |
 
 ### Breakdown
 

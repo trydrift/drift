@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Citation | Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau |
 | Ecosystem | maven |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T04:46:09.548Z |
+| Drift commit | `c45d9d01ede15838d924fe9f5eb51c66632623b4` |
+| Run date | 2026-09-09T10:56:09.551Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -46,6 +46,17 @@ Every exclusion, with its reason:
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
+
+### Affected-repository misses by stage
+
+Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer
+was lost at. This is where affected-repository recall is going — read it before proposing an engine change,
+since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.
+
+| Stage | Cases |
+| --- | ---: |
+| _(no funnel recorded)_ | 98 |
+| **Total** | **98** |
 
 ### Classification
 
