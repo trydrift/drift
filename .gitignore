@@ -63,3 +63,8 @@ eval/results/*/evidence/
 
 # Logs from scripts/run-baselines.sh — a local run record, not an artifact.
 .baseline-logs/
+
+# Node diagnostic reports written when a site capture trips its deadline. Kept
+# as a CI artifact, never committed — the recording is the output, this is the
+# evidence about why one did not arrive.
+site/capture-hang-*.json

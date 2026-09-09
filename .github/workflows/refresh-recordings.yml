@@ -216,6 +216,24 @@ jobs:
         continue-on-error: true
         run: node site/scripts/capture.mjs ${{ needs.check.outputs.targets }}
 
+      # `capture.mjs` writes a Node diagnostic report the moment a target trips
+      # its deadline, because what is holding the process open — no handles at
+      # all (a deadlock in our own code) versus a socket or a child process
+      # (something the environment did) — is most of the diagnosis and cannot
+      # be recovered once the runner is gone. It was being written to a path
+      # nothing collects and then destroyed with the runner, so the two hangs
+      # this has had so far (kubernetes on 2026-09-07, flexlayout on
+      # 2026-09-09, ninety minutes each and neither reproducible locally) both
+      # threw away the only evidence that could explain them.
+      - name: Keep the diagnostic from any target that hung
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: capture-hang-reports
+          path: site/capture-hang-*.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       # A capture that reached no registry produces recordings full of "could
       # not check", which would sail through `git diff` as a large, confident,
       # completely wrong change. Better to fail the job than to open that PR.
