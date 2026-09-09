@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T05:16:58.027Z |
+| Drift commit | `843ae3c98d55489f4d609f78b0938f7b3b16de61` |
+| Run date | 2026-09-09T02:19:46.150Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,13 +42,29 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 17/39 (43.6%) | 28.2–59.0% |
-| consumer localization rate | 8/39 (20.5%) | 7.7–33.3% |
-| dependency-update detection rate | 34/39 (87.2%) | 76.9–97.4% |
-| false-safe verdicts | 11/39 (28.2%) | 15.4–43.6% |
+| affected-repository identification rate | 28/39 (71.8%) | 56.4–84.6% |
+| consumer localization rate | 12/39 (30.8%) | 15.4–46.2% |
+| dependency-update detection rate | 36/39 (92.3%) | 82.1–100.0% |
+| false-safe verdicts | 1/39 (2.6%) | 0.0–7.7% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
+
+### Affected-repository misses by stage
+
+Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer
+was lost at. This is where affected-repository recall is going — read it before proposing an engine change,
+since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.
+
+| Stage | Cases |
+| --- | ---: |
+| `dependency-update-not-detected` | 3 |
+| `dependency-import-not-found` | 2 |
+| `consumer-usage-not-found` | 2 |
+| `verification-inconclusive` | 2 |
+| `no-breaking-change-derived` | 1 |
+| `upstream-surface-unavailable` | 1 |
+| **Total** | **11** |
 
 ### Breakdown
 
@@ -57,10 +73,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: COMPILATION_FAILURE | 6/12 (50.0%) | 5/12 (41.7%) | 11/12 (91.7%) |
+| label: COMPILATION_FAILURE | 9/12 (75.0%) | 6/12 (50.0%) | 12/12 (100.0%) |
 | label: DEPENDENCY_LOCK_FAILURE | 1/2 (50.0%) | 0/2 (0.0%) | 1/2 (50.0%) |
-| label: ENFORCER_FAILURE | 2/9 (22.2%) | 0/9 (0.0%) | 7/9 (77.8%) |
-| label: TEST_FAILURE | 8/16 (50.0%) | 3/16 (18.8%) | 15/16 (93.8%) |
+| label: ENFORCER_FAILURE | 5/9 (55.6%) | 0/9 (0.0%) | 7/9 (77.8%) |
+| label: TEST_FAILURE | 13/16 (81.3%) | 6/16 (37.5%) | 16/16 (100.0%) |
 
 ## What is deliberately not reported
 
