@@ -54,7 +54,7 @@ test('a mistyped command names the one that was meant', async () => {
   const { code, err } = await run(['analze']);
 
   assert.equal(code, 1);
-  assert.match(err, /unknown command `analze`/);
+  assert.match(err, /there's no `analze` command/);
   assert.match(err, /Did you mean `analyze`\?/);
 });
 
@@ -105,7 +105,8 @@ test('an unknown option stops the run instead of being ignored', async () => {
   const { code, err } = await run(['outdated', '--dry-run', '--dir', '.']);
 
   assert.equal(code, 1);
-  assert.match(err, /unknown option `--dry-run`/);
+  assert.match(err, /`outdated` has no `--dry-run` option/);
+  assert.match(err, /Nothing ran, so nothing here changed/);
   assert.match(err, /drift help outdated/);
 });
 
@@ -120,24 +121,25 @@ test('a short flag is refused, because Drift has none', async () => {
   const { code, err } = await run(['outdated', '-z']);
 
   assert.equal(code, 1);
-  assert.match(err, /unknown option `-z`/);
+  assert.match(err, /`-z` isn't an option/);
+  assert.match(err, /options in full/);
 });
 
 test('a stray word after a scanning command is refused', async () => {
   const { code, err } = await run(['outdated', '--dir', '.', 'lodash']);
 
   assert.equal(code, 1);
-  assert.match(err, /unexpected argument `lodash`/);
+  assert.match(err, /`outdated` doesn't take `lodash`/);
 });
 
 test('extra arguments past a command\u2019s positionals are refused', async () => {
   const diff = await run(['diff', 'npm', 'lodash', '4.17.20', '4.17.21', 'extra']);
   assert.equal(diff.code, 1);
-  assert.match(diff.err, /unexpected argument `extra`/);
+  assert.match(diff.err, /`diff` doesn't take `extra`/);
 
   const telemetry = await run(['telemetry', 'print', '--nonsense']);
   assert.equal(telemetry.code, 1);
-  assert.match(telemetry.err, /unknown option `--nonsense`/);
+  assert.match(telemetry.err, /`telemetry` has no `--nonsense` option/);
 });
 
 test('a real option is still accepted in either spelling', async () => {
@@ -145,7 +147,7 @@ test('a real option is still accepted in either spelling', async () => {
   const empty = await mkdtemp(join(tmpdir(), 'drift-cli-args-'));
   for (const argv of [['outdated', '--dir', empty, '--json'], ['outdated', `--dir=${empty}`, '--json']]) {
     const { err } = await run(argv);
-    assert.ok(!/unknown option|unexpected argument/.test(err), `${argv.join(' ')} is a valid command line`);
+    assert.ok(!/has no|isn't an option|doesn't take/.test(err), `${argv.join(' ')} is a valid command line`);
   }
 });
 
@@ -154,4 +156,51 @@ test('`--help` still explains rather than being proofread', async () => {
 
   assert.equal(code, 0);
   assert.match(out, /drift fix \u2014/);
+});
+
+test('a lost dash is read as a lost dash, not as a mystery', async () => {
+  const short = await run(['outdated', '-json']);
+  assert.equal(short.code, 1);
+  assert.match(short.err, /Did you mean `--json`\?/);
+
+  const bare = await run(['fix', 'json']);
+  assert.equal(bare.code, 1);
+  assert.match(bare.err, /Did you mean `--json`\?/);
+});
+
+/**
+ * The overview, the help topics, and the list a typo is measured against are
+ * three copies of the same fact. `explain` and `mcp` were in the first and
+ * neither of the others, so `drift explain --help` — the way anyone reads
+ * about a command — answered that there is no such topic.
+ */
+test('every command in the overview has help and is offered after a typo', async () => {
+  const { out } = await run(['--help']);
+  const advertised = [...out.matchAll(/^ {2}drift ([a-z]+)/gm)].map((match) => match[1]!);
+  assert.ok(advertised.includes('explain') && advertised.includes('mcp'), 'read the overview');
+
+  for (const command of new Set(advertised)) {
+    const topic = await run(['help', command]);
+    assert.equal(topic.code, 0, `\`drift help ${command}\` explains it`);
+
+    const typo = await run([`${command}x`]);
+    assert.match(typo.err, new RegExp(`Commands:.*\\b${command}\\b`), `a typo lists \`${command}\``);
+  }
+});
+
+test('a command that stops on an unexpected error says so kindly', async () => {
+  const { reportCrash } = await import('../dist/cli.js');
+  const error = console.error;
+  let err = '';
+  console.error = (...args: unknown[]) => void (err += `${args.join(' ')}\n`);
+  try {
+    reportCrash('outdated', new Error('EACCES: permission denied'));
+  } finally {
+    console.error = error;
+  }
+
+  assert.match(err, /the `outdated` run stopped: EACCES: permission denied/);
+  assert.match(err, /DRIFT_DEBUG=1/, 'says how to get the stack trace it withheld');
+  assert.match(err, /github\.com\/trydrift\/drift\/issues/, 'says where a real bug goes');
+  assert.ok(!/ at .*cli\.ts/.test(err), 'no stack trace unless it was asked for');
 });

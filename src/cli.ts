@@ -59,6 +59,9 @@ const run = promisify(execFile);
 /** Where to create a token with the scope Drift's write commands need. */
 const CREATE_TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=drift-cli';
 
+/** Where a crash that is Drift's fault should be reported. */
+const ISSUES_URL = 'https://github.com/trydrift/drift/issues';
+
 /**
  * A token for reads/writes against the GitHub API, in priority order:
  * `--token`, `GITHUB_TOKEN`, then whatever the GitHub CLI already has signed
@@ -508,6 +511,42 @@ runtime provides them, and writes its report to the job summary and to SARIF.
 Not meant to be run by hand; \`drift analyze\` is the local equivalent.
 `.trim(),
 
+  explain: `
+drift explain — one upgrade, and every place it reaches this repository
+
+Usage:
+  drift explain <package> [options]
+
+Answers the question a single row of a scan raises: what changed between the
+version this project has and the one available, and which lines here touch it.
+Prints the evidence behind the verdict rather than the verdict alone.
+
+Options:
+  --dir <path>                Local checkout to read.  Default: cwd
+  --verify                    Install the upgrade in a throwaway worktree and
+                              run this project's own checks against it first,
+                              so the answer is a measurement and not a
+                              prediction
+
+Dev dependencies are included, because an upgrade that breaks the test suite
+breaks the project.
+`.trim(),
+
+  mcp: `
+drift mcp — serve Drift to a coding agent
+
+Usage:
+  drift mcp
+
+Speaks MCP over stdio, so an agent can ask what an upgrade would break here
+and read the evidence, instead of guessing from a version number. It runs
+locally and your editor spawns it; there is no server to host and nothing
+leaves the machine that a scan would not already fetch.
+
+Add it to Claude Code with:
+  claude mcp add drift -- npx -y @usedrift/cli mcp
+`.trim(),
+
   serve: `
 drift serve — the self-hosted webhook server
 
@@ -544,6 +583,8 @@ Environment variables Drift reads
   DRIFT_CACHE_DIR             Where fetched registry metadata and artifacts
                               are kept. DRIFT_NO_CACHE=1 disables the cache
   DRIFT_NO_TUI                1 draws prompts as plain numbered lists
+  DRIFT_DEBUG                 1 prints the full stack trace when a run stops
+                              on an unexpected error
   NO_COLOR / FORCE_COLOR      Turn colour off, or force it on for a CI log
   DRIFT_ASCII                 1 replaces box drawing and status glyphs with
                               ASCII
@@ -557,7 +598,20 @@ the last resort, not the first.
 };
 
 /** Topics that are commands, in the order the overview lists them. */
-const COMMANDS = ['analyze', 'outdated', 'upgrade', 'fix', 'pr', 'diff', 'action', 'serve', 'telemetry', 'help'];
+const COMMANDS = [
+  'analyze',
+  'outdated',
+  'upgrade',
+  'fix',
+  'pr',
+  'diff',
+  'action',
+  'explain',
+  'mcp',
+  'serve',
+  'telemetry',
+  'help',
+];
 
 /**
  * Help, with the headings and flags picked out.
@@ -596,8 +650,31 @@ function helpCommand(topic: string | undefined): number {
     return 0;
   }
 
-  console.error(`No help for \`${canonical}\`.${suggestion(canonical, Object.keys(TOPICS))}`);
-  console.error(`Topics: ${Object.keys(TOPICS).join(', ')}`);
+  return refuse([`there's no help topic called \`${canonical}\`.${suggestion(canonical, Object.keys(TOPICS))}`], [
+    `Topics: ${Object.keys(TOPICS).join(', ')}`,
+    'The overview, with every command:  drift help',
+  ]);
+}
+
+/**
+ * How Drift says no.
+ *
+ * Three parts, always in this order: what it could not use, what that means
+ * for the repository, and the one command that answers the question next. A
+ * refusal is read by someone who is mid-task and wants to retype the line and
+ * move on, so the whole thing has to fit above the fold and never make them
+ * go looking for a manual.
+ *
+ * Written to stderr, coloured only where colour survives — a piped or CI copy
+ * of this says every word the terminal one does.
+ */
+function refuse(headlines: readonly string[], next: readonly string[]): number {
+  const palette = paletteFor(process.stderr);
+  for (const headline of headlines) console.error(`${palette('red', 'drift')}: ${headline}`);
+  if (next.length > 0) {
+    console.error('');
+    for (const line of next) console.error(palette('gray', line));
+  }
   return 1;
 }
 
@@ -673,8 +750,12 @@ function knownFlags(command: string): Set<string> {
  * silence this replaces.
  */
 function unknownArguments(command: string, args: readonly string[], positionals: number): string[] {
-  const known = knownFlags(command);
-  if (known.size === 0) return [];
+  // `action`, `serve` and `mcp` are configured by their environment, not by
+  // options. Without this they would inherit the common options out of the
+  // overview and accept `drift mcp --dir ./x` — which reads well and does
+  // nothing at all.
+  const known = OPTIONLESS_COMMANDS.has(command) ? new Set<string>() : knownFlags(command);
+  if (known.size === 0 && !OPTIONLESS_COMMANDS.has(command)) return [];
 
   const problems: string[] = [];
   let bare = 0;
@@ -684,36 +765,56 @@ function unknownArguments(command: string, args: readonly string[], positionals:
     if (arg.startsWith('--')) {
       const [key] = arg.slice(2).split('=');
       if (!known.has(key!)) {
-        problems.push(`drift: unknown option \`--${key}\`.${suggestion(key!, [...known], '--')}`);
+        problems.push(`\`${command}\` has no \`--${key}\` option.${suggestion(key!, [...known], '--')}`);
       }
       const next = args[i + 1];
       if (!arg.includes('=') && next && !next.startsWith('--')) i += 1;
       continue;
     }
 
-    // Drift spells every option in full, so a single dash is never a real
-    // option — say so rather than suggesting a long form it may not be.
+    // Drift spells every option in full, so a single dash is never one. The
+    // likeliest cause is a dash that got lost, so check the rest of the word
+    // against the real options before falling back to saying so.
     if (arg.startsWith('-') && arg !== '-') {
-      problems.push(`drift: unknown option \`${arg}\`. Drift's options are long form, like \`--dir\`.`);
+      const guess = suggestion(arg.replace(/^-+/, ''), [...known], '--');
+      problems.push(
+        guess
+          ? `\`${arg}\` isn't an option.${guess}`
+          : `\`${arg}\` isn't an option — Drift writes its options in full, like \`--dir\`.`,
+      );
       continue;
     }
 
     bare += 1;
-    if (bare > positionals) problems.push(`drift: unexpected argument \`${arg}\`.`);
+    if (bare > positionals) {
+      const guess = suggestion(arg, [...known], '--');
+      problems.push(
+        guess
+          ? `\`${command}\` doesn't take \`${arg}\` on its own.${guess}`
+          : `\`${command}\` doesn't take \`${arg}\` — it reads the repository, not a list of names.`,
+      );
+    }
   }
   return problems;
 }
 
 /**
- * Print what is wrong with these arguments and refuse, or return `null` to
- * let the command run.
+ * Say what is wrong with these arguments and refuse, or return `null` to let
+ * the command run.
+ *
+ * The reassurance is the part that matters for `fix`, `upgrade`, and `pr`:
+ * those commands write to the repository, and someone who mistyped one wants
+ * to know *before* reading further that this run touched nothing.
  */
 function refuseUnknownArguments(command: string, args: readonly string[], positionals = 0): number | null {
   const problems = unknownArguments(command, args, positionals);
   if (problems.length === 0) return null;
-  for (const problem of problems) console.error(problem);
-  console.error(`Run \`drift help ${command}\` for the arguments it takes.`);
-  return 1;
+  return refuse(problems, [
+    'Nothing ran, so nothing here changed.',
+    OPTIONLESS_COMMANDS.has(command)
+      ? `\`${command}\` is configured by its environment, not by options.  What it does:  drift help ${command}`
+      : `Every option \`${command}\` takes:  drift help ${command}`,
+  ]);
 }
 
 /**
@@ -752,8 +853,11 @@ function defaultBaselineCacheDir(): string | null {
     : join(homedir(), '.drift', 'cache', 'baseline');
 }
 
+/** Commands whose whole configuration is their environment; they read no options. */
+const OPTIONLESS_COMMANDS = new Set(['action', 'serve', 'mcp']);
+
 /** Commands that operate on a repository, and so get a repo-local run log. */
-const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'upgrade', 'fix', 'pr']);
+const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'upgrade', 'fix', 'pr', 'explain']);
 
 async function gitHeadShort(repoRoot: string): Promise<string> {
   const result = await execCommand('git', ['rev-parse', '--short', 'HEAD'], { cwd: repoRoot, timeoutMs: 5000 });
@@ -821,8 +925,10 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       const flags = parseFlags(rest);
       const target = rest.find((argument) => !argument.startsWith('-'));
       if (!target) {
-        process.stderr.write('Usage: drift explain <package> [--dir <path>] [--verify]\n');
-        return 2;
+        return refuse(['`explain` needs the name of the package to explain.'], [
+          'For example:  drift explain lodash',
+          "Everything upgradable here, if you're not sure which:  drift outdated",
+        ]);
       }
       const { runScan, renderExplanation } = await import('./upgrade/explain.js');
       const candidates = await runScan({
@@ -860,9 +966,10 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       // A wrong guess printed eighty lines of usage and left the reader to
       // find the one word that was wrong in it. Say what was wrong, offer the
       // command it was probably meant to be, and stop there.
-      console.error(`drift: unknown command \`${command}\`.${suggestion(command, COMMANDS)}`);
-      console.error(`Commands: ${COMMANDS.join(', ')}. Run \`drift help\` for what each one does.`);
-      return 1;
+      return refuse([`there's no \`${command}\` command.${suggestion(command, COMMANDS)}`], [
+        `Commands: ${COMMANDS.join(', ')}`,
+        'What each one does:  drift help          One of them in full:  drift help <command>',
+      ]);
   }
 }
 
@@ -901,9 +1008,10 @@ async function diffCommand(args: readonly string[]): Promise<number> {
 
   const [ecosystem, name, from, to] = args;
   if (!ecosystem || !name || !from || !to) {
-    console.error('Usage: drift diff <ecosystem> <package> <from-version> <to-version>');
-    console.error('Run `drift help diff` for the ecosystems this can fetch source for.');
-    return 1;
+    return refuse(['`diff` needs all four of an ecosystem, a package, and the two versions.'], [
+      'For example:  drift diff npm lodash 4.17.20 4.17.21',
+      'The ecosystems it can fetch source for:  drift help diff',
+    ]);
   }
 
   const result = await fetchVersionDiff({ ecosystem, name, from, to, exec: execCommand });
@@ -927,9 +1035,10 @@ async function telemetryCommand(args: readonly string[]): Promise<number> {
 
   const [subcommand] = args;
   if (subcommand !== 'print') {
-    console.error('Usage: drift telemetry print');
-    console.error('Run `drift help telemetry` for what the event contains.');
-    return 1;
+    return refuse(
+      [subcommand ? `\`telemetry\` has no \`${subcommand}\` subcommand.` : '`telemetry` needs to be told what to do.'],
+      ['Printing a sample event is all it does:  drift telemetry print', 'What that event contains:  drift help telemetry'],
+    );
   }
 
   console.log(JSON.stringify(sampleTelemetryEvent(), null, 2));
@@ -1476,12 +1585,14 @@ async function upgradeCommand(flags: Flags): Promise<number> {
     Object.prototype.hasOwnProperty.call(flags, flag),
   );
   if (unsupported) {
-    console.error(
-      '`drift upgrade` installs only the scan’s safe selected versions. ' +
-        'Use `drift outdated --upgrade <selector>` for package-specific upgrades, --latest, or --force-install; ' +
-        'use `drift outdated --json` for JSON output.',
+    return refuse(
+      [`\`upgrade\` doesn't take \`--${unsupported}\` — it installs only the upgrades this scan measured as safe.`],
+      [
+        'One package, or a wider selection:  drift outdated --upgrade <selector>',
+        'The newest version regardless, or past a failing check:  drift outdated --latest, --force-install',
+        'JSON out:  drift outdated --json',
+      ],
     );
-    return 1;
   }
   return outdatedCommand(flags, { installSafe: true });
 }
@@ -2513,13 +2624,37 @@ function invokedAsScript(): boolean {
   }
 }
 
+/**
+ * The last thing a run can print.
+ *
+ * A crash used to arrive as one bare line of whatever the throw happened to
+ * say, which reads as Drift blaming the reader for something they cannot see.
+ * Say which command stopped, quote the reason as a quote rather than as an
+ * accusation, and give both of the next moves: the switch that turns the full
+ * stack trace back on, and where a genuine bug goes. The stack is never
+ * printed by default — it is unreadable to most people running a CLI, and it
+ * buries the one line that says what happened.
+ */
+export function reportCrash(command: string | undefined, err: unknown): void {
+  const message = err instanceof Error ? err.message : String(err);
+  const where = command && !command.startsWith('-') ? `the \`${command}\` run` : 'this run';
+  const next = [
+    'Nothing further ran; any work already written to this repository is listed above.',
+    'The full stack trace:  DRIFT_DEBUG=1 drift …',
+    `If this looks like a bug in Drift rather than something here: ${ISSUES_URL}`,
+  ];
+  refuse([`${where} stopped: ${message}`], next);
+  if (process.env.DRIFT_DEBUG === '1' && err instanceof Error && err.stack) console.error(`\n${err.stack}`);
+}
+
 if (invokedAsScript()) {
-  main(process.argv.slice(2)).then(
+  const argv = process.argv.slice(2);
+  main(argv).then(
     (code) => {
       process.exitCode = code;
     },
     (err: unknown) => {
-      console.error(`drift: ${(err as Error).message}`);
+      reportCrash(argv[0], err);
       process.exitCode = 1;
     },
   );

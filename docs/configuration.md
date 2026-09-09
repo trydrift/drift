@@ -1152,6 +1152,7 @@ output and VS Code Output-channel messages, but creates no `.git/drift` files.
 | `FORCE_COLOR` | Turns colour on where a bare TTY check would say no — a CI log viewer that renders ANSI |
 | `DRIFT_ASCII` | `1` replaces the box drawing and status glyphs with ASCII |
 | `DRIFT_HYPERLINKS` | `0` or `1` overrides terminal hyperlink detection |
+| `DRIFT_DEBUG` | `1` prints the full stack trace when a run stops on an unexpected error |
 
 ### Sizing the parallelism by hand
 

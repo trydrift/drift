@@ -18,11 +18,32 @@ Requires Node.js 22.6 or newer.
 | `drift fix` | Analyse, prepare fixes in an isolated worktree, push a branch, and open a PR. |
 | `drift pr` | Push the current branch and open a PR. |
 | `drift diff <eco> <pkg> <from> <to>` | Show the published source diff for supported ecosystems. |
+| `drift explain <package>` | What changed in one upgrade, and every place it reaches this repository. |
+| `drift mcp` | Serve Drift to a coding agent over MCP (stdio). |
 | `drift help [topic]` | Everything about one command, including every option. |
 
 `drift --help` is the overview; `drift help <command>` (or `drift <command> --help`)
 has that command's full options, and `drift help environment` lists the
 environment variables Drift reads.
+
+## When Drift can't read the command line
+
+An argument Drift does not recognise stops the run before it does any work,
+rather than being ignored: an unknown command, an option no command reads
+(`--dry-run`), a short flag (`-z` — Drift writes its options in full), or a
+stray word a command has no use for. The message names the argument, suggests
+the one that was probably meant where something is close enough, and exits 1.
+
+```console
+$ drift outdated --dry-run
+drift: `outdated` has no `--dry-run` option.
+
+Nothing ran, so nothing here changed.
+Every option `outdated` takes:  drift help outdated
+```
+
+If a run stops on an unexpected error, Drift prints the reason rather than a
+stack trace; `DRIFT_DEBUG=1` prints the trace too.
 
 ## Interactive prompts
 
