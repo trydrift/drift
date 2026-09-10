@@ -2,7 +2,7 @@
   "name": "usedrift",
   "displayName": "Drift — Safe Dependency Upgrades",
   "description": "Find which dependency upgrades affect your code, see the evidence, and prepare reviewable fixes with deterministic transforms, community recipes, or your existing AI agent.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "drift",
   "license": "SEE LICENSE IN LICENSE.md",
   "author": "Drift (https://github.com/trydrift/drift)",
