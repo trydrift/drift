@@ -373,8 +373,10 @@ changelog doesn't mention one at all, Drift will miss it entirely.
 **Indirection.** Localization is single-hop. Wrap a dependency in your own
 abstraction and Drift flags the wrapper, not the call sites beyond it.
 
-**Non-JS/TS attribution.** Pattern-based parsing means the *enclosing symbol* can
-be wrong in unusual formatting. File and line are always exact.
+**Symbol attribution.** Localization is pattern-based in every language — Drift
+matches imports and symbol usage textually rather than resolving a typed AST,
+and there is no compiler in the loop. The *enclosing symbol* can therefore be
+wrong in unusual formatting. File and line are always exact.
 
 **Prompt injection.** Discussed above. Mitigated, not solved.
 

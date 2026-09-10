@@ -191,10 +191,10 @@ See the [repository](https://github.com/trydrift/drift).
 Stated plainly, because a tool that hides these hasn't earned trust:
 
 - **Localization is single-hop.** If you wrap a dependency in your own abstraction, Drift flags the wrapper — correct, but it won't trace further.
-- **Non-JS/TS parsing is pattern-based.** File and line are always exact; the enclosing symbol can be off in unusual formatting.
+- **Localization is pattern-based, in every language.** Drift matches imports and symbol usage textually rather than building a type-resolved AST — there is no compiler in the loop. File and line are always exact; the enclosing symbol can be off in unusual formatting.
 - **Behaviour changes are the weak spot.** "Retries are now exponential" has no symbol to search for and no compile error to catch. Drift raises risk and flags it rather than pretending.
 - **Small local models struggle** with whole-file rewrites. Use a coding-tuned model with Ollama.
-- **`/scan` is a network sweep.** On a large `package.json` the first run takes a while — it checks every direct dependency rather than a sample, results fill in as they arrive, and every step is named while it runs. Narrow it with `drift.analysis.ignore` or by leaving `drift.analysis.includeDev` off.
+- **`/scan` is a network sweep.** On a large `package.json` the first run takes a while — it checks every direct dependency rather than a sample, results fill in as they arrive, and every step is named while it runs. Narrow it with `drift.analysis.ignore`, or by turning `drift.analysis.includeDev` off (it is on by default).
 
 ## License
 
