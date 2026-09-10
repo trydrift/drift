@@ -140,6 +140,40 @@
         "denominator": 2,
         "value": 0
       }
+    },
+    "stratum: no-api-surface-delta": {
+      "dependency-update detection rate": {
+        "numerator": 8,
+        "denominator": 11,
+        "value": 0.7272727272727273
+      },
+      "affected-repository identification rate": {
+        "numerator": 6,
+        "denominator": 11,
+        "value": 0.5454545454545454
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 11,
+        "value": 0
+      }
+    },
+    "stratum: static-signal-possible": {
+      "dependency-update detection rate": {
+        "numerator": 28,
+        "denominator": 28,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 22,
+        "denominator": 28,
+        "value": 0.7857142857142857
+      },
+      "consumer localization rate": {
+        "numerator": 12,
+        "denominator": 28,
+        "value": 0.42857142857142855
+      }
     }
   },
   "intervals": {
@@ -149,7 +183,7 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.5641025641025641,
+      "low": 0.5897435897435898,
       "high": 0.8461538461538461,
       "iterations": 2000
     },
@@ -171,8 +205,8 @@
     "total": 11,
     "byReason": {
       "dependency-update-not-detected": 3,
-      "consumer-usage-not-found": 2,
       "dependency-import-not-found": 2,
+      "consumer-usage-not-found": 2,
       "no-breaking-change-derived": 1,
       "verification-inconclusive": 2,
       "upstream-surface-unavailable": 1
