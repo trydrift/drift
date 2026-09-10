@@ -187,7 +187,7 @@
     "repo": "https://github.com/royshil/obs-backgroundremoval",
     "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
     "commit": "ac26a4abaa34c9e5a8a346c2f92bb9fa3e8d5808",
-    "capturedAt": "2026-09-09T23:30:25.625Z",
+    "capturedAt": "2026-09-10T02:01:22.179Z",
     "packagesChecked": 6,
     "candidates": 3
   }
