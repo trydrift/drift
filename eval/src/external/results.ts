@@ -139,21 +139,7 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
       };
 
   await writeJson(join(dir, 'manifest.json'), manifest);
-  await writeJson(join(dir, 'selection.json'), {
-    ...input.selection,
-    // A whole-corpus run's id list is every case in the corpus, and writing it
-    // out is a megabyte restating what `mode: 'all'` already says. A *sample's*
-    // id list is the thing a published subset figure has to be checkable
-    // against, so it is always kept.
-    ...(input.selection.mode === 'all'
-      ? {
-          ids: [],
-          idsOmitted:
-            'mode is "all": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.',
-        }
-      : {}),
-    dataset: input.dataset,
-  });
+  await writeJson(join(dir, 'selection.json'), selectionDocument(input.selection, input.dataset));
   await writeJson(join(dir, 'environment.json'), input.environment);
   await writeJson(join(dir, 'metrics.json'), input.metrics);
   await writeJson(
@@ -169,6 +155,42 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
   await writeFile(join(dir, 'report.md'), renderExternalReport({ manifest, ...input }), 'utf8');
 
   return dir;
+}
+
+/**
+ * The `selection.json` document, built in exactly one place.
+ *
+ * There are two writers — the runner writes it the moment the selection is
+ * decided, so an interrupted run still says what it was going to do, and the
+ * final write re-states it alongside the rest of the artifacts. They used to
+ * build the document *differently*: the runner wrote every id, the final write
+ * omitted them for a whole-corpus run. A megabyte of ids and a 28KB summary,
+ * racing for the same path.
+ *
+ * That is how `kong-rq1-documented/selection.json` ended up unparseable — a
+ * complete document, then the orphaned tail of the longer one that was still
+ * being written underneath it. The file is a required artifact, so the site
+ * build failed on it and the whole benchmark refresh was unmergeable.
+ *
+ * One builder means the two writers cannot disagree about length; awaiting both
+ * (see `cli.ts`) means they cannot overlap.
+ */
+export function selectionDocument(selection: Selection, dataset: Dataset): unknown {
+  return {
+    ...selection,
+    // A whole-corpus run's id list is every case in the corpus, and writing it
+    // out is a megabyte restating what `mode: 'all'` already says. A *sample's*
+    // id list is the thing a published subset figure has to be checkable
+    // against, so it is always kept.
+    ...(selection.mode === 'all'
+      ? {
+          ids: [],
+          idsOmitted:
+            'mode is "all": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.',
+        }
+      : {}),
+    dataset,
+  };
 }
 
 export async function writeJson(path: string, value: unknown): Promise<void> {
