@@ -167,8 +167,25 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   const layouts = [...declaredLayouts, ...nestedLayouts];
 
   if (layouts.length > 0) {
+    // Grouped by kind, because undeclared-nested layouts carry exactly one
+    // member each by construction: a repository of sixteen sibling projects
+    // printed `undeclared-nested (1 member(s))` sixteen times on one line, which
+    // is a wall of text saying one thing.
+    const byKind = new Map<string, { layouts: number; members: number }>();
+    for (const layout of layouts) {
+      const seen = byKind.get(layout.kind) ?? { layouts: 0, members: 0 };
+      byKind.set(layout.kind, {
+        layouts: seen.layouts + 1,
+        members: seen.members + layout.members.length,
+      });
+    }
+
     logger.info(
-      `Workspace: ${layouts.map((l) => `${l.kind} (${l.members.length} member(s))`).join(', ')}`,
+      `Workspace: ${[...byKind]
+        .map(([kind, { layouts: count, members }]) =>
+          count === 1 ? `${kind} (${members} member(s))` : `${kind} ×${count} (${members} member(s))`,
+        )
+        .join(', ')}`,
     );
   }
 

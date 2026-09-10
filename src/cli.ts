@@ -19,6 +19,7 @@ import {
 import { runPipeline } from './pipeline.js';
 import { resolveBaseBranch, titleFor } from './plan/pull-request.js';
 import { renderPullRequestBody } from './report/markdown.js';
+import { renderAnalyzeReport } from './report/terminal-analyze.js';
 import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
@@ -325,6 +326,9 @@ Options:
                               limit for release notes/changelogs. Optional —
                               default: \$GITHUB_TOKEN, then \`gh auth token\`
   --config <path>             Config file. Default: .github/drift.yml
+  --markdown                  Print the full report as markdown — the pull
+                              request body, for pasting into an issue or a
+                              review. The default is a terminal summary
   --json                      Emit the plan as JSON instead of markdown
   --verify                    Deep Verification: after the static (Quick
                               Scan) report, install this change in a
@@ -1277,7 +1281,18 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     return 0;
   }
 
-  console.log(`\n${renderPullRequestBody(result.plan, config)}\n`);
+  // The markdown *is* the pull request body, and it is right for where it was
+  // designed to go — an approval issue, a PR, a paste into a review. It was
+  // simply never right for a terminal: several hundred lines, every advisory
+  // and confidence table included, with the two findings that reach this
+  // repository somewhere in the middle. `--markdown` still prints it verbatim.
+  if (flags.markdown) {
+    console.log(`\n${renderPullRequestBody(result.plan, config)}\n`);
+  } else {
+    const palette = paletteFor(process.stdout);
+    console.log(renderAnalyzeReport(result.plan, palette));
+    console.log(`\n${palette('gray', 'Full report: re-run with --markdown, or --json for the plan.')}`);
+  }
 
   if (!deepVerifyRequested) {
     console.log(
