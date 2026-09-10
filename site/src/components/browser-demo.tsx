@@ -17,36 +17,33 @@ import { DEMOS, codespaceUrl, labelFor, upgradeLabel } from "@/lib/demos";
  * is a demo. `git status` in the Codespace shows one modified manifest, which
  * is the claim, checkable in the demo itself.
  *
- * Sixteen links rather than one, because the first question a visitor has is
- * "does it do *my* language", and answering it with a JavaScript demo and a
- * promise about the rest is how the support table lost trust before.
+ * Drawn as a row of chips rather than sixteen cards. The card grid gave every
+ * ecosystem a headline, a package and a version pair, which is a lot of surface
+ * for a decision the reader makes in one glance — they are looking for their own
+ * language and ignoring the other fifteen. A chip answers that question in the
+ * width of a word, and the upgrade each one runs is still there on hover and for
+ * a screen reader, where it informs without competing.
  */
 export function BrowserDemo() {
   return (
     <div>
-      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="flex flex-wrap gap-2">
         {DEMOS.map((demo) => (
           <li key={demo.ecosystem}>
             <a
               href={codespaceUrl(demo.ecosystem)}
               target="_blank"
               rel="noreferrer"
-              className="group flex h-full flex-col rounded-lg border border-border bg-surface/75 px-4 py-3 transition-colors hover:bg-surface-hover"
+              // The upgrade is the tooltip and the accessible name, so the chip
+              // stays one word wide without hiding what it actually runs.
+              title={`${labelFor(demo.ecosystem)} — ${upgradeLabel(demo)}`}
+              className="group flex items-center gap-2 rounded-full border border-border bg-surface/75 py-1.5 pl-3 pr-2.5 text-[13px] text-foreground transition-colors hover:border-brand hover:bg-surface-hover"
             >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="text-[13px] font-medium text-foreground">{labelFor(demo.ecosystem)}</span>
-                <span className="shrink-0 font-mono text-[11px] text-faint">{demo.ecosystem}</span>
+              <span>{labelFor(demo.ecosystem)}</span>
+              <span className="font-mono text-[10px] text-faint transition-colors group-hover:text-brand-text">
+                {demo.ecosystem}
               </span>
-              {/*
-                The upgrade, not a tagline: the package and the two versions are
-                what tell a reader whether this is a toy or a real break.
-              */}
-              <span className="mt-1.5 break-words font-mono text-[11px] leading-snug text-muted">
-                {upgradeLabel(demo)}
-              </span>
-              <span className="mt-2.5 text-[11px] uppercase tracking-[0.14em] text-faint group-hover:text-brand-text">
-                Open in a Codespace →
-              </span>
+              <span className="sr-only">— {upgradeLabel(demo)}, opens a Codespace</span>
             </a>
           </li>
         ))}
@@ -58,7 +55,7 @@ export function BrowserDemo() {
         finding that out on GitHub's create page instead of here would be a
         worse experience than being told.
       */}
-      <p className="mt-5 text-[11px] leading-relaxed text-faint">
+      <p className="mt-5 max-w-2xl text-[11px] leading-relaxed text-faint">
         Opens a GitHub Codespace on your own account — nothing to install, and the free tier covers it. The
         extension and the <code className="font-mono">drift</code> CLI are both already set up: the panel analyses
         the change as the editor opens, and the terminal runs{" "}
