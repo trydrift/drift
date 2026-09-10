@@ -444,6 +444,36 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
     );
   }
 
+  // BUMP pools two failure classes that no static differ can see — a build-policy
+  // rule and a resolution failure have no API-surface change to find — with the
+  // classes that do. Pooled, they read as misses. Split, they say which number
+  // answers which question. Nothing is dropped: both strata are below, and the
+  // pooled rate above still counts every case.
+  const staticSignal = metrics.breakdown['stratum: static-signal-possible'];
+  const noDelta = metrics.breakdown['stratum: no-api-surface-delta'];
+  if (staticSignal && noDelta) {
+    const affected = 'affected-repository identification rate';
+    const pooled = metrics.rates[affected];
+    lines.push(
+      '### Failure classes that admit a static signal',
+      '',
+      'BUMP labels each case with why the build broke. `ENFORCER_FAILURE` (Maven build-policy rules) and the',
+      'resolution/lock failures have no API-surface change for any static differ to find, so Drift answers',
+      '`insufficient-evidence` — the correct answer, indistinguishable from a miss once pooled.',
+      '',
+      '| Stratum | ' + affected + ' |',
+      '| --- | --- |',
+      `| Static signal possible (compilation, test, werror) | ${staticSignal[affected] ? formatRate(staticSignal[affected]!) : '—'} |`,
+      `| No API-surface delta (enforcer, lock, resolution) | ${noDelta[affected] ? formatRate(noDelta[affected]!) : '—'} |`,
+      `| Pooled — every case | ${pooled ? formatRate(pooled) : '—'} |`,
+      '',
+      'The first row is the one that answers "does Drift find the break when a break is findable". The second',
+      'measures a limit of static analysis, not of Drift, and only a build can settle those cases. Neither is',
+      'omitted, and no case is excluded from the pooled rate to produce them.',
+      '',
+    );
+  }
+
   if (Object.keys(metrics.breakdown).length > 0) {
     lines.push(
       '### Breakdown',
