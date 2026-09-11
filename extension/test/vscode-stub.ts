@@ -215,7 +215,25 @@ export const workspace = {
     };
   },
   onDidChangeWorkspaceFolders: () => ({ dispose: () => undefined }),
+  /**
+   * Workspace Trust. Tests set `isTrusted` and call `__grantTrust()` to play out
+   * the sequence a Codespace visitor walks into: a window that starts
+   * restricted, then the moment they answer the dialog.
+   */
+  isTrusted: true,
+  onDidGrantWorkspaceTrust: (listener: () => void) => {
+    trustListeners.push(listener);
+    return { dispose: () => (trustListeners = trustListeners.filter((l) => l !== listener)) };
+  },
 };
+
+let trustListeners: (() => void)[] = [];
+
+/** Test-only: grant trust and notify, the way answering the dialog does. */
+export function __grantTrust(): void {
+  workspace.isTrusted = true;
+  for (const listener of [...trustListeners]) listener();
+}
 
 export const ColorThemeKind = { Light: 1, Dark: 2, HighContrast: 3, HighContrastLight: 4 } as const;
 

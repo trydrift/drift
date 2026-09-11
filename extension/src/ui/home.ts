@@ -135,6 +135,7 @@ type Incoming =
   | { type: 'stop' }
   | { type: 'signIn' }
   | { type: 'showReport' }
+  | { type: 'command'; command: string }
   | { type: 'openFile'; file: string; line: number }
   | { type: 'openUrl'; url: string }
   | { type: 'openDiff'; path: string }
@@ -195,6 +196,17 @@ function runCommand(
  * three characters finds the file you meant.
  */
 /** Workspace memento key for "which package manager owns this ecosystem". */
+/**
+ * The only VS Code command the panel may ask the host to run.
+ *
+ * The panel renders repository content — changelog prose, package names, diff
+ * text — so a `command` message that carried its own command id would be a
+ * path from that content to arbitrary commands. The untrusted welcome needs
+ * exactly one, so exactly one is named here and the message is checked against
+ * it rather than trusted.
+ */
+const TRUSTED_COMMAND = 'workbench.trust.manage';
+
 const MANAGER_KEY = 'drift.packageManagers';
 
 const EXCLUDED_FROM_CONTEXT = '**/{node_modules,.git,dist,out,build,coverage,.next,.turbo,.venv,__pycache__}/**';
@@ -384,7 +396,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // happens, which is the difference between a tool that looks busy and one
     // that looks stuck.
     if (vscode.workspace.getConfiguration('drift').get<boolean>('analysis.runOnStartup', true)) {
-      void this.scanOnStartup();
+      // Restricted Mode: a scan reads lockfiles and shells out to package
+      // managers, so it may not start yet. The panel says that instead of
+      // sitting there looking idle, and the scan starts itself the moment the
+      // developer answers VS Code's trust dialog — which is the point they
+      // expect Drift to get on with it.
+      if (vscode.workspace.isTrusted) {
+        void this.scanOnStartup();
+      } else {
+        const granted = vscode.workspace.onDidGrantWorkspaceTrust(() => {
+          granted.dispose();
+          this.paint();
+          void this.scanOnStartup();
+        });
+        this.disposables.push(granted);
+      }
     }
   }
 
@@ -777,6 +803,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         await this.refreshIdentity();
         await this.refreshAgents();
         return;
+      case 'command':
+        // Exactly one command, named here rather than taken from the message.
+        // The panel renders repository content — a changelog, a package name, a
+        // diff — so a webview that could ask the host to run whatever command
+        // it liked would be a way for that content to run commands. The trust
+        // button is the only reason this exists, and it is the only thing it
+        // can do.
+        if (message.command !== TRUSTED_COMMAND) {
+          this.output.error(`Drift: refused to run "${message.command}" from the panel.`);
+          return;
+        }
+        await vscode.commands.executeCommand(TRUSTED_COMMAND);
+        return;
+
       case 'showReport':
         DriftReportPanel.show(this.state);
         return;
@@ -1161,6 +1201,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /** Called on activation when the setting allows, and by `/scan`. */
   async scanOnStartup(): Promise<void> {
     if (this.scanned) return;
+    // Nothing a scan does is allowed in an untrusted workspace, and failing
+    // halfway through would read as a broken project rather than a locked one.
+    if (!vscode.workspace.isTrusted) return;
     await this.scan();
   }
 
@@ -6090,6 +6133,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // old thread does not retype a message it already typed months ago.
       conversationId: this.conversationId,
       lazyCandidateDetails: true,
+      untrusted: !vscode.workspace.isTrusted,
     };
   }
 }

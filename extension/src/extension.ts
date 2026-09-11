@@ -238,6 +238,19 @@ async function initialise(state: DriftState, home: DriftHomeView): Promise<void>
     return;
   }
 
+  // Restricted Mode. Everything below this line shells out — git for the repo
+  // identity, the package managers for the manifests, the agent binaries for a
+  // fix — so none of it may run yet, and attempting it would report a perfectly
+  // good repository as broken. Wait for the developer to answer VS Code's trust
+  // dialog instead, then start the first run as if the window had just opened.
+  if (!vscode.workspace.isTrusted) {
+    const granted = vscode.workspace.onDidGrantWorkspaceTrust(() => {
+      granted.dispose();
+      void initialise(state, home).catch(() => undefined);
+    });
+    return;
+  }
+
   state.setRoots(await buildRepoRoots());
 
   if (!state.activeRoot?.repo) {

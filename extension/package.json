@@ -2,7 +2,7 @@
   "name": "usedrift",
   "displayName": "Drift — Safe Dependency Upgrades",
   "description": "Find which dependency upgrades affect your code, see the evidence, and prepare reviewable fixes with deterministic transforms, community recipes, or your existing AI agent.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "drift",
   "license": "SEE LICENSE IN LICENSE.md",
   "author": "Drift (https://github.com/trydrift/drift)",
@@ -30,8 +30,8 @@
   ],
   "capabilities": {
     "untrustedWorkspaces": {
-      "supported": false,
-      "description": "Drift runs git commands and can invoke local AI agent binaries, so it requires a trusted workspace."
+      "supported": "limited",
+      "description": "Drift runs git commands and can invoke local AI agent binaries, so it analyses nothing until you trust this folder. It starts anyway, to tell you that rather than leaving the panel empty."
     }
   },
   "contributes": {
