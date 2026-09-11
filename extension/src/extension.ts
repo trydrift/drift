@@ -175,7 +175,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   );
 
-  await initialise(state, home);
+  // Not awaited. VS Code resolves a contributed view only once its extension
+  // has finished activating, so anything awaited here is time the panel spends
+  // blank — and the first run is open-ended: it walks the repository, analyses
+  // the change, then waits on a notification that settles only when somebody
+  // clicks it. Once that notification has hidden itself in the notification
+  // centre nobody does, and the panel stayed empty for as long as it went
+  // unanswered.
+  void initialise(state, home).catch((error: unknown) => {
+    output.error(`Drift: startup failed: ${error instanceof Error ? error.message : String(error)}`);
+  });
 }
 
 /**

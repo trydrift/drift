@@ -145,6 +145,7 @@ export class WorkspaceEdit {
 export const Uri = {
   file: (path: string) => ({ fsPath: path, path, scheme: 'file', toString: () => `file://${path}` }),
   parse: (value: string) => ({ toString: () => value, fsPath: value, path: value }),
+  joinPath: (base: { fsPath: string }, ...segments: string[]) => Uri.file([base.fsPath, ...segments].join('/')),
 };
 
 /** Settings the tests need; overridable per test. */
@@ -213,12 +214,23 @@ export const workspace = {
       lineAt: (line: number) => ({ text: text.split('\n')[line] ?? '' }),
     };
   },
+  onDidChangeWorkspaceFolders: () => ({ dispose: () => undefined }),
 };
 
 export const ColorThemeKind = { Light: 1, Dark: 2, HighContrast: 3, HighContrastLight: 4 } as const;
 
 export const window = {
   activeTextEditor: undefined as unknown,
+  visibleTextEditors: [] as unknown[],
+  onDidChangeActiveTextEditor: () => ({ dispose: () => undefined }),
+  onDidChangeVisibleTextEditors: () => ({ dispose: () => undefined }),
+  createTextEditorDecorationType: () => ({ dispose: () => undefined }),
+  /** Test-only: every webview view provider registered, by view id. */
+  __webviewViewProviders: new Map<string, unknown>(),
+  registerWebviewViewProvider: (viewId: string, provider: unknown) => {
+    window.__webviewViewProviders.set(viewId, provider);
+    return { dispose: () => window.__webviewViewProviders.delete(viewId) };
+  },
   /** Highlighting reads this to pick a fallback theme when none can be loaded from disk. */
   activeColorTheme: { kind: ColorThemeKind.Dark },
   onDidChangeActiveColorTheme: () => ({ dispose: () => undefined }),
@@ -343,6 +355,9 @@ export class CancellationTokenSource {
 }
 
 export const ViewColumn = { One: 1, Two: 2 } as const;
+export const StatusBarAlignment = { Left: 1, Right: 2 } as const;
+export const OverviewRulerLane = { Left: 1, Center: 2, Right: 4, Full: 7 } as const;
+export const DecorationRangeBehavior = { OpenOpen: 0, ClosedClosed: 1, OpenClosed: 2, ClosedOpen: 3 } as const;
 export const TextEditorRevealType = { InCenterIfOutsideViewport: 2 } as const;
 export const ProgressLocation = { Notification: 15, Window: 10 } as const;
 export const ConfigurationTarget = { Global: 1, Workspace: 2 } as const;
