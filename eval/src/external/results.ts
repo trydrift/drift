@@ -139,21 +139,7 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
       };
 
   await writeJson(join(dir, 'manifest.json'), manifest);
-  await writeJson(join(dir, 'selection.json'), {
-    ...input.selection,
-    // A whole-corpus run's id list is every case in the corpus, and writing it
-    // out is a megabyte restating what `mode: 'all'` already says. A *sample's*
-    // id list is the thing a published subset figure has to be checkable
-    // against, so it is always kept.
-    ...(input.selection.mode === 'all'
-      ? {
-          ids: [],
-          idsOmitted:
-            'mode is "all": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.',
-        }
-      : {}),
-    dataset: input.dataset,
-  });
+  await writeJson(join(dir, 'selection.json'), selectionDocument(input.selection, input.dataset));
   await writeJson(join(dir, 'environment.json'), input.environment);
   await writeJson(join(dir, 'metrics.json'), input.metrics);
   await writeJson(
@@ -169,6 +155,42 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
   await writeFile(join(dir, 'report.md'), renderExternalReport({ manifest, ...input }), 'utf8');
 
   return dir;
+}
+
+/**
+ * The `selection.json` document, built in exactly one place.
+ *
+ * There are two writers — the runner writes it the moment the selection is
+ * decided, so an interrupted run still says what it was going to do, and the
+ * final write re-states it alongside the rest of the artifacts. They used to
+ * build the document *differently*: the runner wrote every id, the final write
+ * omitted them for a whole-corpus run. A megabyte of ids and a 28KB summary,
+ * racing for the same path.
+ *
+ * That is how `kong-rq1-documented/selection.json` ended up unparseable — a
+ * complete document, then the orphaned tail of the longer one that was still
+ * being written underneath it. The file is a required artifact, so the site
+ * build failed on it and the whole benchmark refresh was unmergeable.
+ *
+ * One builder means the two writers cannot disagree about length; awaiting both
+ * (see `cli.ts`) means they cannot overlap.
+ */
+export function selectionDocument(selection: Selection, dataset: Dataset): unknown {
+  return {
+    ...selection,
+    // A whole-corpus run's id list is every case in the corpus, and writing it
+    // out is a megabyte restating what `mode: 'all'` already says. A *sample's*
+    // id list is the thing a published subset figure has to be checkable
+    // against, so it is always kept.
+    ...(selection.mode === 'all'
+      ? {
+          ids: [],
+          idsOmitted:
+            'mode is "all": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.',
+        }
+      : {}),
+    dataset,
+  };
 }
 
 export async function writeJson(path: string, value: unknown): Promise<void> {
@@ -368,6 +390,26 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
     );
   }
 
+  if (metrics.affectedMisses.total > 0) {
+    lines.push(
+      '### Affected-repository misses by stage',
+      '',
+      'Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer',
+      'was lost at. This is where affected-repository recall is going — read it before proposing an engine change,',
+      'since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.',
+      '',
+      '| Stage | Cases |',
+      '| --- | ---: |',
+    );
+    for (const [reason, count] of Object.entries(metrics.affectedMisses.byReason).sort((a, b) => b[1] - a[1])) {
+      lines.push(`| \`${reason}\` | ${count} |`);
+    }
+    if (metrics.affectedMisses.unclassified > 0) {
+      lines.push(`| _(no funnel recorded)_ | ${metrics.affectedMisses.unclassified} |`);
+    }
+    lines.push(`| **Total** | **${metrics.affectedMisses.total}** |`, '');
+  }
+
   if (metrics.classification && metrics.confusion) {
     lines.push(
       '### Classification',
@@ -398,6 +440,36 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
       `| ${metrics.baseline.name} | ${formatRate(metrics.baseline.precision)} | ${formatRate(metrics.baseline.recall)} |`,
       '',
       'Read this next to the result above. Where the baseline scores close to Drift, the task is not measuring much.',
+      '',
+    );
+  }
+
+  // BUMP pools two failure classes that no static differ can see — a build-policy
+  // rule and a resolution failure have no API-surface change to find — with the
+  // classes that do. Pooled, they read as misses. Split, they say which number
+  // answers which question. Nothing is dropped: both strata are below, and the
+  // pooled rate above still counts every case.
+  const staticSignal = metrics.breakdown['stratum: static-signal-possible'];
+  const noDelta = metrics.breakdown['stratum: no-api-surface-delta'];
+  if (staticSignal && noDelta) {
+    const affected = 'affected-repository identification rate';
+    const pooled = metrics.rates[affected];
+    lines.push(
+      '### Failure classes that admit a static signal',
+      '',
+      'BUMP labels each case with why the build broke. `ENFORCER_FAILURE` (Maven build-policy rules) and the',
+      'resolution/lock failures have no API-surface change for any static differ to find, so Drift answers',
+      '`insufficient-evidence` — the correct answer, indistinguishable from a miss once pooled.',
+      '',
+      '| Stratum | ' + affected + ' |',
+      '| --- | --- |',
+      `| Static signal possible (compilation, test, werror) | ${staticSignal[affected] ? formatRate(staticSignal[affected]!) : '—'} |`,
+      `| No API-surface delta (enforcer, lock, resolution) | ${noDelta[affected] ? formatRate(noDelta[affected]!) : '—'} |`,
+      `| Pooled — every case | ${pooled ? formatRate(pooled) : '—'} |`,
+      '',
+      'The first row is the one that answers "does Drift find the break when a break is findable". The second',
+      'measures a limit of static analysis, not of Drift, and only a build can settle those cases. Neither is',
+      'omitted, and no case is excluded from the pooled rate to produce them.',
       '',
     );
   }

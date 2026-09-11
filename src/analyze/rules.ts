@@ -48,6 +48,8 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
     case 'exports-require-condition-removed':
     case 'package-type-changed':
       return 'module-system-change';
+    case 'runtime-requirement-raised':
+      return 'runtime-requirement';
 
     default:
       return 'unknown';
@@ -72,6 +74,15 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
   }
 
   switch (code) {
+    case 'runtime-requirement-raised':
+      // Nothing about this is a call site, so the generic "review usages"
+      // ending is actively wrong: there is one edit, and it is to the build.
+      return (
+        `\`${dependency}\` is now compiled for Java ${finding.after ?? 'a newer release'}. ` +
+        `Raise this project's Java toolchain to match — the compiler release and target in the build ` +
+        `(\`maven.compiler.release\`, \`sourceCompatibility\`/\`targetCompatibility\`), the JDK used in CI, ` +
+        `and any runtime base image — or stay on the previous version. There is no source change that avoids this.`
+      );
     case 'export-removed':
       return `Every use of \`${symbol}\` from \`${dependency}\` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub \`${symbol}\` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.`;
     case 'member-removed':
@@ -716,7 +727,12 @@ export function matchProse(passage: string, opts: MatchProseOptions = {}): Prose
       kind: rule.kind,
       summary: runtime
         ? runtime.kind === 'minimum-runtime'
-          ? `Minimum ${runtime.runtime} version is now ${runtime.requirement}`
+          ? // A disjunction is not a floor. `18.x || 20.x || >=22` has holes in
+            // it — 19 and 21 are excluded — and calling that a "minimum" tells
+            // a reader the opposite of what upstream wrote.
+            runtime.requirement.includes('||')
+            ? `Supported ${runtime.runtime} versions are now ${runtime.requirement}`
+            : `Minimum ${runtime.runtime} version is now ${runtime.requirement}`
           : `${runtime.runtime} ${runtime.requirement} is no longer supported`
         : rule.summarize(match),
       symbols: symbol ? [symbol] : [],
@@ -834,6 +850,20 @@ function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): Runti
 }
 
 /**
+ * A bare version as the series it denotes: `18` -> `18.x`, `18.4` -> `18.4.x`.
+ *
+ * A fully-qualified `18.4.1` names one release and is already exact, and a
+ * branch carrying more than one term (`>=18 <19`) is a compound range whose
+ * meaning is already stated, so both are returned untouched.
+ */
+function seriesText(branch: string): string {
+  const single = /^v?(\d+(?:\.\d+){0,3})$/i.exec(branch.trim());
+  if (!single) return branch;
+  const version = single[1]!;
+  return version.split('.').length < 3 ? `${version}.x` : version;
+}
+
+/**
  * Normalize a `||`-joined runtime range, branch by branch.
  *
  * Each branch is validated and canonicalized exactly as a standalone
@@ -866,14 +896,25 @@ function parseRuntimeDisjunction(
   for (const branch of branches) {
     const term = /^(?:([<>=^~]+)\s*)?v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)(?:[<>=^~]+\s*)?v?\d+(?:\.\d+){0,3})*$/i.exec(branch);
     if (!term) return null;
-    const branchOperator = normalizeRuntimeOperator(runtime, term[1] ?? '');
+    const statedOperator = term[1] ?? '';
+    const branchOperator = normalizeRuntimeOperator(runtime, statedOperator);
     if (branchOperator.status === 'unknown') status = 'unknown';
+    const digitsNormalized = branch.replace(/v?(\d+(?:\.\d+){0,3})/gi, (_m, value: string) =>
+      runtime === 'java' ? value.replace(/^1\.(\d+)(?=$|\.|\s|,)/, '$1') : value,
+    );
+    // A branch that states no operator is a version *series*, never a floor.
+    // `||` is semver syntax — the only grammar here that defines it — and in
+    // semver a bare `18` is `18.x`, so rewriting it to `>=18` widens the
+    // requirement across every major above it. `18 || 20 || >=22` became
+    // `>=18 || >=20 || >=22`, which admits the 19 and 21 that upstream
+    // deliberately left out, and a repository pinned to one of them was told
+    // it was compatible. Written as `18.x` rather than left bare so the
+    // sentence a developer reads says which it is — the same rendering the
+    // single-branch dropped-support path already uses.
     normalized.push(
-      branch
-        .replace(/v?(\d+(?:\.\d+){0,3})/gi, (_m, value: string) =>
-          runtime === 'java' ? value.replace(/^1\.(\d+)(?=$|\.|\s|,)/, '$1') : value,
-        )
-        .replace(/^\s*[<>=^~]*\s*/, branchOperator.operator || '>='),
+      statedOperator === ''
+        ? seriesText(digitsNormalized)
+        : digitsNormalized.replace(/^\s*[<>=^~]*\s*/, branchOperator.operator),
     );
   }
 

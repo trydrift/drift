@@ -158,10 +158,17 @@ jobs:
 
           test "$CLI_NAME" = '@usedrift/cli'
           test "$CLI_VERSION" = "$EXPECTED_VERSION"
-          test "$VSIX_PUBLISHER.$VSIX_NAME" = 'drift.drift'
+          test "$VSIX_PUBLISHER.$VSIX_NAME" = 'drift.usedrift'
           test "$VSIX_VERSION" = "$EXPECTED_VERSION"
 
-          echo "cli_tarball=release-artifacts/${CLI_TARBALL#./}" >> "$GITHUB_OUTPUT"
+          # The "./" is load-bearing. Given a bare slash-separated argument,
+          # npm reads it as a GitHub shorthand (owner/repo) and tries to clone
+          # it instead of reading the local tarball — v0.1.0's first release
+          # attempt died on
+          # `git ls-remote ssh://git@github.com/release-artifacts/...git`,
+          # after validation had already passed. An explicit relative path is
+          # unambiguous, and the release workflow tests pin its shape.
+          echo "cli_tarball=./release-artifacts/${CLI_TARBALL#./}" >> "$GITHUB_OUTPUT"
           echo "vsix=release-artifacts/drift.vsix" >> "$GITHUB_OUTPUT"
 
       # No NODE_AUTH_TOKEN or NPM_TOKEN: npm Trusted Publishing exchanges this
@@ -169,9 +176,32 @@ jobs:
       - name: Publish exact CLI tarball to npm
         run: npm publish "${{ steps.artifacts.outputs.cli_tarball }}" --access public
 
-      # No VSCE_PAT: the Marketplace trusts this workflow's OIDC identity.
-      - name: Publish exact VSIX to the VS Code Marketplace
-        run: npx --yes @vscode/vsce@3.9.1 publish --oidc --no-dependencies --packagePath "${{ steps.artifacts.outputs.vsix }}"
+      # The VSIX is deliberately NOT published here.
+      #
+      # This step used to run `vsce publish --oidc`, which does not exist. The
+      # flag is documented on `vscode-vsce`'s main branch but has never shipped:
+      # not in the pinned 3.9.1, not in 3.9.2, not in the 3.9.3 prereleases —
+      # all of them answer `error: unknown option '--oidc'`, and Marketplace
+      # trusted publishing is still an open feature request
+      # (microsoft/vsmarketplace#1422). The only identity-based option that
+      # exists today is `--azure-credential`, which needs an Entra ID app
+      # registration and a federated credential this project does not have.
+      #
+      # The ordering made that fatal rather than merely broken. `npm publish`
+      # runs above and npm versions are immutable, so a tag would have burned
+      # `@usedrift/cli@X.Y.Z` on a release that then died on an unknown flag,
+      # and the next attempt could only ever be X.Y.Z+1.
+      #
+      # So the extension is published by hand, from the exact VSIX this release
+      # attaches below — the same bytes `validate` tested and checksummed:
+      #
+      #   gh release download vX.Y.Z --pattern drift.vsix
+      #   npx @vscode/vsce publish --packagePath drift.vsix
+      #
+      # Restore an automated step here when `--oidc` is in a released `vsce`
+      # (check `npx @vscode/vsce@<version> publish --help` for the flag, not
+      # the README), and put it *before* `npm publish` so the fragile publish
+      # is the one that cannot strand the other.
 
       # Registry publication must succeed before the GitHub Release exists.
       - name: Create GitHub Release

@@ -1,6 +1,7 @@
 import { bumpSelectables, BumpUnavailable, loadBump, predictBump, scoreBump } from '../adapters/bump.ts';
 import type { RunnerContext, RunnerOutput } from '../cli.ts';
 import { CaseTimeout, withDeadline } from '../deadline.ts';
+import { forEachWithConcurrency } from '../pool.ts';
 import { safeEvidenceCaseId, withEvidenceSnapshot, type EvidenceRunMetadata } from '../evidence-snapshot.ts';
 import { missing, probeEnvironment } from '../environment.ts';
 import type { ExternalCaseResult } from '../record.ts';
@@ -29,13 +30,17 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
     results.push(result);
     await context.checkpoint(result);
   };
-  for (const record of records) {
-    if (!wanted.has(record.breakingCommit)) continue;
-    // Recorded by an earlier attempt at this run id. See `--resume`.
-    if (context.alreadyRecorded.has(record.breakingCommit)) continue;
+  const pending = records.filter(
+    (record) =>
+      wanted.has(record.breakingCommit) &&
+      // Recorded by an earlier attempt at this run id. See `--resume`.
+      !context.alreadyRecorded.has(record.breakingCommit),
+  );
+
+  await forEachWithConcurrency(pending, context.concurrency, async (record) => {
     const started = Date.now();
     try {
-      const { value: prediction, evidence } = await withDeadline(() =>
+      const { value: prediction, evidence } = await withDeadline((signal) =>
         withEvidenceSnapshot(
           {
             mode: context.evidenceMode,
@@ -43,8 +48,9 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
             caseDir: `${context.evidenceRoot}/${safeEvidenceCaseId(record.breakingCommit)}`,
             blobDir: `${context.evidenceRoot}/blobs`,
           },
-          () => predictBump(record),
+          () => predictBump(record, signal),
         ),
+        context.caseTimeoutMs,
       );
       await recordCase(
         withEvidenceMetadata(scoreBump({ record, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }), evidence),
@@ -64,7 +70,7 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
         scoreBump({ record, prediction: null, excluded: unavailable, datasetVersion, sourceHash, durationMs: Date.now() - started }),
       );
     }
-  }
+  });
 
   return {
     results,

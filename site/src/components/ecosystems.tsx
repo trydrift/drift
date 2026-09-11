@@ -27,8 +27,15 @@ const SUMMARY_STAGES: readonly (typeof CAPABILITY_STAGES)[number][] = [
 
 export function EcosystemsSummary({ href }: { href: string }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+    /*
+      The matrix link sits on its own row rather than as a third flex child.
+      Beside the chips it read as a peer of the badges rather than an action on
+      the block — and only above the mobile breakpoint, since narrow widths
+      stacked it correctly and hid the problem.
+    */
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
         <p className="font-mono text-3xl text-landing tabular">{ECOSYSTEM_CAPABILITIES.length}</p>
         <p className="mt-1 text-[13px] text-muted">
           ecosystems &mdash; {SUMMARY_STAGES.map((stage) => STAGE_LABEL[stage].toLowerCase()).join(" · ")}
@@ -48,9 +55,11 @@ export function EcosystemsSummary({ href }: { href: string }) {
         ))}
       </div>
 
+      </div>
+
       <Link
         href={href}
-        className="shrink-0 text-[13px] font-medium text-brand-text underline decoration-dotted underline-offset-2"
+        className="text-[13px] font-medium text-brand-text underline decoration-dotted underline-offset-2"
       >
         Full support matrix →
       </Link>

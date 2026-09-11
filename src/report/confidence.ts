@@ -224,7 +224,37 @@ export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
     return 'insufficient-evidence';
   }
 
+  // A surface checked for one kind of breakage and not another cannot carry
+  // "no incompatible change in the checked surfaces" — the sentence is about a
+  // surface that was not checked. japicmp reads binary compatibility, so a
+  // version pair with zero binary-incompatible changes and eighteen
+  // source-incompatible ones (`commons-io 2.7 -> 2.11.0`, whose build really
+  // does fail to compile) produced exactly that false claim.
+  //
+  // Unless the project's own compiler already answered it. A compile-capable
+  // check that passed against the new version *is* the source-compatibility
+  // test, run on the only code whose answer matters — so it settles the
+  // question rather than leaving it open.
+  if (SAFE_EQUIVALENT_VERDICTS.has(reduced) && hasUnruledChanges(plan) && !compileProvenAgainstUpgrade(plan)) {
+    return 'insufficient-evidence';
+  }
+
   return reduced;
+}
+
+/** Did any checked surface observe changes it declined to rule on? */
+function hasUnruledChanges(plan: RemediationPlan): boolean {
+  return plan.checkedSurfaces.some(
+    (surface) => surface.surface === 'api-surface' && surface.status === 'checked' && (surface.unruledChanges ?? 0) > 0,
+  );
+}
+
+/** Did a compile-capable check actually run against the upgrade, and pass? */
+function compileProvenAgainstUpgrade(plan: RemediationPlan): boolean {
+  return (
+    plan.verification?.status === 'passed' &&
+    (plan.verification.checks ?? []).some((check) => check.compileCapable && check.status === 'passed')
+  );
 }
 
 /**
@@ -308,6 +338,18 @@ export function repositoryConclusion(plan: RemediationPlan): string {
 
   if (plan.confirmedRegressions.length > 0) {
     const measured = plan.blockers.find((blocker) => blocker.startsWith(VERIFICATION_FAILURE_BLOCKER_PREFIX));
+    // Sites the toolchain named in the failing output — see `measuredSitesFrom`
+    // in `analysis.ts`. When present, the conclusion points at them instead of
+    // saying static analysis found nothing: the compiler did.
+    const measuredSites = plan.impactSites.filter((site) => site.breakingChangeId.startsWith('measured:'));
+    if (measuredSites.length > 0) {
+      const where = measuredSites
+        .slice(0, 3)
+        .map((site) => `${site.file}:${site.line}`)
+        .join(', ');
+      const more = measuredSites.length > 3 ? `, +${measuredSites.length - 3} more` : '';
+      return `Drift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at ${where}${more}.`;
+    }
     // `verifyPlan` always writes one of these alongside a confirmedRegressions
     // entry, so `measured` being absent should not happen — but the fact
     // being reported is still true without it, and stating it plainly beats

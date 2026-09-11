@@ -71,6 +71,34 @@ async function cliCommands() {
 }
 
 /** Every `drift.*` identifier the extension's manifest declares. */
+/**
+ * The slash commands the Drift panel actually accepts.
+ *
+ * These are not VS Code commands and never appear in the extension manifest —
+ * they are typed into the panel conversation and declared in `SLASH_COMMANDS`.
+ * Nothing checked them, so a documented `/scan` could have been a `/scan` that
+ * no longer existed and every gate would still have passed.
+ */
+async function panelSlashCommands() {
+  const source = await readFile(join(repoRoot, 'extension', 'src', 'ui', 'webview.ts'), 'utf8');
+  const block = /SLASH_COMMANDS[^=]*=\s*\[([\s\S]*?)\n\]/.exec(source);
+  if (!block) throw new Error('Could not find SLASH_COMMANDS in extension/src/ui/webview.ts.');
+  return new Set([...block[1].matchAll(/name:\s*'(\/[a-z-]+)'/g)].map((m) => m[1]));
+}
+
+/**
+ * The site's own routes, which are spelled exactly like slash commands.
+ *
+ * `/benchmarks` and `/configure` are pages, not things typed into the panel,
+ * and they are read from the app directory rather than listed here so a renamed
+ * page cannot leave a stale allowance behind.
+ */
+async function siteRoutes() {
+  const appDir = join(repoRoot, 'site', 'src', 'app');
+  const entries = await readdir(appDir, { withFileTypes: true });
+  return new Set(entries.filter((e) => e.isDirectory()).map((e) => `/${e.name}`));
+}
+
 async function extensionIdentifiers() {
   const manifest = JSON.parse(await readFile(join(repoRoot, 'extension', 'package.json'), 'utf8'));
   const contributes = manifest.contributes ?? {};
@@ -103,9 +131,12 @@ function codeSpans(markdown) {
 
 const cli = await cliCommands();
 const contributed = await extensionIdentifiers();
+const slashCommands = await panelSlashCommands();
+const routes = await siteRoutes();
 
 if (cli.size === 0) throw new Error('Parsed no commands out of src/cli.ts — the parser needs updating.');
 if (contributed.size === 0) throw new Error('Parsed no identifiers out of the extension manifest.');
+if (slashCommands.size === 0) throw new Error('Parsed no slash commands out of the panel — the parser needs updating.');
 
 const identity = [
   ['RodolpheKouyoumdjian', /RodolpheKouyoumdjian/i],
@@ -163,13 +194,51 @@ for (const path of await documents()) {
       );
     }
 
+    // Only a span that is *entirely* a slash command counts. A path fragment
+    // (`/tmp`, `/dist`, a URL route) is not a claim about the panel, and
+    // matching inside spans flagged every one of them.
+    const slash = /^\/[a-z][a-z-]{2,}$/.exec(span.trim());
+    if (slash && !slashCommands.has(slash[0]) && !routes.has(slash[0])) {
+      failures.push(
+        `${where}: documents \`${slash[0]}\`, which the Drift panel does not accept. ` +
+          `SLASH_COMMANDS lists: ${[...slashCommands].sort().join(', ')}.`,
+      );
+    }
+
     for (const match of span.matchAll(/\bdrift\.[a-zA-Z][a-zA-Z0-9]*(?:\.[a-zA-Z][a-zA-Z0-9]*)*/g)) {
       const id = match[0];
-      // `drift.yml` is a config file, `drift.drift` the Marketplace item id.
-      if (/\.(yml|yaml|json|js|ts|tsx|md)$/.test(id) || id === 'drift.drift') continue;
+      // A filename is not a command id: `drift.yml` is the config file,
+      // `drift.fish` the completion script a user saves, `drift.vsix` the
+      // packaged extension a release attaches, `drift.usedrift` the Marketplace
+      // item id.
+      if (/\.(yml|yaml|json|js|ts|tsx|md|fish|bash|zsh|vsix)$/.test(id) || id === 'drift.usedrift') continue;
       if (!contributed.has(id)) {
         failures.push(`${where}: names \`${id}\`, which the extension manifest does not declare.`);
       }
+    }
+  }
+}
+
+/**
+ * The reverse direction: a command the CLI has, missing from the reference.
+ *
+ * Everything above asks whether a documented thing exists. That leaves the
+ * other way round unguarded, and a table under a heading that says "Commands"
+ * reads as the complete list whether or not it is one — `action`, `serve` and
+ * `telemetry` were in the CLI's own overview and in three other pages, and out
+ * of the one page a reader goes to for the full set.
+ */
+{
+  const reference = await readFile(join(repoRoot, 'docs', 'cli.md'), 'utf8');
+  for (const command of [...cli].sort()) {
+    // `drift --version` is an option, not a command; the usage block lists it
+    // in the same shape and it is picked up alongside the real ones.
+    if (command.startsWith('-')) continue;
+    if (!new RegExp(`\\bdrift ${command}\\b`).test(reference)) {
+      failures.push(
+        `docs/cli.md: the CLI has a \`${command}\` command that this reference never mentions. ` +
+          'Add a row for it, even one that points at the page which covers it.',
+      );
     }
   }
 }

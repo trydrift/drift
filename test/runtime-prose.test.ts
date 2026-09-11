@@ -64,8 +64,11 @@ const POSITIVE: PositiveCase[] = [
   { text: 'Requires Ruby ~>3.0', kind: 'minimum-runtime', runtime: 'ruby', requirement: '~>3.0', rangeParseStatus: 'unknown' },
   { text: 'Dropped support for Python ^3.10', kind: 'unsupported-runtime-range', runtime: 'python', requirement: '^3.10', rangeParseStatus: 'unknown' },
   // `||` has no meaning in RubyGems' grammar: the full requirement is still
-  // preserved, but its state stays `unknown` rather than being guessed.
-  { text: 'Requires Ruby 3.1 || 3.2', kind: 'minimum-runtime', runtime: 'ruby', requirement: '>=3.1 || >=3.2', rangeParseStatus: 'unknown' },
+  // preserved, but its state stays `unknown` rather than being guessed. Each
+  // branch keeps the meaning it was written with — a bare `3.1` is the 3.1
+  // series, so `>=3.1 || >=3.2` (which is just `>=3.1`, and would put Ruby 3.5
+  // inside a requirement that named two releases) is not what upstream said.
+  { text: 'Requires Ruby 3.1 || 3.2', kind: 'minimum-runtime', runtime: 'ruby', requirement: '3.1.x || 3.2.x', rangeParseStatus: 'unknown' },
 ];
 
 describe('runtime prose: positive syntax families produce faithful structured requirements', () => {

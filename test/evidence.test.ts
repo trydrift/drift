@@ -107,10 +107,16 @@ describe('locating a package’s declarations', () => {
       api,
     );
 
-    assert.equal(api.get('Phaser')?.kind, 'namespace');
-    assert.equal(api.get('Phaser.Actions')?.kind, 'namespace');
-    assert.equal(api.get('Phaser.Actions.AddEffectBloom')?.kind, 'function');
-    assert.deepEqual(api.get('Phaser.Game')?.members, ['destroy']);
+    // Published under `default`, not `Phaser`: `export = Phaser` makes the
+    // module *be* the namespace, and an importer binds it to a name of its own
+    // choosing. The nesting under it is what a consumer actually reaches —
+    // `Game` and `AddEffectBloom` are still the leaves localization searches
+    // for, whatever the importing file called the module.
+    assert.equal(api.get('default')?.kind, 'namespace');
+    assert.equal(api.get('default.Actions')?.kind, 'namespace');
+    assert.equal(api.get('default.Actions.AddEffectBloom')?.kind, 'function');
+    assert.deepEqual(api.get('default.Game')?.members, ['destroy']);
+    assert.equal(api.get('Phaser'), undefined);
   });
 });
 

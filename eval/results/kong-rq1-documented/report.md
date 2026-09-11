@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `12e8415bc9eed274bbcffeb14c5de31e92ac83e4` |
-| Run date | 2026-09-03T04:46:04.062Z |
+| Drift commit | `64a481d7cc6738734ab88b515f7283def7bb303b` |
+| Run date | 2026-09-10T16:41:36.718Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq1-documented --run-id kong-rq1-documented` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -40,6 +40,17 @@ Read this before any rate below.
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
+
+### Affected-repository misses by stage
+
+Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer
+was lost at. This is where affected-repository recall is going — read it before proposing an engine change,
+since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.
+
+| Stage | Cases |
+| --- | ---: |
+| _(no funnel recorded)_ | 165 |
+| **Total** | **165** |
 
 ### Classification
 

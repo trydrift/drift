@@ -1,0 +1,181 @@
+{
+  "datasetId": "swe-bump",
+  "datasetClass": "consumer-impact",
+  "available": 63,
+  "selected": 63,
+  "attempted": 63,
+  "notRun": 0,
+  "scored": 53,
+  "excluded": {
+    "source-unavailable": 2,
+    "reproduction-failed": 8
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 53,
+      "denominator": 53,
+      "value": 1
+    },
+    "affected-repository identification rate": {
+      "numerator": 33,
+      "denominator": 53,
+      "value": 0.6226415094339622
+    },
+    "consumer localization rate": {
+      "numerator": 30,
+      "denominator": 53,
+      "value": 0.5660377358490566
+    },
+    "false-safe verdicts": {
+      "numerator": 0,
+      "denominator": 53,
+      "value": 0
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 53,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 53,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "consumer localization rate": {
+      "adjudicated": 53,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "false-safe verdicts": {
+      "adjudicated": 53,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: known-breaking-upgrade": {
+      "dependency-update detection rate": {
+        "numerator": 53,
+        "denominator": 53,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 33,
+        "denominator": 53,
+        "value": 0.6226415094339622
+      },
+      "consumer localization rate": {
+        "numerator": 30,
+        "denominator": 53,
+        "value": 0.5660377358490566
+      }
+    },
+    "versionToIsRange: true": {
+      "dependency-update detection rate": {
+        "numerator": 50,
+        "denominator": 50,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 30,
+        "denominator": 50,
+        "value": 0.6
+      },
+      "consumer localization rate": {
+        "numerator": 28,
+        "denominator": 50,
+        "value": 0.56
+      }
+    },
+    "versionToIsRange: false": {
+      "dependency-update detection rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 2,
+        "denominator": 3,
+        "value": 0.6666666666666666
+      }
+    },
+    "exactVersionAdjudicated: true": {
+      "dependency-update detection rate": {
+        "numerator": 53,
+        "denominator": 53,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 33,
+        "denominator": 53,
+        "value": 0.6226415094339622
+      },
+      "consumer localization rate": {
+        "numerator": 30,
+        "denominator": 53,
+        "value": 0.5660377358490566
+      }
+    }
+  },
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 1,
+      "high": 1,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.49056603773584906,
+      "high": 0.7547169811320755,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.4339622641509434,
+      "high": 0.6981132075471698,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0,
+      "high": 0,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "exact": 63
+  },
+  "affectedMisses": {
+    "total": 20,
+    "byReason": {
+      "consumer-usage-not-found": 10,
+      "verification-install-failed": 4,
+      "consumer-match-insufficient-confidence": 1,
+      "verification-inconclusive": 5
+    },
+    "unclassified": 0
+  }
+}

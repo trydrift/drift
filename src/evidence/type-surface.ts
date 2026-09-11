@@ -2,6 +2,7 @@ import { fetchArchive, fetchJson, fetchText, mapWithConcurrency } from '../util/
 import { count, measure } from '../util/profile.js';
 import { readComputed, writeComputed } from '../util/artifact-cache.js';
 import { readArchive, type ArchiveEntry } from '../util/archive.js';
+import { withArticle } from '../util/prose.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
@@ -151,7 +152,18 @@ export type SurfaceChangeKind =
   | 'constant-value-changed'
   | 'commonjs-entry-removed'
   | 'exports-require-condition-removed'
-  | 'package-type-changed';
+  | 'package-type-changed'
+  /**
+   * The artifact now needs a newer language runtime than it did.
+   *
+   * Not an API change and not localizable to a call site: every consumer is
+   * affected or none is, depending on one fact about their toolchain. Carried
+   * here because the differ is what observes it — japicmp reads the class file
+   * format version out of the bytecode — and `analyze` turns it into the
+   * `runtime-requirement` breaking change the rest of the pipeline already
+   * knows how to reason about.
+   */
+  | 'runtime-requirement-raised';
 
 export interface SurfaceChange {
   kind: SurfaceChangeKind;
@@ -261,7 +273,7 @@ const surfaces = new Map<string, Promise<TypeSurface | null>>();
 export function fetchTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean; traversal?: ReexportTraversal } = {},
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal; subpath?: string } = {},
 ): Promise<TypeSurface | null> {
   // A traversal-scoped fetch depends on the path that reached it (visited set,
   // remaining budget), so it is not safe to share through the process-wide
@@ -276,7 +288,9 @@ export function fetchTypeSurface(
     return measure('surface', packageName, () => computeTypeSurface(packageName, version, options));
   }
 
-  const key = `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}`;
+  const key =
+    `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}` +
+    (options.subpath ? `#${options.subpath}` : '');
   const cached = surfaces.get(key);
   if (cached) {
     count('surface.cache.hit');
@@ -329,22 +343,78 @@ export function clearTypeSurfaceCache(): void {
  * cannot change, so the only way this cache can be wrong is an unbumped parser
  * change, not staleness.
  */
-const SURFACE_PARSER_VERSION = 2;
+const SURFACE_PARSER_VERSION = 3;
 
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
 
-function diskCacheKey(packageName: string, version: string, followDependencies: boolean): string {
-  return `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}`;
+function diskCacheKey(
+  packageName: string,
+  version: string,
+  followDependencies: boolean,
+  subpath?: string,
+): string {
+  return (
+    `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}` +
+    (subpath ? `#${subpath}` : '')
+  );
+}
+
+/**
+ * The declaration file a dependency publishes at one of its subpaths.
+ *
+ * `export * from 'lit-element/lit-element.js'` names an entry point, and the
+ * package's `exports` map is what says which declaration file serves it. The
+ * map is consulted first — it is the package's own answer — and the raw path is
+ * expanded as a fallback for packages that publish subpaths without one.
+ * `null` when the version publishes no such declaration, which is a hole in
+ * the parent's surface and is reported as one rather than guessed past.
+ */
+async function resolveSubpathTypesEntry(
+  packageName: string,
+  version: string,
+  pkg: Manifest | null,
+  subpath: string,
+): Promise<string | null> {
+  const declared = typesFromExports(subpathExport(pkg?.exports, subpath));
+  const candidates = [
+    ...(declared ? expandTypesEntry(normalizePath(declared)) : []),
+    ...expandTypesEntry(normalizePath(subpath)),
+  ];
+
+  const wanted = [...new Set(candidates)];
+  const published = await firstPublished(packageName, version, wanted);
+  if (published !== undefined) return published;
+  for (const candidate of wanted) {
+    if (await exists(packageName, version, candidate)) return candidate;
+  }
+  return null;
+}
+
+/** `@scope/pkg/sub` -> `@scope/pkg`; `lit-element/lit-element.js` -> `lit-element`. */
+function packageOfSpecifier(specifier: string): string {
+  const parts = specifier.split('/');
+  if (specifier.startsWith('@')) return parts.slice(0, 2).join('/');
+  return parts[0] ?? specifier;
+}
+
+/** The `exports` entry for `./<subpath>`, however the package spells the key. */
+function subpathExport(exportsField: unknown, subpath: string): unknown {
+  if (!exportsField || typeof exportsField !== 'object') return undefined;
+  const record = exportsField as Record<string, unknown>;
+  for (const key of [`./${subpath}`, subpath]) {
+    if (key in record) return record[key];
+  }
+  return undefined;
 }
 
 async function computeTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean; traversal?: ReexportTraversal },
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal; subpath?: string },
 ): Promise<TypeSurface | null> {
   const followDependencies = options.followDependencies !== false;
-  const key = diskCacheKey(packageName, version, followDependencies);
+  const key = diskCacheKey(packageName, version, followDependencies, options.subpath);
   const remembered = await readComputed<StoredSurface>(key);
   if (remembered) {
     count('surface.diskCache.hit');
@@ -353,7 +423,11 @@ async function computeTypeSurface(
   count('surface.diskCache.miss');
 
   let manifest = await fetchManifest(packageName, version);
-  let entryPath = await resolveOwnTypesEntry(packageName, version, manifest);
+  // A subpath edge names one of the package's entry points, not its root, so
+  // the root `types` field is the wrong file to read.
+  let entryPath = options.subpath
+    ? await resolveSubpathTypesEntry(packageName, version, manifest, options.subpath)
+    : await resolveOwnTypesEntry(packageName, version, manifest);
   let sources = entryPath
     ? await measure('surface-sources', packageName, () =>
         collectDeclarationSources(packageName, version, entryPath!),
@@ -378,7 +452,7 @@ async function computeTypeSurface(
   }
 
   if (!entryPath) {
-    entryPath = await resolveDefinitelyTypedEntry(packageName);
+    entryPath = await resolveDefinitelyTypedEntry(packageName, version);
     if (!entryPath) return null;
     sources = await measure('surface-sources', packageName, () =>
       collectDeclarationSources(packageName, version, entryPath!),
@@ -946,7 +1020,20 @@ async function mergeDependencySurfaces(
   const budget = traversal?.budget ?? { remaining: MAX_TOTAL_FOLLOWED_PACKAGES };
   const visited = new Set<string>([...(traversal?.visited ?? []), selfNode]);
 
-  const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
+  // A re-export can name a *subpath* of a dependency rather than the
+  // dependency itself: `lit@2` publishes nothing of its own and is entirely
+  // `export * from 'lit-element/lit-element.js'`. Matching the specifier
+  // against `dependencies` verbatim never found `lit-element`, so the edge was
+  // dropped, no symbols were merged, and the whole package resolved to "no
+  // public surface". The package is what carries the version range; the
+  // subpath is which of its entry points to read.
+  const wanted = [...externalReferences(sources, api)]
+    .map(([specifier, reference]) => {
+      const pkg = packageOfSpecifier(specifier);
+      const subpath = specifier.length > pkg.length ? specifier.slice(pkg.length + 1) : undefined;
+      return { specifier, reference, pkg, subpath };
+    })
+    .filter((edge) => declared[edge.pkg]);
   const attempted = wanted.length > 0;
   if (!attempted) return { followed: [], attempted: false, incomplete: false };
 
@@ -967,13 +1054,17 @@ async function mergeDependencySurfaces(
   //      deterministic depth-first order rather than a race between subtrees.
 
   // Phase 1 — versions.
-  const resolvedVersions = await mapWithConcurrency(wanted, DEPENDENCY_FETCH_WIDTH, ([specifier]) =>
-    resolveDependencyVersion(specifier, declared[specifier]!),
+  const resolvedVersions = await mapWithConcurrency(wanted, DEPENDENCY_FETCH_WIDTH, (edge) =>
+    resolveDependencyVersion(edge.pkg, declared[edge.pkg]!),
   );
 
   // Phase 2 — plan.
   interface EdgePlan {
     specifier: string;
+    /** The dependency that carries the version range. */
+    pkg: string;
+    /** Which of its entry points this edge names, when not the root. */
+    subpath: string | undefined;
     reference: ExternalReference;
     resolved: string;
     /** A genuine `export * from` / `export { x } from` edge. */
@@ -983,7 +1074,7 @@ async function mergeDependencySurfaces(
   }
   const plan: EdgePlan[] = [];
   let implementationFollows = 0;
-  for (const [index, [specifier, reference]] of wanted.entries()) {
+  for (const [index, { specifier, reference, pkg, subpath }] of wanted.entries()) {
     const resolved = resolvedVersions[index];
     const publicEdge = isPublicReexportEdge(reference);
 
@@ -1003,7 +1094,7 @@ async function mergeDependencySurfaces(
       // bound is acceptable — it cannot hide part of this package's own API.
       if (implementationFollows >= MAX_IMPLEMENTATION_DEPENDENCIES) continue;
       implementationFollows += 1;
-      plan.push({ specifier, reference, resolved, publicEdge, recurse: false });
+      plan.push({ specifier, pkg, subpath, reference, resolved, publicEdge, recurse: false });
       continue;
     }
 
@@ -1016,7 +1107,7 @@ async function mergeDependencySurfaces(
     const canRecurse = !cycle && depth < MAX_REEXPORT_DEPTH && budget.remaining > 0;
     if (canRecurse) budget.remaining -= 1;
     else if (!cycle) incomplete = true;
-    plan.push({ specifier, reference, resolved, publicEdge, recurse: canRecurse });
+    plan.push({ specifier, pkg, subpath, reference, resolved, publicEdge, recurse: canRecurse });
   }
 
   // Phase 3 — fetch and merge.
@@ -1026,15 +1117,17 @@ async function mergeDependencySurfaces(
     DEPENDENCY_FETCH_WIDTH,
     async ({ entry, index }) => {
       if (entry.recurse) return; // fetched in the sequential pass below
-      fetchedSurfaces[index] = await fetchTypeSurface(entry.specifier, entry.resolved, {
+      fetchedSurfaces[index] = await fetchTypeSurface(entry.pkg, entry.resolved, {
         followDependencies: false,
+        ...(entry.subpath ? { subpath: entry.subpath } : {}),
       }).catch(() => null);
     },
   );
   for (const [index, entry] of plan.entries()) {
     if (!entry.recurse) continue;
-    fetchedSurfaces[index] = await fetchTypeSurface(entry.specifier, entry.resolved, {
+    fetchedSurfaces[index] = await fetchTypeSurface(entry.pkg, entry.resolved, {
       followDependencies: true,
+      ...(entry.subpath ? { subpath: entry.subpath } : {}),
       traversal: {
         depth: depth + 1,
         visited: new Set([...visited, `${entry.specifier}@${entry.resolved}`]),
@@ -1282,15 +1375,43 @@ function typeEntryCandidates(packageName: string, pkg: Manifest | null): string[
   return [...new Set(wanted)];
 }
 
-async function resolveDefinitelyTypedEntry(packageName: string): Promise<string | null> {
-  // DefinitelyTyped ships types for the same *major* line, so this is only a
-  // sound comparison when both sides resolve; mismatches yield no evidence.
+/**
+ * The `@types/<pkg>` release line that documents *this* version.
+ *
+ * DefinitelyTyped versions its packages to match the major (and usually the
+ * minor) of what they describe: `@types/express@4` is express 4's API,
+ * `@types/express@5` is express 5's. Resolving both sides to `latest` — the
+ * same bytes twice — is what made every `@types`-only package incomparable,
+ * and it is a large slice of npm: express, lodash and everything else whose
+ * declarations live outside the package.
+ *
+ * The major line is a convention, not a guarantee, so a range that does not
+ * resolve falls back to `latest` rather than failing. When *both* sides fall
+ * back the entry paths are equal, and `computeTypeSurface` still declines to
+ * compare — nothing was learned, and saying so is the point.
+ */
+export async function resolveDefinitelyTypedEntry(
+  packageName: string,
+  version: string,
+): Promise<string | null> {
   const dtName = packageName.startsWith('@')
     ? `@types/${packageName.slice(1).replace('/', '__')}`
     : `@types/${packageName}`;
-  if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
+
+  const major = /^\D*(\d+)\./.exec(version)?.[1] ?? /^\D*(\d+)$/.exec(version)?.[1];
+  if (major && (await exists(dtName, major, 'index.d.ts'))) return `@types:${dtName}@${major}`;
+  if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}@latest`;
 
   return null;
+}
+
+/** Split `@types:@types/express@4` into the package and the range to fetch. */
+export function definitelyTypedTarget(entryPath: string): { name: string; range: string } {
+  const spec = entryPath.slice('@types:'.length);
+  const at = spec.lastIndexOf('@');
+  // `lastIndexOf` lands on the version separator, never on the scope's own
+  // leading `@`, because the range is always appended.
+  return at > 0 ? { name: spec.slice(0, at), range: spec.slice(at + 1) } : { name: spec, range: 'latest' };
 }
 
 /**
@@ -1327,7 +1448,17 @@ export function expandTypesEntry(declared: string): string[] {
   // computed diff, which is the strongest evidence Drift has. That is exactly
   // how zod 4 was reported as having no breaking changes.
   const base = declared.replace(/\.(c|m)?[jt]s$/, '').replace(/\/$/, '');
-  return [`${base}.d.ts`, `${base}.d.cts`, `${base}.d.mts`, `${base}/index.d.ts`, declared];
+  const candidates = [`${base}.d.ts`, `${base}.d.cts`, `${base}.d.mts`, `${base}/index.d.ts`];
+
+  // A JavaScript file is never a declaration file, so it must not survive as
+  // the last-resort candidate. `uuid@9` publishes no `types` field and an
+  // `exports` map whose only reachable string is `./dist/esm-browser/index.js`;
+  // that path exists, so it was selected as the types entry, parsed as
+  // TypeScript to zero exported symbols, and the package was reported as
+  // having no public surface — while `@types/uuid@9` sat unread, because the
+  // DefinitelyTyped fallback only runs when *no* entry was found at all.
+  if (!/\.(c|m)?js$/.test(declared)) candidates.push(declared);
+  return candidates;
 }
 
 export function typesFromExports(exportsField: unknown): string | null {
@@ -1382,8 +1513,8 @@ async function collectDeclarationSources(
   artifact?: NpmArtifact,
 ): Promise<DeclarationSource[]> {
   if (entryPath.startsWith('@types:')) {
-    const dtName = entryPath.slice('@types:'.length);
-    const content = await fetchText(`${JSDELIVR_CDN}/${dtName}@latest/index.d.ts`);
+    const target = definitelyTypedTarget(entryPath);
+    const content = await fetchText(`${JSDELIVR_CDN}/${target.name}@${target.range}/index.d.ts`);
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
@@ -1566,6 +1697,7 @@ export function extractExports(
 
   collectExportSpecifiers(content, locals, into, aliases);
   collectExportAssignments(content, locals, into);
+  collectDefaultExports(content, locals, into);
   // Within one file, bases are already all known. A surface assembled from
   // several files resolves again in `fetchTypeSurface`, once every source has
   // been read; doing it here as well is what makes `extractExports` usable on
@@ -1670,12 +1802,66 @@ function resolveAliases(api: SurfaceApi, aliases: readonly ExportAlias[]): void 
  * fetch Phaser's `.d.ts` successfully and still report "no declarations".
  */
 function collectExportAssignments(content: string, locals: SurfaceApi, into: SurfaceApi): void {
-  for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$]*)\s*;/g)) {
+  // The trailing semicolon is optional. `export = LRUCache` with no semicolon
+  // is valid TypeScript and is what `lru-cache@7` ships; requiring one meant
+  // its entire API — a `declare class` plus a `declare namespace`, the whole
+  // package — parsed to zero exported symbols, and the version pair was
+  // reported as having no comparable surface at all.
+  for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$.]*)\s*(?:;|$)/gm)) {
+    // `export = G` means the module *is* `G`, so `G` is an identifier internal
+    // to the package and not a name any consumer can write: an importer binds
+    // the module to a name of its own choosing. `glob@8` calls it `G`, so Drift
+    // reported `G.sync` and `G.hasMagic` -- symbols that appear in no consumer
+    // anywhere, and read as gibberish in a report -- while the line to find
+    // says `glob.sync(...)`.
+    //
+    // So the declarations are published *only* under `default`, the one name
+    // the module is reachable by. Keeping the local name as well was tried and
+    // is worse in both directions: it puts `G` in front of a reader, and it
+    // reports every change twice, once under each name (26 findings for glob
+    // 8 -> 13, where there are 13). Nothing is lost -- a named import off an
+    // `export =` namespace (`import { Glob } from 'glob'`) still matches,
+    // because `default.Glob` contributes the bare leaf `Glob`.
+    republishAs('default', match[1]!, locals, into);
+  }
+}
+
+/**
+ * Copy `local` and its members into `into` under the name consumers reach them
+ * by.
+ *
+ * The local identifier is kept as well, never replaced: it is frequently the
+ * conventional name too (`LRUCache`), and dropping it would lose a real symbol
+ * to gain a synthetic one.
+ */
+function republishAs(published: string, local: string, locals: SurfaceApi, into: SurfaceApi): void {
+  const declared = locals.get(local);
+  if (declared && !into.has(published)) into.set(published, renameEntry(declared, published));
+  for (const entry of locals.values()) {
+    if (!entry.name.startsWith(`${local}.`)) continue;
+    const name = `${published}.${entry.name.slice(local.length + 1)}`;
+    if (!into.has(name)) into.set(name, renameEntry(entry, name));
+  }
+}
+
+/**
+ * `export default class Telnet { … }`, and the other default-export forms.
+ *
+ * A default export's *published* name is `default` — it is the only name an
+ * importer can reach it by, and the local identifier is the package's own
+ * business. So the declaration is republished under that name, which is also
+ * what keeps a purely local rename from reading as a removal plus an addition.
+ *
+ * Its members come with it, and they are the part that matters: a consumer
+ * writes `client.exec(…)`, so `default.exec` is what localization has to have.
+ */
+function collectDefaultExports(content: string, locals: SurfaceApi, into: SurfaceApi): void {
+  for (const match of content.matchAll(
+    /\bexport\s+default\s+(?:abstract\s+)?(?:class|function|enum|const|let|var)?\s*([A-Za-z_$][\w$]*)/g,
+  )) {
     const local = match[1]!;
-    for (const entry of locals.values()) {
-      if (entry.name !== local && !entry.name.startsWith(`${local}.`)) continue;
-      if (!into.has(entry.name)) into.set(entry.name, entry);
-    }
+    if (!locals.has(local)) continue;
+    republishAs('default', local, locals, into);
   }
 }
 
@@ -2305,7 +2491,7 @@ export function diffSurfaces(
         symbol: name,
         detail: oldEntry.shapeUnknown
           ? `\`${name}\` is no longer exported${origin}.`
-          : `\`${name}\` is no longer exported (was a ${oldEntry.kind})${origin}.`,
+          : `\`${name}\` is no longer exported (was ${withArticle(oldEntry.kind)})${origin}.`,
         before: oldEntry.signature,
         ...(oldEntry.shapeUnknown ? {} : { fromKind: oldEntry.kind }),
       });
@@ -2324,7 +2510,7 @@ export function diffSurfaces(
       changes.push({
         kind: 'kind-changed',
         symbol: name,
-        detail: `\`${name}\` changed from a ${oldEntry.kind} to a ${newEntry.kind}${origin}.`,
+        detail: `\`${name}\` changed from ${withArticle(oldEntry.kind)} to ${withArticle(newEntry.kind)}${origin}.`,
         before: oldEntry.signature,
         after: newEntry.signature,
         fromKind: oldEntry.kind,

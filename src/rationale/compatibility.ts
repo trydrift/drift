@@ -235,6 +235,7 @@ function sitesFor(
       // meaning read as a hedge about whether the file was even found.
       confidence: declaration.verdict === 'unknown' ? 'low' : 'high',
       runtimeVerdict: declaration.verdict,
+      siteKind: 'runtime-declaration',
     });
   }
 
@@ -247,6 +248,7 @@ function sitesFor(
       matchedSymbol: runtime,
       confidence: 'low',
       runtimeVerdict: 'unknown',
+      siteKind: 'runtime-declaration',
     });
   }
 

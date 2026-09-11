@@ -32,6 +32,27 @@ export class LocalGitProvider implements RepoProvider {
     private readonly range: RefRange,
   ) {}
 
+  /**
+   * The repository root, resolved once and cached.
+   *
+   * Every path in this class is relative to the root, because that is what git
+   * reports: `git diff --name-only` and `git ls-files` name files from the root
+   * regardless of where they are invoked. Reading those names back off disk
+   * relative to `cwd` therefore looked for `demos/npm/package.json` inside
+   * `demos/npm`, found nothing, and reported the file as absent — which is
+   * indistinguishable from a manifest whose dependencies were all deleted. Any
+   * project analysed below the repository root, every workspace member
+   * included, came out as a list of removals.
+   */
+  private rootPromise: Promise<string> | null = null;
+
+  private async root(): Promise<string> {
+    this.rootPromise ??= this.git(['rev-parse', '--show-toplevel'], this.cwd).then(
+      (out) => out?.trim() || this.cwd,
+    );
+    return this.rootPromise;
+  }
+
   async changedFiles(): Promise<string[]> {
     // Against the working tree, `git diff <before>` already means "compare the
     // tree to that commit" — passing a second ref would be a syntax error.
@@ -40,7 +61,7 @@ export class LocalGitProvider implements RepoProvider {
         ? ['diff', '--name-only', this.range.before]
         : ['diff', '--name-only', this.range.before, this.range.after];
 
-    const out = await this.git(args);
+    const out = await this.git(args, await this.root());
     if (out === null) return [];
 
     return out
@@ -56,12 +77,12 @@ export class LocalGitProvider implements RepoProvider {
       try {
         const { readFile } = await import('node:fs/promises');
         const { join } = await import('node:path');
-        return await readFile(join(this.cwd, path), 'utf8');
+        return await readFile(join(await this.root(), path), 'utf8');
       } catch {
         return null;
       }
     }
-    return this.git(['show', `${ref}:${path}`]);
+    return this.git(['show', `${ref}:${path}`], await this.root());
   }
 
   async listFiles(ref: string): Promise<string[] | null> {
@@ -70,8 +91,8 @@ export class LocalGitProvider implements RepoProvider {
     // not what the user is asking about.
     const out =
       ref === WORKING_TREE
-        ? await this.git(['ls-files', '--cached', '--others', '--exclude-standard'])
-        : await this.git(['ls-tree', '-r', '--name-only', ref]);
+        ? await this.git(['ls-files', '--cached', '--others', '--exclude-standard'], await this.root())
+        : await this.git(['ls-tree', '-r', '--name-only', ref], await this.root());
     if (out === null) return null;
 
     return out
@@ -81,10 +102,10 @@ export class LocalGitProvider implements RepoProvider {
   }
 
   /** Run a git command, returning `null` on any failure. */
-  private async git(args: readonly string[]): Promise<string | null> {
+  private async git(args: readonly string[], at: string = this.cwd): Promise<string | null> {
     try {
       const { stdout } = await run('git', [...args], {
-        cwd: this.cwd,
+        cwd: at,
         maxBuffer: 32 * 1024 * 1024,
         windowsHide: true,
       });
@@ -268,10 +289,14 @@ export async function commitWorkingTreeManifests(
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
 
-  const git = async (args: string[], env?: NodeJS.ProcessEnv): Promise<string | null> => {
+  const gitIn = async (
+    at: string,
+    args: string[],
+    env?: NodeJS.ProcessEnv,
+  ): Promise<string | null> => {
     try {
       const { stdout } = await run('git', args, {
-        cwd,
+        cwd: at,
         windowsHide: true,
         maxBuffer: 32 * 1024 * 1024,
         ...(env ? { env: { ...process.env, ...env } } : {}),
@@ -281,6 +306,23 @@ export async function commitWorkingTreeManifests(
       return null;
     }
   };
+
+  // Everything below runs from the repository root rather than from `cwd`.
+  //
+  // `git status --porcelain` reports paths relative to the root, and those same
+  // strings are handed straight back to `git add` as pathspecs — which git
+  // resolves relative to the process's working directory. Running the pair from
+  // different directories silently staged nothing whenever the analysed project
+  // sat below the root: for a project in `demos/npm`, `demos/npm/package.json`
+  // was looked for at `demos/npm/demos/npm/package.json`, `git add` failed, the
+  // scratch commit came out identical to HEAD minus its manifests, and every
+  // dependency then read as *removed* rather than upgraded. That is the whole
+  // monorepo case, so the two commands have to agree on what a path is.
+  const root = (await gitIn(cwd, ['rev-parse', '--show-toplevel']))?.trim();
+  if (!root) return null;
+
+  const git = async (args: string[], env?: NodeJS.ProcessEnv): Promise<string | null> =>
+    gitIn(root, args, env);
 
   const status = await git(['status', '--porcelain']);
   if (!status) return null;

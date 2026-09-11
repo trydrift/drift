@@ -12,24 +12,24 @@
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 34,
+      "numerator": 36,
       "denominator": 39,
-      "value": 0.8717948717948718
+      "value": 0.9230769230769231
     },
     "affected-repository identification rate": {
-      "numerator": 17,
+      "numerator": 28,
       "denominator": 39,
-      "value": 0.4358974358974359
+      "value": 0.717948717948718
     },
     "consumer localization rate": {
-      "numerator": 8,
+      "numerator": 12,
       "denominator": 39,
-      "value": 0.20512820512820512
+      "value": 0.3076923076923077
     },
     "false-safe verdicts": {
-      "numerator": 11,
+      "numerator": 1,
       "denominator": 39,
-      "value": 0.28205128205128205
+      "value": 0.02564102564102564
     }
   },
   "adjudication": {
@@ -80,9 +80,9 @@
         "value": 0.7777777777777778
       },
       "affected-repository identification rate": {
-        "numerator": 2,
+        "numerator": 5,
         "denominator": 9,
-        "value": 0.2222222222222222
+        "value": 0.5555555555555556
       },
       "consumer localization rate": {
         "numerator": 0,
@@ -90,38 +90,38 @@
         "value": 0
       }
     },
-    "label: TEST_FAILURE": {
-      "dependency-update detection rate": {
-        "numerator": 15,
-        "denominator": 16,
-        "value": 0.9375
-      },
-      "affected-repository identification rate": {
-        "numerator": 8,
-        "denominator": 16,
-        "value": 0.5
-      },
-      "consumer localization rate": {
-        "numerator": 3,
-        "denominator": 16,
-        "value": 0.1875
-      }
-    },
     "label: COMPILATION_FAILURE": {
       "dependency-update detection rate": {
-        "numerator": 11,
+        "numerator": 12,
         "denominator": 12,
-        "value": 0.9166666666666666
+        "value": 1
       },
       "affected-repository identification rate": {
+        "numerator": 9,
+        "denominator": 12,
+        "value": 0.75
+      },
+      "consumer localization rate": {
         "numerator": 6,
         "denominator": 12,
         "value": 0.5
+      }
+    },
+    "label: TEST_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 16,
+        "denominator": 16,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 13,
+        "denominator": 16,
+        "value": 0.8125
       },
       "consumer localization rate": {
-        "numerator": 5,
-        "denominator": 12,
-        "value": 0.4166666666666667
+        "numerator": 6,
+        "denominator": 16,
+        "value": 0.375
       }
     },
     "label: DEPENDENCY_LOCK_FAILURE": {
@@ -140,31 +140,77 @@
         "denominator": 2,
         "value": 0
       }
+    },
+    "stratum: no-api-surface-delta": {
+      "dependency-update detection rate": {
+        "numerator": 8,
+        "denominator": 11,
+        "value": 0.7272727272727273
+      },
+      "affected-repository identification rate": {
+        "numerator": 6,
+        "denominator": 11,
+        "value": 0.5454545454545454
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 11,
+        "value": 0
+      }
+    },
+    "stratum: static-signal-possible": {
+      "dependency-update detection rate": {
+        "numerator": 28,
+        "denominator": 28,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 22,
+        "denominator": 28,
+        "value": 0.7857142857142857
+      },
+      "consumer localization rate": {
+        "numerator": 12,
+        "denominator": 28,
+        "value": 0.42857142857142855
+      }
     }
   },
   "intervals": {
     "dependency-update detection rate": {
-      "low": 0.7692307692307693,
-      "high": 0.9743589743589743,
+      "low": 0.8205128205128205,
+      "high": 1,
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.28205128205128205,
-      "high": 0.5897435897435898,
+      "low": 0.5897435897435898,
+      "high": 0.8461538461538461,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.07692307692307693,
-      "high": 0.3333333333333333,
+      "low": 0.15384615384615385,
+      "high": 0.46153846153846156,
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.15384615384615385,
-      "high": 0.4358974358974359,
+      "low": 0,
+      "high": 0.07692307692307693,
       "iterations": 2000
     }
   },
   "mappingCoverage": {
     "compatible": 40
+  },
+  "affectedMisses": {
+    "total": 11,
+    "byReason": {
+      "dependency-update-not-detected": 3,
+      "dependency-import-not-found": 2,
+      "consumer-usage-not-found": 2,
+      "no-breaking-change-derived": 1,
+      "verification-inconclusive": 2,
+      "upstream-surface-unavailable": 1
+    },
+    "unclassified": 0
   }
 }

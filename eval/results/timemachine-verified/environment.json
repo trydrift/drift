@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-03T04:45:58.202Z",
+  "capturedAt": "2026-09-10T16:41:13.774Z",
   "platform": "linux",
   "arch": "x64",
   "node": "v22.23.2",
@@ -48,8 +48,8 @@
     },
     {
       "tool": "uv",
-      "available": false,
-      "version": "unavailable",
+      "available": true,
+      "version": "uv 0.12.12 (x86_64-unknown-linux-gnu)",
       "neededFor": "TimeMachine's documented environment setup"
     },
     {

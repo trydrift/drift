@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { impactFunnelSchema } from './impact-funnel.ts';
 
 /**
  * One external case, and everything needed to answer "where did this code and
@@ -171,6 +172,14 @@ export const externalCaseResultSchema = z.object({
    * confusion matrix would be undefined anyway.
    */
   predictedPositive: z.boolean().optional(),
+  /**
+   * Per-case consumer-impact funnel: which pipeline stage a scored positive
+   * miss was lost at, plus secondary diagnostics. Present on the consumer-
+   * impact datasets (swe-bump, bump, timemachine); absent on upstream-only
+   * detection datasets, where "affected" is not a question. See
+   * `impact-funnel.ts`.
+   */
+  impactFunnel: impactFunnelSchema.optional(),
   excluded: z
     .object({ kind: exclusionKindSchema, reason: z.string().min(1), missingRequirement: z.string().nullable() })
     .nullable(),

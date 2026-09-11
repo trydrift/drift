@@ -18,8 +18,77 @@ Requires Node.js 22.6 or newer.
 | `drift fix` | Analyse, prepare fixes in an isolated worktree, push a branch, and open a PR. |
 | `drift pr` | Push the current branch and open a PR. |
 | `drift diff <eco> <pkg> <from> <to>` | Show the published source diff for supported ecosystems. |
+| `drift explain <package>` | What changed in one upgrade, and every place it reaches this repository. |
+| `drift mcp` | Serve Drift to a coding agent over MCP (stdio). |
+| `drift completion <shell>` | Print a bash, zsh or fish completion script. |
+| `drift action` | The entrypoint the GitHub Action runs — see [deployment](deployment.md). |
+| `drift serve` | The self-hosted webhook server — see [deployment](deployment.md). |
+| `drift telemetry print` | Print the exact telemetry event shape — see [telemetry](telemetry.md). |
+| `drift help [topic]` | Everything about one command, including every option. |
 
-Use `drift --help` for all options.
+`drift --help` is the overview; `drift help <command>` (or `drift <command> --help`)
+has that command's full options, and `drift help environment` lists the
+environment variables Drift reads.
+
+## When Drift can't read the command line
+
+An argument Drift does not recognise stops the run before it does any work,
+rather than being ignored: an unknown command, an option no command reads
+(`--dry-run`), a short flag (`-z` — Drift writes its options in full), or a
+stray word a command has no use for. The message names the argument, suggests
+the one that was probably meant where something is close enough, and exits 1.
+
+```console
+$ drift outdated --dry-run
+drift: `outdated` has no `--dry-run` option.
+
+Nothing ran, so nothing here changed.
+Every option `outdated` takes:  drift help outdated
+```
+
+If a run stops on an unexpected error, Drift prints the reason rather than a
+stack trace; `DRIFT_DEBUG=1` prints the trace too.
+
+## Interactive prompts
+
+Anything Drift asks in a terminal is an arrow-key menu:
+
+```text
+? Upgrade one of these now?  (↑/↓ move · enter select · / filter · esc skip)
+  1 some-lib          2.1.0 → 3.0.0 · Affects your code — 12 sites in 4 files
+→ 2 other-lib         1.4.0 → 1.5.0 · No upstream breaking changes
+  3 Skip              leave every manifest as it is
+```
+
+| Key | Does |
+| --- | --- |
+| `↑`/`↓`, `j`/`k` | Move between rows |
+| `enter` | Pick the highlighted row |
+| a row number | Jump to that row (`12` then `enter` picks row 12) |
+| `/` | Filter a long list, `esc` to clear the filter |
+| `esc`, `q` | Decline — the same answer a non-interactive run gives, never a choice picked for you |
+| `y`/`n` | Answer a yes/no question outright |
+
+Prompts are drawn only when stdin and stderr are a terminal. A pipe, a
+redirect, or CI takes the default and carries on, so scripts never hang. Set
+`DRIFT_NO_TUI=1` for plain numbered prompts, or `NO_COLOR=1` to drop colour.
+
+## Shell completion
+
+```bash
+eval "$(drift completion bash)"   # ~/.bashrc
+eval "$(drift completion zsh)"    # ~/.zshrc
+drift completion fish > ~/.config/fish/completions/drift.fish
+```
+
+Completes commands, the options each one takes, and `drift help` topics; offers
+a directory after `--dir` and a file after `--config`. The command prints the
+script and installs nothing itself, so what goes into a shell profile is a line
+you can read first.
+
+The names come out of the same help text the CLI reads to decide whether an
+argument is a typo, so the options a shell offers are the options the CLI
+accepts — there is no second list to fall behind.
 
 ## Typical workflow
 

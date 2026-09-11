@@ -124,12 +124,13 @@ export default function Benchmarks() {
             </p>
             {group.datasetClass === "consumer-impact" && (
               <p className="mt-3 max-w-2xl rounded-lg border border-border bg-surface-hover/50 px-3.5 py-2.5 text-sm leading-6 text-muted">
-                <strong className="font-medium text-foreground">TypeScript is where this is furthest along.</strong>{" "}
-                swe-bump-bench&rsquo;s {narrative.javaVsTypeScript.sweBump.affectedFraction} affected-repository rate
-                and {narrative.javaVsTypeScript.sweBump.falseSafePercent} false-safe rate are the numbers behind that.
-                The Java (BUMP) and Python (TimeMachine) consumer-impact results below are earlier and weaker on the
-                same questions — see the two Java cards under &ldquo;Known weaknesses&rdquo; — and are published as
-                beta results, not a claim that they are launch-ready in the way the TypeScript numbers are.
+                <strong className="font-medium text-foreground">Read these three together, not against each other.</strong>{" "}
+                All three are run against the same engine build — comparing rates across runs of different vintages
+                is unsound, so they move together whenever the engine does. What they do not support is a ranking:
+                swe-bump-bench and TimeMachine are an order of magnitude smaller than BUMP, so their rates carry
+                intervals wide enough to swallow the differences between them. BUMP is the only one of the three
+                precise enough to argue about, and the Java cards under &ldquo;Known weaknesses&rdquo; are where
+                that argument is made.
               </p>
             )}
             <div className="mt-5 space-y-5">
@@ -184,22 +185,37 @@ export default function Benchmarks() {
               </p>
             </Weakness>
 
-            <Weakness title="On Java, Drift finds the upstream change and then fails to find it in your code — beta, not launch-ready">
+            <Weakness title="On Java, Drift still calls some broken upgrades safe — and Java is the only ecosystem measured well enough to say so">
               <p>
-                In BUMP&rsquo;s {narrative.bumpSubset.selected}-case Java subset, Drift detected the update in {narrative.bumpSubset.detectionFraction} cases.
-                It still returned a false-safe verdict for {narrative.bumpSubset.falseSafeFraction} of them ({narrative.bumpSubset.falseSafePercent}).
-                That is the number this page treats as blocking a general-availability claim for Java consumer-impact —
-                it is published as beta, tracked for improvement, not presented as equivalent to the TypeScript result above.
+                Over BUMP&rsquo;s Java consumer breakages in full — all {narrative.bumpFull.selected} records, of
+                which {narrative.bumpFull.dataset.scored} scored — Drift detected the update in{" "}
+                {narrative.bumpFull.detectionFraction} cases and still returned a false-safe verdict for{" "}
+                {narrative.bumpFull.falseSafeFraction} of them ({narrative.bumpFull.falseSafePercent},{" "}
+                {narrative.bumpFull.falseSafeInterval}).
               </p>
               <p className="mt-3">
-                Some of the hardest failures live outside a public API surface entirely — build-plugin rules and
-                behavioural test failures an API diff cannot see by itself. One specific localization gap has since
-                been fixed: the Maven coordinate a dependency is fetched under is frequently not the Java package it
-                ships (a Jenkins plugin&rsquo;s <code className="font-mono text-[12px]">groupId</code> is nothing like its <code className="font-mono text-[12px]">hudson.*</code> packages),
-                so a consumer file that plainly imported and used the changed type was never searched. Re-running
-                this exact subset after that fix left the numbers on this card unmoved, which says the fix does not
-                reach this particular corpus&rsquo; packages — not that nothing changed. The remaining gap is still
-                unidentified.
+                It is also the only rate here precise enough to argue about. The npm and Python consumer corpora
+                are an order of magnitude smaller, and their intervals are correspondingly wide — reaching{" "}
+                {narrative.bumpFull.peerCeilings.npm} and {narrative.bumpFull.peerCeilings.python} respectively,
+                both far above Java&rsquo;s. Ranking the ecosystems against each other from these three numbers
+                would be reading noise: what separates them is how much evidence each has, not how well Drift does.
+              </p>
+              <p className="mt-3">
+                Two of the three causes behind it are fixed. A raised minimum JDK was invisible: japicmp reports it
+                as <code className="font-mono text-[12px]">CLASS FILE FORMAT VERSION</code> on every recompiled
+                class, which Drift&rsquo;s line grammar did not match, so a jOOQ upgrade requiring Java 17 read as
+                having no incompatible change at all. Signatures were also cut at the first parenthesis, discarding
+                the parameter types that carry a <code className="font-mono text-[12px]">javax</code> to{" "}
+                <code className="font-mono text-[12px]">jakarta</code> migration — a break that lands on the
+                consumer&rsquo;s own import and names nothing the changed library owns.
+              </p>
+              <p className="mt-3">
+                What remains is mostly the class no static analysis reaches: a behavioural change with no signature
+                change and no changelog sentence describing it. Drift finds those in prose where upstream wrote them
+                down, flags the call sites it can see, and refuses to claim a search that found nothing proves
+                anything. And <code className="font-mono text-[12px]">drift upgrade</code> installs nothing on this
+                verdict alone — the unattended batch requires the project&rsquo;s own checks to have run against the
+                upgrade and passed.
               </p>
             </Weakness>
 

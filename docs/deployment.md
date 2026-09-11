@@ -252,8 +252,10 @@ the repositories where you want fixes dispatched.
 
 ## Publishing a release
 
-Release publishing uses OIDC on both registries — there is no npm or VS Code
-Marketplace token stored in this repository, and there should never be one.
+Release publishing uses OIDC for npm — there is no npm or VS Code Marketplace
+token stored in this repository, and there should never be one. The extension
+is published by hand from the VSIX the release attaches, because the Marketplace
+has no trusted-publishing equivalent yet (see below).
 The workflow keeps validation and publication in separate trust domains:
 
 - `validate` has read-only repository access and no OIDC permission. It runs
@@ -276,7 +278,7 @@ account-level settings only a maintainer with the right access can create —
 | --- | --- | --- |
 | The repository is **public** | GitHub → Settings → General | `uses: trydrift/drift@v0` cannot resolve from a private repository, and the Marketplace listing links to it |
 | npm **Trusted Publisher** configured for `@usedrift/cli` | [npmjs.com](https://www.npmjs.com) → package → Settings → Trusted Publisher | Lets `npm publish` succeed with no token, authenticated as GitHub owner `trydrift`, repository `drift`, workflow `release.yml`. **The package must already exist** — see bootstrap below |
-| VS Code Marketplace **Trusted Publisher** configured for publisher `drift` | Marketplace publisher management (`vsce` docs) | Lets `vsce publish --oidc` succeed with no PAT, trusting `trydrift/drift` → `.github/workflows/release.yml` |
+| VS Code Marketplace **publisher `drift`** exists | [Marketplace publisher management](https://marketplace.visualstudio.com/manage) | The publisher id must match `"publisher": "drift"` in `extension/package.json`. The extension itself need not pre-exist — the first `vsce publish` creates `drift.usedrift` |
 | **GitHub Pages enabled**, source **GitHub Actions** | GitHub → Settings → Pages | `pages.yml` deploys the site with `actions/deploy-pages`, which fails outright if the source is still set to a branch |
 
 ### The npm bootstrap problem
@@ -308,13 +310,40 @@ tags only:
    OIDC — no token involved.
 
 The VS Code Marketplace has no equivalent bootstrap problem: the `drift`
-publisher and `drift.drift` extension id can be registered ahead of the first
-release, and its Trusted Publisher trust can be configured before anything is
-ever published.
+publisher can be registered ahead of the first release, and the first
+`vsce publish` creates the `drift.usedrift` extension id.
+
+### Why the extension is published by hand
+
+`release.yml` publishes the CLI and creates the GitHub Release, but does not
+publish the VSIX. `vsce publish --oidc` is documented on `vscode-vsce`'s main
+branch and has never shipped: 3.9.1, 3.9.2 and the 3.9.3 prereleases all answer
+`error: unknown option '--oidc'`, and Marketplace trusted publishing is still an
+open feature request ([microsoft/vsmarketplace#1422](https://github.com/microsoft/vsmarketplace/issues/1422)).
+The only identity-based option that exists today is `--azure-credential`, which
+needs an Entra ID app registration and a federated credential this project does
+not have.
+
+Automating it with a stored `VSCE_PAT` would contradict the rule at the top of
+this section, so the extension is published manually from the exact VSIX the
+release attaches — the same bytes `validate` built, tested and checksummed:
+
+```bash
+gh release download vX.Y.Z --pattern drift.vsix
+npx @vscode/vsce login drift          # once, with a Marketplace PAT held locally
+npx @vscode/vsce publish --packagePath drift.vsix
+```
+
+Restore an automated step when `--oidc` reaches a released `vsce` — check
+`npx @vscode/vsce@<version> publish --help` for the flag rather than the README
+— and place it **before** `npm publish`. npm versions are immutable, so the
+fragile publish must be the one that cannot strand the other.
+`scripts/release-workflow.test.mjs` enforces both halves of that.
 
 ### Releasing
 
-Once both Trusted Publisher relationships exist:
+Once the npm Trusted Publisher relationship exists and the `drift` publisher is
+registered:
 
 ```bash
 npm run release:check   # local mirror of the validation phase; no tag needed yet

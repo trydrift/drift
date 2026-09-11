@@ -65,6 +65,16 @@ const workflow = `# Drift — detect breaking dependency changes and fix them.
 name: Drift
 
 on:
+  # Renovate and Dependabot open a pull request rather than pushing to a
+  # watched branch, and that PR is where the merge decision is actually made.
+  # Drift comments its verdict there, replacing its own previous comment
+  # rather than appending — a rebased bot branch would otherwise accumulate
+  # stale verdicts, which is worse than none. Needs \`pull-requests: write\`,
+  # already in the permissions block below.
+  pull_request:
+    paths:
+${paths}
+
   push:
     # Deliberately unfiltered by branch. Which branches Drift acts on is
     # \`watchBranches\` in .github/drift.yml (default: main, master, develop),
@@ -111,7 +121,7 @@ jobs:
     permissions:
       contents: write # create the fix branch
       issues: write # file and comment on the approval issue
-      pull-requests: write # let Copilot open the PR
+      pull-requests: write # let Copilot open the PR, and post the verdict on a bot's PR
       checks: write # post the Drift check run
       security-events: write # upload code scanning alerts (codeScanning.enabled in drift.yml)
 

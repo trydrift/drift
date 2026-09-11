@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import type { DependencyChange, Ecosystem, ImpactSite, RemediationPlan, RepoContext } from './types.js';
 import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
@@ -17,7 +18,8 @@ import { gatherEvidence, type ProseSource } from './evidence/index.js';
 import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
-import { localizeWithRuntime } from './localize/index.js';
+import { localizeWithRuntime, type LocalizationDiagnostic } from './localize/index.js';
+export type { LocalizationDiagnostic } from './localize/index.js';
 import { completeRuntimeAnalyses, type RuntimeRequirementAnalysis } from './rationale/compatibility.js';
 import { resolveModuleMaps } from './localize/modules.js';
 import { attemptCodemod, type CodemodResult } from './codemod/index.js';
@@ -42,6 +44,7 @@ import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confide
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
 import { probeDependencyChange, type UpgradeVerification } from './verification/upgrade-probe.js';
+import type { VerificationDiagnostic } from './verification/diagnostics.js';
 import { applyVerificationToPlan, combineVerifications, describeVerification } from './verification/apply.js';
 import { detectPackageManagers, type PackageManagerId } from './detect/package-manager.js';
 import type { CheckKind } from './detect/checks.js';
@@ -74,6 +77,18 @@ export interface AnalysisOptions {
   env?: NodeJS.ProcessEnv;
   /** Reports coarse progress, for editor UI. */
   onProgress?: (stage: AnalysisStage, detail: string) => void;
+  /**
+   * Abandons the analysis, killing any command it has running.
+   *
+   * Verification runs the project's own build, and those commands carry their
+   * own generous timeouts — ten minutes apiece, several per pass. A caller
+   * that has already given up on this repository (a benchmark case past its
+   * deadline, a cancelled scan) would otherwise leave them running to
+   * completion, and abandoned builds accumulate until they starve whatever
+   * runs next. Aborting both stops the next check from starting and kills the
+   * one already in flight.
+   */
+  signal?: AbortSignal;
 }
 
 export type AnalysisStage =
@@ -91,6 +106,16 @@ export interface AnalysisResult {
   /** `null` when no dependency change was found worth analysing. */
   plan: RemediationPlan | null;
   summary: string;
+  /**
+   * Per-dependency localization funnel counts, when a source search ran.
+   *
+   * Not on the plan: this is instrumentation for triage — the benchmark
+   * miss-reason funnel reads it to tell "nothing imports this dependency"
+   * apart from "importers exist but never touch the changed symbol" — and it
+   * carries no schema-version obligation the way a `RemediationPlan` field
+   * would. Absent when there was no checkout to search.
+   */
+  localizationDiagnostics?: LocalizationDiagnostic[];
 }
 
 export async function analyzeRepository(options: AnalysisOptions): Promise<AnalysisResult> {
@@ -142,8 +167,25 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   const layouts = [...declaredLayouts, ...nestedLayouts];
 
   if (layouts.length > 0) {
+    // Grouped by kind, because undeclared-nested layouts carry exactly one
+    // member each by construction: a repository of sixteen sibling projects
+    // printed `undeclared-nested (1 member(s))` sixteen times on one line, which
+    // is a wall of text saying one thing.
+    const byKind = new Map<string, { layouts: number; members: number }>();
+    for (const layout of layouts) {
+      const seen = byKind.get(layout.kind) ?? { layouts: 0, members: 0 };
+      byKind.set(layout.kind, {
+        layouts: seen.layouts + 1,
+        members: seen.members + layout.members.length,
+      });
+    }
+
     logger.info(
-      `Workspace: ${layouts.map((l) => `${l.kind} (${l.members.length} member(s))`).join(', ')}`,
+      `Workspace: ${[...byKind]
+        .map(([kind, { layouts: count, members }]) =>
+          count === 1 ? `${kind} (${members} member(s))` : `${kind} ×${count} (${members} member(s))`,
+        )
+        .join(', ')}`,
     );
   }
 
@@ -193,6 +235,10 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // whether it found anything — `additions` alone cannot answer that, because
   // a clean diff and "never computed" both leave it without an entry.
   const surfaceComputed = new Set<string>();
+  // Changes a provider saw and declined to rule on — see
+  // `SurfaceDiff.sourceIncompatibleCount`. Not findings; they exist only to
+  // stop a verdict claiming an unchecked surface is unchanged.
+  const sourceIncompatible = new Map<string, number>();
   // Contract documents (OpenAPI, protobuf, GraphQL) are keyed by path rather
   // than by dependency, and recorded whether or not the comparison worked: a
   // spec that was configured and could not be diffed must not look like one
@@ -216,6 +262,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       // `judgeConfidence` gives any dependency it believes had a real
       // computed API diff — see `CONFIDENT_SURFACE_WEIGHT`.
       if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceComputed.add(key);
+      if (diff.sourceIncompatibleCount) sourceIncompatible.set(key, diff.sourceIncompatibleCount);
       additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
     },
     onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
@@ -248,6 +295,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   /* Stage 5 — localize */
   const impactSites: RemediationPlan['impactSites'] = [];
   const runtimeAnalyses: RuntimeRequirementAnalysis[] = [];
+  const localizationDiagnostics: LocalizationDiagnostic[] = [];
   // Populated below, in the same pass that reads the repository for
   // localization -- a dependency's runtime floor is a property of this
   // repository, not of any one breaking change, so it is gathered once and
@@ -348,6 +396,21 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
         // site, and that is exactly the case the rationale must not read as
         // "nothing found, so nothing wrong".
         runtimeAnalyses.push(...localized.runtimeAnalyses);
+        // Merge funnel counts across members: the same dependency can be
+        // searched once per workspace member, and the benchmark funnel wants
+        // one row per dependency, not one per member.
+        for (const diagnostic of localized.diagnostics) {
+          const existing = localizationDiagnostics.find(
+            (row) => row.dependency === diagnostic.dependency && row.ecosystem === diagnostic.ecosystem,
+          );
+          if (existing) {
+            existing.importerCandidateFiles += diagnostic.importerCandidateFiles;
+            existing.changesSearched += diagnostic.changesSearched;
+            existing.sitesFound += diagnostic.sitesFound;
+          } else {
+            localizationDiagnostics.push({ ...diagnostic });
+          }
+        }
       }
 
       logger.info(`Found ${impactSites.length} impact site(s)`);
@@ -575,6 +638,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       ecosystem: change.ecosystem,
       workspace: change.workspace,
       status: gap ? 'unavailable' : computed ? 'checked' : 'unavailable',
+      ...(sourceIncompatible.get(key) ? { unruledChanges: sourceIncompatible.get(key) } : {}),
       detail: gap
         ? gap.reason
         : computed
@@ -665,7 +729,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // answer calls `deepVerify` next with this result; `analyzeRepository`
   // itself never does, so a Quick Scan is exactly that regardless of what
   // `config.verify.enabled` says.
-  return { plan: withGaps, summary: summarize(withGaps) };
+  return {
+    plan: withGaps,
+    summary: summarize(withGaps),
+    ...(localizationRan ? { localizationDiagnostics } : {}),
+  };
 }
 
 /**
@@ -721,7 +789,11 @@ export async function deepVerify(result: AnalysisResult, options: AnalysisOption
   });
 
   if (verifiedPlan === result.plan) return result;
-  return { plan: verifiedPlan, summary: summarize(verifiedPlan) };
+  return {
+    plan: verifiedPlan,
+    summary: summarize(verifiedPlan),
+    ...(result.localizationDiagnostics ? { localizationDiagnostics: result.localizationDiagnostics } : {}),
+  };
 }
 
 /**
@@ -762,6 +834,13 @@ async function verifyPlan(
   // that moved exactly one dependency, so a batch of several simultaneous
   // bumps in one manifest never has its failure blamed on all of them.
   const confirmedRegressions: string[] = [];
+  // Impact sites the toolchain *measured* rather than predicted: a compiler or
+  // build diagnostic that appeared only after an isolated dependency change.
+  // Bound to a synthetic `measured:<key>` id (no static breaking change to
+  // attach to), so disposition/risk/commit-graph — which iterate
+  // `breakingChanges` — ignore them, while the report and `plan.impactSites`
+  // can still point a reader at the exact line.
+  const measuredSites: ImpactSite[] = [];
 
   for (const [dir, changes] of groups) {
     const manager = await managerFor(workspace, dir, changes[0]!.ecosystem);
@@ -780,6 +859,16 @@ async function verifyPlan(
       ...(repo.beforeSha ? { beforeSha: repo.beforeSha } : {}),
       kinds: config.verify.checks as CheckKind[],
       timeoutMs: config.verify.timeoutMs,
+      ...(options.signal
+        ? {
+            signal: options.signal,
+            // The probe checks this between checks; the signal above kills the
+            // one already running. Both are needed: without the token an
+            // aborted pass still starts its remaining checks, and without the
+            // signal the in-flight build runs to its own timeout.
+            token: { get isCancellationRequested() { return options.signal!.aborted; } },
+          }
+        : {}),
       ...(config.verify.generatedSourceGlobs.length > 0
         ? { allowedGlobs: config.verify.generatedSourceGlobs }
         : {}),
@@ -798,7 +887,27 @@ async function verifyPlan(
       // ruling out the one remaining ambiguity: several dependencies moving
       // together in the same manifest, where a red result cannot be
       // attributed to any one of them.
-      if (changes.length === 1) confirmedRegressions.push(dependencyEcosystemKey(changes[0]!));
+      if (changes.length === 1) {
+        const key = dependencyEcosystemKey(changes[0]!);
+        confirmedRegressions.push(key);
+        // Only an isolated failure earns measured sites: a diagnostic from a
+        // multi-dependency group cannot be pinned on this change alone.
+        const fromDiagnostics = await measuredSitesFrom(
+          verification.introducedDiagnostics ?? [],
+          key,
+          changes[0]!.name,
+          dir,
+          workspace,
+        );
+        measuredSites.push(...fromDiagnostics);
+        // Nothing in the output named a source location: the break is in the
+        // dependency graph or the build policy, not in a line of code. The
+        // declaration is still somewhere real to send the developer.
+        if (fromDiagnostics.length === 0) {
+          const site = await manifestSiteFor(workspace, changes[0]!, key);
+          if (site) measuredSites.push(site);
+        }
+      }
     }
     verifiedPlan = applyVerificationToPlan(verifiedPlan, verification, dir);
   }
@@ -836,7 +945,192 @@ async function verifyPlan(
     };
   }
 
+  // Measured sites join `impactSites` last, de-duplicated against anything
+  // static localization already found at the same file+line, so a diagnostic
+  // that merely confirms a predicted site does not double it.
+  if (measuredSites.length > 0) {
+    const known = new Set(verifiedPlan.impactSites.map((site) => `${site.file}:${site.line}`));
+    const fresh = measuredSites.filter((site) => !known.has(`${site.file}:${site.line}`));
+    if (fresh.length > 0) {
+      verifiedPlan = { ...verifiedPlan, impactSites: [...verifiedPlan.impactSites, ...fresh] };
+    }
+  }
+
   return verifiedPlan;
+}
+
+/**
+ * Turn a check's introduced diagnostics into impact sites.
+ *
+ * `node_modules` / virtualenv paths are dropped — a diagnostic inside an
+ * installed package is real, but it is not a location in *this* repository's
+ * code and pointing a reviewer at it wastes the click. What remains is
+ * consumer source the compiler itself named as broken by this change, which is
+ * `high` confidence by construction: it is measured, not matched.
+ */
+/**
+ * Source roots a JVM stack frame's package path can sit under.
+ *
+ * A frame prints `(FooTest.java:42)` and the class's package supplies
+ * `com/example/`, but neither says which source root holds it. These are the
+ * Maven/Gradle conventions, tried in order; a frame that matches none of them
+ * is dropped rather than guessed at.
+ */
+const JVM_SOURCE_ROOTS = [
+  '',
+  'src/test/java/',
+  'src/main/java/',
+  'src/test/kotlin/',
+  'src/main/kotlin/',
+  'src/test/scala/',
+  'src/main/scala/',
+];
+
+/**
+ * Turn a stack frame's inferred package path into a path that exists.
+ *
+ * Tried under the changed workspace member first, then under each immediate
+ * subdirectory — a multi-module Maven build reports its modules' failures in
+ * one output, and the module a test belongs to is not recoverable from the
+ * frame. Returns `undefined` when nothing matches, which is the point: a
+ * measured site has to name a file the developer can open.
+ */
+async function resolveStackFrameFile(
+  workspace: string,
+  dir: string,
+  file: string,
+  modules: readonly string[],
+): Promise<string | undefined> {
+  for (const base of [dir, ...modules]) {
+    for (const root of JVM_SOURCE_ROOTS) {
+      const candidate = [base, root + file].filter(Boolean).join('/').replace(/\/{2,}/g, '/');
+      try {
+        const info = await stat(join(workspace, candidate));
+        if (info.isFile()) return candidate;
+      } catch {
+        // Not there; try the next root.
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The line in a manifest that declares this dependency.
+ *
+ * Coordinate-shaped ecosystems name the artifact separately from the group, so
+ * a Maven POM is matched on `<artifactId>`; everywhere else the package name
+ * appears verbatim on its own declaration line. Returns `undefined` rather
+ * than guessing when nothing matches — an unfound declaration is better than
+ * a wrong line.
+ */
+async function locateDeclaration(
+  workspace: string,
+  manifestPath: string,
+  name: string,
+): Promise<{ line: number; excerpt: string } | undefined> {
+  let text: string;
+  try {
+    text = await readFile(join(workspace, manifestPath), 'utf8');
+  } catch {
+    return undefined;
+  }
+
+  const artifact = name.includes(':') ? name.slice(name.indexOf(':') + 1) : name;
+  const escaped = artifact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const patterns = [
+    new RegExp(`<artifactId>\\s*${escaped}\\s*</artifactId>`),
+    new RegExp(`["'\`]${escaped}["'\`]\\s*[:=]`),
+    new RegExp(`(^|\\s)${escaped}\\s*(==|>=|<=|~=|=|:|$)`),
+  ];
+
+  const lines = text.split('\n');
+  for (const pattern of patterns) {
+    const index = lines.findIndex((line) => pattern.test(line));
+    if (index !== -1) return { line: index + 1, excerpt: lines[index]!.trim().slice(0, 200) };
+  }
+  return undefined;
+}
+
+/**
+ * Where to send a developer when the build broke but no source line is wrong.
+ *
+ * A Maven Enforcer rule, a dependency-convergence error or a failed lock
+ * resolution is a real, measured break with no consumer call site to point at
+ * — the fix is in the declaration. Marked `siteKind: 'manifest'` so neither a
+ * report nor a benchmark mistakes it for source-level localization.
+ */
+async function manifestSiteFor(
+  workspace: string,
+  change: DependencyChange,
+  breakingChangeKey: string,
+): Promise<ImpactSite | undefined> {
+  const declaration = await locateDeclaration(workspace, change.manifestPath, change.name);
+  if (!declaration) return undefined;
+  return {
+    breakingChangeId: `measured:${breakingChangeKey}`,
+    file: change.manifestPath,
+    line: declaration.line,
+    excerpt: declaration.excerpt,
+    matchedSymbol: change.name,
+    confidence: 'high',
+    siteKind: 'manifest',
+  };
+}
+
+async function measuredSitesFrom(
+  diagnostics: readonly VerificationDiagnostic[],
+  breakingChangeKey: string,
+  dependencyName: string,
+  dir: string,
+  workspace: string,
+): Promise<ImpactSite[]> {
+  const sites: ImpactSite[] = [];
+  const seen = new Set<string>();
+
+  // Only read the directory when a stack frame actually needs resolving.
+  let modules: string[] | undefined;
+  const moduleDirs = async (): Promise<string[]> => {
+    if (modules) return modules;
+    try {
+      const entries = await readdir(workspace, { withFileTypes: true });
+      modules = entries
+        .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'target')
+        .map((entry) => entry.name);
+    } catch {
+      modules = [];
+    }
+    return modules;
+  };
+
+  for (const diagnostic of diagnostics) {
+    if (/(^|\/)(node_modules|\.venv|venv|site-packages|target\/|dist\/|build\/)/.test(diagnostic.file)) continue;
+    let file = dir && !diagnostic.file.startsWith(`${dir}/`) ? `${dir}/${diagnostic.file}` : diagnostic.file;
+    if (diagnostic.origin === 'stack-frame') {
+      const resolved = await resolveStackFrameFile(workspace, dir, diagnostic.file, await moduleDirs());
+      if (!resolved) continue;
+      file = resolved;
+    }
+    const dedupeKey = `${file}:${diagnostic.line}:${diagnostic.column ?? ''}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    sites.push({
+      breakingChangeId: `measured:${breakingChangeKey}`,
+      file,
+      line: diagnostic.line,
+      ...(diagnostic.column !== undefined ? { column: diagnostic.column } : {}),
+      excerpt: (diagnostic.code ? `${diagnostic.code}: ${diagnostic.message}` : diagnostic.message).slice(0, 200),
+      matchedSymbol: diagnostic.code ?? quotedIdentifier(diagnostic.message) ?? dependencyName,
+      confidence: 'high',
+    });
+  }
+  return sites;
+}
+
+/** The first `` `back-ticked` `` or `'quoted'` identifier in a compiler message, if any. */
+function quotedIdentifier(message: string): string | undefined {
+  const match = /[`'"]([A-Za-z_$][\w$.]*)[`'"]/.exec(message);
+  return match?.[1];
 }
 
 /**

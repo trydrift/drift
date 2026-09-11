@@ -258,6 +258,81 @@ describe('maven detection', () => {
     const changes = detectChanges([{ path: 'pom.xml', before: pom('4.12'), after: pom('4.13') }]);
     assert.equal(changes[0]?.kind, 'dev');
   });
+
+  /**
+   * Stating the version once under `<dependencyManagement>` and referencing it
+   * without one is ordinary Maven. Read in file order the version-less direct
+   * block comes second, and it used to overwrite the managed version with
+   * `null` — so both sides of a real bump read as "version unknown" and the
+   * change was reported as no change at all.
+   */
+  test('a version-less dependency inherits its managed version', () => {
+    const pom = (version: string) => `<project>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+  </dependencies>
+</project>`;
+
+    const changes = detectChanges([{ path: 'pom.xml', before: pom('1.7.36'), after: pom('2.0.2') }]);
+    const slf4j = changes.find((c) => c.name === 'org.slf4j:slf4j-api');
+    assert.ok(slf4j, 'the managed bump is a detected dependency change');
+    assert.equal(slf4j?.from, '1.7.36');
+    assert.equal(slf4j?.to, '2.0.2');
+    assert.equal(slf4j?.bump, 'major');
+  });
+
+  test('an explicit version on the direct declaration still wins over the managed one', () => {
+    const pom = (version: string) => `<project>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>1.0.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>${version}</version>
+    </dependency>
+  </dependencies>
+</project>`;
+
+    const changes = detectChanges([{ path: 'pom.xml', before: pom('2.0.0'), after: pom('2.1.0') }]);
+    const slf4j = changes.find((c) => c.name === 'org.slf4j:slf4j-api');
+    assert.equal(slf4j?.from, '2.0.0', 'the override, not the managed 1.0.0');
+    assert.equal(slf4j?.to, '2.1.0');
+  });
+
+  test('a managed version stated as a property still resolves', () => {
+    const pom = (version: string) => `<project>
+  <properties><slf4j.version>${version}</slf4j.version></properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>\${slf4j.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId></dependency>
+  </dependencies>
+</project>`;
+
+    const changes = detectChanges([{ path: 'pom.xml', before: pom('1.7.36'), after: pom('2.0.2') }]);
+    assert.equal(changes.find((c) => c.name === 'org.slf4j:slf4j-api')?.to, '2.0.2');
+  });
 });
 
 describe('cargo and rubygems detection', () => {

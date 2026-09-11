@@ -79,6 +79,18 @@ export interface CheckedSurface {
    */
   workspace?: string;
   status: 'checked' | 'unavailable' | 'skipped';
+  /**
+   * Changes the provider observed on this surface but was not confident
+   * enough to report as findings — japicmp's source-incompatible-only class,
+   * where the differ reads binary compatibility.
+   *
+   * A `checked` row carrying these was checked for one kind of breakage and
+   * not another, so it cannot support "no incompatible change in the checked
+   * surfaces". `commons-io 2.7 -> 2.11.0` is the shape: zero binary-
+   * incompatible changes, eighteen source-incompatible ones, and a build that
+   * really does fail to compile.
+   */
+  unruledChanges?: number;
   detail: string;
 }
 

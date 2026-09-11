@@ -328,3 +328,111 @@ describe('the canonical safe-equivalent predicate', () => {
     }
   });
 });
+
+/**
+ * Case H — a surface checked for one kind of breakage and not another.
+ *
+ * japicmp reads *binary* compatibility, and Drift reports only what it flags
+ * binary-incompatible: emitting the source-incompatible-only class collapsed
+ * precision on `benchmarks/roseau` from 91.1% to 70.3%. But "not confident
+ * enough to report" is not "did not happen", and the two were collapsing into
+ * a safety claim. `commons-io 2.7 → 2.11.0` has zero binary-incompatible
+ * changes and eighteen source-incompatible ones, and its consumer's build
+ * really does fail to compile — while Drift said "no incompatible change in
+ * the checked surfaces", a sentence about a surface it never checked.
+ */
+describe('Case H — changes the differ saw but declined to rule on', () => {
+  const planWith = (extra: Record<string, unknown>) => ({
+    breakingChanges: [],
+    changes: [{ name: 'commons-io:commons-io', ecosystem: 'maven' }],
+    confirmedRegressions: [],
+    blockers: [],
+    checkedSurfaces: [
+      {
+        surface: 'api-surface',
+        dependency: 'commons-io:commons-io',
+        ecosystem: 'maven',
+        status: 'checked',
+        unruledChanges: 18,
+        detail: 'computed',
+      },
+      { surface: 'localization', status: 'checked', detail: 'searched' },
+    ],
+    ...extra,
+  });
+
+  test('cannot be called "no incompatible change in the checked surfaces"', () => {
+    assert.equal(resolvePlanVerdict(planWith({}) as never), 'insufficient-evidence');
+  });
+
+  test('a passing compile-capable check settles it, because that *is* the source-compatibility test', () => {
+    const verdict = resolvePlanVerdict(
+      planWith({
+        verification: { status: 'passed', checks: [{ compileCapable: true, status: 'passed' }] },
+      }) as never,
+    );
+    assert.equal(verdict, 'no-incompatible-change-in-checked-surfaces');
+    assert.ok(isSafeEquivalentVerdict(verdict));
+  });
+
+  test('a passing check that cannot compile does not settle it', () => {
+    // A lint or format task passing says nothing about whether the code still
+    // compiles against the new version.
+    assert.equal(
+      resolvePlanVerdict(
+        planWith({
+          verification: { status: 'passed', checks: [{ compileCapable: false, status: 'passed' }] },
+        }) as never,
+      ),
+      'insufficient-evidence',
+    );
+  });
+
+  test('a surface with nothing unruled is unaffected by any of this', () => {
+    const clean = planWith({});
+    clean.checkedSurfaces[0]!.unruledChanges = 0;
+    assert.equal(resolvePlanVerdict(clean as never), 'no-incompatible-change-in-checked-surfaces');
+  });
+});
+
+/**
+ * A manifest site says "your build breaks, and this is the line you edit". It
+ * is a real answer and a weaker claim than a call site, and every surface that
+ * shows impact sites has to keep the two apart — the CLI table, the markdown
+ * report, `drift explain`, and the MCP tools. Rendering one as an ordinary
+ * impact site would put back exactly the conflation `siteKind` exists to
+ * remove.
+ */
+describe('a manifest site is labelled wherever it is shown', () => {
+  const manifestSite = {
+    breakingChangeId: 'measured:maven|org.example:lib',
+    file: 'pom.xml',
+    line: 42,
+    excerpt: '<artifactId>lib</artifactId>',
+    matchedSymbol: 'org.example:lib',
+    confidence: 'high' as const,
+    siteKind: 'manifest' as const,
+  };
+
+  test('`drift explain` says so', async () => {
+    const { renderExplanation } = await import('../dist/upgrade/explain.js');
+    const candidate = {
+      name: 'org.example:lib',
+      ecosystem: 'maven',
+      manifestPath: 'pom.xml',
+      current: '1.0.0',
+      selected: '2.0.0',
+      status: 'ready',
+      breakingCount: 0,
+      impactCount: 1,
+      impactFiles: 1,
+      impactConfidence: 'high',
+      evidenceCount: 0,
+      gaps: [],
+      risk: 'low',
+      summary: 'x',
+      plan: { breakingChanges: [], impactSites: [manifestSite] },
+    };
+    assert.match(renderExplanation(candidate as never, 'org.example:lib'), /not a call site/);
+  });
+});

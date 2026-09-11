@@ -4,7 +4,7 @@ import { inter, instrumentSerif } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Drift — did that dependency update break your code?",
+  title: "Drift — Did that dependency update break your code?",
   description:
     "Drift checks dependency updates against the code that uses them, shows the evidence, and prepares a fix you can review.",
   openGraph: {

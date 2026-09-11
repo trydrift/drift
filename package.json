@@ -1,8 +1,9 @@
 {
   "name": "@usedrift/cli",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Find which dependency upgrades affect your code, show the evidence, and prepare reviewable fixes from the command line.",
   "license": "SEE LICENSE IN LICENSE.md",
+  "author": "Drift (https://github.com/trydrift/drift)",
   "type": "module",
   "repository": {
     "type": "git",
@@ -64,6 +65,7 @@
   },
   "dependencies": {
     "@graphql-inspector/core": "^7.1.3",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@octokit/rest": "^22.0.1",
     "@octokit/webhooks": "^14.2.0",
     "graphql": "^16.14.2",

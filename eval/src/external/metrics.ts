@@ -131,6 +131,16 @@ export interface DatasetMetrics {
    * the rate.
    */
   mappingCoverage: Record<string, number>;
+  /**
+   * Every scored positive case that did not reach `locally-affected`, charged
+   * to the one pipeline stage it was lost at. `total` is the denominator the
+   * affected-repository rate is missing from — the sum of the buckets.
+   *
+   * Present only for datasets whose ground truth supports the affected
+   * question; absent (empty `byReason`, zero `total`) otherwise. See
+   * `impact-funnel.ts` for what each reason means.
+   */
+  affectedMisses: { total: number; byReason: Record<string, number>; unclassified: number };
 }
 
 /**
@@ -287,6 +297,8 @@ export function computeMetrics(input: {
     });
   }
 
+  const affectedMisses = tallyAffectedMisses(dataset, scored);
+
   return {
     datasetId: dataset.id,
     datasetClass: dataset.datasetClass,
@@ -310,7 +322,39 @@ export function computeMetrics(input: {
       counts[result.truth.mappingStatus] = (counts[result.truth.mappingStatus] ?? 0) + 1;
       return counts;
     }, {}),
+    affectedMisses,
   };
+}
+
+/**
+ * Charge every scored positive that did not reach `locally-affected` to the
+ * one pipeline stage the miss-reason funnel assigned it.
+ *
+ * Deliberately spans both the adjudicated misses and the cases withheld from
+ * the affected rate (an unresolved version pair, a partial migration): those
+ * are still real places the pipeline lost the answer, and folding them in is
+ * what makes the bucket totals reconcile against "positives that were not
+ * `locally-affected`" rather than against a shrunken denominator.
+ */
+function tallyAffectedMisses(
+  dataset: Dataset,
+  scored: readonly ExternalCaseResult[],
+): DatasetMetrics['affectedMisses'] {
+  const empty = { total: 0, byReason: {} as Record<string, number>, unclassified: 0 };
+  if (!supportsMetric(dataset, 'identifiedAffected')) return empty;
+
+  const byReason: Record<string, number> = {};
+  let total = 0;
+  let unclassified = 0;
+  for (const result of scored) {
+    if (result.truth.polarity !== 'positive') continue;
+    if (result.outcomes.identifiedAffected === true) continue;
+    total += 1;
+    const reason = result.impactFunnel?.missReason;
+    if (reason) byReason[reason] = (byReason[reason] ?? 0) + 1;
+    else unclassified += 1;
+  }
+  return { total, byReason, unclassified };
 }
 
 /**
@@ -321,6 +365,36 @@ export function computeMetrics(input: {
  * records a new dimension gets it reported without this file having to learn
  * about it.
  */
+/**
+ * Which BUMP failure classes a static differ can say anything about.
+ *
+ * BUMP labels each case with why the build broke. Two of those classes have no
+ * API-surface change for *any* static tool to find: `ENFORCER_FAILURE` is a
+ * Maven build-policy rule (dependency convergence, banned dependencies,
+ * required versions) and the resolution/lock failures are the build never
+ * settling on a version at all. Drift answers `insufficient-evidence` on those,
+ * which is the correct answer — there is nothing to see.
+ *
+ * Pooled with the rest they are indistinguishable from a miss, and they drag
+ * the headline affected-identification rate down by six points while measuring
+ * a limitation of static analysis rather than of Drift.
+ *
+ * So they get their own denominator instead. Not dropped — every case is still
+ * scored, still in `cases.jsonl.gz`, still in the pooled rate above; the split
+ * only says which number answers which question.
+ */
+const BUMP_NO_STATIC_SIGNAL = new Set([
+  'ENFORCER_FAILURE',
+  'DEPENDENCY_LOCK_FAILURE',
+  'DEPENDENCY_RESOLUTION_FAILURE',
+]);
+
+/** The stratum a BUMP label belongs to, or `null` for a dataset without them. */
+export function bumpStratum(datasetId: string, label: string): string | null {
+  if (datasetId !== 'bump' || !label) return null;
+  return BUMP_NO_STATIC_SIGNAL.has(label) ? 'no-api-surface-delta' : 'static-signal-possible';
+}
+
 function breakdownOf(dataset: Dataset, scored: readonly ExternalCaseResult[]): Record<string, Record<string, Rate>> {
   const dimensions = new Map<string, Map<string, ExternalCaseResult[]>>();
 
@@ -334,6 +408,8 @@ function breakdownOf(dataset: Dataset, scored: readonly ExternalCaseResult[]): R
 
   for (const result of scored) {
     put('label', result.truth.label || '(unlabelled)', result);
+    const stratum = bumpStratum(dataset.id, result.truth.label);
+    if (stratum) put('stratum', stratum, result);
     for (const [key, value] of Object.entries(result.provenance.extra)) {
       if (value === 'true' || value === 'false') put(key, value, result);
     }

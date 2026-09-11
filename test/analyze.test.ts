@@ -458,6 +458,34 @@ describe('type surface diffing', () => {
     assert.ok(changes.some((c) => c.kind === 'member-now-required'));
   });
 
+  /**
+   * Evidence text is the product. "`Options` is no longer exported (was a
+   * interface)" is the same finding as the correct sentence and reads like
+   * output nobody looked at, which is the wrong impression for a tool whose
+   * claim is that every line came from somewhere real. The kinds that need
+   * "an" — interface, enum — are decided from a parsed artifact at runtime,
+   * so the article cannot be written into the template beside them.
+   */
+  test('a removed declaration takes the article its kind actually needs', () => {
+    const before = extractExports('export interface Options {}\nexport enum Mode { A }\nexport function go(): void;', 'a.d.ts');
+    const after = extractExports('export declare const nothing: number;', 'a.d.ts');
+
+    const details = diffSurfaces(before, after).map((change) => change.detail);
+    assert.ok(details.some((d) => d.includes('was an interface')), `expected "an interface" in ${JSON.stringify(details)}`);
+    assert.ok(details.some((d) => d.includes('was an enum')), `expected "an enum" in ${JSON.stringify(details)}`);
+    assert.ok(details.some((d) => d.includes('was a function')), `expected "a function" in ${JSON.stringify(details)}`);
+    assert.ok(!details.some((d) => /\bwas a (?:interface|enum)\b/.test(d)), 'no "a interface" survives');
+  });
+
+  test('a declaration that changes kind takes both articles', () => {
+    const before = extractExports('export interface Shape { a: number }', 'a.d.ts');
+    const after = extractExports('export declare class Shape { a: number }', 'a.d.ts');
+
+    const changed = diffSurfaces(before, after).find((change) => change.kind === 'kind-changed');
+    assert.ok(changed, 'the kind change is reported');
+    assert.match(changed.detail, /changed from an interface to a class/);
+  });
+
   test('reports nothing when the surface only grows', () => {
     const before = extractExports('export function a(): void;', 'a.d.ts');
     const after = extractExports('export function a(): void;\nexport function b(): void;', 'a.d.ts');
@@ -894,6 +922,39 @@ describe('analysis', () => {
     assert.equal(result[0]?.confidence, 'high');
     assert.deepEqual(result[0]?.citations, ['ev_1']);
     assert.ok(result[0]?.symbols.includes('createClient'));
+  });
+
+  /**
+   * `default` is the name a module published through `export =` or
+   * `export default` is reachable by, and the only name localization can bind
+   * — an importing file picks its own, and `ImportRecord.defaultBinding` maps
+   * between them. It is not a name any developer has typed, and a surface
+   * provider writes its detail text before it knows which package the finding
+   * is about, so `glob@8`'s removals read "`default.sync` is no longer
+   * exported". Here the package is known.
+   */
+  test('a default export is described by the name the developer wrote', async () => {
+    const evidence = [
+      {
+        id: 'ev_default',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'surface',
+        weight: 1,
+        findings: [
+          { code: 'export-removed', symbol: 'default.sync', detail: '`default.sync` is no longer exported (was a function).' },
+          { code: 'export-removed', symbol: 'default', detail: '`default` is no longer exported (was a function).' },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.equal(result[0]?.summary, '`acme-sdk.sync` is no longer exported (was a function).');
+    // The bare form needs the clause rewritten, not just the name.
+    assert.equal(result[1]?.summary, '`acme-sdk` no longer has a default export (was a function).');
+    // Only the prose is rewritten: the symbol stays bindable.
+    assert.ok(result[0]?.symbols.includes('default.sync'));
   });
 
   test('module-system dedupe preserves package-wide, exact, and wildcard scopes', async () => {
