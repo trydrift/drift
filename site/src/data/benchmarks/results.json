@@ -1,6 +1,6 @@
 {
   "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
-  "generatedAt": "2026-09-09T10:56:26.438Z",
+  "generatedAt": "2026-09-10T16:42:21.021Z",
   "datasets": [
     {
       "runId": "roseau-accuracy",
@@ -26,9 +26,9 @@
           "category-accuracy"
         ]
       },
-      "driftCommit": "c45d9d01ede15838d924fe9f5eb51c66632623b4",
+      "driftCommit": "64a481d7cc6738734ab88b515f7283def7bb303b",
       "driftTreeDirty": false,
-      "runDate": "2026-09-09T10:56:09.551Z",
+      "runDate": "2026-09-10T16:42:21.021Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- roseau",
@@ -189,9 +189,9 @@
           "category-accuracy"
         ]
       },
-      "driftCommit": "c45d9d01ede15838d924fe9f5eb51c66632623b4",
+      "driftCommit": "64a481d7cc6738734ab88b515f7283def7bb303b",
       "driftTreeDirty": false,
-      "runDate": "2026-09-09T10:56:26.438Z",
+      "runDate": "2026-09-10T16:42:04.890Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- kong",
@@ -558,9 +558,9 @@
           "category-accuracy"
         ]
       },
-      "driftCommit": "c45d9d01ede15838d924fe9f5eb51c66632623b4",
+      "driftCommit": "64a481d7cc6738734ab88b515f7283def7bb303b",
       "driftTreeDirty": false,
-      "runDate": "2026-09-09T10:56:01.699Z",
+      "runDate": "2026-09-10T16:41:36.718Z",
       "rescoredAt": null,
       "rescoredAtCommit": null,
       "command": "npm run eval:external -- kong",
@@ -990,8 +990,8 @@
       "driftCommit": "65686d9a777678e2c43e6049b7024f2230e399cc",
       "driftTreeDirty": true,
       "runDate": "2026-09-07T11:20:24.156Z",
-      "rescoredAt": null,
-      "rescoredAtCommit": null,
+      "rescoredAt": "2026-09-11T16:42:20.022Z",
+      "rescoredAtCommit": "c9644ed9ba7b1a7a1c98af91e173aa74d4a25b69",
       "command": "npm run eval:external -- bump",
       "platform": "darwin/x64, Node v24.20.0",
       "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against.",
@@ -1151,6 +1151,40 @@
             "numerator": 0,
             "denominator": 14,
             "value": 0
+          }
+        },
+        "stratum: static-signal-possible": {
+          "dependency-update detection rate": {
+            "numerator": 385,
+            "denominator": 411,
+            "value": 0.9367396593673966
+          },
+          "affected-repository identification rate": {
+            "numerator": 315,
+            "denominator": 411,
+            "value": 0.7664233576642335
+          },
+          "consumer localization rate": {
+            "numerator": 274,
+            "denominator": 411,
+            "value": 0.6666666666666666
+          }
+        },
+        "stratum: no-api-surface-delta": {
+          "dependency-update detection rate": {
+            "numerator": 110,
+            "denominator": 140,
+            "value": 0.7857142857142857
+          },
+          "affected-repository identification rate": {
+            "numerator": 71,
+            "denominator": 140,
+            "value": 0.5071428571428571
+          },
+          "consumer localization rate": {
+            "numerator": 8,
+            "denominator": 140,
+            "value": 0.05714285714285714
           }
         }
       },
