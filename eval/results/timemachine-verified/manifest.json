@@ -2,16 +2,14 @@
   "version": "drift-external-run-v1",
   "runId": "timemachine-verified",
   "datasetId": "timemachine",
-  "createdAt": "2026-09-11T18:47:49.727Z",
-  "driftCommit": "a2a31d4de491a0335a115995f4776bde3db6730a",
+  "createdAt": "2026-09-11T19:41:47.604Z",
+  "driftCommit": "3f60351d2b781f868ac6d380b267f5391d7e3af2",
   "driftTreeDirty": false,
-  "harnessVersion": "a2a31d4de491a0335a115995f4776bde3db6730a",
+  "harnessVersion": "3f60351d2b781f868ac6d380b267f5391d7e3af2",
   "datasetVersion": "9928dbf1af1405433d2c2e40227f39fd831d3863",
   "command": "/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified",
   "node": "v22.23.2",
   "platform": "linux",
   "arch": "x64",
-  "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed.",
-  "rescoredAt": "2026-09-11T19:25:54.035Z",
-  "rescoredAtCommit": "8aa0690ba8bc9372dbac1a734f3dcd546a3c4e7f"
+  "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed."
 }
