@@ -480,7 +480,7 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
       // A case with nothing to detect cannot measure detection, and scoring it
       // as a miss would charge Drift for an empty input.
       throw new TimemachineUnavailable(
-        'reproduction-failed',
+        'no-dependency-update',
         `no requirements file at ${task.commit_hash} declares a package whose resolved version differs, so no dependency update could be constructed for this task`,
       );
     }

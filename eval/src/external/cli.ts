@@ -9,6 +9,7 @@ import { probeEnvironment } from './environment.ts';
 import { DEFAULT_CASE_TIMEOUT_MS } from './deadline.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
+import { reclassifyRecordedExclusion } from './exclusion-reclassification.ts';
 import { driftRevision, newRunId, resultsDir, selectionDocument, writeJson, writeProvisionalManifest, writeRun, type RunManifest } from './results.ts';
 import { select, type Selectable } from './selection.ts';
 import { runKong } from './runners/kong-runner.ts';
@@ -191,7 +192,7 @@ async function readPartial(path: string): Promise<ExternalCaseResult[]> {
   const results: ExternalCaseResult[] = [];
   const stream = createInterface({ input: createReadStream(path) });
   for await (const line of stream) {
-    if (line.trim().length > 0) results.push(JSON.parse(line) as ExternalCaseResult);
+    if (line.trim().length > 0) results.push(reclassifyRecordedExclusion(JSON.parse(line) as ExternalCaseResult));
   }
   return results;
 }
@@ -232,7 +233,7 @@ export async function rescoreExternal(options: ExternalRunOptions & { rescore: s
   const input = useFinished ? createReadStream(finished).pipe(createGunzip()) : createReadStream(partial);
   const stream = createInterface({ input });
   for await (const line of stream) {
-    if (line.trim().length > 0) results.push(JSON.parse(line) as ExternalCaseResult);
+    if (line.trim().length > 0) results.push(reclassifyRecordedExclusion(JSON.parse(line) as ExternalCaseResult));
   }
 
   // `available` is a property of the corpus the run read, not of this

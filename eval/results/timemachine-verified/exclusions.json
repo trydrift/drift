@@ -1,7 +1,7 @@
 [
   {
     "caseId": "dakrauth/django-swingtime@e32fba3f8eec",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at e32fba3f8eecfc291201b21776b9f130e152c1c3 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -34,7 +34,7 @@
   },
   {
     "caseId": "mp4096/blockschaltbilder@9253022b5518",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 9253022b5518e42d784176594d4d6fee7baa1050 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -67,7 +67,7 @@
   },
   {
     "caseId": "FabienArcellier/spike-ariadne@fce763134711",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at fce763134711472a729a8f09daa3e009d94d8188 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -100,7 +100,7 @@
   },
   {
     "caseId": "mixkorshun/django-antispam@e0c749844234",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at e0c74984423486ed5b89d0a86be5191af2b0efcc declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -133,7 +133,7 @@
   },
   {
     "caseId": "microparts/configuration-python@7626e4e075a5",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 7626e4e075a5b698255118dc8c2925a2522752b7 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -166,7 +166,7 @@
   },
   {
     "caseId": "NickWedzinga/BlekingePoGO@96fba00f9171",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 96fba00f9171b1eab3b2a43af5e22c532a5aa3b3 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -199,7 +199,7 @@
   },
   {
     "caseId": "miracle2k/k8s-snapshots@5185ecb70743",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 5185ecb707438211e8c24deb5704bb59fdb78077 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -232,7 +232,7 @@
   },
   {
     "caseId": "lucasmaystre/choix@4feb285312b2",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 4feb285312b2b22e87d1e961514dc735e60d7624 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -265,7 +265,7 @@
   },
   {
     "caseId": "italomaia/flask-rev@dbdeefe21b24",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at dbdeefe21b248226bac0ce4854b7e87ef5c97407 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -298,7 +298,7 @@
   },
   {
     "caseId": "manicmaniac/sqlalchemy-repr@a02c45b21e0c",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at a02c45b21e0ced3234e70ebfeec1b40070db6472 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -331,7 +331,7 @@
   },
   {
     "caseId": "mirandrom/PyS2@9bf44f0ad16d",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 9bf44f0ad16d9ccdeadd4cff719eda2a8e42cc84 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -364,7 +364,7 @@
   },
   {
     "caseId": "n8henrie/icw@fdff9b9b5665",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at fdff9b9b566552b0f1bcbee7b3562e4210c755da declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -397,7 +397,7 @@
   },
   {
     "caseId": "bguedj/pyrotor@dcef5d29fd5d",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at dcef5d29fd5dedf63f4aadd26a1e5a912ac7c896 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -430,7 +430,7 @@
   },
   {
     "caseId": "ricco386/django-faktura@03e94843e0f1",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 03e94843e0f17e1c66db360784cb31615f829027 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -463,7 +463,7 @@
   },
   {
     "caseId": "alliefitter/iterable_collections@4e8fb4b05517",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 4e8fb4b05517406cbffe9c3276a1c0c956ba263c declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -496,7 +496,7 @@
   },
   {
     "caseId": "RatJuggler/guinea-bot@b44a51a422d9",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at b44a51a422d94b9ec59b157493b6bec147b5a19e declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -529,7 +529,7 @@
   },
   {
     "caseId": "gwaramadze/falguard@e1c234dc1708",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at e1c234dc17086bf6026418495bfb597497f166aa declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -562,7 +562,7 @@
   },
   {
     "caseId": "bovee/Aston@3bfd589384ba",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 3bfd589384ba180d8d632b3f28c312e8b1f2594b declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -595,7 +595,7 @@
   },
   {
     "caseId": "lockepatton/sonipy@edc9015cad24",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at edc9015cad24a5598a06ccfffa5b42c061811c13 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -628,7 +628,7 @@
   },
   {
     "caseId": "LedgerHQ/marshmallow_dataclass@b974a43d58ba",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at b974a43d58ba2f6ebb952a722e9249e15b25409e declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -661,7 +661,7 @@
   },
   {
     "caseId": "aothman/hiscore@0b7960d04b5a",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 0b7960d04b5ada7b8fdc6197c4d0f1eeb545cfb4 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -694,7 +694,7 @@
   },
   {
     "caseId": "serioeseGmbH/hackwork-gayson@971e8cdef612",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 971e8cdef612701f721dc5bf4240277c542e5984 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -727,7 +727,7 @@
   },
   {
     "caseId": "uichathurika/laptimize@973a25468d5a",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 973a25468d5a9bac96467391595d04dcac780e7a declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -760,7 +760,7 @@
   },
   {
     "caseId": "fides-dev/fides@ed54c6bd1cb4",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at ed54c6bd1cb4d9366336045e70503587ea363203 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -793,7 +793,7 @@
   },
   {
     "caseId": "rebuy-de/ds-pub-utils@49a14b9ee169",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 49a14b9ee16960a76f2523429e192a5d5af37038 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -826,7 +826,7 @@
   },
   {
     "caseId": "uma-pi1/kge@00de5127dd7f",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 00de5127dd7fdc0d0d921a6dffda09a30dbd3d7d declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -859,7 +859,7 @@
   },
   {
     "caseId": "socialwifi/queue-messaging@c40010829782",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at c400108297823a126e4675fe5b3fb16838e4faaf declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -892,7 +892,7 @@
   },
   {
     "caseId": "pylhc/optics_functions@3f2364fe5c9b",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 3f2364fe5c9b78cb354e3db47c5282b3c39265e5 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -925,7 +925,7 @@
   },
   {
     "caseId": "Gunnstein/fatpack@cc80744d3896",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at cc80744d3896bb79655d2ee82694c65b9f0d6a57 declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -958,7 +958,7 @@
   },
   {
     "caseId": "blockchain-etl/icon-etl@0bd93cc316c6",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at 0bd93cc316c60ff1479fcd751e68bd12600b21ca declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {
@@ -991,7 +991,7 @@
   },
   {
     "caseId": "demorest/sdmpy@a57ef70f6c5b",
-    "kind": "reproduction-failed",
+    "kind": "no-dependency-update",
     "reason": "no requirements file at a57ef70f6c5b5727ef35c651fa535b6550c9206a declares a package whose resolved version differs, so no dependency update could be constructed for this task",
     "missingRequirement": null,
     "provenance": {

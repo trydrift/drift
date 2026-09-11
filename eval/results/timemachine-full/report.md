@@ -17,6 +17,7 @@ What a good result here does *not* establish: No precision and no false-positive
 | Benchmark class | consumer-impact |
 | Drift commit | `0de69bc20a560df43f0b21b6f9c5387c4d3b2cd1` (working tree dirty) |
 | Run date | 2026-09-07T20:19:56.217Z |
+| Re-scored | 2026-09-11T19:25:59.293Z at `8aa0690ba8` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /private/tmp/claude-501/-Users-rudy-Desktop-Developer-Drift/430aba2d-72ba-44fc-9d6a-07ffdc20243f/scratchpad/wt-consumer/eval/src/external/cli.ts timemachine --run-id p9-timemachine --concurrency 3 --benchmarks /Users/rudy/Desktop/Developer/Drift/benchmarks` |
 | Platform | darwin/x64, Node v24.20.0 |
 
@@ -36,7 +37,8 @@ Every exclusion, with its reason:
 
 | Reason | Cases |
 | --- | --- |
-| `reproduction-failed` | 32 |
+| `no-dependency-update` | 31 |
+| `reproduction-failed` | 1 |
 
 ## Results
 

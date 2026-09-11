@@ -97,6 +97,13 @@ export const exclusionKindSchema = z.enum([
   'source-unavailable',
   /** The case could not be set up: install failed, checkout failed, the baseline did not behave as recorded. */
   'reproduction-failed',
+  /**
+   * The task, as checked out, pins no dependency whose version actually moves,
+   * so there is no upgrade for Drift to analyse. Not a failure of the harness
+   * and not a miss by Drift: the question the case exists to ask cannot be
+   * asked of it. See `exclusion-reclassification.ts`.
+   */
+  'no-dependency-update',
   /** The dataset's label does not map onto anything Drift represents, so a comparison would not be meaningful. */
   'label-unmappable',
   /**

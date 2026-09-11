@@ -17,6 +17,7 @@ What a good result here does *not* establish: No precision and no false-positive
 | Benchmark class | consumer-impact |
 | Drift commit | `a2a31d4de491a0335a115995f4776bde3db6730a` |
 | Run date | 2026-09-11T18:47:49.727Z |
+| Re-scored | 2026-09-11T19:25:54.035Z at `8aa0690ba8` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -36,7 +37,7 @@ Every exclusion, with its reason:
 
 | Reason | Cases |
 | --- | --- |
-| `reproduction-failed` | 31 |
+| `no-dependency-update` | 31 |
 
 ## Results
 
