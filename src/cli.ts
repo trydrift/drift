@@ -50,7 +50,7 @@ import {
 } from './upgrade/scan.js';
 import { opensPullRequestAsDraft, type DriftConfig, type ExplicitAgentProvider } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
-import { ask, confirm, text as promptText, type ChoiceInput } from './util/prompt.js';
+import { ask, canPrompt, confirm, text as promptText, type ChoiceInput } from './util/prompt.js';
 import {
   COMPLETION_SHELLS,
   completionScript,
@@ -118,7 +118,7 @@ async function isGhInstalled(): Promise<boolean> {
  * `drift fix` must never block on a browser flow nobody is there to complete.
  */
 async function tryBrowserSignIn(logger: Logger): Promise<boolean> {
-  if (!process.stdin.isTTY || !process.stdout.isTTY) return false;
+  if (!canPrompt()) return false;
   if (!(await isGhInstalled())) return false;
 
   logger.info('No GitHub token found. Opening a browser to sign in (`gh auth login`)...');
@@ -1302,7 +1302,7 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     );
   }
 
-  if (process.stdin.isTTY && result.plan.breakingChanges.length > 0) {
+  if (canPrompt() && result.plan.breakingChanges.length > 0) {
     await offerIssueBranchActions({ plan: result.plan, config, repo, github, workspace, logger, flags });
   }
 
@@ -1529,7 +1529,7 @@ async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } 
   const view = createOutdatedView({
     palette,
     status,
-    interactive: Boolean(process.stdin.isTTY),
+    interactive: canPrompt(),
   });
 
   // Announced up front, before the first registry request, so the command has
@@ -1663,7 +1663,7 @@ async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } 
     );
   }
 
-  if (result.candidates.length > 0 && process.stdin.isTTY) {
+  if (result.candidates.length > 0 && canPrompt()) {
     // Labelled, not bare names: two workspace members can both depend on
     // `react`, and a menu with `react` twice offers no way to say which. The
     // hint carries the two facts the choice actually turns on — which versions,
@@ -1991,7 +1991,7 @@ async function resolveManagerForWrite(
     hint: c.evidence.length > 0 ? `${c.fromLockfile ? 'lockfile' : 'found'}: ${c.evidence.join(', ')}` : '',
   }));
 
-  if (!process.stdin.isTTY) {
+  if (!canPrompt()) {
     logger.error(
       `More than one package manager claims ${candidate.ecosystem} in ${where} (${options.join(', ')}), ` +
         `so Drift will not guess which one may write here — the wrong choice generates a second lockfile. ` +
@@ -2361,7 +2361,7 @@ async function resolveCliAgentSelection(args: {
     override,
     runtime: {
       surface: 'cli',
-      interactive: !args.nonInteractive && process.stdin.isTTY,
+      interactive: !args.nonInteractive && canPrompt(),
       eligibleProviders,
       credentials,
     },
@@ -2369,7 +2369,7 @@ async function resolveCliAgentSelection(args: {
 
   if (selection.source !== 'unresolved') return selection;
 
-  if (!args.nonInteractive && process.stdin.isTTY && eligibleProviders.length > 1) {
+  if (!args.nonInteractive && canPrompt() && eligibleProviders.length > 1) {
     const rows: ChoiceInput[] = eligibleProviders.map((candidate) => ({
       value: candidate,
       label: labelForAgentProvider(candidate, registry),

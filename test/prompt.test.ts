@@ -284,6 +284,19 @@ test('a piped stdin answers with the fallback and draws nothing', async () => {
   assert.equal(term.screen(), '');
 });
 
+test('a piped stdout answers with the fallback too, rather than asking into the pipe', async () => {
+  // `drift analyze | tail`: the keystrokes would come from a terminal, but the
+  // question goes into the pipe, where nobody sees it — and the command sat
+  // there waiting for an answer to a question it never showed.
+  const term = fakeTerminal();
+  Object.assign(term.io.output!, { isTTY: false });
+
+  assert.equal(await ask('Pick one', ['alpha', 'beta'], 'beta', term.io), 'beta');
+  assert.equal(await confirm('Start fixing now?', false, term.io), false);
+  assert.equal(await text('Pull request title', 'Bump lodash', term.io), 'Bump lodash');
+  assert.equal(term.screen(), '');
+});
+
 test('a menu whose terminal goes away answers with the fallback instead of hanging', async () => {
   await withDrawableTerminal(async () => {
     const term = fakeTerminal();

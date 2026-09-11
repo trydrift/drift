@@ -11,7 +11,7 @@ import { planForCommits } from './partition.js';
 import { renderFixPlanDocument } from '../fixplan/document.js';
 import type { FixPlanAssessment } from '../fixplan/schema.js';
 import { dispositionFor } from '../fixplan/policy.js';
-import { ask as defaultAsk } from '../util/prompt.js';
+import { ask as defaultAsk, canPrompt } from '../util/prompt.js';
 
 export interface WorktreeRunOptions {
   repo: RepoContext;
@@ -69,7 +69,7 @@ export async function runWorktreeRemediation(
 ): Promise<WorktreeRemediationResult & { teardown: () => Promise<void> }> {
   const { repo, plan, config, logger, workspace } = options;
   const exec = options.exec ?? execCommand;
-  const nonInteractive = options.nonInteractive ?? !process.stdin.isTTY;
+  const nonInteractive = options.nonInteractive ?? !canPrompt();
 
   const worktree = await createRemediationWorktree({ repo, plan, workspace, exec });
 

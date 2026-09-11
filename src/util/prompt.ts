@@ -86,6 +86,22 @@ function canRedraw(output: NodeJS.WriteStream): boolean {
   return supportsRedraw(output);
 }
 
+/**
+ * Whether there is somebody on both ends of the question.
+ *
+ * A terminal on stdin is not enough. `drift analyze | tail` reads keystrokes
+ * from a terminal but writes the question into the pipe, where nobody sees it,
+ * and a prompt nobody can see holds the command open exactly as long as one
+ * nobody is there to answer. Both streams have to be a terminal before a
+ * question is worth asking; anything else takes the caller's fallback.
+ */
+export function canPrompt(
+  input: NodeJS.ReadStream = process.stdin,
+  output: NodeJS.WriteStream = process.stdout,
+): boolean {
+  return Boolean(input.isTTY && output.isTTY);
+}
+
 /** Whether an arrow-key menu can be drawn on these streams. */
 function canDraw(input: NodeJS.ReadStream, output: NodeJS.WriteStream): boolean {
   if (!input.isTTY || typeof input.setRawMode !== 'function') return false;
@@ -112,7 +128,7 @@ export async function ask(
   const decline = fallback ?? choices[choices.length - 1]?.value ?? '';
 
   if (choices.length === 0) return decline;
-  if (!input.isTTY) return decline;
+  if (!canPrompt(input, output)) return decline;
   if (!canDraw(input, output)) return askNumbered(question, choices, decline, input, output);
 
   return selectInteractive({ question, choices, decline, input, output, io });
@@ -122,7 +138,7 @@ export async function ask(
 export async function confirm(question: string, defaultAnswer = false, io: PromptIO = {}): Promise<boolean> {
   const input = io.input ?? process.stdin;
   const output = io.output ?? process.stdout;
-  if (!input.isTTY) return defaultAnswer;
+  if (!canPrompt(input, output)) return defaultAnswer;
 
   if (!canDraw(input, output)) {
     const { createInterface } = await import('node:readline/promises');
@@ -172,7 +188,7 @@ export async function confirm(question: string, defaultAnswer = false, io: Promp
 export async function text(question: string, initial: string, io: PromptIO = {}): Promise<string> {
   const input = io.input ?? process.stdin;
   const output = io.output ?? process.stdout;
-  if (!input.isTTY) return initial;
+  if (!canPrompt(input, output)) return initial;
 
   const palette = paletteFor(output);
   const editable = canRedraw(output);
