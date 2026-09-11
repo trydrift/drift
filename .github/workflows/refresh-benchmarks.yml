@@ -148,7 +148,17 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # Check out main as it is *now*, not the commit this run started from.
+      # A full refresh takes hours; anything merged meanwhile moves main on. A PR
+      # branch built on the run's starting commit carries older copies of
+      # whatever changed since — workflow files included, which GitHub refuses
+      # to let this token push ("without `workflows` permission"), and ordinary
+      # files, which a merge would silently revert. The results are the only
+      # thing this job adds, and their manifests already record the build that
+      # produced them.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
