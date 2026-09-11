@@ -11,5 +11,7 @@
   "node": "v24.20.0",
   "platform": "darwin",
   "arch": "x64",
-  "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against."
+  "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against.",
+  "rescoredAt": "2026-09-11T16:42:20.022Z",
+  "rescoredAtCommit": "c9644ed9ba7b1a7a1c98af91e173aa74d4a25b69"
 }

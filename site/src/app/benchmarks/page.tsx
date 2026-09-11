@@ -183,6 +183,20 @@ export default function Benchmarks() {
               <p className="mt-3">
                 Update detection is strong in all three. The gap appears later, when Drift maps a Java API change back to consumer code.
               </p>
+              {/*
+                Part of the Java figure is not a localization miss. BUMP records why each build broke, and
+                its build-policy and dependency-resolution failures change no API, so no static analysis can
+                find them. Both strata are shown, and the pooled figure stays the one compared across corpora.
+              */}
+              <p className="mt-3">
+                Part of that gap is not a localization miss at all. BUMP records why each build broke, and its
+                build-policy and dependency-resolution failures change no API, so there is nothing for any static
+                analysis to find. On the failure classes that do leave a signal — compilation, test and{" "}
+                <code className="font-mono text-[12px]">-Werror</code> failures — Drift identified the affected
+                project in {narrative.bumpFull.staticSignalAffectedFraction} cases; on the rest, in{" "}
+                {narrative.bumpFull.noStaticSignalAffectedFraction}. The Java figure above pools both, because that
+                is the like-for-like comparison with the TypeScript and Python corpora.
+              </p>
             </Weakness>
 
             <Weakness title="On Java, Drift still calls some broken upgrades safe — and Java is the only ecosystem measured well enough to say so">

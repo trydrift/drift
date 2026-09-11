@@ -17,6 +17,7 @@ What a good result here does *not* establish: No precision and no false-positive
 | Benchmark class | consumer-impact |
 | Drift commit | `65686d9a777678e2c43e6049b7024f2230e399cc` (working tree dirty) |
 | Run date | 2026-09-07T11:20:24.156Z |
+| Re-scored | 2026-09-11T16:42:20.022Z at `c9644ed9ba` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /private/tmp/claude-501/-Users-rudy-Desktop-Developer-Drift/430aba2d-72ba-44fc-9d6a-07ffdc20243f/scratchpad/wt-bump/eval/src/external/cli.ts bump --run-id p9-bump --concurrency 3 --benchmarks /Users/rudy/Desktop/Developer/Drift/benchmarks` |
 | Platform | darwin/x64, Node v24.20.0 |
 
@@ -67,6 +68,22 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | `breaking-change-low-confidence` | 4 |
 | **Total** | **165** |
 
+### Failure classes that admit a static signal
+
+BUMP labels each case with why the build broke. `ENFORCER_FAILURE` (Maven build-policy rules) and the
+resolution/lock failures have no API-surface change for any static differ to find, so Drift answers
+`insufficient-evidence` — the correct answer, indistinguishable from a miss once pooled.
+
+| Stratum | affected-repository identification rate |
+| --- | --- |
+| Static signal possible (compilation, test, werror) | 315/411 (76.6%) |
+| No API-surface delta (enforcer, lock, resolution) | 71/140 (50.7%) |
+| Pooled — every case | 386/551 (70.1%) |
+
+The first row is the one that answers "does Drift find the break when a break is findable". The second
+measures a limit of static analysis, not of Drift, and only a build can settle those cases. Neither is
+omitted, and no case is excluded from the pooled rate to produce them.
+
 ### Breakdown
 
 Every rate again, split by the dataset's own label and by the strata the adapter recorded. A pooled figure
@@ -80,6 +97,8 @@ hides both directions of the interesting result, so it is never the only number 
 | label: ENFORCER_FAILURE | 67/121 (55.4%) | 8/121 (6.6%) | 104/121 (86.0%) |
 | label: TEST_FAILURE | 133/187 (71.1%) | 96/187 (51.3%) | 168/187 (89.8%) |
 | label: WERROR_FAILURE | 1/4 (25.0%) | 0/4 (0.0%) | 3/4 (75.0%) |
+| stratum: no-api-surface-delta | 71/140 (50.7%) | 8/140 (5.7%) | 110/140 (78.6%) |
+| stratum: static-signal-possible | 315/411 (76.6%) | 274/411 (66.7%) | 385/411 (93.7%) |
 
 ## What is deliberately not reported
 

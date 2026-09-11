@@ -52,6 +52,13 @@ export interface BenchmarkNarrative {
     falseSafeInterval: string;
     /** The ceiling the smaller positives-only corpora reach, which is what stops a false comparison. */
     peerCeilings: { npm: string; python: string };
+    /**
+     * Affected-identification split by whether the failure class leaves anything
+     * for static analysis to find. Build-policy and dependency-resolution
+     * failures change no API; pooled with the rest they read as misses.
+     */
+    staticSignalAffectedFraction: string;
+    noStaticSignalAffectedFraction: string;
     affectedByCategory: { slice: string; rate: string }[];
   };
   javaVsTypeScript: {
@@ -144,6 +151,12 @@ export function buildNarrative(benchmarks: Benchmarks): BenchmarkNarrative {
         npm: formatIntervalCeiling(falseSafeRate(sweBump)) ?? "n/a",
         python: formatIntervalCeiling(falseSafeRate(timeMachine)) ?? "n/a",
       },
+      staticSignalAffectedFraction: fraction(
+        requireBreakdownRate(bumpFull, "stratum: static-signal-possible", "affected-repository identification rate"),
+      ),
+      noStaticSignalAffectedFraction: fraction(
+        requireBreakdownRate(bumpFull, "stratum: no-api-surface-delta", "affected-repository identification rate"),
+      ),
       affectedByCategory: bumpFailureCategories.map((slice) => ({
         slice,
         rate: formatRate(requireBreakdownRate(bumpFull, slice, "affected-repository identification rate")),
