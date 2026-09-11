@@ -136,8 +136,26 @@ jobs:
         if: env.SKIP != '1'
         with:
           name: benchmark-${{ matrix.runId }}
-          path: eval/results/${{ matrix.runId }}/
+          path: |
+            eval/results/${{ matrix.runId }}/
+            !eval/results/${{ matrix.runId }}/evidence/
+            !eval/results/${{ matrix.runId }}/cases.partial.jsonl
           if-no-files-found: error
+          retention-days: 14
+
+      # Evidence snapshots and the partial checkpoint are gitignored, so the
+      # refresh PR never commits them — but TimeMachine's run to ~2.8 GB, and
+      # `open-pr` downloads every `benchmark-*` artifact before discarding them.
+      # They go up separately under a name that pattern does not match, so they
+      # stay retrievable for debugging a run without riding along on every PR.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: env.SKIP != '1'
+        with:
+          name: evidence-${{ matrix.runId }}
+          path: |
+            eval/results/${{ matrix.runId }}/evidence/
+            eval/results/${{ matrix.runId }}/cases.partial.jsonl
+          if-no-files-found: ignore
           retention-days: 14
 
   open-pr:
@@ -148,7 +166,17 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # Check out main as it is *now*, not the commit this run started from.
+      # A full refresh takes hours; anything merged meanwhile moves main on. A PR
+      # branch built on the run's starting commit carries older copies of
+      # whatever changed since — workflow files included, which GitHub refuses
+      # to let this token push ("without `workflows` permission"), and ordinary
+      # files, which a merge would silently revert. The results are the only
+      # thing this job adds, and their manifests already record the build that
+      # produced them.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
