@@ -9,7 +9,7 @@ import { probeEnvironment } from './environment.ts';
 import { DEFAULT_CASE_TIMEOUT_MS } from './deadline.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
-import { driftRevision, newRunId, resultsDir, writeJson, writeProvisionalManifest, writeRun, type RunManifest } from './results.ts';
+import { driftRevision, newRunId, resultsDir, selectionDocument, writeJson, writeProvisionalManifest, writeRun, type RunManifest } from './results.ts';
 import { select, type Selectable } from './selection.ts';
 import { runKong } from './runners/kong-runner.ts';
 import { runSweBump } from './runners/swe-bump-runner.ts';
@@ -320,6 +320,10 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
   let selection = select([], { seed: options.seed ?? 20260819 });
   /** Serializes checkpoint appends; see `checkpoint` below. */
   let checkpointChain: Promise<void> = Promise.resolve();
+  // The early selection write, ordered against itself and awaited before the
+  // run returns, so it can never still be in flight when the final artifacts
+  // are written over the same path.
+  let selectionChain: Promise<void> = Promise.resolve();
   const context: RunnerContext = {
     dataset,
     datasetRoot,
@@ -350,7 +354,17 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
         ...(options.seed === undefined ? {} : { seed: options.seed }),
       });
       // Written the moment it is decided, not at the end. See below.
-      void writeJson(join(resultsDir(runId, options.outRoot), 'selection.json'), { ...selection, dataset });
+      //
+      // Chained rather than fired and forgotten: the final artifact write puts
+      // the same file down again, and an un-awaited write here raced it. The
+      // two documents were different lengths, so the loser's tail survived past
+      // the winner's closing brace and the file stopped being JSON.
+      selectionChain = selectionChain.then(() =>
+        writeJson(
+          join(resultsDir(runId, options.outRoot), 'selection.json'),
+          selectionDocument(selection, dataset),
+        ),
+      );
       return selection;
     },
   };
@@ -397,6 +411,10 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
     selected: selection.ids.length,
     ...(output.baseline ? { baseline: output.baseline } : {}),
   });
+
+  // The early write must have finished before the final artifacts go down over
+  // the same path — this is the ordering that stops the two from interleaving.
+  await selectionChain;
 
   return writeRun({
     runId,

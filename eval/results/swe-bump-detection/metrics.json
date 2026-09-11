@@ -22,9 +22,9 @@
       "value": 0.6885245901639344
     },
     "consumer localization rate": {
-      "numerator": 37,
+      "numerator": 38,
       "denominator": 61,
-      "value": 0.6065573770491803
+      "value": 0.6229508196721312
     },
     "false-safe verdicts": {
       "numerator": 0,
@@ -85,9 +85,9 @@
         "value": 0.6885245901639344
       },
       "consumer localization rate": {
-        "numerator": 37,
+        "numerator": 38,
         "denominator": 61,
-        "value": 0.6065573770491803
+        "value": 0.6229508196721312
       }
     },
     "versionToIsRange: true": {
@@ -102,9 +102,9 @@
         "value": 0.6724137931034483
       },
       "consumer localization rate": {
-        "numerator": 35,
+        "numerator": 36,
         "denominator": 58,
-        "value": 0.603448275862069
+        "value": 0.6206896551724138
       }
     },
     "versionToIsRange: false": {
@@ -136,9 +136,9 @@
         "value": 0.6885245901639344
       },
       "consumer localization rate": {
-        "numerator": 37,
+        "numerator": 38,
         "denominator": 61,
-        "value": 0.6065573770491803
+        "value": 0.6229508196721312
       }
     }
   },
@@ -155,7 +155,7 @@
     },
     "consumer localization rate": {
       "low": 0.4918032786885246,
-      "high": 0.7213114754098361,
+      "high": 0.7377049180327869,
       "iterations": 2000
     },
     "false-safe verdicts": {

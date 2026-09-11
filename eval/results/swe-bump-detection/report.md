@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `c45d9d01ede15838d924fe9f5eb51c66632623b4` |
-| Run date | 2026-09-09T11:39:19.602Z |
+| Drift commit | `64a481d7cc6738734ab88b515f7283def7bb303b` |
+| Run date | 2026-09-10T17:23:57.564Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -43,7 +43,7 @@ Every exclusion, with its reason:
 | Question | Result | 95% interval |
 | --- | --- | --- |
 | affected-repository identification rate | 42/61 (68.9%) | 57.4–80.3% |
-| consumer localization rate | 37/61 (60.7%) | 49.2–72.1% |
+| consumer localization rate | 38/61 (62.3%) | 49.2–73.8% |
 | dependency-update detection rate | 61/61 (100.0%) | 100.0–100.0% |
 | false-safe verdicts | 0/61 (0.0%) | 0.0–0.0% |
 
@@ -71,10 +71,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| exactVersionAdjudicated: true | 42/61 (68.9%) | 37/61 (60.7%) | 61/61 (100.0%) |
-| label: known-breaking-upgrade | 42/61 (68.9%) | 37/61 (60.7%) | 61/61 (100.0%) |
+| exactVersionAdjudicated: true | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
+| label: known-breaking-upgrade | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
 | versionToIsRange: false | 3/3 (100.0%) | 2/3 (66.7%) | 3/3 (100.0%) |
-| versionToIsRange: true | 39/58 (67.2%) | 35/58 (60.3%) | 58/58 (100.0%) |
+| versionToIsRange: true | 39/58 (67.2%) | 36/58 (62.1%) | 58/58 (100.0%) |
 
 ## What is deliberately not reported
 
