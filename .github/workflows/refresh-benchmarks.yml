@@ -136,8 +136,26 @@ jobs:
         if: env.SKIP != '1'
         with:
           name: benchmark-${{ matrix.runId }}
-          path: eval/results/${{ matrix.runId }}/
+          path: |
+            eval/results/${{ matrix.runId }}/
+            !eval/results/${{ matrix.runId }}/evidence/
+            !eval/results/${{ matrix.runId }}/cases.partial.jsonl
           if-no-files-found: error
+          retention-days: 14
+
+      # Evidence snapshots and the partial checkpoint are gitignored, so the
+      # refresh PR never commits them — but TimeMachine's run to ~2.8 GB, and
+      # `open-pr` downloads every `benchmark-*` artifact before discarding them.
+      # They go up separately under a name that pattern does not match, so they
+      # stay retrievable for debugging a run without riding along on every PR.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: env.SKIP != '1'
+        with:
+          name: evidence-${{ matrix.runId }}
+          path: |
+            eval/results/${{ matrix.runId }}/evidence/
+            eval/results/${{ matrix.runId }}/cases.partial.jsonl
+          if-no-files-found: ignore
           retention-days: 14
 
   open-pr:
