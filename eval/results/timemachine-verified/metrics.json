@@ -7,7 +7,7 @@
   "notRun": 0,
   "scored": 69,
   "excluded": {
-    "reproduction-failed": 31
+    "no-dependency-update": 31
   },
   "missingRequirements": {},
   "rates": {

@@ -5,6 +5,7 @@ import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
 import { datasetOrThrow, type Dataset } from './dataset.ts';
 import type { ExternalCaseResult } from './record.ts';
+import { reclassifyRecordedExclusion } from './exclusion-reclassification.ts';
 import { resultsDir, type RunManifest } from './results.ts';
 import type { Selection } from './selection.ts';
 
@@ -208,7 +209,7 @@ async function readCases(dir: string): Promise<ExternalCaseResult[]> {
   const results: ExternalCaseResult[] = [];
   const input = path === finished ? createReadStream(path).pipe(createGunzip()) : createReadStream(path);
   for await (const line of createInterface({ input })) {
-    if (line.trim()) results.push(JSON.parse(line) as ExternalCaseResult);
+    if (line.trim()) results.push(reclassifyRecordedExclusion(JSON.parse(line) as ExternalCaseResult));
   }
   return results;
 }
