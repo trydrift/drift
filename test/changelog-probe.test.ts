@@ -1,6 +1,6 @@
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchChangelog, fetchMigrationGuide } from '../dist/evidence/changelog.js';
+import { fetchChangelog, fetchDeclaredChangelogDocuments, fetchMigrationGuide } from '../dist/evidence/changelog.js';
 import { clearHttpCache } from '../dist/util/http.js';
 
 /**
@@ -52,7 +52,7 @@ describe('finding a changelog by guessing its name', () => {
     assert.equal(found, null);
     // Every candidate is still asked about — the same coverage as before — but
     // the first is alone and the rest go out in waves.
-    assert.equal(calls().length, 30);
+    assert.equal(calls().length, 32);
   });
 
   test('the winner is the highest-priority match, not whichever answered first', async () => {
@@ -84,6 +84,29 @@ describe('finding a changelog by guessing its name', () => {
     const found = await fetchChangelog('acme/widget');
 
     assert.equal(found?.path, 'CHANGES.md');
+  });
+
+  test('preserves a Sidekiq-style case-sensitive Changes.md fallback', async () => {
+    stubFetch({ 'main/Changes.md': '# 2.0.0\nRemoved OldWorker\n' });
+    const found = await fetchChangelog('acme/widget');
+    assert.equal(found?.path, 'Changes.md');
+  });
+
+  test('fetches a registry-declared changelog URL directly', async () => {
+    const calls: string[] = [];
+    globalThis.fetch = (async (input) => {
+      calls.push(String(input));
+      return new Response('# 2.0.0\nRemoved OldWorker\n');
+    }) as typeof fetch;
+    const documents = await fetchDeclaredChangelogDocuments(
+      'https://github.com/sidekiq/sidekiq/blob/main/Changes.md',
+      'sidekiq/sidekiq',
+      '1.0.0',
+      '2.0.0',
+      'rubygems',
+    );
+    assert.equal(documents[0]?.path, 'Changes.md');
+    assert.deepEqual(calls, ['https://raw.githubusercontent.com/sidekiq/sidekiq/main/Changes.md']);
   });
 
   test('migration guides are probed the same way', async () => {

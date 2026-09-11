@@ -38,7 +38,10 @@ const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
   affected: "border-brand/45 bg-brand-soft text-brand-text",
   "verification-failed": "border-brand/45 bg-brand-soft text-brand-text",
   "upstream-only": "border-border bg-surface-hover text-muted",
-  unchecked: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  "review-required": "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  "runtime-unresolved": "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  "localization-incomplete": "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  "evidence-missing": "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   clean: "border-border bg-surface-hover text-faint",
   error: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   // A row the scan has listed and not yet checked. The demo never renders one
@@ -53,7 +56,10 @@ const VERDICT_PILL: Record<UpgradeSeverity, string> = {
   affected: "Affects You",
   "verification-failed": "Verified Breaking",
   "upstream-only": "None Used Here",
-  unchecked: "Not Verified",
+  "review-required": "Review Required",
+  "runtime-unresolved": "Runtime Unknown",
+  "localization-incomplete": "Localization Incomplete",
+  "evidence-missing": "Evidence Missing",
   clean: "Safe",
   error: "Could Not Check",
   pending: "Checking",
@@ -515,13 +521,13 @@ function PackageRow({
             >
               Upgrade to {candidate.selected}
             </button>
-            {candidate.impactCount > 0 && (
+            {(candidate.actionableImpactCount ?? 0) > 0 && (
               <button
                 onClick={onAct}
                 className="rounded-md bg-brand px-2.5 py-1.5 text-[11px] font-medium text-brand-foreground transition-colors hover:bg-brand-200"
               >
-                Fix {candidate.impactCount} site{candidate.impactCount === 1 ? "" : "s"} in{" "}
-                {candidate.impactFiles} file{candidate.impactFiles === 1 ? "" : "s"}
+                Fix {candidate.actionableImpactCount} site{candidate.actionableImpactCount === 1 ? "" : "s"} in{" "}
+                {candidate.actionableImpactFiles ?? 0} file{candidate.actionableImpactFiles === 1 ? "" : "s"}
               </button>
             )}
             {candidate.safeLatest && candidate.safeLatest !== candidate.selected && (

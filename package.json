@@ -1,8 +1,9 @@
 {
   "name": "@usedrift/cli",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Find which dependency upgrades affect your code, show the evidence, and prepare reviewable fixes from the command line.",
   "license": "SEE LICENSE IN LICENSE.md",
+  "author": "Drift (https://github.com/trydrift/drift)",
   "type": "module",
   "repository": {
     "type": "git",
@@ -28,8 +29,6 @@
   },
   "files": [
     "dist",
-    "action",
-    "action.yml",
     "README.md"
   ],
   "scripts": {
@@ -41,6 +40,7 @@
     "docs:support": "npm run build && node scripts/generate-support-doc.mjs",
     "eval:accuracy:audit": "npm run build && node --experimental-strip-types eval/src/audit.ts",
     "eval:bench": "npm run build && node --experimental-strip-types eval/src/cli/bench.ts",
+    "eval:compare": "node --experimental-strip-types eval/src/external/compare.ts",
     "eval:cases:import": "node --experimental-strip-types eval/src/corpus/import-fixture.ts",
     "eval:cases:reproduce": "node --experimental-strip-types eval/src/cli/reproduce.ts",
     "eval:corpus:mine": "node --experimental-strip-types eval/src/cli/mine.ts",
@@ -53,6 +53,9 @@
     "eval:typecheck": "tsc -p eval/tsconfig.json",
     "prepublishOnly": "npm run build",
     "release:check": "node scripts/release-check.mjs",
+    "release:version": "node scripts/check-release-version.mjs",
+    "test:release": "node --test scripts/check-release-version.test.mjs scripts/release-workflow.test.mjs scripts/set-version.test.mjs",
+    "version:set": "node scripts/set-version.mjs",
     "serve": "node dist/runners/webhook.js",
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",
     "test": "npm run build && node --test --experimental-strip-types \"test/*.test.ts\"",
@@ -62,6 +65,7 @@
   },
   "dependencies": {
     "@graphql-inspector/core": "^7.1.3",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@octokit/rest": "^22.0.1",
     "@octokit/webhooks": "^14.2.0",
     "graphql": "^16.14.2",

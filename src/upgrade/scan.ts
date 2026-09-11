@@ -13,7 +13,7 @@ import type {
 } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
-import { classifyBump, normalizeVersion } from '../detect/version.js';
+import { classifyBump } from '../detect/version.js';
 import { parserFor } from '../detect/index.js';
 import {
   describeCommand,
@@ -39,6 +39,7 @@ import {
 import { discoverNestedProjects, type NestedProject } from '../detect/nested.js';
 import { gatherDependencyEvidence } from '../evidence/index.js';
 import { buildRationale, finalizeRationale, prepareRationaleFacts, type PreparedRationaleFacts } from '../rationale/index.js';
+import type { RuntimeRequirementAnalysis } from '../rationale/compatibility.js';
 import { findNodeDeclarations, findPythonDeclarations } from '../rationale/runtime.js';
 import { assessSecurityBatch, unchecked as uncheckedSecurity, type SecurityLookup } from '../rationale/osv.js';
 import type { SecurityAssessment } from '../rationale/types.js';
@@ -51,9 +52,9 @@ import {
 } from '../evidence/surface/types.js';
 import type { ProseSource } from '../evidence/index.js';
 import { analyze } from '../analyze/index.js';
-import { walkSourceFiles } from '../index/walk.js';
+import { walkSourceFiles, type WalkCoverage } from '../index/walk.js';
 import { buildIndex } from '../index/metarag.js';
-import { localize } from '../localize/index.js';
+import { localizeWithRuntime } from '../localize/index.js';
 import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey, upstreamUpgradeKey } from '../util/id.js';
@@ -75,8 +76,32 @@ import {
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
 import type { CargoDependencyPlacement } from '../detect/ecosystems/types.js';
+import { versionSemantics } from '../version-semantics.js';
+import {
+  isCompiledPythonRequirements,
+  isPythonRequirementsInputFile,
+} from '../detect/python-requirements.js';
 
 const run = promisify(execFile);
+
+/** Downgrade absence-based runtime conclusions when authoritative config coverage is incomplete. */
+export function accountForRuntimeConfigCoverage(
+  analyses: readonly RuntimeRequirementAnalysis[],
+  runtimeConfigComplete: boolean,
+): RuntimeRequirementAnalysis[] {
+  if (runtimeConfigComplete) return [...analyses];
+  return analyses.map((analysis) => {
+    // A declaration already shown to violate or overlap the requirement is a
+    // positive fact. An unread config elsewhere cannot make that fact vanish.
+    if (analysis.state === 'incompatible' || analysis.state === 'partial') return analysis;
+    return {
+      ...analysis,
+      state: 'unknown',
+      reason: 'config-incomplete',
+      statement: `${analysis.statement} Drift could not index every authoritative runtime configuration file, so this result is incomplete.`,
+    };
+  });
+}
 
 /**
  * Scanning a repository for available upgrades — not "what changed", which is
@@ -160,6 +185,15 @@ export interface UpgradeCandidate {
   evidenceCount: number;
   breakingCount: number;
   impactCount: number;
+  /**
+   * Sites whose canonical disposition permits a remediation edit. Always set
+   * by the scan pipeline; optional only so hand-built candidate fixtures
+   * typecheck. `severityOf` falls back to `impactCount` when absent.
+   */
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  /** Runtime declarations shown for review, whether or not actionable. */
+  runtimeDeclarationSiteCount?: number;
   /** Distinct repository files with at least one impact site. */
   impactFiles: number;
   /**
@@ -170,6 +204,41 @@ export interface UpgradeCandidate {
    * actually traced. See `SeverityInput.impactConfidence`.
    */
   impactConfidence: 'high' | 'medium' | 'low' | 'none';
+  /** Completeness facts for absence-of-local-usage claims. */
+  sourceCoverage?: WalkCoverage;
+  /** Structured provider outcome used by recording accuracy validation. */
+  surfaceAssessment?: RecordedSurfaceAssessment;
+  /**
+   * What Drift established about this repository's runtime relative to this
+   * upgrade's runtime requirements, or absent when it announced none.
+   *
+   * Carried on the candidate rather than recomputed by each consumer because
+   * it is the one fact about a package-wide compatibility condition that no
+   * count on this row can express: `unknown` and `partial` both routinely
+   * come with `impactCount === 0`. `severityOf` reads it, and site
+   * recordings capture it so the corpus validator can assert the invariant
+   * structurally.
+   */
+  runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+  /**
+   * The per-requirement breakdown behind {@link runtimeCompatibility}: which
+   * upstream runtime requirement, which runtime, what state, and why.
+   *
+   * Kept as structure rather than prose so a recording can capture it and the
+   * corpus validator can assert invariants against the state directly —
+   * "unknown may not be safe", "a generic image is attached to no runtime" —
+   * instead of grepping the rendered sentences for them.
+   */
+  runtimeAnalyses?: readonly {
+    changeId: string;
+    runtime: string;
+    state: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+    reason: string;
+    siteCount: number;
+    declarationCount: number;
+    unresolvedCount: number;
+    statement: string;
+  }[];
   /**
    * `impactCount` includes a compiler-provable finding that only a batch pass
    * has weighed in on — not because isolated evidence found it real, but
@@ -181,6 +250,12 @@ export interface UpgradeCandidate {
    * omitted) is read as `false` by callers not yet updated to supply it.
    */
   impactPendingIsolatedClearance?: boolean;
+  /**
+   * Reconciled "an authoritative verification showed this repository is
+   * unaffected" — see `SeverityInput.verifiedUnaffected`. Set by
+   * `applyVerification`; absent until a pass has actually run.
+   */
+  verifiedUnaffected?: boolean;
   risk: string;
   summary: string;
   /**
@@ -373,7 +448,36 @@ interface UpstreamEvidenceBundle {
   additions: Map<string, { additions: SurfaceAddition[]; locator: string }>;
   surfaceGaps: Map<string, SurfaceUnavailable>;
   surfaceCompared: Set<string>;
+  surfaceAssessments: Map<string, RecordedSurfaceAssessment>;
   prose: Map<string, ProseSource[]>;
+}
+
+type RecordedSurfaceAssessment =
+  | { available: true; inspection: 'succeeded'; tool: string; packageRole?: string }
+  | {
+      available: false;
+      reason: SurfaceUnavailable['reason'];
+      inspection: 'succeeded' | 'failed' | 'not-applicable';
+      tool: string;
+      detail: string;
+      packageRole?: string;
+      diagnostic?: SurfaceUnavailable['diagnostic'];
+    };
+
+function recordedSurfaceGap(gap: SurfaceUnavailable): RecordedSurfaceAssessment {
+  return {
+    available: false,
+    reason: gap.reason,
+    inspection: gap.reason === 'no-public-surface'
+      ? 'succeeded'
+      : gap.reason === 'artifact-type-unsupported'
+        ? 'not-applicable'
+        : 'failed',
+    tool: gap.tool,
+    detail: gap.detail,
+    ...(gap.packageRole ? { packageRole: gap.packageRole } : {}),
+    ...(gap.diagnostic ? { diagnostic: gap.diagnostic } : {}),
+  };
 }
 
 /**
@@ -471,13 +575,22 @@ export async function discoverTargets(
     }
 
     for (const entry of chooseManagers(detected, dir, preferences, rootDefaults)) {
+      const patterned = entry.manager.manifestPattern
+        ? entries.filter((file) => entry.manager.manifestPattern!.test(file))
+        : [];
       const manifest =
         entry.manager.manifests.find((f) => entries.includes(f)) ??
-        (entry.manager.manifestPattern
-          ? entries.find((f) => entry.manager.manifestPattern!.test(f))
-          : undefined);
+        patterned.find(isPythonRequirementsInputFile) ??
+        patterned[0];
       if (!manifest) continue;
-      const lockfile = entry.manager.lockfiles.find((f) => entries.includes(f)) ?? null;
+      let lockfile = entry.manager.lockfiles.find((f) => entries.includes(f)) ?? null;
+      if (entry.manager.id === 'pip' && isPythonRequirementsInputFile(manifest)) {
+        const compiled = manifest.replace(/\.in$/i, '.txt');
+        if (entries.includes(compiled)) {
+          const compiledContent = await fs.readFile(join(absolute, compiled));
+          if (compiledContent && isCompiledPythonRequirements(compiledContent)) lockfile = compiled;
+        }
+      }
       targets.push({
         manager: entry.manager,
         dir,
@@ -1229,7 +1342,7 @@ export async function scanUpgrades(args: {
       from: dep.current,
       to: selected,
       kind: dep.kind,
-      bump: classifyBump(dep.current, selected),
+      bump: classifyBump(dep.current, selected, dep.target.manager.ecosystem),
       manifestPath: dep.target.manifestPath,
       rawFrom: dep.current,
       rawTo: selected,
@@ -1249,6 +1362,7 @@ export async function scanUpgrades(args: {
       const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
       const surfaceGaps = new Map<string, SurfaceUnavailable>();
       const surfaceCompared = new Set<string>();
+      const surfaceAssessments = new Map<string, RecordedSurfaceAssessment>();
       const prose = new Map<string, ProseSource[]>();
       publishUpstreamProgress(key, 'Reading release notes and changelog', detail);
       const started = diagWithSpan(
@@ -1260,15 +1374,25 @@ export async function scanUpgrades(args: {
             onSurfaceComputed: (change, diff) => {
               const k = dependencyEcosystemKey(change);
               if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
+              surfaceAssessments.set(k, {
+                available: true,
+                inspection: 'succeeded',
+                tool: diff.tool,
+                ...(diff.packageRole ? { packageRole: diff.packageRole } : {}),
+              });
               additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
               publishUpstreamProgress(key, 'Comparing the public API surface', detail);
             },
-            onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
+            onUnavailableSurface: (change, reason) => {
+              const k = dependencyEcosystemKey(change);
+              surfaceGaps.set(k, reason);
+              surfaceAssessments.set(k, recordedSurfaceGap(reason));
+            },
             onProseConsulted: (change, source) => {
               const k = dependencyEcosystemKey(change);
               prose.set(k, [...(prose.get(k) ?? []), source]);
             },
-          }).then((evidence) => ({ evidence, additions, surfaceGaps, surfaceCompared, prose })),
+          }).then((evidence) => ({ evidence, additions, surfaceGaps, surfaceCompared, surfaceAssessments, prose })),
       );
       upstreamEvidenceCache.set(key, started);
       evidencePromise = started;
@@ -2069,7 +2193,7 @@ async function analyzeUpgrade(args: {
     from: args.dep.current,
     to: args.selected,
     kind: args.dep.kind,
-    bump: classifyBump(args.dep.current, args.selected),
+    bump: classifyBump(args.dep.current, args.selected, target.manager.ecosystem),
     manifestPath: target.manifestPath,
     rawFrom: args.dep.current,
     rawTo: args.selected,
@@ -2114,6 +2238,7 @@ async function analyzeUpgrade(args: {
     const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
     const surfaceGaps = new Map<string, SurfaceUnavailable>();
     const surfaceCompared = new Set<string>();
+    const surfaceAssessments = new Map<string, RecordedSurfaceAssessment>();
     const prose = new Map<string, ProseSource[]>();
 
     const evidence = args.prepared?.evidence?.evidence.map((record) =>
@@ -2133,10 +2258,19 @@ async function analyzeUpgrade(args: {
         // `judgeConfidence` gives any dependency it believes had a real
         // computed API diff — see `CONFIDENT_SURFACE_WEIGHT`.
         if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(key);
+        surfaceAssessments.set(key, {
+          available: true,
+          inspection: 'succeeded',
+          tool: diff.tool,
+          ...(diff.packageRole ? { packageRole: diff.packageRole } : {}),
+        });
         additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
       },
-      onUnavailableSurface: (unavailableChange, reason) =>
-        surfaceGaps.set(dependencyEcosystemKey(unavailableChange), reason),
+      onUnavailableSurface: (unavailableChange, reason) => {
+        const key = dependencyEcosystemKey(unavailableChange);
+        surfaceGaps.set(key, reason);
+        surfaceAssessments.set(key, recordedSurfaceGap(reason));
+      },
       onProseConsulted: (proseChange, source) => {
         const key = dependencyEcosystemKey(proseChange);
         prose.set(key, [...(prose.get(key) ?? []), source]);
@@ -2149,6 +2283,7 @@ async function analyzeUpgrade(args: {
       additions.clear(); const addition = prep.additions.get(sharedKey); if (addition) additions.set(canonicalKey, addition);
       surfaceGaps.clear(); const gap = prep.surfaceGaps.get(sharedKey); if (gap) surfaceGaps.set(canonicalKey, gap);
       if (prep.surfaceCompared.has(sharedKey)) surfaceCompared.add(canonicalKey);
+      surfaceAssessments.clear(); const assessment = prep.surfaceAssessments.get(sharedKey); if (assessment) surfaceAssessments.set(canonicalKey, assessment);
       prose.clear(); const consulted = prep.prose.get(sharedKey); if (consulted) prose.set(canonicalKey, consulted);
     }
 
@@ -2188,17 +2323,30 @@ async function analyzeUpgrade(args: {
     awaitIndex.end();
     const localizing = span('localize', target.manager.ecosystem, { changes: breakingChanges.length });
     const localization = diagSpan('localization', { package: args.dep.name, changes: breakingChanges.length, filesConsidered: files.length });
-    const impactSites = localize(breakingChanges, [change], index, files, {
+    const { sites: impactSites, runtimeAnalyses: localizedRuntimeAnalyses } = localizeWithRuntime(breakingChanges, [change], index, files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
+      members: args.allMembers,
       ...(moduleMaps ? { moduleMaps } : {}),
     });
+    const runtimeAnalyses = accountForRuntimeConfigCoverage(
+      localizedRuntimeAnalyses,
+      files.coverage.runtimeConfigComplete,
+    );
     localizing.end({ sites: impactSites.length });
     localization.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
     const [rationale] = await measure('rationale', target.manager.ecosystem, () => buildRationale(
-      { changes: [change], evidence, breakingChanges, impactSites },
+      {
+        changes: [change],
+        evidence,
+        breakingChanges,
+        impactSites,
+        runtimeAnalyses,
+        localizationRan: true,
+        localizationComplete: !files.coverage.sourceTruncated,
+      },
       {
         config: args.config,
         logger: args.logger,
@@ -2229,26 +2377,61 @@ async function analyzeUpgrade(args: {
       evidence,
       breakingChanges,
       impactSites,
+      runtimeAnalyses,
+      localizationRan: true,
+      localizationComplete: !files.coverage.sourceTruncated,
+      runtimeConfigComplete: files.coverage.runtimeConfigComplete,
       ...(rationale ? { rationale: [rationale] } : {}),
     });
 
+    const surfaceAssessment = surfaceAssessments.get(dependencyEcosystemKey(change));
     return {
       ...base,
       status: breakingChanges.length > 0 ? 'ready' : 'clean',
       evidenceCount: evidence.length,
       breakingCount: breakingChanges.length,
       impactCount: impactSites.length,
+      actionableImpactCount: (plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0),
+      actionableImpactFiles: new Set((plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file))).size,
+      runtimeDeclarationSiteCount: (plan.dispositions ?? [])
+        .filter((disposition) => disposition.runtimeAnalysis !== undefined)
+        .reduce((count, disposition) => count + disposition.sites.length, 0),
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
       impactConfidence: strongestImpactConfidence(impactSites),
+      sourceCoverage: files.coverage,
+      ...(surfaceAssessment ? { surfaceAssessment } : {}),
       risk: plan.risk,
-      summary: summarize(breakingChanges.length, impactSites.length, args.dep.name, rationale),
+      summary: summarize(breakingChanges.length, breakingChanges, impactSites, args.dep.name, rationale),
       // Kept even when there are findings: "two breaking changes, and the type
       // surface could not be read" is a different claim from "two breaking
       // changes", and the weaker one is the true one.
       gaps: rationale?.gaps ?? [],
       toolRequests: installRequests(surfaceGaps),
       ...(rationale
-        ? { rationale, recommendation: rationale.assessment.recommendation }
+        ? {
+            rationale,
+            recommendation: rationale.assessment.recommendation,
+            // Structural, not derived from `impactCount`: the two states that
+            // must never render as safe -- `unknown` and `partial` -- can
+            // both come with zero sites. See `severityOf`.
+            ...(rationale.assessment.runtimeCompatibility
+              ? { runtimeCompatibility: rationale.assessment.runtimeCompatibility }
+              : {}),
+            ...(runtimeAnalyses.length > 0
+              ? {
+                  runtimeAnalyses: runtimeAnalyses.map((analysis) => ({
+                    changeId: analysis.changeId,
+                    runtime: analysis.runtime,
+                    state: analysis.state,
+                    reason: analysis.reason,
+                    siteCount: analysis.sites.length,
+                    declarationCount: analysis.declarations.length,
+                    unresolvedCount: analysis.unresolved.length,
+                    statement: analysis.statement,
+                  })),
+                }
+              : {}),
+          }
         : {}),
       plan,
     };
@@ -2259,6 +2442,9 @@ async function analyzeUpgrade(args: {
       evidenceCount: 0,
       breakingCount: 0,
       impactCount: 0,
+      actionableImpactCount: 0,
+      actionableImpactFiles: 0,
+      runtimeDeclarationSiteCount: 0,
       impactFiles: 0,
       impactConfidence: 'none',
       risk: 'unknown',
@@ -2345,6 +2531,9 @@ function pendingCandidate(args: {
     evidenceCount: 0,
     breakingCount: 0,
     impactCount: 0,
+    actionableImpactCount: 0,
+    actionableImpactFiles: 0,
+    runtimeDeclarationSiteCount: 0,
     impactFiles: 0,
     impactConfidence: 'none',
     risk: 'unknown',
@@ -2435,7 +2624,12 @@ export async function directDependencies(
   const out: ScanDependency[] = [];
   for (const [name, entry] of declared) {
     if (!kinds.includes(entry.kind)) continue;
-    const current = normalizeVersion(locked?.get(name)?.version ?? entry.version);
+    const ecosystem = target.manager.ecosystem;
+    const resolved = locked?.get(name)?.version ?? null;
+    const semantics = versionSemantics(ecosystem);
+    const current = resolved
+      ? (semantics.exactVersion(resolved) ?? semantics.parse(resolved)?.raw ?? null)
+      : semantics.exactVersion(entry.version ?? '');
     if (!current) continue;
     out.push({
       name,

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyze, matchProse } from '../dist/analyze/index.js';
+import { analyze, declaresBreakingChange, matchProse } from '../dist/analyze/index.js';
 import { diffSpecs } from '../dist/evidence/spec/openapi.js';
 import {
   acceptsCallOfArity,
@@ -203,6 +203,136 @@ describe('prose rules', () => {
       false,
     );
   });
+
+  test('a bare BREAKING CHANGE marker with no description is still a detected break', () => {
+    for (const line of ['BREAKING CHANGE', 'BREAKING CHANGE:', 'BREAKING-CHANGE:', 'BREAKING CHANGES:', 'BREAKING CHANGE: none']) {
+      const matches = matchProse(line);
+      assert.ok(
+        matches.some((m) => m.ruleId === 'prose-breaking-change-marker' && m.kind === 'unknown'),
+        `expected a bare-marker match for ${JSON.stringify(line)}`,
+      );
+    }
+  });
+
+  test('the bare-marker rule yields to the footer rule once there is a description', () => {
+    const matches = matchProse('BREAKING CHANGE: the storage format changed');
+    assert.ok(matches.some((m) => m.ruleId === 'prose-breaking-change-footer'));
+    assert.equal(matches.some((m) => m.ruleId === 'prose-breaking-change-marker'), false);
+  });
+
+  test('the plural footer spelling is read', () => {
+    assert.ok(
+      matchProse('BREAKING CHANGES: several endpoints were removed').some(
+        (m) => m.ruleId === 'prose-breaking-change-footer',
+      ),
+    );
+  });
+
+  test('"breaking change" as ordinary prose is still not a marker', () => {
+    assert.deepEqual(matchProse('This is a breaking change for some users.'), []);
+    assert.deepEqual(matchProse('We were careful to avoid any breaking change here.'), []);
+  });
+
+  describe('signature changes are named as such, not folded into behaviour-change', () => {
+    const readsSignatureChange = (line: string) =>
+      matchProse(line).some((m) => m.kind === 'signature-change');
+
+    test('"the signature of `x` changed", either word order', () => {
+      assert.ok(readsSignatureChange('BREAKING CHANGE: constructor signature of `TagManager` has changed.'));
+      assert.ok(readsSignatureChange('the call signature of `useSelector` changed'));
+      assert.ok(readsSignatureChange('We changed the signature of the multi-series mapping function'));
+      assert.ok(
+        readsSignatureChange(
+          'The signature of the mapping function has changed from (data, series, index) to (data, index, series)',
+        ),
+      );
+    });
+
+    test('"`x` no longer takes …" is a signature change, and still also a behaviour-change', () => {
+      const matches = matchProse('BREAKING CHANGE: `AwsLogDriver` no longer takes construct properties.');
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+      // `prose-no-longer` still fires too — a caller wants both framings.
+      assert.ok(matches.some((m) => m.ruleId === 'prose-no-longer'));
+    });
+
+    test('an ordinal argument tied to a backticked symbol', () => {
+      assert.ok(
+        readsSignatureChange('The second argument for `useIndeterminateChecked` is now an object of options'),
+      );
+      assert.ok(readsSignatureChange('`onError` is no longer the second parameter of `useController`'));
+    });
+
+    test('an explicit call-shape rewrite with the same name on both sides', () => {
+      assert.ok(readsSignatureChange('fetch(Resource.create(), {}, body) -> fetch(Resource.create(), body)'));
+      assert.ok(
+        readsSignatureChange('Refactor fetchJSON(instance = {}, url, compression) into fetchJSON(instance = {}, options)'),
+      );
+    });
+
+    test('does not fire on a commit that left the signature alone', () => {
+      assert.equal(readsSignatureChange('The public signature is unchanged in this release.'), false);
+      assert.equal(readsSignatureChange('Document the signature of `parse` in the README.'), false);
+      assert.equal(readsSignatureChange('Rename the internal helper; no signature has not changed here'), false);
+      // A different function on each side of the arrow is a data-flow arrow, not a rewrite.
+      assert.equal(readsSignatureChange('map(xs) -> filter(xs)'), false);
+    });
+  });
+
+  describe('refinement rules only sharpen a break another rule already found', () => {
+    test('a broad signature phrase alone establishes nothing', () => {
+      // No symbol, no marker — the phrasing of an internal refactor subject.
+      for (const line of [
+        'refactor(content-docs): make readVersionsMetadata async',
+        'perf: re-use options object when generating ETags',
+        'chore: fix return type of findFlatConfigFile',
+        'update function signatures for basic math ops',
+      ]) {
+        assert.deepEqual(matchProse(line), [], `expected no match for ${JSON.stringify(line)}`);
+      }
+    });
+
+    test('the same phrase on a BREAKING CHANGE line is kept, and names the kind', () => {
+      const matches = matchProse('BREAKING CHANGE: make Query.prototype.exec() async, drop callback support');
+      assert.ok(matches.some((m) => m.ruleId === 'prose-breaking-change-footer'));
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+    });
+
+    test('a refinement rides on a symbol rule as its anchor, not only the footer', () => {
+      const matches = matchProse('`render` was removed; the callback argument was removed from the new API');
+      assert.ok(matches.some((m) => m.kind === 'removed-export'));
+      assert.ok(matches.some((m) => m.kind === 'signature-change'));
+    });
+
+    test('anchored:true keeps a refinement whose anchor is a line or two up', () => {
+      // The footer sits above the sentence in a real multi-line commit body.
+      const body = matchProse('the encode method is now synchronous', { anchored: true });
+      assert.ok(body.some((m) => m.kind === 'signature-change'));
+      // Without the anchor, the same sentence is not evidence of a break.
+      assert.deepEqual(matchProse('the encode method is now synchronous'), []);
+    });
+  });
+
+  describe('declaresBreakingChange — the marker, not the words', () => {
+    test('recognises the Conventional Commits footer in its real spellings', () => {
+      for (const t of [
+        'feat: x\n\nBREAKING CHANGE: the API moved',
+        'BREAKING-CHANGE: dropped node 12',
+        'BREAKING CHANGES: several',
+        '*** BREAKING CHANGE ***\nObservable.from no longer supports the map fn',
+        'BREAKING CHANGE - Observable.from no longer supports the optional map function',
+        '## Breaking Changes\n\n- `foo` removed',
+      ]) {
+        assert.equal(declaresBreakingChange(t), true, JSON.stringify(t));
+      }
+    });
+
+    test('does not fire on "breaking change" sitting inside a changelog bullet', () => {
+      const kuzzleStyle =
+        'Adapt ES service\n\n - `deleteByQuery`: **breaking change** does not return ids\n' +
+        '**breaking change** `truncateCollection` does not return `acknowledged` anymore';
+      assert.equal(declaresBreakingChange(kuzzleStyle), false);
+    });
+  });
 });
 
 describe('OpenAPI diffing', () => {
@@ -326,6 +456,34 @@ describe('type surface diffing', () => {
 
     const changes = diffSurfaces(before, after);
     assert.ok(changes.some((c) => c.kind === 'member-now-required'));
+  });
+
+  /**
+   * Evidence text is the product. "`Options` is no longer exported (was a
+   * interface)" is the same finding as the correct sentence and reads like
+   * output nobody looked at, which is the wrong impression for a tool whose
+   * claim is that every line came from somewhere real. The kinds that need
+   * "an" — interface, enum — are decided from a parsed artifact at runtime,
+   * so the article cannot be written into the template beside them.
+   */
+  test('a removed declaration takes the article its kind actually needs', () => {
+    const before = extractExports('export interface Options {}\nexport enum Mode { A }\nexport function go(): void;', 'a.d.ts');
+    const after = extractExports('export declare const nothing: number;', 'a.d.ts');
+
+    const details = diffSurfaces(before, after).map((change) => change.detail);
+    assert.ok(details.some((d) => d.includes('was an interface')), `expected "an interface" in ${JSON.stringify(details)}`);
+    assert.ok(details.some((d) => d.includes('was an enum')), `expected "an enum" in ${JSON.stringify(details)}`);
+    assert.ok(details.some((d) => d.includes('was a function')), `expected "a function" in ${JSON.stringify(details)}`);
+    assert.ok(!details.some((d) => /\bwas a (?:interface|enum)\b/.test(d)), 'no "a interface" survives');
+  });
+
+  test('a declaration that changes kind takes both articles', () => {
+    const before = extractExports('export interface Shape { a: number }', 'a.d.ts');
+    const after = extractExports('export declare class Shape { a: number }', 'a.d.ts');
+
+    const changed = diffSurfaces(before, after).find((change) => change.kind === 'kind-changed');
+    assert.ok(changed, 'the kind change is reported');
+    assert.match(changed.detail, /changed from an interface to a class/);
   });
 
   test('reports nothing when the surface only grows', () => {
@@ -766,6 +924,39 @@ describe('analysis', () => {
     assert.ok(result[0]?.symbols.includes('createClient'));
   });
 
+  /**
+   * `default` is the name a module published through `export =` or
+   * `export default` is reachable by, and the only name localization can bind
+   * — an importing file picks its own, and `ImportRecord.defaultBinding` maps
+   * between them. It is not a name any developer has typed, and a surface
+   * provider writes its detail text before it knows which package the finding
+   * is about, so `glob@8`'s removals read "`default.sync` is no longer
+   * exported". Here the package is known.
+   */
+  test('a default export is described by the name the developer wrote', async () => {
+    const evidence = [
+      {
+        id: 'ev_default',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'surface',
+        weight: 1,
+        findings: [
+          { code: 'export-removed', symbol: 'default.sync', detail: '`default.sync` is no longer exported (was a function).' },
+          { code: 'export-removed', symbol: 'default', detail: '`default` is no longer exported (was a function).' },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.equal(result[0]?.summary, '`acme-sdk.sync` is no longer exported (was a function).');
+    // The bare form needs the clause rewritten, not just the name.
+    assert.equal(result[1]?.summary, '`acme-sdk` no longer has a default export (was a function).');
+    // Only the prose is rewritten: the symbol stays bindable.
+    assert.ok(result[0]?.symbols.includes('default.sync'));
+  });
+
   test('module-system dedupe preserves package-wide, exact, and wildcard scopes', async () => {
     const evidence = [
       {
@@ -1055,7 +1246,7 @@ describe('analysis', () => {
 });
 
 describe('search symbols derived from a computed finding', () => {
-  const symbolsFor = async (symbol: string): Promise<string[]> => {
+  const symbolsFor = async (symbol: string, code = 'member-removed'): Promise<string[]> => {
     const changes = await analyze(
       [{ name: 'dep', ecosystem: 'go', from: '1', to: '2', kind: 'runtime', bump: 'minor', manifestPath: 'go.mod' } as never],
       [
@@ -1066,7 +1257,7 @@ describe('search symbols derived from a computed finding', () => {
           title: 't',
           content: 'c',
           weight: 1,
-          findings: [{ code: 'member-removed', symbol, detail: 'd' }],
+          findings: [{ code, symbol, detail: 'd' }],
         } as never,
       ],
       { config: DEFAULT_CONFIG, logger: createLogger('silent') },
@@ -1117,5 +1308,41 @@ describe('search symbols derived from a computed finding', () => {
     // "golang.org/x/sys constants" is a label, not a symbol; splitting it on
     // its dots produced `golang`, which matched every import of the module.
     assert.deepEqual(await symbolsFor('golang.org/x/sys constants'), ['golang.org/x/sys constants']);
+  });
+
+  describe('a member becoming required also searches the owning type', () => {
+    // The real axios/TypeScript shape this comes from: `AxiosRequestConfig`
+    // gains a required `headers`, and `headers` is common enough to sit in
+    // `GENERIC_LEAF_NAMES` — so before this, the only search symbol was
+    // `AxiosRequestConfig.headers`, which no caller ever writes verbatim, and
+    // `const config: AxiosRequestConfig = {...}` — sitting in the file that
+    // imports the type — was never found. 6 of 61 swe-bump-bench cases came
+    // back false-safe; this was the mechanism behind two of them.
+    test('the owner is added when the member name is too generic to search alone', async () => {
+      const symbols = await symbolsFor('AxiosRequestConfig.headers', 'member-now-required');
+      assert.ok(symbols.includes('AxiosRequestConfig'), JSON.stringify(symbols));
+      assert.deepEqual(symbols, ['AxiosRequestConfig', 'AxiosRequestConfig.headers']);
+    });
+
+    test('a type annotation of the owner is what this exists to localize', async () => {
+      const symbols = await symbolsFor('AxiosRequestConfig.headers', 'member-now-required');
+      const usageLine = 'const config: AxiosRequestConfig = { url, data };';
+      assert.ok(symbols.some((symbol) => usageLine.includes(symbol)));
+    });
+
+    test('a distinctive member name still contributes its own bare leaf too', async () => {
+      const symbols = await symbolsFor('AxiosRequestConfig.transformResponse', 'member-now-required');
+      assert.deepEqual(symbols.sort(), [
+        'AxiosRequestConfig',
+        'AxiosRequestConfig.transformResponse',
+        'transformResponse',
+      ]);
+    });
+
+    // A plain `member-removed` finding stays owner-less — see 'a two-part
+    // member yields the qualified name and the bare member, never the bare
+    // owner' above. A removed or renamed member is a fact about the member,
+    // not the type; searching the owner there would just as often point at an
+    // unrelated construction that happens to share a type name.
   });
 });

@@ -473,3 +473,71 @@ end`;
     assert.deepEqual(elixirModulesIn(source), ['Jason.Decoder', 'Jason.Decoder.Unescape']);
   });
 });
+
+describe('Maven: japicmp FQN symbols carry the import path the coordinate does not', () => {
+  test('a Jenkins plugin change lands on the instance-method call site', () => {
+    // groupId `org.jenkins-ci.plugins` ships `hudson.*` — the coordinate tells
+    // you nothing about the import. japicmp reports the change as a real FQN.
+    const files = [
+      file(
+        'src/main/java/app/Builder.java',
+        'java',
+        [
+          'package app;',
+          '',
+          'import hudson.model.Run;',
+          '',
+          'public class Builder {',
+          '  void go(Run run) {',
+          '    Run r = run;',
+          '    r.getLog(50);',
+          '  }',
+          '}',
+        ].join('\n'),
+      ),
+    ];
+
+    const sites = run(
+      files,
+      dep('org.jenkins-ci.plugins:some-plugin', 'maven'),
+      change('org.jenkins-ci.plugins:some-plugin', ['hudson.model.Run.getLog', 'getLog'], 'signature-change'),
+    );
+
+    assert.ok(sites.length >= 1, 'the r.getLog(...) call is localized');
+    assert.ok(sites.some((s) => s.line === 8));
+  });
+
+  test('a wildcard import still resolves the class', () => {
+    const files = [
+      file(
+        'src/main/java/app/Use.java',
+        'java',
+        'package app;\n\nimport hudson.model.*;\n\nclass Use {\n  void f() {\n    Run r = null;\n    r.getLog(1);\n  }\n}',
+      ),
+    ];
+    const sites = run(
+      files,
+      dep('org.jenkins-ci.plugins:p', 'maven'),
+      change('org.jenkins-ci.plugins:p', ['hudson.model.Run.getLog', 'getLog'], 'signature-change'),
+    );
+    assert.ok(sites.some((s) => s.line === 8));
+  });
+
+  test('still does not land in a file that only imports a different package', () => {
+    const files = [
+      file(
+        'src/main/java/app/Other.java',
+        'java',
+        'package app;\n\nimport java.util.List;\n\nclass Other {\n  void f(List<String> xs) {\n    xs.getLog();\n  }\n}',
+      ),
+    ];
+    assert.deepEqual(
+      run(
+        files,
+        dep('org.jenkins-ci.plugins:p', 'maven'),
+        change('org.jenkins-ci.plugins:p', ['hudson.model.Run.getLog', 'getLog'], 'signature-change'),
+      ),
+      [],
+    );
+  });
+});

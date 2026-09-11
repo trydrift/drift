@@ -23,6 +23,10 @@ export type SurfaceUnavailableReason =
   | 'tool-missing'
   /** The tool ran and failed — a build error, a private crate, a bad network. */
   | 'toolchain-failed'
+  /** The published artifact could not be downloaded or safely inspected. */
+  | 'artifact-unavailable'
+  /** The artifact role is known, but this provider does not model its contract. */
+  | 'artifact-type-unsupported'
   /** The tool succeeded and there was nothing to read: no stubs, no rustdoc. */
   | 'no-public-surface'
   /** One of the two versions could not be fetched (yanked, deleted, private). */
@@ -50,6 +54,10 @@ export interface SurfaceUnavailable {
   install?: ToolInstallRequest;
   /** The tool that was tried, or would have been. */
   tool: string;
+  /** Artifact role established before choosing a surface provider. */
+  packageRole?: string;
+  /** Structured tool diagnostic retained for recording validation. */
+  diagnostic?: { causalErrorPresent: boolean; summary: string };
 }
 
 export interface ToolInstallRequest {
@@ -80,6 +88,16 @@ export interface SurfaceDiff {
   changes: SurfaceChange[];
   /** Additive API, when the provider can distinguish it. Never breaking. */
   additions?: SurfaceAddition[];
+  /**
+   * Changes this provider observed but is not confident enough to report —
+   * source-incompatible where the differ reads binary compatibility, say.
+   *
+   * Never findings, and never counted as breaking. Their only job is to stop a
+   * verdict claiming that a surface the provider did not check is unchanged:
+   * "no incompatible change in the checked surfaces" is a false sentence when
+   * the provider saw eighteen changes it declined to rule on.
+   */
+  sourceIncompatibleCount?: number;
   /** Named in the citation, because "computed" without saying by what is a claim. */
   tool: string;
   /**
@@ -91,6 +109,8 @@ export interface SurfaceDiff {
   weight: number;
   /** Human-readable citation of what was compared. */
   locator: string;
+  /** Artifact role established before the role-specific comparison. */
+  packageRole?: string;
 }
 
 export type SurfaceOutcome = SurfaceDiff | SurfaceUnavailable;
@@ -136,6 +156,16 @@ export interface SurfaceRequest {
    * an ordinary case.
    */
   readRepoFile?: (path: string) => Promise<string | null>;
+  /**
+   * Repo-relative path of the manifest that declared this dependency.
+   *
+   * Which manifest matters when the manifest itself says where the dependency
+   * is *published*: a Maven POM declares `<repositories>`, and an artifact
+   * hosted anywhere but Central cannot be found without reading them. The
+   * declaring member's POM is the one that carries them, so a monorepo cannot
+   * fall back to the root.
+   */
+  manifestPath?: string;
   /**
    * Install a missing helper inline instead of reporting the gap.
    *

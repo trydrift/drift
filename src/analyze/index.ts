@@ -9,6 +9,7 @@ import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { dependencyKey, stableId } from '../util/id.js';
 import {
+  declaresBreakingChange,
   kindForFindingCode,
   matchProse,
   remediationForFinding,
@@ -97,13 +98,51 @@ function analyzeDependency(
       out.push(...fromComputedEvidence(record));
       continue;
     }
-    if (record.source === 'semver-heuristic' || record.source === 'registry-metadata') {
+    if (record.source === 'semver-heuristic') {
       continue; // Context, not a specific breaking change.
+    }
+    if (record.source === 'registry-metadata') {
+      // Registry metadata is context — with one exception. A raised or
+      // introduced runtime floor (npm `engines`, `requires-python`, the `go`
+      // directive, Cargo `rust-version`) is a canonical runtime requirement,
+      // and must produce the same `runtime-requirement` breaking change a
+      // changelog sentence would so it flows through the one
+      // `RuntimeRequirementAnalysis` pipeline rather than a second checker.
+      out.push(
+        ...fromProseEvidence(record, dependency, workspace).filter(
+          (finding) => finding.kind === 'runtime-requirement',
+        ),
+      );
+      continue;
     }
     out.push(...fromProseEvidence(record, dependency, workspace));
   }
 
   return out;
+}
+
+/**
+ * `default` is the name a module published through `export =` or
+ * `export default` is reachable by, and it is the only name localization can
+ * bind — an importing file chooses its own, and `ImportRecord.defaultBinding`
+ * is what maps between them.
+ *
+ * It is not, however, a name any developer has ever typed. A surface provider
+ * writes its detail text before anyone knows which package the finding is
+ * about, so `glob@8`'s removals read "`default.sync` is no longer exported",
+ * which is unreadable in a report. Here the package is known, so the sentence
+ * can say what the developer wrote: `glob.sync`.
+ *
+ * Only the prose is rewritten. `symbols` keeps `default.*`, because that is
+ * what the localizer binds through.
+ */
+function withPublishedName(detail: string, dependency: string): string {
+  return detail
+    .replace(/`default\.([\w$]+)`/g, `\`${dependency}.$1\``)
+    // The bare form needs the whole clause rewritten, not just the name:
+    // "the default export of `glob` is no longer exported" says it twice.
+    .replace(/`default` is no longer exported/g, `\`${dependency}\` no longer has a default export`)
+    .replace(/`default`/g, `the default export of \`${dependency}\``);
 }
 
 /** Computed findings map one-to-one onto breaking changes; no inference needed. */
@@ -128,9 +167,27 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
       dependency: record.dependency,
       workspace: record.workspace,
       kind,
-      summary: finding.detail,
+      summary: withPublishedName(finding.detail, record.dependency),
+      // A computed runtime floor is a real `RuntimeRequirement`, not prose to
+      // be re-parsed: the differ read it out of the bytecode and put the two
+      // releases in `before`/`after`. Building it here lets
+      // `completeRuntimeAnalyses` answer it against this repository's own
+      // declared toolchain, exactly as it does for a floor found in a
+      // changelog.
+      ...(kind === 'runtime-requirement' && finding.after
+        ? {
+            runtime: {
+              kind: 'minimum-runtime' as const,
+              runtime: 'java' as const,
+              requirement: `>=${finding.after}`,
+              sourceText: finding.detail,
+            },
+          }
+        : {}),
       before: finding.before,
       after: finding.after,
+      ...(finding.fromKind ? { fromKind: finding.fromKind } : {}),
+      ...(finding.toKind ? { toKind: finding.toKind } : {}),
       remediation: remediationForFinding(finding, record.dependency),
       symbols: symbolsFromFinding(finding),
       ...(moduleSystem
@@ -207,6 +264,23 @@ function symbolsFromFinding(finding: StructuredFinding): string[] {
       // the field is written wherever the package is imported under an alias.
       const owner = parts[parts.length - 2];
       if (owner) symbols.add(`${owner}.${last}`);
+    }
+
+    // A member *becoming required* is a fact about the owning type, not about
+    // the member's own name: `AxiosRequestConfig.headers` becoming required
+    // means every construction or type annotation of `AxiosRequestConfig`
+    // needs a look, whether or not that literal happens to mention `headers`.
+    // `headers` and `url` are exactly the field names common enough to sit in
+    // `GENERIC_LEAF_NAMES`, so without this the qualified symbol
+    // (`AxiosRequestConfig.headers`, which no caller ever writes verbatim) was
+    // the only thing searched, and `const config: AxiosRequestConfig = {...}`
+    // — sitting in the very file that imports the type — was never found.
+    // Scoped to this one finding kind: a removed or renamed member is a fact
+    // about the member, and searching its owner instead would just as often
+    // point at an unrelated construction that happens to share a type name.
+    if (parts.length >= 2 && kindForFindingCode(finding.code) === 'required-field-added') {
+      const owner = parts[parts.length - 2];
+      if (owner && !isGenericLeaf(owner)) symbols.add(owner);
     }
   }
 
@@ -288,8 +362,13 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
   const out: BreakingChange[] = [];
   const seen = new Set<string>();
 
+  // A `BREAKING CHANGE:` footer or a "Breaking Changes" heading applies to the
+  // whole record, not just the line it sits on — so a refinement rule matching
+  // the sentence *below* the marker is still anchored by it.
+  const anchored = declaresBreakingChange(record.content);
+
   for (const line of record.content.split('\n')) {
-    for (const match of matchProse(line)) {
+    for (const match of matchProse(line, { anchored })) {
       const key = `${match.kind}:${match.symbols.join(',')}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -307,8 +386,9 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
         workspace,
         kind: match.kind,
         summary: match.summary,
-        remediation: remediationForProse(match, dependency),
-        symbols,
+      remediation: remediationForProse(match, dependency),
+      symbols,
+      ...(match.runtime ? { runtime: match.runtime } : {}),
         replacementSymbols: match.replacementSymbols.length ? match.replacementSymbols : undefined,
         ...(match.moduleSystem ? { moduleSystem: match.moduleSystem } : {}),
         // Provisional; `scoreUpstream` decides the real value.
@@ -470,4 +550,5 @@ export function meetsConfidence(actual: Confidence, minimum: Confidence): boolea
 }
 
 export * from './rules.js';
+export * from './runtime-grammar.js';
 export type { ProseMatch };

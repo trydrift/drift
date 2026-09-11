@@ -1,0 +1,17 @@
+{
+  "version": "drift-external-run-v1",
+  "runId": "p0-baseline-bump",
+  "datasetId": "bump",
+  "createdAt": "2026-09-04T23:29:16.287Z",
+  "driftCommit": "a8757c68985ab23e5d8125b54463eaf8decd1052",
+  "driftTreeDirty": true,
+  "harnessVersion": "a8757c68985ab23e5d8125b54463eaf8decd1052",
+  "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts bump --run-id p0-baseline-bump --resume",
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against.",
+  "rescoredAt": "2026-09-04T23:30:16.053Z",
+  "rescoredAtCommit": "a8757c68985ab23e5d8125b54463eaf8decd1052"
+}

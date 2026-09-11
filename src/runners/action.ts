@@ -112,7 +112,7 @@ export async function runAction(): Promise<number> {
 
   if (!repo) {
     logger.error(
-      'Could not determine the repository and commit range from the event payload. Drift supports `push`, `workflow_dispatch`, `schedule`, and `issue_comment` events.',
+      'Could not determine the repository and commit range from the event payload. Drift supports `push`, `pull_request`, `workflow_dispatch`, `schedule`, and `issue_comment` events.',
     );
     return 1;
   }
@@ -195,6 +195,7 @@ export async function runAction(): Promise<number> {
       });
       await uploadCodeScanning({ repo, config: effectiveConfig, github, logger, findings, category: 'drift/diff' });
       await createIssuesForFindings({ repo, config: effectiveConfig, github, logger, findings, category: 'drift/diff' });
+      await commentOnPullRequest({ event, repo, github, logger, body: renderPullRequestBody(result.plan, effectiveConfig) });
     }
 
     if (result.dispatch.status === 'dispatched') {
@@ -439,7 +440,7 @@ function renderOutdatedTable(candidates: readonly UpgradeCandidate[]): string {
 
   const rows = candidates.map((c) => {
     const version = c.selected === c.latest ? `${c.current} → ${c.selected}` : `${c.current} → ${c.selected} (latest ${c.latest})`;
-    const impact = c.breakingCount > 0 ? `${c.impactCount} site(s) in ${c.impactFiles} file(s)` : '—';
+    const impact = c.breakingCount > 0 ? `${c.actionableImpactCount ?? 0} actionable site(s) in ${c.actionableImpactFiles ?? 0} file(s)` : '—';
     return `| ${c.name} | ${DEPENDENCY_KIND_LABELS[c.kind]} | ${version} | ${c.breakingCount} | ${impact} | ${c.risk} |`;
   });
 
@@ -632,6 +633,54 @@ async function readEventPayload(): Promise<Record<string, unknown>> {
  * none — in both cases Drift falls back to the commit's first parent, which is
  * the right comparison point for a dependency diff.
  */
+/**
+ * Put the verdict where the decision is already being made.
+ *
+ * Renovate and Dependabot do not push to a watched branch — they open a pull
+ * request, and that PR is where a human decides whether to merge. A tool that
+ * cannot reach it is a tool somebody has to remember to run, which in practice
+ * means a tool nobody runs. So when this workflow is triggered by a
+ * `pull_request` event, Drift comments its plan on that PR.
+ *
+ * One comment, replaced rather than appended: an update bot rebases its
+ * branches, and a PR carrying nine stale Drift verdicts is worse than a PR
+ * carrying none. The marker is what makes the previous one findable.
+ *
+ * Best-effort in every direction. A missing `pull-requests: write` permission
+ * is the common case on a repository that has not opted in, and it must not
+ * fail a run whose analysis succeeded.
+ */
+const PR_COMMENT_MARKER = '<!-- drift:pr-verdict -->';
+
+export async function commentOnPullRequest(args: {
+  event: Record<string, unknown>;
+  repo: RepoContext;
+  github: GitHubClient;
+  logger: Logger;
+  body: string;
+}): Promise<void> {
+  const number = (args.event.pull_request as { number?: number } | undefined)?.number;
+  if (typeof number !== 'number') return;
+
+  const body = `${PR_COMMENT_MARKER}\n${args.body}`;
+  try {
+    const existing = await args.github.listIssueComments(args.repo, number);
+    const previous = existing.find((comment) => comment.body?.includes(PR_COMMENT_MARKER));
+    if (previous) {
+      await args.github.updateIssueComment(args.repo, previous.id, body);
+      args.logger.info(`Updated Drift's verdict on #${number}.`);
+      return;
+    }
+    await args.github.commentOnIssue(args.repo, number, body);
+    args.logger.info(`Commented Drift's verdict on #${number}.`);
+  } catch (err) {
+    args.logger.warn(
+      `Could not comment on #${number} (${(err as Error).message}). ` +
+        'The workflow needs `permissions: pull-requests: write` to post a verdict.',
+    );
+  }
+}
+
 function resolveRepoContext(
   event: Record<string, unknown>,
   workspace: string,
@@ -642,6 +691,29 @@ function resolveRepoContext(
 
   const [owner, repo] = fullName.split('/');
   if (!owner || !repo) return null;
+
+  // A `pull_request` event is the one that matters for an update bot: Renovate
+  // and Dependabot do not push to a watched branch, they open a PR, and until
+  // this existed Drift never saw the change that a team actually reviews.
+  //
+  // The range is the PR's own, not the push range: `base.sha` is the commit the
+  // branch forked from and `head.sha` is the proposal. `GITHUB_SHA` on a
+  // `pull_request` event points at a synthetic merge commit, so deriving the
+  // range from it would analyse a tree that exists nowhere and belongs to
+  // nobody.
+  const pull = event.pull_request as
+    | { base?: { sha?: string; ref?: string }; head?: { sha?: string } }
+    | undefined;
+  if (pull?.base?.sha && pull.head?.sha) {
+    return {
+      owner,
+      repo,
+      baseBranch: pull.base.ref ?? repository?.default_branch ?? 'main',
+      beforeSha: pull.base.sha,
+      afterSha: pull.head.sha,
+      workspace,
+    };
+  }
 
   const ref = (event.ref as string | undefined) ?? process.env.GITHUB_REF ?? '';
   const baseBranch =

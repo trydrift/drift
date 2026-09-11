@@ -45,10 +45,22 @@ on:
       - 'src/verification/**'
       - 'src/analysis.ts'
       - 'src/config/schema.ts'
+      - 'src/disposition.ts'
       - 'src/pipeline.ts'
       - 'src/types.ts'
+      - 'src/util/**'
+      # Not the engine: a capture calls `scanUpgrades` directly and never
+      # draws a terminal. Kept in lockstep with RECORDING_ENGINE_EXCLUDES.
+      - '!src/util/prompt.ts'
+      - '!src/util/terminal.ts'
+      - 'package-lock.json'
+      - 'site/package-lock.json'
       - 'site/scripts/capture.mjs'
       - 'site/scripts/recording-validation.mjs'
+      - 'site/scripts/runtime-recording-validation.mjs'
+      - 'site/scripts/validate-recordings.mjs'
+      - 'site/scripts/recording-engine-manifest.mjs'
+      - 'site/scripts/analyzer-environment.mjs'
       - 'site/src/lib/recordings.ts'
       - 'site/scripts/engine-fingerprint.mjs'
       - '.github/workflows/refresh-recordings.yml'
@@ -93,6 +105,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
 
       - run: npm ci
 
@@ -171,6 +187,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
+
       - run: npm ci
       - run: npm run build
 
@@ -196,6 +216,24 @@ jobs:
         continue-on-error: true
         run: node site/scripts/capture.mjs ${{ needs.check.outputs.targets }}
 
+      # `capture.mjs` writes a Node diagnostic report the moment a target trips
+      # its deadline, because what is holding the process open — no handles at
+      # all (a deadlock in our own code) versus a socket or a child process
+      # (something the environment did) — is most of the diagnosis and cannot
+      # be recovered once the runner is gone. It was being written to a path
+      # nothing collects and then destroyed with the runner, so the two hangs
+      # this has had so far (kubernetes on 2026-09-07, flexlayout on
+      # 2026-09-09, ninety minutes each and neither reproducible locally) both
+      # threw away the only evidence that could explain them.
+      - name: Keep the diagnostic from any target that hung
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: capture-hang-reports
+          path: site/capture-hang-*.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       # A capture that reached no registry produces recordings full of "could
       # not check", which would sail through `git diff` as a large, confident,
       # completely wrong change. Better to fail the job than to open that PR.
@@ -215,6 +253,12 @@ jobs:
           }
           console.log(`${index.length} recording(s), ${index.reduce((sum, e) => sum + e.packagesChecked, 0)} packages checked.`);
           NODE
+
+      - name: Validate recording corpus
+        # Failed targets intentionally retain stale artifacts. Validate every
+        # artifact structurally, but require the current fingerprint only for
+        # files this run actually changed.
+        run: node site/scripts/validate-recordings.mjs --allow-stale --fresh-from-git
 
       - name: Open a pull request
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1

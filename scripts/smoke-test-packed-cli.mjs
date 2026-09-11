@@ -1,14 +1,15 @@
 #!/usr/bin/env node
-// Builds the real npm artifact with `npm pack`, installs *that tarball* into a
-// clean temporary directory, and exercises the installed `drift` binary from
-// there — never importing anything from this source tree. This is the only
+// Accepts an existing npm tarball, or builds one with `npm pack` when no path
+// is supplied. Installs *that tarball* into a clean temporary directory and
+// exercises the installed `drift` binary from there — never importing anything
+// from this source tree. This is the only
 // check in the repo that would catch a bin path typo, a missing entry in
 // `files`, an accidentally-devDependency-only runtime import, or an ESM
 // resolution error that only appears once the package is actually installed.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -18,9 +19,34 @@ function log(msg) {
   console.log(`[smoke] ${msg}`);
 }
 
+/**
+ * Run the installed binary and read what it said, not how it said it.
+ *
+ * The CLI colours its output wherever the terminal renders ANSI, and a CI
+ * runner is one of those places — `GITHUB_ACTIONS=true` is enough. So on the
+ * runner `drift analyze` leaves the packed binary as
+ * `ESC[90mdriftESC[0m ESC[36manalyzeESC[0m`, and an assertion written against
+ * the raw bytes fails on wording that is perfectly correct. Every assertion
+ * here is about what the CLI said, so styling is stripped once, here, rather
+ * than forcing `NO_COLOR` — which would leave the coloured path, the one a CI
+ * user actually sees, untested in the packed artifact.
+ */
 function run(cmd, args, opts = {}) {
   const result = spawnSync(cmd, args, { encoding: 'utf8', ...opts });
-  return result;
+  return { ...result, stdout: stripAnsi(result.stdout), stderr: stripAnsi(result.stderr) };
+}
+
+/**
+ * Drop CSI/OSC escape sequences.
+ *
+ * A copy of `ANSI_PATTERN` in `src/util/terminal.ts`, deliberately: this script
+ * imports nothing from the source tree, because its whole job is to exercise
+ * the installed package rather than this checkout.
+ */
+const ANSI_PATTERN = /\u001b\][0-9]*;;[\s\S]*?(?:\u0007|\u001b\\)|\u001b\[[0-9;?]*[A-Za-z]/g;
+
+function stripAnsi(text) {
+  return typeof text === 'string' ? text.replace(ANSI_PATTERN, '') : text;
 }
 
 function assert(cond, message) {
@@ -31,16 +57,25 @@ function assert(cond, message) {
 
 let workdir;
 let tarballAbsPath;
+let removeTarball = false;
 try {
-  log('npm pack (root package)');
-  const packOut = execFileSync('npm', ['pack', '--json', '--pack-destination', tmpdir()], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  });
-  const [{ filename }] = JSON.parse(packOut);
-  tarballAbsPath = join(tmpdir(), filename);
+  const suppliedTarball = process.argv[2];
+  if (suppliedTarball) {
+    tarballAbsPath = resolve(process.cwd(), suppliedTarball);
+    log(`using existing tarball ${tarballAbsPath}`);
+  } else {
+    log('npm pack (root package)');
+    const packOut = execFileSync('npm', ['pack', '--json', '--pack-destination', tmpdir()], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+    const [{ filename }] = JSON.parse(packOut);
+    tarballAbsPath = join(tmpdir(), filename);
+    removeTarball = true;
+    log(`packed ${filename}`);
+  }
   assert(existsSync(tarballAbsPath), `tarball ${tarballAbsPath} was not created`);
-  log(`packed ${filename}`);
+  assert(tarballAbsPath.endsWith('.tgz'), `${basename(tarballAbsPath)} is not an npm tarball`);
 
   workdir = mkdtempSync(join(tmpdir(), 'drift-smoke-'));
   log(`installing into clean directory ${workdir}`);
@@ -163,5 +198,5 @@ try {
   log('all packaged-CLI smoke checks passed');
 } finally {
   if (workdir) rmSync(workdir, { recursive: true, force: true });
-  if (tarballAbsPath) rmSync(tarballAbsPath, { force: true });
+  if (removeTarball && tarballAbsPath) rmSync(tarballAbsPath, { force: true });
 }

@@ -144,7 +144,7 @@ async function extensionIdentifiers() {
 /**
  * `drift.<something>` references written into the site's copy.
  *
- * `drift.yml` is a config file and `drift.drift` is the Marketplace item id —
+ * `drift.yml` is a config file and `drift.usedrift` is the Marketplace item id —
  * neither is an identifier the manifest declares, and both are correct where
  * they appear, so they are excluded by shape rather than by an allowlist that
  * would have to grow.
@@ -157,7 +157,7 @@ async function referencedIdentifiers() {
     for (const match of source.matchAll(/\bdrift\.[a-zA-Z][a-zA-Z0-9]*(?:\.[a-zA-Z][a-zA-Z0-9]*)*/g)) {
       const id = match[0];
       if (/\.(yml|yaml|json|js|ts|tsx|md)$/.test(id)) continue;
-      if (id === 'drift.drift') continue;
+      if (id === 'drift.usedrift') continue;
       if (!found.has(id)) found.set(id, path);
     }
   }

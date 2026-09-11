@@ -268,7 +268,7 @@ describe('the words this shares with the extension', () => {
       .split('\n')
       .map((line) => /^\S+ (.+) \(\d+\)$/.exec(line.trim())?.[1])
       .filter((name): name is string => name !== undefined);
-    assert.deepEqual(headings, ['Affected', 'Unchecked', 'Safe']);
+    assert.deepEqual(headings, ['Affected', 'Evidence Missing', 'Safe']);
   });
 
   test('orders them by compareSeverity rather than by a second copy of it', () => {

@@ -143,7 +143,7 @@ async function surfaceOf(
       ok: false,
       failure: unavailable(
         TOOL,
-        'toolchain-failed',
+        'artifact-unavailable',
         `Could not read ${request.name} ${version} from ${url}: ${(err as Error).message}`,
       ),
     };

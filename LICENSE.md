@@ -2,6 +2,15 @@
 
 <https://polyformproject.org/licenses/shield/1.0.0>
 
+Required Notice: Copyright Rodolphe Kouyoumdjian (<https://github.com/trydrift/drift>)
+
+The line above is the licensor identity this license is granted under, and the
+`Required Notice:` line the [Notices](#notices) section obliges you to carry
+with any copy you pass on. It matters more here than under a permissive
+license: [Noncompete](#noncompete) is defined relative to "the licensor or any
+of its affiliates", so who the licensor is decides what the one restriction
+actually covers.
+
 ## Acceptance
 
 In order to get any license under these terms, you must agree

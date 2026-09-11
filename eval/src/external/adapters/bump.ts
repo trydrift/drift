@@ -1,10 +1,11 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
+import { cleanupTemporaryDirectory } from '../cleanup.ts';
 import type { Selectable } from '../selection.ts';
 import {
   DriftConfigSchema,
@@ -18,6 +19,7 @@ import {
 // Not part of the public package surface — see the note in
 // `eval/src/adapters/end-to-end.ts`.
 import { deepVerify } from '../../../../dist/analysis.js';
+import { buildImpactFunnel, type ImpactFunnel } from '../impact-funnel.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -142,12 +144,15 @@ export class BumpUnavailable extends Error {
 export interface BumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' | 'runtime-declaration' }[];
   verdict: string;
   summary: string;
+  checkedSurfaces: { surface: string; dependency?: string; ecosystem?: string; workspace?: string; status: string; detail: string }[];
+  /** Which pipeline stage a miss was lost at, plus secondary diagnostics. See `impact-funnel.ts`. */
+  impactFunnel: ImpactFunnel;
 }
 
-const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean', 'detected-not-locally-reachable']);
+const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean']); // detected-not-locally-reachable is not a safety claim; see src/report/confidence.ts
 
 /**
  * Fetches the real commit pair and runs Drift over it.
@@ -157,7 +162,7 @@ const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', '
  * received. A commit the remote no longer has — dependabot branches are often
  * deleted — is `source-unavailable`, and is never replaced by the branch head.
  */
-export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
+export async function predictBump(record: BumpRecord, signal?: AbortSignal): Promise<BumpPrediction> {
   const work = await mkdtemp(join(tmpdir(), `drift-bump-${record.project}-`));
   const repo = join(work, 'repo');
   const slug = `${record.projectOrganisation}/${record.project}`;
@@ -206,6 +211,9 @@ export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
       logger: SILENT_LOGGER,
       provider: new LocalGitProvider(repo, { before: beforeSha, after: record.breakingCommit }),
       workspace: repo,
+      // Handed down from the case deadline: when it fires, the build this
+      // case started is killed rather than left running into the next case.
+      ...(signal ? { signal } : {}),
     };
 
     // Deep Verification: install the change and run the project's own build,
@@ -216,15 +224,35 @@ export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
     const result = await deepVerify(await analyzeRepository(analysisOptions), analysisOptions);
 
     const plan = result.plan;
+    const dependency = `${record.updatedDependency.dependencyGroupID}:${record.updatedDependency.dependencyArtifactID}`;
+    const artifactSuffix = `:${record.updatedDependency.dependencyArtifactID}`;
+    const isTargetDependency = (name: string): boolean => name === dependency || name.endsWith(artifactSuffix);
+    const verdict = verdictFromPlan(plan);
+    const impactFunnel = buildImpactFunnel({
+      plan,
+      localizationDiagnostics: result.localizationDiagnostics,
+      isTargetDependency,
+      updateDetected: (plan?.changes ?? []).some((change) => isTargetDependency(change.name)),
+      // BUMP is two real consecutive commits: the before/after pair is always concrete.
+      exactVersionResolved: true,
+      identifiedAffected: verdict === 'locally-affected',
+    });
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({ name: change.name, from: change.from, to: change.to })),
       breakingChanges: (plan?.breakingChanges ?? []).map((change) => ({ kind: String(change.kind), symbols: change.symbols ?? [] })),
-      impactSites: (plan?.impactSites ?? []).map((site) => ({ file: site.file, line: site.line, matchedSymbol: site.matchedSymbol })),
-      verdict: verdictFromPlan(plan),
+      impactSites: (plan?.impactSites ?? []).map((site) => ({
+        file: site.file,
+        line: site.line,
+        matchedSymbol: site.matchedSymbol,
+        ...(site.siteKind ? { siteKind: site.siteKind } : {}),
+      })),
+      verdict,
       summary: result.summary,
+      checkedSurfaces: (plan?.checkedSurfaces ?? []).map((surface) => ({ ...surface })),
+      impactFunnel,
     };
   } finally {
-    await rm(work, { recursive: true, force: true });
+    await cleanupTemporaryDirectory(work);
   }
 }
 
@@ -298,6 +326,7 @@ export function scoreBump(input: ScoreBumpInput): ExternalCaseResult {
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
+    impactFunnel: prediction.impactFunnel,
     outcomes: {
       /*
        * Matched on the full coordinate, or on the artifact as a whole segment.
@@ -313,7 +342,20 @@ export function scoreBump(input: ScoreBumpInput): ExternalCaseResult {
         (change) => change.name === dependency || change.name.endsWith(`:${record.updatedDependency.dependencyArtifactID}`),
       ),
       identifiedAffected: prediction.verdict === 'locally-affected',
-      localized: prediction.impactSites.length > 0,
+      /*
+       * Source sites only.
+       *
+       * This corpus carries no line-level ground truth, so "localized" is
+       * already only "Drift produced a site" — which makes it exactly the
+       * metric a change could inflate without getting anything right. A
+       * declaration site — a `pom.xml` dependency line, or the `ci.yml` line
+       * stating this project's Java version — is a real answer to "where do I
+       * go" and a false answer to "where does my code break". Any `siteKind`
+       * marks one, so source localization is exactly the unmarked sites.
+       * Without the split, a raised JDK floor would score as a localization on
+       * every project that declares a Java version anywhere.
+       */
+      localized: prediction.impactSites.some((site) => site.siteKind === undefined),
       falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
       // Deliberately no `repaired` key. Repair cannot be judged without the
       // Maven oracle, and the oracle needs the published image. An absent key

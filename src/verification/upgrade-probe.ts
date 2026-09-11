@@ -19,6 +19,8 @@ import {
   type LocalCheck,
 } from './checks.js';
 import { detectChecks } from '../detect/checks.js';
+import { isPythonRequirementsFile } from '../detect/python-requirements.js';
+import { parseVerificationDiagnostics, subtractBaseline, type VerificationDiagnostic } from './diagnostics.js';
 
 /**
  * Testing an upgrade before anyone is told about it.
@@ -68,6 +70,23 @@ export interface UpgradeVerification {
   diagnostics?: string;
   /** Repo-relative files named by the failing output, best effort. */
   failedFiles: string[];
+  /**
+   * Structured compiler/build diagnostics that appeared only after the change
+   * — parsed from the output of checks that passed at baseline and fail now,
+   * with the baseline's own diagnostics subtracted. The raw material for
+   * turning a measured regression into concrete {@link ImpactSite}s rather
+   * than a filename list. Absent when nothing was measured, or when the failing
+   * output named no parseable location.
+   */
+  introducedDiagnostics?: VerificationDiagnostic[];
+  /**
+   * Internal: every error diagnostic parsed from this run's failing checks,
+   * with the worktree path stripped. Carried between `checkAt` and
+   * `reconcileAgainstBaseline` so the after/before subtraction operates on
+   * structured data rather than re-parsing strings that reference a worktree
+   * that no longer exists. Not meant for callers — read `introducedDiagnostics`.
+   */
+  parsedDiagnostics?: VerificationDiagnostic[];
   /**
    * How many upgrades were installed together when this was measured.
    *
@@ -140,6 +159,8 @@ export interface ProbeOptions {
   fs?: WorkspaceFs;
   logger?: Logger;
   token?: CancelSignal;
+  /** Kills an in-flight check, not merely the next one. See `ExecOptions.signal`. */
+  signal?: AbortSignal;
   /** Per-check timeout. */
   timeoutMs?: number;
   /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
@@ -331,6 +352,7 @@ async function probeGroup(
       install: manager?.install,
       ...(options.installTogether ? { installTogether: options.installTogether } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      ...(options.signal ? { signal: options.signal } : {}),
       ...(options.token ? { token: options.token } : {}),
     };
 
@@ -434,7 +456,7 @@ async function probeAlone(pass: GroupPass, target: ProbeTarget, hooks: GroupHook
   }
 
   hooks.report(phase, pass.usable.map((check) => check.label).join(', '), [target]);
-  hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase, [target])));
+  hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase, [target]), pass.root));
   return resetWorktree(pass);
 }
 
@@ -641,6 +663,7 @@ async function prepareGroup(
         cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
         env,
         timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+        ...(options.signal ? { signal: options.signal } : {}),
         onOutput: hooks.output,
       }),
       { project, manager: install.command },
@@ -694,6 +717,7 @@ async function prepareGroup(
       onOutput: (_check, chunk) => hooks.output(chunk),
       ...(options.token ? { token: options.token } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      ...(options.signal ? { signal: options.signal } : {}),
     });
     baselineRun.end();
     baseline = measured;
@@ -736,7 +760,7 @@ async function cacheKeyFor(
   const fs = options.fs ?? nodeWorkspaceFs();
   const base = dir ? `${worktreePath}/${dir}` : worktreePath;
   const entries = await fs.readDirectory(base).catch(() => []);
-  const interesting = entries.filter((name) => MANIFEST_PATTERN.test(name)).sort();
+  const interesting = entries.filter((name) => MANIFEST_PATTERN.test(name) || isPythonRequirementsFile(name)).sort();
   if (interesting.length === 0) return null;
 
   const files: { path: string; content: string }[] = [];
@@ -767,7 +791,7 @@ async function cacheKeyFor(
  * misses is a cache hit it should not have had.
  */
 const MANIFEST_PATTERN =
-  /^(package\.json|package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|pyproject\.toml|setup\.py|setup\.cfg|requirements[^/]*\.txt|poetry\.lock|uv\.lock|Pipfile(\.lock)?|go\.mod|go\.sum|Cargo\.(toml|lock)|Gemfile(\.lock)?|[^/]*\.gemspec|pom\.xml|build\.gradle(\.kts)?|gradle\.lockfile|build\.sbt|composer\.(json|lock)|mix\.(exs|lock)|pubspec\.(yaml|lock)|Package\.(swift|resolved)|Podfile(\.lock)?|[^/]*\.opam|conanfile\.(txt|py)|conan\.lock|vcpkg\.json|platformio\.ini|library\.properties|.*\.csproj|.*\.fsproj|packages\.lock\.json)$/i;
+  /^(package\.json|package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|pyproject\.toml|setup\.py|setup\.cfg|poetry\.lock|uv\.lock|Pipfile(\.lock)?|go\.mod|go\.sum|Cargo\.(toml|lock)|Gemfile(\.lock)?|[^/]*\.gemspec|pom\.xml|build\.gradle(\.kts)?|gradle\.lockfile|build\.sbt|composer\.(json|lock)|mix\.(exs|lock)|pubspec\.(yaml|lock)|Package\.(swift|resolved)|Podfile(\.lock)?|[^/]*\.opam|conanfile\.(txt|py)|conan\.lock|vcpkg\.json|platformio\.ini|library\.properties|.*\.csproj|.*\.fsproj|packages\.lock\.json)$/i;
 
 /**
  * A checkout being prepared ahead of the packages that will need it.
@@ -893,6 +917,8 @@ interface GroupPass {
   installTogether?: (root: string, targets: readonly ProbeTarget[]) => Promise<boolean>;
   timeoutMs?: number;
   token?: CancelSignal;
+  /** Kills an in-flight check, not merely the next one. See `ExecOptions.signal`. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -949,7 +975,7 @@ async function probeTogether(
 
   const resetOk = await resetWorktree(pass);
   if (green) {
-    for (const target of targets) hooks.settle(target, { ...verdictFrom(outcomes), measuredWith: targets.length });
+    for (const target of targets) hooks.settle(target, { ...verdictFrom(outcomes, pass.root), measuredWith: targets.length });
     return 'settled';
   }
 
@@ -1052,6 +1078,7 @@ function runPass(
     ...(hooks ? { onOutput: (_check: LocalCheck, chunk: string) => hooks.output(chunk) } : {}),
     ...(pass.token ? { token: pass.token } : {}),
     ...(pass.timeoutMs ? { timeoutMs: pass.timeoutMs } : {}),
+    ...(pass.signal ? { signal: pass.signal } : {}),
   }));
 }
 
@@ -1073,6 +1100,8 @@ export interface ChangeProbeOptions {
   fs?: WorkspaceFs;
   logger?: Logger;
   token?: CancelSignal;
+  /** Kills an in-flight check, not merely the next one. See `ExecOptions.signal`. */
+  signal?: AbortSignal;
   timeoutMs?: number;
   /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
   allowedGlobs?: readonly string[];
@@ -1154,11 +1183,20 @@ function reconcileAgainstBaseline(
   }
 
   const diagnostics = genuine.map((outcome) => `$ ${outcome.label}\n${outcome.fullOutput ?? outcome.output}`).join('\n\n');
+
+  // `after.parsedDiagnostics` is every error `verdictFrom` parsed from the
+  // failing run, worktree path already stripped; `before` passed, so its
+  // `parsedDiagnostics` is empty and the subtraction keeps everything — but it
+  // is still done through `subtractBaseline` so a baseline that printed a
+  // warning the regex misread as an error cannot leak through.
+  const introduced = subtractBaseline(after.parsedDiagnostics ?? [], before.parsedDiagnostics ?? []);
+
   return {
     status: 'failed',
     checks: after.checks,
     diagnostics,
     failedFiles: filesNamedIn(diagnostics),
+    ...(introduced.length > 0 ? { introducedDiagnostics: introduced } : {}),
   };
 }
 
@@ -1202,6 +1240,7 @@ async function checkAt(
         cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
         env,
         timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+        ...(options.signal ? { signal: options.signal } : {}),
       });
       if (installed.code !== 0) {
         const detail = (installed.stderr || installed.stdout).trim().split('\n').slice(-3).join(' ');
@@ -1220,7 +1259,9 @@ async function checkAt(
         exec,
         ...(options.token ? { token: options.token } : {}),
         ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      ...(options.signal ? { signal: options.signal } : {}),
       }),
+      worktree.path,
     );
   } finally {
     await worktree.dispose();
@@ -1273,6 +1314,7 @@ async function resetWorktreeInner(pass: GroupPass): Promise<boolean> {
       cwd: pass.dir ? `${pass.root}/${pass.dir}` : pass.root,
       env: pass.env,
       timeoutMs: pass.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+      ...(pass.signal ? { signal: pass.signal } : {}),
     })
     .catch(() => ({ code: 1 }) as Awaited<ReturnType<Exec>>);
   return restored.code === 0;
@@ -1302,17 +1344,19 @@ function settleRemainingAsContaminated(
  * pass — an absent answer is not a clean bill of health, which is the same
  * distinction `severity.ts` draws between `clean` and `unchecked`.
  */
-function verdictFrom(outcomes: readonly CheckOutcome[]): UpgradeVerification {
+function verdictFrom(outcomes: readonly CheckOutcome[], root?: string): UpgradeVerification {
   const failed = outcomes.filter((outcome) => outcome.status === 'failed');
   if (failed.length > 0) {
     const diagnostics = failed
       .map((outcome) => `$ ${outcome.label}\n${outcome.fullOutput ?? outcome.output}`)
       .join('\n\n');
+    const parsed = parseVerificationDiagnostics(diagnostics, root).filter((d) => d.severity === 'error');
     return {
       status: 'failed',
       checks: [...outcomes],
       diagnostics,
       failedFiles: filesNamedIn(diagnostics),
+      ...(parsed.length > 0 ? { parsedDiagnostics: parsed } : {}),
     };
   }
 

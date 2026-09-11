@@ -42,11 +42,14 @@ function truth(safety: Conclusion['groundTruthSafety'], overrides: Partial<Concl
 const d4 = (verdict: string, safety: Conclusion['groundTruthSafety']) =>
   scoreDetection({ caseId: 'c', detection: detection(verdict), truth: truth(safety) }).d4;
 
-test('a safe control scores correct-safe when Drift searched and found nothing reachable', () => {
+test('a completed localization with no hits is NOT correct-safe — it is safe-but-inconclusive', () => {
+  // "Drift searched and found nothing" is not affirmative evidence the
+  // repository is unaffected, so it no longer scores as a safety success even
+  // when the ground truth is safe. It is also not a safety failure.
   const result = d4('detected-not-locally-reachable', 'safe');
-  assert.equal(result.correctSafe, true);
+  assert.equal(result.correctSafe, false);
   assert.equal(result.falseSafe, false);
-  assert.equal(result.safeButInconclusive, false);
+  assert.equal(result.safeButInconclusive, true);
 });
 
 test('a safe control scores correct-safe when no incompatible change was found in checked surfaces', () => {
@@ -60,10 +63,20 @@ test('a safe control with insufficient evidence is not correct-safe, and is not 
   assert.equal(result.safeButInconclusive, true);
 });
 
-test('unsafe truth plus any safe-equivalent verdict is a false-safe, including not-locally-reachable', () => {
-  for (const verdict of ['clean', 'no-incompatible-change-in-checked-surfaces', 'detected-not-locally-reachable']) {
+test('unsafe truth plus a safe-equivalent verdict is a false-safe', () => {
+  for (const verdict of ['clean', 'no-incompatible-change-in-checked-surfaces']) {
     assert.equal(d4(verdict, 'unsafe').falseSafe, true, `${verdict} must count as a safety claim`);
   }
+});
+
+test('unsafe truth plus detected-not-locally-reachable is a miss, not a false-safe', () => {
+  // Reporting "breaking change upstream, impact unresolved — review" about code
+  // that is in fact affected is a conservative miss, not the catastrophic
+  // trust failure a false-safe is.
+  const result = d4('detected-not-locally-reachable', 'unsafe');
+  assert.equal(result.falseSafe, false);
+  assert.equal(result.correctAffected, false);
+  assert.equal(isSafeEquivalent('detected-not-locally-reachable'), false);
 });
 
 test('unsafe truth plus an inconclusive verdict is a miss, not a false-safe', () => {
@@ -76,7 +89,7 @@ test('unsafe truth plus an inconclusive verdict is a miss, not a false-safe', ()
 });
 
 test('uncertain truth plus a safe-equivalent verdict is unsupported-safe, never pooled into false-safe', () => {
-  const result = d4('detected-not-locally-reachable', 'uncertain');
+  const result = d4('no-incompatible-change-in-checked-surfaces', 'uncertain');
   assert.equal(result.unsupportedSafe, true);
   assert.equal(result.falseSafe, false);
   assert.equal(result.correctSafe, false);

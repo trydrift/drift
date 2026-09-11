@@ -12,24 +12,46 @@
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 49,
+      "numerator": 67,
       "denominator": 69,
-      "value": 0.7101449275362319
+      "value": 0.9710144927536232
     },
     "affected-repository identification rate": {
-      "numerator": 46,
+      "numerator": 47,
       "denominator": 69,
-      "value": 0.6666666666666666
+      "value": 0.6811594202898551
     },
     "consumer localization rate": {
-      "numerator": 46,
+      "numerator": 40,
       "denominator": 69,
-      "value": 0.6666666666666666
+      "value": 0.5797101449275363
     },
     "false-safe verdicts": {
-      "numerator": 1,
+      "numerator": 0,
       "denominator": 69,
-      "value": 0.014492753623188406
+      "value": 0
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 69,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 69,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "consumer localization rate": {
+      "adjudicated": 69,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "false-safe verdicts": {
+      "adjudicated": 69,
+      "notAdjudicated": 0,
+      "reasons": {}
     }
   },
   "refusals": [
@@ -53,36 +75,36 @@
   "breakdown": {
     "label: migration-failure-easy": {
       "dependency-update detection rate": {
-        "numerator": 32,
+        "numerator": 42,
         "denominator": 44,
-        "value": 0.7272727272727273
+        "value": 0.9545454545454546
       },
       "affected-repository identification rate": {
-        "numerator": 30,
+        "numerator": 26,
         "denominator": 44,
-        "value": 0.6818181818181818
+        "value": 0.5909090909090909
       },
       "consumer localization rate": {
-        "numerator": 30,
+        "numerator": 23,
         "denominator": 44,
-        "value": 0.6818181818181818
+        "value": 0.5227272727272727
       }
     },
     "label: migration-failure-medium": {
       "dependency-update detection rate": {
+        "numerator": 23,
+        "denominator": 23,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 19,
+        "denominator": 23,
+        "value": 0.8260869565217391
+      },
+      "consumer localization rate": {
         "numerator": 15,
         "denominator": 23,
         "value": 0.6521739130434783
-      },
-      "affected-repository identification rate": {
-        "numerator": 14,
-        "denominator": 23,
-        "value": 0.6086956521739131
-      },
-      "consumer localization rate": {
-        "numerator": 14,
-        "denominator": 23,
-        "value": 0.6086956521739131
       }
     },
     "label: migration-failure-hard": {
@@ -105,27 +127,39 @@
   },
   "intervals": {
     "dependency-update detection rate": {
-      "low": 0.5942028985507246,
-      "high": 0.8115942028985508,
+      "low": 0.927536231884058,
+      "high": 1,
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.5507246376811594,
-      "high": 0.7681159420289855,
+      "low": 0.5652173913043478,
+      "high": 0.7971014492753623,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.5507246376811594,
-      "high": 0.7681159420289855,
+      "low": 0.463768115942029,
+      "high": 0.6956521739130435,
       "iterations": 2000
     },
     "false-safe verdicts": {
       "low": 0,
-      "high": 0.043478260869565216,
+      "high": 0,
       "iterations": 2000
     }
   },
   "mappingCoverage": {
     "compatible": 100
+  },
+  "affectedMisses": {
+    "total": 22,
+    "byReason": {
+      "consumer-usage-not-found": 10,
+      "consumer-match-insufficient-confidence": 2,
+      "dependency-import-not-found": 5,
+      "breaking-change-low-confidence": 2,
+      "dependency-update-not-detected": 2,
+      "upstream-surface-unavailable": 1
+    },
+    "unclassified": 0
   }
 }

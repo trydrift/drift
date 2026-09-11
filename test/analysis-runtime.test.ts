@@ -55,8 +55,8 @@ function mockRegistryFetch() {
     )) as typeof fetch;
 }
 
-describe('analyzeRepository gathers runtime declarations even with zero breaking changes', () => {
-  test('a registry-only runtime floor raise is still caught against an incompatible .nvmrc', async () => {
+describe('#110: a registry-only runtime floor flows through the one RuntimeRequirementAnalysis', () => {
+  test('an incompatible .nvmrc yields a canonical incompatible analysis and a blocked recommendation', async () => {
     const root = mkdtempSync(join(tmpdir(), 'drift-runtime-gating-'));
     const realFetch = globalThis.fetch;
     clearHttpCache();
@@ -80,18 +80,33 @@ describe('analyzeRepository gathers runtime declarations even with zero breaking
       });
 
       assert.ok(result.plan, 'a dependency version move should still produce a plan');
-      // The whole point: no API/prose breaking finding exists for this made-up
-      // package, so this is exercising the registry-metadata-only path.
-      assert.equal(result.plan!.breakingChanges.length, 0);
 
+      // The raised Node floor from registry metadata alone is now a canonical
+      // runtime-requirement breaking change.
+      const runtimeChange = result.plan!.breakingChanges.find((c) => c.kind === 'runtime-requirement');
+      assert.ok(runtimeChange, 'the registry-metadata floor becomes a runtime-requirement change');
+      assert.equal(runtimeChange!.runtime?.runtime, 'node');
+
+      // A canonical RuntimeRequirementAnalysis exists and says incompatible.
+      const analysis = (result.plan!.rationale ?? [])
+        .flatMap((r) => r.runtimeAnalyses ?? [])
+        .find((a) => a.changeId === runtimeChange!.id);
+      assert.ok(analysis, 'a canonical runtime analysis was produced');
+      assert.equal(analysis!.state, 'incompatible');
+
+      // Recommendation is blocked appropriately.
       const rationale = result.plan!.rationale?.find((r) => r.dependency === 'acme-runtime-sdk');
-      assert.ok(rationale, 'rationale should still be computed for this dependency');
+      assert.ok(rationale);
+      assert.ok(
+        ['do-not-upgrade-yet', 'manual-migration-required'].includes(rationale!.assessment.recommendation),
+        rationale!.assessment.recommendation,
+      );
 
-      const runtimeFact = rationale!.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
-      assert.ok(runtimeFact, 'the raised Node.js floor should be reported as a maintenance fact');
-      assert.match(runtimeFact!.statement, /does not satisfy it: \.nvmrc/);
-      assert.equal(runtimeFact!.polarity, 'blocks');
-      assert.equal(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
+      // Maintenance states the upstream fact only — no second verdict.
+      const runtimeFact = rationale!.maintenance.facts.find((f) => /Node\.js/.test(f.statement));
+      assert.ok(runtimeFact);
+      assert.equal(runtimeFact!.polarity, 'context');
+      assert.doesNotMatch(runtimeFact!.statement, /does not satisfy|already satisfies it|Check this against/);
     } finally {
       globalThis.fetch = realFetch;
       clearHttpCache();
@@ -99,7 +114,7 @@ describe('analyzeRepository gathers runtime declarations even with zero breaking
     }
   });
 
-  test('the same registry-only runtime floor raise is silent when this repository already satisfies it', async () => {
+  test('a satisfying .nvmrc yields a canonical compatible analysis and an unblocked recommendation', async () => {
     const root = mkdtempSync(join(tmpdir(), 'drift-runtime-gating-ok-'));
     const realFetch = globalThis.fetch;
     clearHttpCache();
@@ -122,14 +137,22 @@ describe('analyzeRepository gathers runtime declarations even with zero breaking
         workspace: root,
       });
 
+      const runtimeChange = result.plan!.breakingChanges.find((c) => c.kind === 'runtime-requirement');
+      assert.ok(runtimeChange);
+      const analysis = (result.plan!.rationale ?? [])
+        .flatMap((r) => r.runtimeAnalyses ?? [])
+        .find((a) => a.changeId === runtimeChange!.id);
+      assert.ok(analysis);
+      assert.equal(analysis!.state, 'compatible');
+
       const rationale = result.plan!.rationale?.find((r) => r.dependency === 'acme-runtime-sdk');
       assert.ok(rationale);
-
-      const runtimeFact = rationale!.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
-      assert.ok(runtimeFact);
-      assert.match(runtimeFact!.statement, /already satisfies it \(\.nvmrc\)/);
-      assert.equal(runtimeFact!.polarity, 'context');
       assert.notEqual(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
+
+      const runtimeFact = rationale!.maintenance.facts.find((f) => /Node\.js/.test(f.statement));
+      assert.ok(runtimeFact);
+      assert.equal(runtimeFact!.polarity, 'context');
+      assert.doesNotMatch(runtimeFact!.statement, /does not satisfy|already satisfies it|Check this against/);
     } finally {
       globalThis.fetch = realFetch;
       clearHttpCache();

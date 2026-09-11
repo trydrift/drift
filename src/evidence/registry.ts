@@ -1,6 +1,13 @@
 import type { Ecosystem } from '../types.js';
 import { fetchJson, fetchText } from '../util/http.js';
 import { arduinoLibrary } from './arduino-index.js';
+import { fetchCocoaPodsSpec, githubRepoFromSpec } from './cocoapods-spec.js';
+import {
+  fetchOpamMetadata,
+  fetchOpamPackageVersions,
+  githubRepoFromOpam,
+} from './opam-repository.js';
+import { exactPackagistRelease, expandPackagistP2 } from './packagist-p2.js';
 
 /** Normalised registry facts Drift needs, across every ecosystem. */
 export interface RegistryInfo {
@@ -14,6 +21,10 @@ export interface RegistryInfo {
   /** Deprecation notice for the *target* version, when the registry has one. */
   deprecated: string | null;
   description: string | null;
+  /** Registry-authoritative changelog location, preferred over filename guesses. */
+  changelogUrl?: string | null;
+  /** Registry-authoritative API/reference documentation location. */
+  documentationUrl?: string | null;
 }
 
 /**
@@ -44,7 +55,7 @@ export async function fetchRegistryInfo(
     case 'nuget':
       return fetchNuGet(name);
     case 'packagist':
-      return fetchPackagist(name);
+      return fetchPackagist(name, targetVersion);
     case 'hex':
       return fetchHex(name);
     case 'pub':
@@ -52,21 +63,46 @@ export async function fetchRegistryInfo(
     case 'swift':
       return swiftRegistryInfo(name);
     case 'cocoapods':
-      return fetchCocoaPods(name);
+      return fetchCocoaPods(name, targetVersion);
     case 'conan':
       return fetchConan(name);
     case 'vcpkg':
       return fetchVcpkg(name);
     case 'arduino':
       return fetchArduino(name);
-    // opam publishes no JSON metadata API. Returning `null` means the evidence
-    // stage reports "no registry data" rather than an empty version list, which
-    // would read as "this package has no releases".
     case 'opam':
-      return null;
+      return fetchOpam(name, targetVersion);
     default:
       return null;
   }
+}
+
+/**
+ * opam has no JSON metadata API, so its index git repository is read directly:
+ * the version list from `packages/<name>/`, and the source repository /
+ * homepage / description from the target version's `opam` file — literal
+ * fields only, never evaluated. This is what re-enables release/changelog
+ * research for opam packages with an explicit GitHub `dev-repo`.
+ */
+async function fetchOpam(
+  name: string,
+  targetVersion: string | null,
+): Promise<RegistryInfo | null> {
+  const [versions, meta] = await Promise.all([
+    fetchOpamPackageVersions(name),
+    targetVersion ? fetchOpamMetadata(name, targetVersion) : Promise.resolve(null),
+  ]);
+  if (!versions && !meta) return null;
+
+  return {
+    name,
+    ecosystem: 'opam',
+    githubRepo: meta ? githubRepoFromOpam(meta) : null,
+    homepage: meta?.homepage ?? meta?.devRepo ?? null,
+    versions: versions ?? [],
+    deprecated: null,
+    description: meta?.description ?? meta?.synopsis ?? null,
+  };
 }
 
 async function fetchNuGet(name: string): Promise<RegistryInfo | null> {
@@ -106,21 +142,24 @@ interface NuGetCatalogEntry {
   deprecation?: { message?: string };
 }
 
-async function fetchPackagist(name: string): Promise<RegistryInfo | null> {
+async function fetchPackagist(name: string, targetVersion: string | null): Promise<RegistryInfo | null> {
   const data = await fetchJson<{
     packages?: Record<string, PackagistVersion[]>;
   }>(`https://repo.packagist.org/p2/${name}.json`);
 
-  const releases = data?.packages?.[name];
-  if (!releases || releases.length === 0) return null;
+  const compact = data?.packages?.[name];
+  if (!compact || compact.length === 0) return null;
+  const releases = expandPackagistP2(compact);
 
-  // p2 returns newest first.
-  const latest = releases[0]!;
+  // Target-version facts must come from that exact registry identity. Version
+  // discovery passes null and intentionally receives the newest release.
+  const selected = targetVersion ? exactPackagistRelease(releases, targetVersion) : releases[0];
+  if (!selected) return null;
 
   // Packagist spells deprecation as `abandoned`, whose value is either `true`
   // or the name of the package that replaced it — and the replacement is the
   // single most useful thing to tell someone, so it is not flattened away.
-  const abandoned = latest.abandoned;
+  const abandoned = selected.abandoned;
   const deprecated =
     abandoned === undefined || abandoned === false
       ? null
@@ -131,11 +170,11 @@ async function fetchPackagist(name: string): Promise<RegistryInfo | null> {
   return {
     name,
     ecosystem: 'packagist',
-    githubRepo: parseGitHubRepo(latest.source?.url ?? null) ?? parseGitHubRepo(latest.homepage ?? null),
-    homepage: latest.homepage ?? `https://packagist.org/packages/${name}`,
+    githubRepo: parseGitHubRepo(selected.source?.url ?? null) ?? parseGitHubRepo(selected.homepage ?? null),
+    homepage: selected.homepage ?? `https://packagist.org/packages/${name}`,
     versions: releases.map((release) => release.version).filter((v): v is string => Boolean(v)),
     deprecated,
-    description: latest.description ?? null,
+    description: selected.description ?? null,
   };
 }
 
@@ -233,26 +272,31 @@ function swiftRegistryInfo(name: string): RegistryInfo | null {
   };
 }
 
-async function fetchCocoaPods(name: string): Promise<RegistryInfo | null> {
-  // Trunk answers with the owner and the published versions, but nothing about
-  // the source repository — that lives in the podspec, which is served from the
-  // CDN as JSON at a path keyed by a hash of the name. Following that would
-  // cost two more round trips for a link, so Drift takes the versions and lets
-  // the changelog stage find the repository from the GitHub search it already
-  // does for every ecosystem.
-  const data = await fetchJson<{ versions?: { name?: string }[] }>(
-    `https://trunk.cocoapods.org/api/v1/pods/${encodeURIComponent(name)}`,
-  );
+async function fetchCocoaPods(
+  name: string,
+  targetVersion: string | null,
+): Promise<RegistryInfo | null> {
+  // Trunk is the source of truth for the published version list. The source
+  // repository, `module_name`, and description live in the podspec instead —
+  // read through the shared `fetchCocoaPodsSpec` resolver so localization and
+  // evidence agree on one fetch. A podspec that names a GitHub `source` is
+  // what re-enables the ordinary release/changelog research path.
+  const [data, spec] = await Promise.all([
+    fetchJson<{ versions?: { name?: string }[] }>(
+      `https://trunk.cocoapods.org/api/v1/pods/${encodeURIComponent(name)}`,
+    ),
+    targetVersion ? fetchCocoaPodsSpec(name, targetVersion) : Promise.resolve(null),
+  ]);
   if (!data) return null;
 
   return {
     name,
     ecosystem: 'cocoapods',
-    githubRepo: null,
-    homepage: `https://cocoapods.org/pods/${name}`,
+    githubRepo: spec ? githubRepoFromSpec(spec) : null,
+    homepage: spec?.homepage ?? `https://cocoapods.org/pods/${name}`,
     versions: (data.versions ?? []).map((v) => v.name).filter((v): v is string => Boolean(v)),
     deprecated: null,
-    description: null,
+    description: spec?.description ?? spec?.summary ?? null,
   };
 }
 
@@ -897,6 +941,7 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     homepage_uri?: string;
     source_code_uri?: string;
     changelog_uri?: string;
+    documentation_uri?: string;
   }>(`https://rubygems.org/api/v1/gems/${encodeURIComponent(name)}.json`);
   if (!data) return null;
 
@@ -915,6 +960,8 @@ async function fetchRubyGems(name: string): Promise<RegistryInfo | null> {
     versions: (versions ?? []).map((v) => v.number),
     deprecated: null,
     description: data.info ?? null,
+    changelogUrl: data.changelog_uri ?? null,
+    documentationUrl: data.documentation_uri ?? null,
   };
 }
 

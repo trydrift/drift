@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
-| Run date | 2026-08-24T16:56:25.088Z |
+| Drift commit | `c45d9d01ede15838d924fe9f5eb51c66632623b4` |
+| Run date | 2026-09-09T11:19:03.839Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,13 +42,29 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 14/39 (35.9%) | 20.5–51.3% |
-| consumer localization rate | 7/39 (17.9%) | 5.1–30.8% |
-| dependency-update detection rate | 34/39 (87.2%) | 76.9–97.4% |
-| false-safe verdicts | 9/39 (23.1%) | 10.3–35.9% |
+| affected-repository identification rate | 28/39 (71.8%) | 56.4–84.6% |
+| consumer localization rate | 12/39 (30.8%) | 15.4–46.2% |
+| dependency-update detection rate | 36/39 (92.3%) | 82.1–100.0% |
+| false-safe verdicts | 1/39 (2.6%) | 0.0–7.7% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
+
+### Affected-repository misses by stage
+
+Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer
+was lost at. This is where affected-repository recall is going — read it before proposing an engine change,
+since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.
+
+| Stage | Cases |
+| --- | ---: |
+| `dependency-update-not-detected` | 3 |
+| `consumer-usage-not-found` | 2 |
+| `dependency-import-not-found` | 2 |
+| `verification-inconclusive` | 2 |
+| `no-breaking-change-derived` | 1 |
+| `upstream-surface-unavailable` | 1 |
+| **Total** | **11** |
 
 ### Breakdown
 
@@ -57,10 +73,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: COMPILATION_FAILURE | 5/12 (41.7%) | 4/12 (33.3%) | 11/12 (91.7%) |
-| label: DEPENDENCY_LOCK_FAILURE | 0/2 (0.0%) | 0/2 (0.0%) | 1/2 (50.0%) |
-| label: ENFORCER_FAILURE | 2/9 (22.2%) | 0/9 (0.0%) | 7/9 (77.8%) |
-| label: TEST_FAILURE | 7/16 (43.8%) | 3/16 (18.8%) | 15/16 (93.8%) |
+| label: COMPILATION_FAILURE | 9/12 (75.0%) | 6/12 (50.0%) | 12/12 (100.0%) |
+| label: DEPENDENCY_LOCK_FAILURE | 1/2 (50.0%) | 0/2 (0.0%) | 1/2 (50.0%) |
+| label: ENFORCER_FAILURE | 5/9 (55.6%) | 0/9 (0.0%) | 7/9 (77.8%) |
+| label: TEST_FAILURE | 13/16 (81.3%) | 6/16 (37.5%) | 16/16 (100.0%) |
 
 ## What is deliberately not reported
 
@@ -98,12 +114,12 @@ how generously the mapping was written.
 | `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
 | `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "21.0.12" 2026-07-21 LTS | any Java case |
+| `java` | openjdk version "21.0.12.1" 2026-08-18 LTS | any Java case |
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
-| `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
+| `japicmp` | installed (version unknown) | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
 

@@ -36,6 +36,18 @@ describe('extension package contributions', () => {
     assert.equal(walkthrough!.steps.length, 5);
   });
 
+  test('the demo/prepared-environment panel opener exists and stays off by default', () => {
+    // Codespaces and walkthroughs need the panel up without a click, but a
+    // sidebar that seizes focus in every window is a reason to uninstall. The
+    // default is the whole point of the setting, so it is pinned here.
+    const opener = pkg.contributes.configuration.properties['drift.ui.openOnStartup'] as
+      | { type?: string; default?: unknown }
+      | undefined;
+    assert.ok(opener, 'drift.ui.openOnStartup is contributed');
+    assert.equal(opener!.type, 'boolean');
+    assert.equal(opener!.default, false);
+  });
+
   test('removes the deprecated single effort setting from Settings UI', () => {
     assert.equal('drift.session.effort' in pkg.contributes.configuration.properties, false);
     assert.ok('drift.agent.efforts' in pkg.contributes.configuration.properties);

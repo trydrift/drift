@@ -249,6 +249,95 @@ export type BreakingChangeKind =
   | 'runtime-requirement'
   | 'unknown';
 
+/** Runtime names understood by the structured prose and declaration paths. */
+export type RuntimeName = 'node' | 'python' | 'go' | 'ruby' | 'java' | 'rust';
+
+/**
+ * Whether the *range grammar* upstream used is one Drift can evaluate against
+ * this runtime's ecosystem.
+ *
+ * `'unknown'` is not "no requirement": the runtime is identified and the
+ * version is legible, but the operator upstream wrote has no defined meaning
+ * in that ecosystem — PEP 440 has no caret, and `~` is not its
+ * compatible-release operator (`~=` is). Feeding "Python ^3.10" into the PEP
+ * 440 parser would manufacture a confident-looking `partial` verdict out of a
+ * range nobody can actually evaluate, so the requirement is carried through
+ * intact and the compatibility state it produces is `unknown`.
+ *
+ * Absent means `'parsed'`, so every requirement written before this field
+ * existed keeps its meaning.
+ */
+export type RuntimeRangeParseStatus = 'parsed' | 'unknown';
+
+/** A parseable runtime floor announced by an upstream release. */
+export interface MinimumRuntimeRequirement {
+  kind: 'minimum-runtime';
+  runtime: RuntimeName;
+  requirement: string;
+  /** The exact prose fragment from which the requirement was parsed. */
+  sourceText: string;
+  /** See {@link RuntimeRangeParseStatus}. Absent means `'parsed'`. */
+  rangeParseStatus?: RuntimeRangeParseStatus;
+}
+
+/** A runtime line upstream dropped without stating its replacement floor. */
+export interface UnsupportedRuntimeRange {
+  kind: 'unsupported-runtime-range';
+  runtime: RuntimeName;
+  /** The unsupported range exactly as upstream stated it, e.g. "16.x", "^16", "<18". */
+  requirement: string;
+  /** The exact prose fragment from which the requirement was parsed. */
+  sourceText: string;
+  /**
+   * A replacement floor, but only when the unsupported range's complement is
+   * mathematically unambiguous (`<18` implies `>=18`; `^16` does not imply
+   * anything Drift is willing to state as a floor). Never invented — see
+   * `parseRuntimeRequirement` in `analyze/rules.ts`.
+   */
+  derivedMinimum?: string;
+  /** See {@link RuntimeRangeParseStatus}. Absent means `'parsed'`. */
+  rangeParseStatus?: RuntimeRangeParseStatus;
+}
+
+/** Structured runtime evidence. Only `minimum-runtime` implies a local floor. */
+export type RuntimeRequirement = MinimumRuntimeRequirement | UnsupportedRuntimeRange;
+
+/**
+ * What Drift established about this repository's runtime relative to one
+ * upstream runtime requirement.
+ *
+ * Four states, never three, and never a count. `compatible` is a *positive*
+ * finding — a declaration was found, read, and shown to satisfy the
+ * requirement — so it can never be produced by the absence of anything.
+ * `unknown` covers every way Drift failed to establish an answer: a dynamic
+ * declaration it could not resolve, a declaration whose value it could not
+ * parse, an upstream range whose grammar it could not evaluate, and a
+ * workspace with no authoritative declaration at all. The whole point of the
+ * distinction is that "no impact sites" must never be read as "compatible".
+ */
+export type RuntimeCompatibilityState = 'compatible' | 'incompatible' | 'partial' | 'unknown';
+
+/** Why a {@link RuntimeCompatibilityState} came out the way it did. */
+export type RuntimeCompatibilityReason =
+  /** A declaration was found and every version it allows satisfies the requirement. */
+  | 'satisfies'
+  /** A declaration was found and every version it allows is rejected. */
+  | 'violates'
+  /** A declaration allows both accepted and rejected versions. */
+  | 'overlaps'
+  /** A runtime-specific declaration position was found, its value is dynamic. */
+  | 'dynamic'
+  /** No authoritative declaration for this runtime exists in this scope. */
+  | 'no-declaration'
+  /** Localization did not run or failed before this requirement could be checked. */
+  | 'not-analyzed'
+  /** A declaration or the upstream range itself could not be parsed. */
+  | 'unparseable'
+  /** One or more authoritative runtime configuration files could not be indexed. */
+  | 'config-incomplete'
+  /** At least one authoritative runtime configuration file could not be indexed. */
+  | 'config-incomplete';
+
 export type ModuleSystem = 'commonjs' | 'esm' | 'dual';
 export type ModuleIncompatibleUsage = 'require' | 'static-import' | 'dynamic-import' | 're-export';
 
@@ -285,6 +374,8 @@ export interface BreakingChange {
    */
   workspace?: string;
   kind: BreakingChangeKind;
+  /** Present for structured `runtime-requirement` changes. */
+  runtime?: RuntimeRequirement;
   /** One-line statement of what broke. */
   summary: string;
   /**
@@ -295,6 +386,10 @@ export interface BreakingChange {
    */
   before?: string;
   after?: string;
+  /** Observed declaration shape before removal/change, when the surface provider knows it. */
+  fromKind?: string;
+  /** Observed declaration shape after a kind change. */
+  toKind?: string;
   /**
    * The real upstream source declaring the changed symbol, as a GitHub blob
    * URL with a line number — set after localization, only for a breaking
@@ -411,6 +506,80 @@ export interface ImpactSite {
    */
   matchedText?: string;
   confidence: Confidence;
+  /**
+   * Set only for a `runtime-requirement` site: what compatibility state this
+   * particular declaration was found in. Distinct from `confidence`, which
+   * answers a different question (how sure Drift is about the site itself,
+   * not what it means) — an `unknown` site is one Drift is quite sure it
+   * found, and quite unsure how to interpret, hence `low` confidence paired
+   * with `runtimeVerdict: 'unknown'` rather than one field trying to carry
+   * both. Used to keep runtime rationale text (§ `assess.ts`) and the
+   * recording validator honest without re-deriving the verdict from prose.
+   */
+  runtimeVerdict?: 'incompatible' | 'partial' | 'unknown';
+  /**
+   * Set when the site is a dependency *declaration* rather than a use of the
+   * changed API.
+   *
+   * Some upgrades break a project without any source line being wrong: a
+   * Maven Enforcer rule, a dependency-convergence failure, an unresolvable
+   * lock. The build genuinely fails and the developer genuinely has somewhere
+   * to go — the declaration they edit — but calling that "where your code
+   * breaks" would overstate it, and counting it as source-level localization
+   * would overstate it twice. Consumers that report or measure localization
+   * should treat a `manifest` site as a weaker claim than an unmarked one.
+   *
+   * `runtime-declaration` is the same distinction for the same reason: the
+   * line where this project states its Node or Java version is where a raised
+   * floor is *fixed*, and it is never a use of the changed API. A
+   * `.github/workflows/ci.yml` line is a real answer to "where do I go" and
+   * would be a false answer to "where does my code break".
+   */
+  siteKind?: 'manifest' | 'runtime-declaration';
+}
+
+/** Canonical downstream meaning of one localized breaking change. */
+export type BreakingChangeDispositionState = 'actionable' | 'review-only' | 'unaffected' | 'unknown';
+
+export interface BreakingChangeDisposition {
+  changeId: string;
+  state: BreakingChangeDispositionState;
+  reason:
+    | 'high-confidence-impact'
+    | 'low-confidence-impact'
+    | 'runtime-incompatible'
+    | 'runtime-partial'
+    | 'runtime-unknown'
+    | 'runtime-compatible'
+    | 'not-localized'
+    | 'localization-incomplete'
+    /**
+     * Localization ran to completion and found no site, but a completed
+     * syntactic search is not affirmative evidence that an upstream breaking
+     * change cannot reach this repository (structural typing, inferred types,
+     * wrappers, generated code, dynamic dispatch, behavioural changes, and
+     * ownership relationships all defeat it). Without an authoritative
+     * verification clearing the change, the honest state is `unknown` — impact
+     * is unresolved, not disproven.
+     */
+    | 'impact-unresolved'
+    /**
+     * No longer emitted. A zero-hit completed search resolves to
+     * `impact-unresolved`; a change an isolated verification cleared is pruned
+     * before it reaches `deriveBreakingChangeDispositions`; runtime
+     * requirements use `runtime-compatible`. Retained in the union so historical
+     * recordings and stored plans still parse.
+     */
+    | 'no-local-impact';
+  /** All explanatory locations, including review-only runtime declarations. */
+  sites: ImpactSite[];
+  /** The strict subset that may produce edits, commits, or fix controls. */
+  actionableSites: ImpactSite[];
+  runtimeAnalysis?: {
+    runtime: RuntimeName;
+    state: RuntimeCompatibilityState;
+    reason: RuntimeCompatibilityReason;
+  };
 }
 
 export type PlanEdgeReason =
@@ -603,6 +772,27 @@ export interface RemediationPlan {
    */
   upstreamBreakingCount?: number;
   impactSites: ImpactSite[];
+  /**
+   * Single authority for actionability, review state, and local non-impact.
+   * Always produced by `buildPlan`; optional only so hand-built plan fixtures
+   * from before this field existed still typecheck. Consumers fall back to the
+   * conservative per-site derivation when it is absent.
+   */
+  dispositions?: BreakingChangeDisposition[];
+  /**
+   * Whether localization actually searched this repository.
+   *
+   * `false` when no checkout was available (the webhook runner), which is what
+   * turns "no impact sites" from a finding into a stated gap. Optional only so
+   * hand-built plan fixtures from before this field existed still typecheck;
+   * `buildPlan` always sets it. Consumers treat an absent value as `true`, the
+   * same default `buildPlan` applies to its input.
+   */
+  localizationRan?: boolean;
+  /** Whether a completed localization covered every eligible source file. */
+  localizationComplete?: boolean;
+  /** Whether every discovered authoritative runtime configuration file was indexed. */
+  runtimeConfigComplete?: boolean;
   commits: CommitUnit[];
   /** Real dependency graph over commit units. */
   planEdges: PlanEdge[];

@@ -76,7 +76,9 @@ describe('dependency scan tree', () => {
   test('groups the last scan by user-facing severity', () => {
     const state = new DriftState();
     state.setCandidates([
-      candidate({ name: 'safe', breakingCount: 2, impactCount: 0, impactFiles: 0 }),
+      // Breaking changes upstream, no local site, nothing verified: unresolved
+      // impact, not "Safe".
+      candidate({ name: 'unresolved', breakingCount: 2, impactCount: 0, impactFiles: 0 }),
       candidate({ name: 'unchecked', breakingCount: 0, impactCount: 0, impactFiles: 0, recommendation: 'insufficient-evidence' }),
       candidate({ name: 'failed', status: 'error', breakingCount: 0, impactCount: 0, impactFiles: 0 }),
       candidate({ name: 'affected' }),
@@ -86,9 +88,9 @@ describe('dependency scan tree', () => {
     const groups = tree.getChildren();
     assert.deepEqual(groups.map((g) => tree.getTreeItem(g).label), [
       'Affected (1)',
-      'Unchecked (1)',
-      'Safe (1)',
       'Failed (1)',
+      'Review Required (1)',
+      'Evidence Missing (1)',
     ]);
     tree.dispose();
   });
@@ -194,6 +196,32 @@ describe('manifest CodeLens and hover', () => {
     assert.equal(lineMentionsDependency('serde = "1"', 'serde', 'Cargo.toml'), true);
     assert.equal(lineMentionsDependency('<artifactId>guava</artifactId>', 'guava', 'pom.xml'), true);
     assert.equal(lineMentionsDependency('django==5.0.0', 'django', 'requirements.txt'), true);
+    assert.equal(lineMentionsDependency('django>=5.0.0', 'django', 'requirements.in'), true);
+    assert.equal(lineMentionsDependency('django~=5.0.0', 'django', 'requirements-docs.in'), true);
+    assert.equal(lineMentionsDependency('django!=5.0.0', 'django', 'constraints.in'), true);
     assert.equal(lineMentionsDependency("gem 'rails', '~> 7.0'", 'rails', 'Gemfile'), true);
   });
+
+  for (const manifestPath of ['requirements.in', 'requirements-docs.in', 'constraints.in']) {
+    test(`supports CodeLens and hover navigation in ${manifestPath}`, () => {
+      const state = new DriftState();
+      state.setRoots([{ path: '/repo', label: 'repo', repo: null, gitRoot: null, subprojects: [] }]);
+      state.setCandidates([
+        candidate({
+          id: `${manifestPath}#pydantic`,
+          name: 'pydantic',
+          ecosystem: 'pypi',
+          packageManager: 'pip',
+          manifestPath,
+          current: '2.10.0',
+          selected: '2.11.0',
+        }),
+      ]);
+      const source = document(`/repo/${manifestPath}`, '# direct requirements\npydantic>=2.0\n');
+      const lenses = new ManifestLensProvider(state).provideCodeLenses(source);
+      assert.equal(lenses[0]?.range.start.line, 1);
+      const hover = new ManifestHoverProvider(state).provideHover(source, new vscode.Position(1, 2));
+      assert.match(String((hover as unknown as { contents: { value: string } }).contents.value), /pydantic/);
+    });
+  }
 });

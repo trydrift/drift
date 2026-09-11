@@ -1,10 +1,12 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import semver from 'semver';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
+import { cleanupTemporaryDirectory } from '../cleanup.ts';
 import type { Selectable } from '../selection.ts';
 import {
   DriftConfigSchema,
@@ -18,6 +20,7 @@ import {
 // Not part of the public package surface — see the note in
 // `eval/src/adapters/end-to-end.ts`.
 import { deepVerify } from '../../../../dist/analysis.js';
+import { buildImpactFunnel, type ImpactFunnel } from '../impact-funnel.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -62,13 +65,17 @@ const execFile = promisify(execFileCallback);
  * is not version-pinned and two runs of it a year apart are not strictly
  * comparable.
  *
- * This track cannot close that gap and does not pretend to. It writes the
- * range into the manifest exactly as the dataset states it and records that
- * under `manifestVersionTo`, with `versionToIsRange` beside it. Resolving the
- * range would mean running the package manager, which is the install step this
- * track deliberately does not perform — so what the range resolves to is
- * genuinely unknown here, and the artifact says `versionToIsRange: true`
- * rather than presenting a range under a field name that implies a resolution.
+ * The range still goes into the manifest exactly as the dataset states it,
+ * recorded under `manifestVersionTo` with `versionToIsRange` beside it. What
+ * the adjudicator scores against is the concrete pair *Drift itself resolved*
+ * while analysing — `analyzeRepository` already reads the committed lockfile
+ * for the before version and asks the registry what the new range points at,
+ * because its published type-surface diff cannot run on a range. That pair is
+ * exactly what the prediction is about, and it is captured in
+ * `exactVersionPair` with `exactVersionResolvedBy: "drift"`. No package-manager
+ * install is added to obtain it. A case where Drift cannot resolve a concrete
+ * pair (no committed lockfile, say) stays unadjudicated for the
+ * version-pair questions, with that reason recorded.
  */
 
 export const ADAPTER_VERSION = 'swe-bump-detect-v1';
@@ -113,7 +120,7 @@ export function sweBumpSelectables(tasks: readonly SweBumpTask[]): Selectable[] 
 export interface SweBumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
-  impactSites: { file: string; line: number; matchedSymbol: string }[];
+  impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' | 'runtime-declaration' }[];
   verdict: string;
   summary: string;
   /**
@@ -125,6 +132,9 @@ export interface SweBumpPrediction {
    */
   manifestVersionTo: string;
   versionFrom: string | null;
+  exactVersionPair: { from: string; to: string } | null;
+  /** Which pipeline stage a miss was lost at, plus secondary diagnostics. See `impact-funnel.ts`. */
+  impactFunnel: ImpactFunnel;
 }
 
 /**
@@ -134,7 +144,7 @@ export interface SweBumpPrediction {
  * same reason: two halves of one harness disagreeing about what "Drift said it
  * was safe" means would be worse than either answer.
  */
-const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean', 'detected-not-locally-reachable']);
+const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean']); // detected-not-locally-reachable is not a safety claim; see src/report/confidence.ts
 
 export class SweBumpUnavailable extends Error {
   readonly kind: ExclusionKind;
@@ -207,6 +217,7 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
     }
 
     const versionFrom = section[task.package] ?? null;
+
     section[task.package] = task.versionTo;
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
     await execFile('git', ['add', 'package.json'], { cwd: repo });
@@ -238,6 +249,34 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
     const result = await deepVerify(await analyzeRepository(analysisOptions), analysisOptions);
 
     const plan = result.plan;
+
+    // The corpus states the upgrade as a range (`^8.0.1`), not a pin — so the
+    // authoritative before/after pair is not in the dataset. It *is* in the
+    // resolution Drift already performs: `analyzeRepository` reads the
+    // committed lockfile for the before version and queries the registry for
+    // what the new range resolves to, because its published type-surface diff
+    // needs concrete versions to fetch. That resolved pair is exactly what the
+    // prediction is about, so it is what scoring adjudicates against. No
+    // package-manager install is added here; this reuses a query the pipeline
+    // makes regardless.
+    const applied = (plan?.changes ?? []).find((change) => change.name === task.package);
+    const resolvedFrom = applied?.from && semver.valid(applied.from) ? semver.valid(applied.from) : null;
+    const resolvedTo = applied?.to && semver.valid(applied.to) ? semver.valid(applied.to) : null;
+    const exactVersionPair = resolvedFrom && resolvedTo ? { from: resolvedFrom, to: resolvedTo } : null;
+
+    const verdict = verdictFromPlan(plan);
+    const impactFunnel = buildImpactFunnel({
+      plan,
+      localizationDiagnostics: result.localizationDiagnostics,
+      isTargetDependency: (name) => name === task.package,
+      updateDetected: Boolean(applied),
+      // The corpus states a range; when Drift could not pin it to a concrete
+      // pair the version questions are unadjudicated, and the funnel says so
+      // with the same distinction rather than charging localization for it.
+      exactVersionResolved: Boolean(exactVersionPair),
+      identifiedAffected: verdict === 'locally-affected',
+    });
+
     return {
       dependencyChanges: (plan?.changes ?? []).map((change) => ({
         name: change.name,
@@ -252,15 +291,25 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
         file: site.file,
         line: site.line,
         matchedSymbol: site.matchedSymbol,
+        ...(site.siteKind ? { siteKind: site.siteKind } : {}),
       })),
-      verdict: verdictFromPlan(plan),
+      verdict,
       summary: result.summary,
       manifestVersionTo: task.versionTo,
       versionFrom,
+      exactVersionPair,
+      impactFunnel,
     };
   } finally {
-    await rm(work, { recursive: true, force: true });
+    await cleanupTemporaryDirectory(work);
   }
+}
+
+/** Normalise a `v`-prefixed exact before/after pair; `null` if either side is a range. */
+export function exactSweBumpVersionPair(from: string | null, to: string): { from: string; to: string } | null {
+  const exactFrom = from ? semver.valid(from) : null;
+  const exactTo = semver.valid(to);
+  return exactFrom && exactTo ? { from: exactFrom, to: exactTo } : null;
 }
 
 /**
@@ -305,18 +354,21 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
       commit: task.commit,
       baseCommit: null,
       dependency: task.package,
-      fromVersion: prediction?.versionFrom ?? null,
-      toVersion: task.versionTo,
+      fromVersion: prediction?.exactVersionPair?.from ?? null,
+      toVersion: prediction?.exactVersionPair?.to ?? null,
       packageManager: task.pkgManager,
       requiredRuntime: task.nodeVersion,
       oracleCommand: 'tsc --noEmit',
       containerImage: null,
       sourceHash: input.sourceHash,
       extra: {
-        // The corpus states a range, not a pin. See the module docstring.
-        // The corpus states a range, not a pin. See the module docstring.
+        // The corpus states a range, not a pin (see the module docstring); the
+        // pair below, when present, is what Drift resolved that range to.
         versionToIsRange: String(/[\^~><*x|\s]/.test(task.versionTo)),
         manifestVersionTo: prediction?.manifestVersionTo ?? 'unavailable',
+        manifestVersionFrom: prediction?.versionFrom ?? 'unavailable',
+        exactVersionAdjudicated: String(Boolean(prediction?.exactVersionPair)),
+        exactVersionResolvedBy: prediction?.exactVersionPair ? 'drift' : 'none',
       },
     },
     truth: {
@@ -336,22 +388,55 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
     return { ...base, prediction: {}, outcomes: {}, excluded: input.excluded };
   }
 
-  const detectedUpdate = prediction.dependencyChanges.some((change) => change.name === task.package);
+  const detectedUpdate = prediction.exactVersionPair
+    ? prediction.dependencyChanges.some(
+        (change) =>
+          change.name === task.package &&
+          change.from === prediction.exactVersionPair!.from &&
+          change.to === prediction.exactVersionPair!.to,
+      )
+    : undefined;
   const identifiedAffected = prediction.verdict === 'locally-affected';
-  const localized = prediction.impactSites.length > 0;
+  // Localization is a strict subset of affected-identification: pointing at a
+  // consumer line only counts as a "yes" when Drift also stood behind the
+  // conclusion that the repository is affected. Scored independently, a case
+  // with impact sites but a hedged (`verification-incomplete` /
+  // `insufficient-evidence`) verdict counted as localized while not counting as
+  // affected — impossible per case, and it let the pooled localization rate
+  // exceed the affected rate it is a subset of. The Python adapter already
+  // scored it this way; this one did not, so the two disagreed.
+  // Source sites only — see the note on the same rule in `bump.ts`.
+  const localized =
+    identifiedAffected && prediction.impactSites.some((site) => site.siteKind === undefined);
+  const adjudicated = detectedUpdate !== undefined;
+  const unadjudicatedReason =
+    'the corpus supplies a manifest range and Drift could not resolve it to a concrete before/after version pair';
 
   return {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
-    outcomes: {
-      detectedUpdate,
-      identifiedAffected,
-      localized,
-      // The question this corpus is best at answering. Every case really is
-      // broken, so any safe-equivalent verdict is Drift telling a developer
-      // with a broken build that they are fine.
-      falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
-    },
+    impactFunnel: prediction.impactFunnel,
+    outcomes: adjudicated
+      ? {
+          detectedUpdate,
+          identifiedAffected,
+          localized,
+          // The question this corpus is best at answering. Every case really is
+          // broken, so any safe-equivalent verdict is Drift telling a developer
+          // with a broken build that they are fine.
+          falseSafe: SAFE_EQUIVALENT.has(prediction.verdict),
+        }
+      : {},
+    ...(!adjudicated
+      ? {
+          notAdjudicated: {
+            detectedUpdate: unadjudicatedReason,
+            identifiedAffected: unadjudicatedReason,
+            localized: unadjudicatedReason,
+            falseSafe: unadjudicatedReason,
+          },
+        }
+      : {}),
     excluded: null,
   };
 }

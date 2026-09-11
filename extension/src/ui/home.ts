@@ -1715,7 +1715,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       }
 
-      const files = new Set(plan.impactSites.map((site) => site.file)).size;
+      const files = new Set(
+        (plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file)),
+      ).size;
       step.done(`${plan.changes.length} dependency change${plan.changes.length === 1 ? '' : 's'} analysed`);
 
       // The packages that moved are what a developer looks this conversation
@@ -1733,9 +1735,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       // The distinction that matters, stated first.
       if (files === 0) {
+        const dispositions = plan.dispositions ?? [];
+        const hasReview = dispositions.some((d) => d.state === 'review-only');
+        const hasUnknown = dispositions.some((d) => d.state === 'unknown');
+        const localized = plan.localizationRan !== false;
+        const allUnaffected = localized && dispositions.length > 0 && dispositions.every((d) => d.state === 'unaffected');
+        const message = allUnaffected
+          ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none touch this repository** — static analysis only, not deeply verified.`
+          : hasUnknown
+            ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, but local impact was **not established** — review the report before treating this as safe.`
+            : hasReview
+              ? `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them; some evidence requires **review**, and no actionable files were established.`
+              : `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, but no actionable files were established.`;
         this.session.say(
           [
-            `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none of them touch this repository** — static analysis only, not deeply verified.`,
+            message,
             '',
             'Open the report if you want to see the reasoning and the sources.',
           ].join('\n'),
@@ -1831,7 +1845,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     if (severity === 'affected') {
       lines.push('', `Say \`/fix ${candidate.name}\` to let ${this.agentLabel()} update the affected code.`);
-    } else if (severity === 'unchecked') {
+    } else if (severity === 'review-required') {
+      lines.push('', `Drift found local evidence that needs a person to review before upgrading.`);
+    } else if (severity === 'runtime-unresolved') {
+      lines.push('', `Drift could not resolve this repository's runtime compatibility, so it will not call the upgrade safe.`);
+    } else if (severity === 'localization-incomplete') {
+      lines.push('', `Drift searched only the indexed source subset, so it could not prove the breaking API is unused everywhere.`);
+    } else if (severity === 'evidence-missing') {
       lines.push(
         '',
         `I have nothing to go on for this one, so I will not call it safe. Read the release notes, then say \`/upgrade ${candidate.name}\` if you want it anyway.`,
@@ -2122,18 +2142,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // It is put to the developer in the same shape as forcing past a range,
     // because it carries the same kind of risk: Drift has no idea what this
     // does to their code, and saying nothing would imply it does.
-    const unverified = candidates.filter((candidate) => severityOf(candidate) === 'unchecked');
+    const unverified = candidates.filter((candidate) =>
+      ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
+    );
     if (unverified.length > 0) {
       const names = unverified.map((c) => `**${c.name}**`).join(', ');
       const answer = await this.session.ask(
-        `I could not verify ${names}. ${
-          unverified.length === 1 ? 'There was' : 'There were'
-        } no reachable changelog, release notes or type declarations to check against, so "no breaking changes" is not something I can claim here. Install ${unverified.length === 1 ? 'it' : 'them'} anyway?`,
+        `${names} ${unverified.length === 1 ? 'requires' : 'require'} review: Drift found review-only local evidence, unresolved runtime compatibility, or incomplete upstream evidence. "Safe" is not something I can claim here. Install ${unverified.length === 1 ? 'it' : 'them'} anyway?`,
         [
           {
             label: 'Install anyway',
             value: 'yes',
-            description: 'I have read the release notes myself',
+            description: 'I reviewed the reported uncertainty myself',
           },
           {
             label: 'Skip the unverified ones',
@@ -2150,7 +2170,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return false;
       }
       if (answer === 'skip') {
-        const remaining = candidates.filter((c) => severityOf(c) !== 'unchecked');
+        const remaining = candidates.filter((candidate) =>
+          !['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
+        );
         if (remaining.length === 0) {
           this.session.notice('info', 'That left nothing to install.');
           return false;
@@ -3225,8 +3247,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     if (plan.commits.length === 0 || plan.impactSites.length === 0) {
+      // "Upgrading is all that is needed" is a compatibility claim, and a
+      // runtime requirement Drift could not resolve produces exactly this
+      // shape -- no commits, no sites -- without having established it.
+      const runtimeUnresolved = (plan.rationale ?? []).some(
+        (entry) =>
+          entry.assessment.runtimeCompatibility === 'unknown' ||
+          entry.assessment.runtimeCompatibility === 'partial',
+      );
+      const hasReview = (plan.dispositions ?? []).some((d) => d.state === 'review-only' || d.state === 'unknown');
       this.session.say(
-        'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
+        runtimeUnresolved || hasReview
+          ? 'There is nothing for an agent to edit, but this upgrade carries a runtime requirement Drift could not check against this repository. Confirm the runtime version you build and deploy on before upgrading.'
+          : 'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
       );
       return;
     }
@@ -3341,7 +3374,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // watching this can tell what is about to happen while there is still time
     // to stop it, and afterwards can see which sites the agent actually changed
     // — neither of which is legible in a stream of agent chatter.
-    const files = new Set(plan.impactSites.map((site) => site.file)).size;
+    const files = new Set(
+      (plan.dispositions ?? []).flatMap((disposition) => disposition.actionableSites.map((site) => site.file)),
+    ).size;
     const commitMode = this.session.commitMode;
     const landing = upgraded
       ? `on \`${branch.name}\`, alongside the upgrade itself`
@@ -3359,7 +3394,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         ? 'Each concern is committed as soon as it is finished.'
         : 'Nothing is committed until you keep it.';
     const tasks = this.session.tasks(
-      `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
+      `${this.agentLabel()} is fixing ${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0)} site${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0) === 1 ? '' : 's'}`,
       `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${evidence}`,
       buildTaskGroups(plan),
     );
@@ -6402,7 +6437,9 @@ function headline(
   // just upstream of this function instead of in it.
   const affected =
     candidates.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length;
-  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
+  const uncertain = candidates.filter((candidate) =>
+    ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
+  ).length + unlooked;
 
   // Rows a manifest produced that nothing has looked at yet. They are counted
   // separately and never folded into `safe`: while a scan is running the list
@@ -6419,7 +6456,7 @@ function headline(
     );
   }
 
-  const safe = candidates.length - affected - (unchecked - unlooked);
+  const safe = candidates.length - affected - (uncertain - unlooked);
   const scope = checked > 0 ? ` out of ${checked} checked` : '';
 
   if (candidates.length === 0) {
@@ -6432,9 +6469,9 @@ function headline(
   // safe is the same claim that put zod 4 and typescript 7 into this
   // repository, one level further up the page.
   const caveat =
-    unchecked === 0
+    uncertain === 0
       ? ''
-      : ` ${unchecked} ${unchecked === 1 ? 'could not be verified at all — read that one yourself' : 'could not be verified at all — read those yourself'}.`;
+      : ` ${uncertain} ${uncertain === 1 ? 'requires review before upgrading' : 'require review before upgrading'}.`;
 
   if (affected === 0 && safe === candidates.length) {
     return `**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}, and none of them affect code in this repository. Safe to take.`;

@@ -1,9 +1,10 @@
-import { createHash } from 'node:crypto';
 import type { DependencyChange, Ecosystem } from '../types.js';
 import type { Logger } from '../util/logger.js';
 import { readArchive, type ArchiveEntry } from '../util/archive.js';
 import { fetchArchive as fetchCachedArchive, fetchJson, fetchText } from '../util/http.js';
 import { mapWithConcurrency } from '../util/http.js';
+import { fetchCocoaPodsSpec } from '../evidence/cocoapods-spec.js';
+import { exactPackagistRelease, expandPackagistP2 } from '../evidence/packagist-p2.js';
 
 /**
  * What a package is called *inside* your source code.
@@ -299,27 +300,12 @@ const composerModules: Resolver = async (name, version, { timeoutMs }) => {
   const releases = metadata?.packages?.[name.toLowerCase()];
   if (!releases?.length) return undefined;
 
-  // Packagist serves this endpoint "minified" (`composer/2.0`): the first
-  // entry is complete and every later one carries only the fields that changed
-  // from the entry before it. Reading a matched release directly therefore
-  // finds an object with no `autoload` at all for almost every version — which
-  // is exactly how this resolver silently returned nothing for PHP until the
-  // format was read properly. Fields are merged forward, and an explicit
-  // `null` means the field was removed rather than unchanged.
-  const wanted = version.replace(/^v/, '');
-  let autoload: PhpAutoload | undefined;
-  let found = false;
-  for (const entry of releases) {
-    if (entry.autoload !== undefined) autoload = entry.autoload ?? undefined;
-    if ((entry.version ?? '').replace(/^v/, '') === wanted) {
-      found = true;
-      break;
-    }
-  }
+  const expanded = expandPackagistP2(releases);
+  const matched = exactPackagistRelease(expanded, version);
   // A version Packagist has never heard of — a private fork, a dev branch, a
   // typo. The newest release's map is a better answer than the oldest one the
   // walk happened to end on, and a PSR-4 root almost never moves.
-  if (!found) autoload = releases[0]!.autoload ?? undefined;
+  const autoload = (matched ?? expanded[0])?.autoload ?? undefined;
 
   const namespaces = new Set<string>();
   for (const section of [autoload?.['psr-4'], autoload?.['psr-0']]) {
@@ -567,17 +553,12 @@ const swiftModules: Resolver = async (name, version, { timeoutMs }) => {
  * here rather than a path being assembled from the name alone.
  */
 const cocoapodsModules: Resolver = async (name, version, { timeoutMs }) => {
-  const hash = createHash('md5').update(name).digest('hex');
-  const shard = `${hash[0]}/${hash[1]}/${hash[2]}`;
-  const spec = await fetchJson<{ module_name?: string; name?: string }>(
-    `https://cdn.cocoapods.org/Specs/${shard}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/${encodeURIComponent(name)}.podspec.json`,
-    { timeoutMs, immutable: true },
-  );
+  const spec = await fetchCocoaPodsSpec(name, version, { timeoutMs });
   if (!spec) return undefined;
 
   // A pod name with a dot or a hyphen cannot be a module name; CocoaPods
   // replaces those with underscores when it generates one.
-  const declared = spec.module_name ?? (spec.name ?? name).replace(/[-.]/g, '_');
+  const declared = spec.moduleName ?? (spec.name ?? name).replace(/[-.]/g, '_');
   return { names: [...new Set([declared, name])], source: `${name} ${version} podspec` };
 };
 

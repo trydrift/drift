@@ -13,6 +13,8 @@
  * prose: a benefit Drift cannot cite is a benefit Drift does not mention.
  */
 
+import type { RuntimeCompatibilityState } from '../types.js';
+
 /** How sure the underlying source is about a vulnerability's seriousness. */
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'unknown';
 
@@ -193,6 +195,17 @@ export interface UpgradeAssessment {
   confidence: EvidenceConfidence;
   /** What the confidence rests on, named. */
   confidenceBasis: string;
+  /**
+   * The worst runtime compatibility state across this dependency's runtime
+   * requirements, or absent when it announced none.
+   *
+   * Deliberately absent rather than `'compatible'` when there was no runtime
+   * requirement to check: "nothing asked" and "asked and satisfied" are
+   * different facts, and only the second is evidence of anything. Consumed by
+   * `severityOf` and captured structurally into site recordings so the
+   * corpus validator can assert the invariant instead of grepping prose.
+   */
+  runtimeCompatibility?: RuntimeCompatibilityState;
 }
 
 /** Everything Drift concluded about one dependency move. */
@@ -206,6 +219,17 @@ export interface UpgradeRationale {
   license: LicenseFinding;
   summary: ReleaseSummary;
   assessment: UpgradeAssessment;
+  /** Per-finding runtime result; consumers resolve by changeId, never package. */
+  runtimeAnalyses?: Array<{
+    changeId: string;
+    runtime: import('../types.js').RuntimeName;
+    /** Exact upstream requirement answered; runtime names alone are not unique. */
+    requirement?: string;
+    state: RuntimeCompatibilityState;
+    reason: import('../types.js').RuntimeCompatibilityReason;
+    /** The sentence the report states for this result, matched to the state. */
+    statement?: string;
+  }>;
   /**
    * Why this analysis is incomplete, in the developer's terms.
    *
@@ -213,6 +237,19 @@ export interface UpgradeRationale {
    * the bug this field exists to prevent.
    */
   gaps: string[];
+  /**
+   * Whether Drift obtained evidence bearing on *compatibility* specifically —
+   * a computed API surface diff, or compatibility prose actually fetched and
+   * read — as opposed to evidence answering some other question (a clean
+   * security check, a fine license, a version lookup that merely confirms the
+   * target exists). See `hasCompatibilityEvidence` in `assess.ts`.
+   *
+   * Carried on the rationale (not just folded into `assessment.recommendation`)
+   * so downstream consumers — recording capture, the corpus validator — can
+   * check "a safe-to-upgrade claim implies real evidence" structurally,
+   * without re-deriving it from `gaps` prose or the recommendation label alone.
+   */
+  hasCompatibilityEvidence: boolean;
 }
 
 const SEVERITY_ORDER: Record<Severity, number> = {

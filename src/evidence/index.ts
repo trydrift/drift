@@ -7,12 +7,13 @@ import { stableId } from '../util/id.js';
 import { isDowngrade, isZeroVerBreaking } from '../detect/version.js';
 import {
   extractBreakingPassages,
+  fetchDeclaredChangelogDocuments,
   fetchChangelogDocuments,
   fetchMigrationGuides,
   parseChangelogSections,
   sectionsBetween,
 } from './changelog.js';
-import { fetchRegistryInfo } from './registry.js';
+import { fetchRegistryInfo, fetchVersionInfo } from './registry.js';
 import { fetchReleaseNotes } from './releases.js';
 import {
   computeSpecDiff,
@@ -30,6 +31,7 @@ import {
   diffPackageModuleMetadata,
   entryPointMoved,
   fetchTypeSurface,
+  ArtifactUnavailableError,
   VersionUnavailableError,
   type SurfaceChange,
 } from './type-surface.js';
@@ -195,7 +197,12 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
 
   if (!change.from || !change.to) return tag(out);
 
+  const currentVersionPending = fetchVersionInfo(change.name, change.ecosystem, change.from).catch(() => null);
   const registry = await fetchRegistryInfo(change.name, change.ecosystem, change.to);
+  const [currentVersion, targetVersion] = await Promise.all([
+    currentVersionPending,
+    fetchVersionInfo(change.name, change.ecosystem, change.to).catch(() => null),
+  ]);
 
   if (registry?.deprecated) {
     out.push({
@@ -205,6 +212,26 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
       url: registry.homepage ?? undefined,
       title: `${change.name}@${change.to} is deprecated`,
       content: registry.deprecated,
+      weight: WEIGHTS['registry-metadata'],
+    });
+  }
+
+  // A raised or newly-introduced runtime floor declared in the target's own
+  // registry metadata (npm `engines`, PyPI `requires-python`, the `go`
+  // directive, Cargo `rust-version`) is a canonical runtime requirement — the
+  // same kind of fact a changelog sentence produces. Emitted here as evidence
+  // so `analyze` turns it into a `runtime-requirement` breaking change that
+  // flows through the one `RuntimeRequirementAnalysis` pipeline. Maintenance
+  // must not run a second compatibility check of its own against it.
+  const runtimeFloor = raisedRuntimeFloor(currentVersion?.runtime ?? null, targetVersion?.runtime ?? null);
+  if (runtimeFloor) {
+    out.push({
+      id: stableId('ev', change.name, 'runtime-metadata', change.to, runtimeFloor.runtime, runtimeFloor.requirement),
+      source: 'registry-metadata',
+      dependency: change.name,
+      url: registry?.homepage ?? undefined,
+      title: `${change.name}@${change.to} requires ${runtimeFloor.runtime} ${runtimeFloor.requirement}`,
+      content: `${change.name}@${change.to} requires ${runtimeFloor.runtime} ${runtimeFloor.requirement}.`,
       weight: WEIGHTS['registry-metadata'],
     });
   }
@@ -229,7 +256,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   const surfacePending = config.evidence.typeSurface ? surfaceEvidence(change, ctx) : null;
   const releasesPending =
     githubRepo && config.evidence.githubReleases
-      ? fetchReleaseNotes(githubRepo, change.from, change.to, {
+      ? fetchReleaseNotes(githubRepo, change.from, change.to, change.ecosystem, {
           token: ctx.githubToken,
           maxReleases: config.evidence.maxReleases,
         })
@@ -237,8 +264,22 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   // Plural: a project large enough to split its changelog by version has one
   // document per release, and the index that lists them is not itself prose.
   const changelogsPending =
-    githubRepo && config.evidence.changelog
-      ? fetchChangelogDocuments(githubRepo, change.from, change.to)
+    config.evidence.changelog && (registry?.changelogUrl || githubRepo)
+      ? (async () => {
+          if (registry?.changelogUrl) {
+            const declared = await fetchDeclaredChangelogDocuments(
+              registry.changelogUrl,
+              githubRepo ?? null,
+              change.from!,
+              change.to!,
+              change.ecosystem,
+            );
+            if (declared.length > 0) return declared;
+          }
+          return githubRepo
+            ? fetchChangelogDocuments(githubRepo, change.from!, change.to!, change.ecosystem)
+            : [];
+        })()
       : null;
   // Migration guides are the artefact LADU relies on exclusively. Drift
   // treats one as strong corroboration rather than the sole input, so a
@@ -253,8 +294,8 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   const surface = surfacePending ? await surfacePending : null;
   if (surface) out.push(surface);
 
-  if (!githubRepo) {
-    logger.debug(`No source repository resolved for ${change.name}; prose evidence unavailable`);
+  if (!githubRepo && !changelogsPending) {
+    logger.debug(`No source repository or declared changelog resolved for ${change.name}; prose evidence unavailable`);
     return tag(out);
   }
 
@@ -290,7 +331,12 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     const documents = await changelogsPending;
 
     for (const changelog of documents) {
-      const sections = sectionsBetween(parseChangelogSections(changelog.content), change.from, change.to);
+      const sections = sectionsBetween(
+        parseChangelogSections(changelog.content, change.ecosystem),
+        change.from,
+        change.to,
+        change.ecosystem,
+      );
       const breaking = sections.some((section) => extractBreakingPassages(section.body).length > 0);
       ctx.onProseConsulted?.(change, {
         kind: 'changelog',
@@ -349,6 +395,69 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
 /** Gather evidence tied only to the published dependency upgrade. */
 export async function gatherDependencyEvidence(change: DependencyChange, ctx: EvidenceContext): Promise<Evidence[]> {
   return gatherForChange(change, ctx);
+}
+
+/**
+ * `VersionInfo.runtime.name` as each registry reports it, mapped to the display
+ * form the runtime prose grammar (`analyze/rules.ts`) accepts, so a synthesized
+ * sentence is parsed by exactly the same rule a changelog line is.
+ */
+const RUNTIME_METADATA_NAMES: Readonly<Record<string, string>> = {
+  node: 'Node.js',
+  'node.js': 'Node.js',
+  nodejs: 'Node.js',
+  python: 'Python',
+  go: 'Go',
+  ruby: 'Ruby',
+  java: 'Java',
+  rust: 'Rust',
+};
+
+/**
+ * The runtime floor a target version *introduces* or *raises* over the
+ * installed one, as a `{ runtime, requirement }` pair, or `null` when there is
+ * no such change to state.
+ *
+ * Whether *this repository* actually satisfies the floor is deliberately not
+ * decided here: that verdict has one owner, `RuntimeRequirementAnalysis`, and
+ * this function only surfaces the upstream fact for it to answer.
+ */
+export function raisedRuntimeFloor(
+  current: { name: string; requirement: string } | null,
+  target: { name: string; requirement: string } | null,
+): { runtime: string; requirement: string } | null {
+  if (!target?.requirement) return null;
+  const runtime = RUNTIME_METADATA_NAMES[target.name.toLowerCase()];
+  if (!runtime) return null;
+  const requirement = target.requirement.trim();
+  if (!requirement) return null;
+
+  const sameRuntime = current && RUNTIME_METADATA_NAMES[current.name.toLowerCase()] === runtime;
+  if (!sameRuntime) return { runtime, requirement };
+
+  // Same runtime on both sides: only a genuinely raised floor is news. An
+  // unchanged or lowered minimum is not a breaking condition.
+  const floor = (spec: string) => {
+    const digits = /(\d+(?:\.\d+)*)/.exec(spec)?.[1];
+    return digits ? digits.split('.').map((n) => Number(n)) : null;
+  };
+  const [before, after] = [floor(current!.requirement), floor(requirement)];
+  if (!before || !after) return null;
+  for (let i = 0; i < Math.max(before.length, after.length); i++) {
+    const a = after[i] ?? 0;
+    const b = before[i] ?? 0;
+    if (a > b) return { runtime, requirement };
+    if (a < b) return null;
+  }
+  return null;
+}
+
+/** Both sides of this comparison came from DefinitelyTyped, not the package. */
+function fromDefinitelyTyped(surface: { beforeEntryPath?: string; afterEntryPath?: string }): boolean {
+  return (
+    (surface.beforeEntryPath?.startsWith('@types:') ?? false) &&
+    (surface.afterEntryPath?.startsWith('@types:') ?? false)
+  );
 }
 
 /**
@@ -435,6 +544,28 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       ctx.onUnavailableSurface?.(change, unavailable('TypeScript declarations', 'toolchain-failed', detail));
       return null;
     }
+    if (surface.artifactUnavailable) {
+      const detail = `${surface.artifactUnavailable} could not be obtained and inspected from either jsDelivr or the exact npm registry tarball. This is an artifact availability failure, not proof that the package publishes no declarations.`;
+      ctx.onUnavailableSurface?.(
+        change,
+        unavailable(
+          'TypeScript declarations',
+          'artifact-unavailable',
+          detail,
+        ),
+      );
+      if (moduleMetadataChanges.length > 0) {
+        return surfaceRecord(change, {
+          changes: moduleMetadataChanges,
+          weight: WEIGHTS['type-surface-diff'],
+          locator: `${change.name}@${from}:package.json → ${change.name}@${to}:package.json`,
+          url: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+          beforeUrl: jsdelivrDeclarationUrl(change.name, from, 'package.json'),
+          afterUrl: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+        });
+      }
+      return null;
+    }
     if (surface.unreachable) {
       ctx.onUnavailableSurface?.(
         change,
@@ -486,7 +617,15 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
 
     return surfaceRecord(change, {
       changes: computedChanges,
-      weight: WEIGHTS['type-surface-diff'],
+      // A comparison drawn from DefinitelyTyped is a diff of the *description*
+      // of two versions, maintained by people other than the package's authors
+      // and restructured on its own schedule. It is the only declaration
+      // evidence available for a package whose types ship separately, and it
+      // is real evidence — but it is not the package's own declarations, and a
+      // difference between two `@types` majors can reflect the description
+      // changing rather than the API. Scored one notch down for the same
+      // reason the reconstructed Python surface is.
+      weight: fromDefinitelyTyped(surface) ? WEIGHTS['type-surface-diff'] * 0.9 : WEIGHTS['type-surface-diff'],
       locator: `${change.name}@${from}:${surface.beforeEntryPath} + package.json → ${change.name}@${to}:${surface.afterEntryPath} + package.json`,
       url: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
       beforeUrl: jsdelivrDeclarationUrl(change.name, from, surface.beforeEntryPath),
@@ -517,6 +656,7 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     changes: outcome.changes,
     weight: outcome.weight,
     locator: `${outcome.locator} · computed by ${outcome.tool}`,
+    ...(outcome.packageRole ? { packageRole: outcome.packageRole } : {}),
   });
 }
 
@@ -549,6 +689,7 @@ function surfaceRecord(
     url?: string;
     beforeUrl?: string;
     afterUrl?: string;
+    packageRole?: string;
   },
 ): Evidence {
   const sources =
@@ -569,7 +710,7 @@ function surfaceRecord(
     dependency: change.name,
     url: args.url,
     locator: args.locator,
-    title: `${args.changes.length} API surface change(s) in ${change.name}`,
+    title: `${args.changes.length} ${surfaceContractLabel(args.packageRole)} change(s) in ${change.name}`,
     content: `${sources}${formatSurfaceChanges(args.changes)}`,
     findings: args.changes.map((c) => ({
       code: c.kind,
@@ -599,6 +740,23 @@ function surfaceRecord(
   };
 }
 
+function surfaceContractLabel(packageRole: string | undefined): string {
+  switch (packageRole) {
+    case 'pom':
+      return 'Maven POM contract';
+    case 'analyzer':
+    case 'msbuild':
+    case 'tool':
+    case 'meta-package':
+      return 'NuGet package contract';
+    case 'asset':
+    case 'tooling':
+      return 'Pub package contract';
+    default:
+      return 'API surface';
+  }
+}
+
 /**
  * The smallest surface worth calling a comparison.
  *
@@ -624,6 +782,8 @@ async function diffTypeSurfaces(
   beforeEntryPath: string;
   afterEntryPath: string;
   unreachable?: string;
+  /** Exact npm artifact retrieval or safe inspection failed. */
+  artifactUnavailable?: string;
   /**
    * Both sides resolved to DefinitelyTyped.
    *
@@ -666,10 +826,20 @@ async function diffTypeSurfaces(
     // wrong fix; a reader who is told the entry point moved reaches for the
     // right one.
     const moved = entryPointMoved(packageName, before, after);
-    const changes = diffSurfaces(before.api, after.api);
+    const changes = diffSurfaces(before.api, after.api, {
+      beforeComplete: !before.incomplete,
+      afterComplete: !after.incomplete,
+    });
 
+    // Only incomparable when both sides resolved to the *same* `@types`
+    // release. Different majors (`@types/express@4` vs `@types/express@5`) are
+    // DefinitelyTyped's own description of the two versions being upgraded
+    // between, and diffing them is the only declaration evidence available for
+    // a package whose types ship separately.
     const definitelyTyped =
-      before.entryPath.startsWith('@types:') && after.entryPath.startsWith('@types:');
+      before.entryPath.startsWith('@types:') &&
+      after.entryPath.startsWith('@types:') &&
+      before.entryPath === after.entryPath;
 
     return {
       changes: moved ? [moved, ...changes] : changes,
@@ -689,6 +859,15 @@ async function diffTypeSurfaces(
         beforeEntryPath: '',
         afterEntryPath: '',
         unreachable: `${err.packageName}@${err.version}`,
+      };
+    }
+    if (err instanceof ArtifactUnavailableError) {
+      return {
+        changes: [],
+        comparable: false,
+        beforeEntryPath: '',
+        afterEntryPath: '',
+        artifactUnavailable: `${err.packageName}@${err.version}`,
       };
     }
     return {
@@ -895,7 +1074,7 @@ function formatSpecChanges(changes: readonly SpecChange[]): string {
  * clause, §8 is the one that permits arbitrary breakage across a major bump.
  */
 function semverClauseUrl(change: DependencyChange): string {
-  if (change.from && change.to && isZeroVerBreaking(change.from, change.to)) {
+  if (change.from && change.to && isZeroVerBreaking(change.from, change.to, change.ecosystem)) {
     return 'https://semver.org/#spec-item-4';
   }
   if (change.bump === 'major') return 'https://semver.org/#spec-item-8';
@@ -910,7 +1089,7 @@ function describeSemver(change: DependencyChange): string | null {
     notes.push(
       `Major version bump ${change.from} → ${change.to}. Semver permits arbitrary breaking changes across a major boundary.`,
     );
-  } else if (isZeroVerBreaking(change.from, change.to)) {
+  } else if (isZeroVerBreaking(change.from, change.to, change.ecosystem)) {
     notes.push(
       `0.x minor bump ${change.from} → ${change.to}. Under semver §4 the minor position carries breaking changes while the major version is 0.`,
     );
@@ -925,7 +1104,7 @@ function describeSemver(change: DependencyChange): string | null {
     notes.push(`Patch bump ${change.from} → ${change.to}. Breakage here is usually accidental.`);
   }
 
-  if (isDowngrade(change.from, change.to)) {
+  if (isDowngrade(change.from, change.to, change.ecosystem)) {
     notes.push(
       `This is a DOWNGRADE. Code written against ${change.from} may rely on APIs that do not exist in ${change.to}.`,
     );

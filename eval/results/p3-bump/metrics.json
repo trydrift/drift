@@ -1,0 +1,218 @@
+{
+  "datasetId": "bump",
+  "datasetClass": "consumer-impact",
+  "available": 571,
+  "selected": 571,
+  "attempted": 571,
+  "notRun": 0,
+  "scored": 541,
+  "excluded": {
+    "source-unavailable": 21,
+    "reproduction-failed": 9
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 486,
+      "denominator": 541,
+      "value": 0.8983364140480592
+    },
+    "affected-repository identification rate": {
+      "numerator": 302,
+      "denominator": 541,
+      "value": 0.5582255083179297
+    },
+    "consumer localization rate": {
+      "numerator": 198,
+      "denominator": 541,
+      "value": 0.3659889094269871
+    },
+    "false-safe verdicts": {
+      "numerator": 37,
+      "denominator": 541,
+      "value": 0.06839186691312385
+    }
+  },
+  "adjudication": {
+    "dependency-update detection rate": {
+      "adjudicated": 541,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "affected-repository identification rate": {
+      "adjudicated": 541,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "consumer localization rate": {
+      "adjudicated": 541,
+      "notAdjudicated": 0,
+      "reasons": {}
+    },
+    "false-safe verdicts": {
+      "adjudicated": 541,
+      "notAdjudicated": 0,
+      "reasons": {}
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: COMPILATION_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 211,
+        "denominator": 216,
+        "value": 0.9768518518518519
+      },
+      "affected-repository identification rate": {
+        "numerator": 137,
+        "denominator": 216,
+        "value": 0.6342592592592593
+      },
+      "consumer localization rate": {
+        "numerator": 137,
+        "denominator": 216,
+        "value": 0.6342592592592593
+      }
+    },
+    "label: ENFORCER_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 103,
+        "denominator": 120,
+        "value": 0.8583333333333333
+      },
+      "affected-repository identification rate": {
+        "numerator": 60,
+        "denominator": 120,
+        "value": 0.5
+      },
+      "consumer localization rate": {
+        "numerator": 4,
+        "denominator": 120,
+        "value": 0.03333333333333333
+      }
+    },
+    "label: TEST_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 164,
+        "denominator": 183,
+        "value": 0.8961748633879781
+      },
+      "affected-repository identification rate": {
+        "numerator": 100,
+        "denominator": 183,
+        "value": 0.546448087431694
+      },
+      "consumer localization rate": {
+        "numerator": 57,
+        "denominator": 183,
+        "value": 0.3114754098360656
+      }
+    },
+    "label: WERROR_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 2,
+        "denominator": 3,
+        "value": 0.6666666666666666
+      },
+      "affected-repository identification rate": {
+        "numerator": 1,
+        "denominator": 3,
+        "value": 0.3333333333333333
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0
+      }
+    },
+    "label: DEPENDENCY_RESOLUTION_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 2,
+        "denominator": 5,
+        "value": 0.4
+      },
+      "affected-repository identification rate": {
+        "numerator": 0,
+        "denominator": 5,
+        "value": 0
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 5,
+        "value": 0
+      }
+    },
+    "label: DEPENDENCY_LOCK_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 4,
+        "denominator": 14,
+        "value": 0.2857142857142857
+      },
+      "affected-repository identification rate": {
+        "numerator": 4,
+        "denominator": 14,
+        "value": 0.2857142857142857
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 14,
+        "value": 0
+      }
+    }
+  },
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 0.8724584103512015,
+      "high": 0.922365988909427,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.5157116451016636,
+      "high": 0.5988909426987061,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.32532347504621073,
+      "high": 0.4066543438077634,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0.04805914972273567,
+      "high": 0.09242144177449169,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "compatible": 571
+  },
+  "affectedMisses": {
+    "total": 239,
+    "byReason": {
+      "verification-inconclusive": 24,
+      "no-breaking-change-derived": 24,
+      "dependency-import-not-found": 50,
+      "consumer-usage-not-found": 56,
+      "breaking-change-low-confidence": 13,
+      "upstream-surface-unavailable": 17,
+      "dependency-update-not-detected": 55
+    },
+    "unclassified": 0
+  }
+}

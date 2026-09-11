@@ -21,8 +21,11 @@
 export type UpgradeSeverity =
   | 'affected'
   | 'verification-failed'
+  | 'review-required'
+  | 'runtime-unresolved'
+  | 'localization-incomplete'
+  | 'evidence-missing'
   | 'upstream-only'
-  | 'unchecked'
   | 'clean'
   | 'error'
   /** Nothing has been checked yet. Not a verdict — the absence of one. */
@@ -33,6 +36,9 @@ export interface SeverityInput {
   status: string;
   breakingCount: number;
   impactCount: number;
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  runtimeDeclarationSiteCount?: number;
   impactFiles: number;
   /**
    * Reasons this upgrade could not actually be checked — no declarations to
@@ -62,8 +68,31 @@ export interface SeverityInput {
    */
   verification?: {
     status: string;
-    checks?: readonly { label: string; status: string }[];
+    checks?: readonly { label: string; status: string; compileCapable?: boolean }[];
+    /**
+     * How many upgrades were installed together when this was measured.
+     * Absent or `1` means isolated. `> 1` means the verdict is about the
+     * *group*, and a green group proves nothing about this candidate alone —
+     * see `verificationScope` in `verification/apply.ts`.
+     */
+    measuredWith?: number;
   };
+  /**
+   * The reconciled answer to "has an authoritative verification shown this
+   * repository is unaffected?" — computed once, by the layer that can see the
+   * plan (`applyVerification` in `upgrade/verification.ts`), never re-derived
+   * from `verification.status` here.
+   *
+   * `true` only when an **isolated**, compile-capable pass cleared every
+   * compiler-provable prediction and nothing non-runtime is left unresolved.
+   * A batch pass, a pass with no compile-capable check, a behavioural change
+   * that survived a green build, or an unavailable plan all leave this
+   * `undefined`/`false`, and an upstream break with no located site then
+   * renders `review-required`, never `upstream-only`. This is the single
+   * signal that keeps `severityOf` from inventing stronger safety evidence
+   * than `applyVerificationToPlan` is willing to act on.
+   */
+  verifiedUnaffected?: boolean;
   /**
    * The strongest local-impact confidence among the sites behind
    * `impactCount`, when it was computed.
@@ -91,6 +120,36 @@ export interface SeverityInput {
    * give up exactly the cost that batching exists to save.
    */
   impactPendingIsolatedClearance?: boolean;
+  /**
+   * What Drift established about this repository's runtime relative to the
+   * upgrade's runtime requirements — `'compatible'`, `'incompatible'`,
+   * `'partial'`, `'unknown'` — or absent when the upgrade announced none.
+   *
+   * This module is deliberately dependency-free (the render layer imports
+   * it), so the union is spelled out rather than imported from
+   * `types.ts`; `RuntimeCompatibilityState` is its definition.
+   *
+   * It exists because a package-wide compatibility condition is invisible to
+   * every count above it. A raised Node floor Drift could not check against
+   * this repository produces zero impact sites, and `breakingCount > 0` then
+   * rendered "Safe for your code · N upstream changes, none used here" over
+   * a question nobody answered. `upstream-only` may only ever mean *Drift
+   * found upstream breaking changes and established this repository is
+   * unaffected* — never *found them and failed to find a local site*.
+   */
+  runtimeCompatibility?: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+  runtimeAnalyses?: readonly {
+    state: 'compatible' | 'incompatible' | 'partial' | 'unknown';
+    reason: string;
+    statement?: string;
+  }[];
+  /** Source-localization completeness; config completeness is tracked separately. */
+  sourceCoverage?: {
+    sourceTruncated: boolean;
+    localizationRan?: boolean;
+    localizationComplete?: boolean;
+    runtimeConfigComplete?: boolean;
+  };
 }
 
 /**
@@ -103,9 +162,9 @@ export interface SeverityInput {
  * `not-run` (nothing installed yet, Quick Scan only), `clean` and `passed`
  * (Deep Verification confirmed it), or `affected` and `skipped` (a location
  * was found statically, and separately an attempt to install and check it
- * did not finish). `unchecked` severity is unaffected by this — it means no
- * *static* evidence was reachable at all, which is a different gap than
- * whether the toolchain ran.
+ * did not finish). Static uncertainty verdicts are unaffected by this: they
+ * describe review-only evidence, runtime uncertainty, or missing upstream
+ * evidence, all separate from whether the toolchain ran.
  */
 export type VerificationState = 'not-run' | 'skipped' | 'passed' | 'failed';
 
@@ -119,7 +178,7 @@ export function verificationState(candidate: SeverityInput): VerificationState {
 /**
  * The verdict.
  *
- * `unchecked` exists because the alternative is a lie Drift told once and must
+ * Explicit uncertainty states exist because the alternative is a lie Drift told once and must
  * never tell again: zod 3 → 4 and typescript 5 → 7 were both reported as *no
  * breaking changes found* when the truth was that nothing had been found at
  * all — the `.d.ts` surface would not resolve, no changelog was reachable, and
@@ -134,20 +193,109 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   // the one wrong answer this module exists to prevent.
   if (candidate.status === 'pending') return 'pending';
   if (candidate.status === 'error') return 'error';
-  if (candidate.impactCount > 0) return 'affected';
+  const runtimeUnresolved =
+    candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial';
+  // The canonical count, when the plan supplied one. The fallback for a direct
+  // caller that did not is deliberately *not* `runtime unknown ? 0 : impact`:
+  // zeroing the whole candidate because its runtime is unresolved would erase
+  // independent API impact. Only the runtime declaration sites are held back
+  // for review; the API sites still count.
+  //
+  // When the caller also omits `runtimeDeclarationSiteCount`, there is no
+  // structural way to subtract the runtime site out of `impactCount` — so the
+  // fallback cannot tell "one unresolved runtime declaration and nothing
+  // else" from "one unresolved runtime declaration plus a confirmed API
+  // impact" by count alone. It leans on the confidence signal it already has:
+  // `impactConfidence: 'high'` is the same fact `assessLocalImpact` uses
+  // everywhere else in this module to mean "a real, direct local match", so a
+  // legacy caller reporting one is reporting *something* concrete Drift found
+  // in the repository, not the mere existence of the unresolved runtime
+  // declaration. Anything less certain (low/medium, or simply not supplied —
+  // which here means "unknown", not "certain", because there is no resolved
+  // runtime state to fall back on being irrelevant) stays conservative at 0,
+  // so a bare unresolved runtime site is never promoted to `affected`.
+  const actionableImpactCount = candidate.actionableImpactCount ?? (
+    runtimeUnresolved
+      ? (candidate.runtimeDeclarationSiteCount !== undefined
+        ? Math.max(0, candidate.impactCount - candidate.runtimeDeclarationSiteCount)
+        : candidate.impactConfidence === 'high'
+          ? candidate.impactCount
+          : 0)
+      : candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
+        ? 0
+        : candidate.impactCount
+  );
+  if (actionableImpactCount > 0) return 'affected';
   // Static analysis found nothing to point at, but the project's own toolchain
   // — running for real, not predicting — disagrees. That is a stronger signal
   // than a clean diff and must outrank it, not be silently absorbed by it.
   if (candidate.verification?.status === 'failed') return 'verification-failed';
+
+  // Local evidence that is real but not actionable — a low-confidence API
+  // match, a runtime declaration under a partial/unknown result — is still
+  // evidence. It cannot be `affected` (nothing here is safe to auto-edit) and
+  // it must never fall through to `upstream-only` or `clean`, both of which
+  // tell the developer this repository is unaffected.
+  const runtimeSiteCount = runtimeUnresolved ? candidate.runtimeDeclarationSiteCount : 0;
+  const reviewSiteCount = runtimeSiteCount === undefined
+    ? (runtimeUnresolved ? 0 : candidate.impactCount)
+    : Math.max(0, candidate.impactCount - runtimeSiteCount);
+  if (reviewSiteCount > 0) return 'review-required';
+
+  // Checked *before* `breakingCount`, and before the recommendation/gap
+  // ladder below, because every verdict past this point tells the developer
+  // some form of "this is fine here". A runtime requirement Drift could not
+  // resolve against this repository — a dynamic CI matrix, no authoritative
+  // declaration at all, an upstream range whose grammar it could not
+  // evaluate — is precisely the case where zero impact sites means zero
+  // knowledge, not zero risk. `partial` lands here too on the rare path where
+  // it produced no site: a declared range that admits rejected versions has
+  // not been shown to be safe either.
+  if (candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial') {
+    return 'runtime-unresolved';
+  }
+
+  // Source indexing completeness governs API-site absence. Runtime
+  // requirements are resolved against runtime configuration instead; a fully
+  // compatible runtime-only finding does not become uncertain merely because
+  // unrelated source files exceeded the indexing budget.
+  const runtimeBreakingCount = candidate.runtimeAnalyses?.length ?? 0;
+  const apiBreakingCount = Math.max(0, candidate.breakingCount - runtimeBreakingCount);
+  if (
+    apiBreakingCount > 0 &&
+    (candidate.sourceCoverage?.localizationComplete === false || candidate.sourceCoverage?.sourceTruncated)
+  ) return 'localization-incomplete';
+
+  // An upstream **API** break, localization ran to completion, and it pointed
+  // at nothing here. That is *not* affirmative evidence this repository is
+  // unaffected — a completed syntactic search misses structural typing,
+  // inferred types, wrappers, generated code, dynamic dispatch, behavioural
+  // changes, and ownership relationships. `upstream-only` tells the developer
+  // "safe, none used here" and lets bulk upgrade install it unattended, so it
+  // may only be reached when `verifiedUnaffected` says an isolated,
+  // compile-capable verification actually stood behind that claim (computed
+  // in `applyVerification`, never from `verification.status` alone — a batch
+  // pass or a check that never compiled anything does not count). Absent that,
+  // this is `review-required`: real upstream incompatibility, local impact
+  // unresolved.
+  //
+  // Runtime-requirement breaks are excluded here on purpose: they are resolved
+  // against runtime *configuration*, not source sites, and an unresolved one
+  // was already caught as `runtime-unresolved` above — so reaching this point
+  // with only runtime breaks means they resolved `compatible`, which *is*
+  // affirmative evidence and stays `upstream-only`.
+  if (apiBreakingCount > 0) {
+    return candidate.verifiedUnaffected === true ? 'upstream-only' : 'review-required';
+  }
   if (candidate.breakingCount > 0) return 'upstream-only';
 
   // The assessment ran and concluded that nothing could be read. That is the
   // authoritative form of this verdict, and it is reached only when no source
   // answered at all.
-  if (candidate.recommendation === 'insufficient-evidence') return 'unchecked';
+  if (candidate.recommendation === 'insufficient-evidence') return 'evidence-missing';
   if (candidate.recommendation) return 'clean';
 
-  if (candidate.gaps && candidate.gaps.length > 0) return 'unchecked';
+  if (candidate.gaps && candidate.gaps.length > 0) return 'evidence-missing';
   return 'clean';
 }
 
@@ -163,7 +311,7 @@ export function describeSeverity(candidate: SeverityInput): string {
   // Appended to a prediction that Deep Verification has not (yet, or not
   // successfully) confirmed, so a Quick Scan result never reads the same as
   // one the project's own toolchain has actually stood behind. Never applied
-  // to `verification-failed`/`unchecked`, which already say something
+  // to explicit failure/uncertainty verdicts, which already say something
   // stronger and more specific about why nothing here can be called safe.
   const deepNote =
     state === 'not-run'
@@ -171,6 +319,7 @@ export function describeSeverity(candidate: SeverityInput): string {
       : state === 'skipped'
         ? ' — deep verification did not complete'
         : '';
+  const runtimeUncertainty = runtimeUncertaintyText(candidate);
 
   switch (severityOf(candidate)) {
     case 'pending':
@@ -178,12 +327,25 @@ export function describeSeverity(candidate: SeverityInput): string {
     case 'error':
       return 'Could not check';
     case 'affected': {
-      const files = candidate.impactFiles;
+      // "actionable" only when the plan actually separated actionable sites
+      // from review-only ones. A direct caller that supplied a raw
+      // `impactCount` keeps today's plain "N sites" wording.
+      const hasCanonicalCounts = candidate.actionableImpactCount !== undefined;
+      const files = candidate.actionableImpactFiles ?? candidate.impactFiles;
+      const actionable = candidate.actionableImpactCount ?? candidate.impactCount;
+      const siteNoun = hasCanonicalCounts ? 'actionable site' : 'site';
       // Hedged unless the strongest match is a direct, imported usage — a
       // textual-only or wrapper-mediated match is real enough to surface, but
       // not certain enough to tell someone flatly that their code is affected.
+      // Also hedged when the only established fact is a *partial* runtime
+      // overlap: the declaration was found with certainty, and what it means
+      // is that this repository's declared range includes versions upstream
+      // rejects — not that the version it actually runs on is one of them.
       const verb =
-        candidate.impactConfidence && candidate.impactConfidence !== 'high' ? 'May affect' : 'Affects';
+        (candidate.impactConfidence && candidate.impactConfidence !== 'high') ||
+        candidate.runtimeCompatibility === 'partial'
+          ? 'May affect'
+          : 'Affects';
       // Stated whenever it applies, for the same reason `describeVerification`
       // states `measuredWith`: this exact finding could read "safe" on the
       // next scan for no reason but an unrelated dependency's install
@@ -199,7 +361,8 @@ export function describeSeverity(candidate: SeverityInput): string {
       // than left to the generic `deepNote`, which only speaks to whether
       // verification ran, not to what it found.
       const measured = state === 'failed' ? ' — and its own checks fail with this installed, measured not predicted' : deepNote;
-      return `${verb} your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${unconfirmed}${measured}`;
+      const runtimeReview = runtimeUncertainty ? ` · ${runtimeUncertainty}` : '';
+      return `${verb} your code · ${actionable} ${siteNoun}${actionable === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${runtimeReview}${unconfirmed}${measured}`;
     }
     case 'verification-failed': {
       const failing = (candidate.verification?.checks ?? [])
@@ -211,12 +374,46 @@ export function describeSeverity(candidate: SeverityInput): string {
     }
     case 'upstream-only': {
       const base = `${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
-      return state === 'passed'
+      // Two ways to reach this verdict, and they carry different evidence:
+      //  - `verifiedUnaffected`: an isolated, compile-capable pass cleared
+      //    every compiler-provable prediction. Measured.
+      //  - otherwise: the only breaking change was a runtime requirement that
+      //    resolved `compatible` against this repository's declared runtime.
+      //    A configuration fact, not a build — so it must not claim "checks
+      //    pass".
+      return candidate.verifiedUnaffected === true
         ? `Verified safe · ${base}, and your own checks pass`
-        : `Safe for your code · ${base}${deepNote}`;
+        : `Safe for your code · ${base}`;
     }
-    case 'unchecked':
-      return 'Not verified · Drift found nothing it could check this version against';
+    case 'review-required': {
+      const runtimeSites = candidate.runtimeCompatibility === 'unknown' || candidate.runtimeCompatibility === 'partial'
+        ? candidate.runtimeDeclarationSiteCount ?? 0
+        : 0;
+      // No local site at all: this is the "breaking change upstream, localization
+      // found nothing, nothing verified it" case. Say that plainly rather than
+      // claiming a site count Drift does not have.
+      if (candidate.impactCount - runtimeSites <= 0) {
+        const bc = candidate.breakingCount;
+        return (
+          `Review Required · ${bc} breaking change${bc === 1 ? '' : 's'} upstream; ` +
+          'Drift found no usage in this repository but could not prove none — verify before upgrading' +
+          (runtimeUncertainty ? ` · ${runtimeUncertainty}` : '')
+        );
+      }
+      const n = Math.max(1, candidate.impactCount - runtimeSites);
+      const detail = runtimeUncertainty ? ` · ${runtimeUncertainty}` : '';
+      return candidate.impactConfidence === 'low' || candidate.impactConfidence === 'medium'
+        ? `May affect your code · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm — Review required; check before upgrading${detail}`
+        : `Review Required · ${n} local site${n === 1 ? '' : 's'} Drift flagged but could not confirm${detail}`;
+    }
+    case 'runtime-unresolved':
+      return runtimeUncertainty
+        ? `Runtime Unknown · ${runtimeUncertainty}`
+        : 'Runtime Unknown · Drift could not resolve this repository’s runtime compatibility';
+    case 'localization-incomplete':
+      return 'Localization Incomplete · Drift searched the indexed source subset, but the file limit prevented proving the breaking API is unused';
+    case 'evidence-missing':
+      return 'Evidence Missing · Drift could not obtain enough upstream evidence to decide';
     case 'clean': {
       // "Safe for your code" and "you should take this" are different things,
       // and an upgrade that closes a known advisory deserves the stronger word.
@@ -240,20 +437,31 @@ export function describeSeverity(candidate: SeverityInput): string {
  * finding: they are not an emergency, but leaving them at the bottom of the
  * list next to the genuinely safe ones is how one gets installed by accident.
  */
-export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
-  const rank = {
+export function severityRank(severity: UpgradeSeverity): number {
+  const rank: Record<UpgradeSeverity, number> = {
     affected: 0,
     'verification-failed': 1,
     error: 2,
-    'upstream-only': 3,
-    unchecked: 4,
+    'review-required': 3,
+    'runtime-unresolved': 4,
+    'localization-incomplete': 5,
+    'evidence-missing': 6,
+    'upstream-only': 7,
     // Above `clean` deliberately: a package nobody has looked at yet is not a
     // package that has been cleared, and sorting it under the safe ones is how
     // it would be read as one.
-    pending: 5,
-    clean: 6,
-  } as const;
-  return rank[severityOf(a)] - rank[severityOf(b)];
+    pending: 8,
+    clean: 9,
+  };
+  return rank[severity];
+}
+
+export function compareUpgradeSeverities(a: UpgradeSeverity, b: UpgradeSeverity): number {
+  return severityRank(a) - severityRank(b);
+}
+
+export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
+  return compareUpgradeSeverities(severityOf(a), severityOf(b));
 }
 
 /**
@@ -275,8 +483,8 @@ export function scanTitle(
   /**
    * Dependencies whose *version lookup* never returned — a registry Drift
    * could not reach, or an ecosystem with no version API. These never became
-   * candidates at all, so counting only the candidates' own `unchecked`
-   * severity would title a run "all up to date" while four dependencies went
+   * candidates at all, so counting only candidate verdicts would title a run
+   * "all up to date" while four dependencies went
    * unlooked-at. See `UpgradeScanResult.unchecked`.
    */
   unlooked = 0,
@@ -296,7 +504,9 @@ export function scanTitle(
   // reason this upgrade affects the repo — a title that only counted
   // `affected` would report "all safe" over a build Drift just watched fail.
   const verificationFailed = candidates.filter((c) => severityOf(c) === 'verification-failed').length;
-  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
+  const uncertain = candidates.filter((candidate) =>
+    ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
+  ).length + unlooked;
   const total = candidates.length;
 
   const urgent = affected + verificationFailed;
@@ -304,6 +514,18 @@ export function scanTitle(
   // Kept distinct from "all safe" for the same reason the verdict is: a run
   // that could not check something did not find it safe, and a title that
   // says otherwise is the claim Drift exists to stop making.
-  if (unchecked > 0) return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, ${unchecked} unverified`;
+  if (uncertain > 0) return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, ${uncertain} require review`;
   return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, all safe`;
+}
+
+function runtimeUncertaintyText(candidate: SeverityInput): string | undefined {
+  if (candidate.runtimeCompatibility !== 'unknown' && candidate.runtimeCompatibility !== 'partial') return undefined;
+  const analysis = candidate.runtimeAnalyses?.find((entry) => entry.state === 'unknown' || entry.state === 'partial');
+  if (analysis?.statement) return analysis.statement;
+  if (analysis?.reason === 'config-incomplete') {
+    return 'Drift could not index every authoritative runtime configuration file';
+  }
+  const sites = candidate.runtimeDeclarationSiteCount ?? 0;
+  if (sites > 0) return `${sites} runtime declaration${sites === 1 ? '' : 's'} to review`;
+  return 'Drift could not resolve this repository’s runtime compatibility';
 }

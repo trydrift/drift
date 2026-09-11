@@ -48,6 +48,52 @@ export function applyVerification(
   verified.breakingCount = verified.plan.upstreamBreakingCount ?? verified.plan.breakingChanges.length;
   verified.impactCount = verified.plan.impactSites.length;
   verified.impactFiles = new Set(verified.plan.impactSites.map((site) => site.file)).size;
+  const dispositions = verified.plan.dispositions;
+  if (dispositions) {
+    verified.actionableImpactCount = dispositions.reduce((n, d) => n + d.actionableSites.length, 0);
+    verified.actionableImpactFiles = new Set(
+      dispositions.flatMap((d) => d.actionableSites.map((site) => site.file)),
+    ).size;
+    verified.runtimeDeclarationSiteCount = dispositions
+      .filter((d) => d.runtimeAnalysis !== undefined)
+      .reduce((n, d) => n + d.sites.length, 0);
+  }
+  // `applyVerificationToPlan` re-derives the plan's dispositions, per-dependency
+  // rationale assessment (recommendation, reasons, runtime compatibility) and
+  // aggregate risk from the pruned structural plan whenever a pass actually
+  // cleared a prediction. Read those through rather than hand-patching the
+  // flattened copies here — the old shortcut ("keep the whole pre-verification
+  // reason list whenever any actionable finding survives") left reasons
+  // describing predictions the compiler had already disproved.
+  if (verified.rationale) {
+    verified.rationale =
+      verified.plan.rationale?.find((entry) => entry.dependency === verified.rationale!.dependency) ??
+      verified.plan.rationale?.[0] ??
+      verified.rationale;
+  }
+  verified.risk = verified.plan.risk;
+  // The reconciled "an authoritative verification showed this repository is
+  // unaffected" signal `severityOf` reads instead of re-deriving safety from
+  // `verification.status`. Deliberately strict, and matched to what
+  // `applyVerificationToPlan` is actually willing to act on:
+  //   - the pass was isolated (a batch pass clears the group, not this one);
+  //   - at least one compile-capable check passed (a bare `test` or a bundler
+  //     `build` proves nothing about a moved signature or a narrowed type);
+  //   - after pruning every compiler-provable prediction the isolated pass
+  //     could clear, nothing non-runtime is left unresolved and every runtime
+  //     question resolved `compatible` — i.e. every surviving disposition is
+  //     `unaffected` (vacuously true when the pass cleared them all);
+  //   - there was an upstream breaking change in the first place.
+  // A behavioural change that survives a green build fails the third clause
+  // (its disposition is `impact-unresolved`), so it can never reach
+  // `upstream-only`.
+  verified.verifiedUnaffected =
+    verification.status === 'passed' &&
+    verificationScope(verification) === 'isolated' &&
+    verification.checks.some((check) => check.status === 'passed' && check.compileCapable) &&
+    Array.isArray(verified.plan.dispositions) &&
+    verified.plan.dispositions.every((disposition) => disposition.state === 'unaffected') &&
+    (verified.plan.breakingChanges.length > 0 || (verified.plan.upstreamBreakingCount ?? 0) > 0);
   // Whether the "affected" verdict above rests on evidence a batch pass could
   // not give it. A compile-capable pass that ran scoped to a batch is not
   // licensed to prune a compiler-provable finding (see `applyVerificationToPlan`),
@@ -75,7 +121,8 @@ export function applyVerification(
   // disproved sixty-five of them.
   verified.summary = summarize(
     verified.breakingCount,
-    verified.impactCount,
+    verified.plan!.breakingChanges,
+    verified.plan!.impactSites,
     verified.name,
     verified.rationale,
   );

@@ -40,6 +40,17 @@ export interface EvidenceRef {
   locator: string | null;
 }
 
+interface RuntimeRequirementBase {
+  runtime: "node" | "python" | "go" | "ruby" | "java" | "rust";
+  requirement: string;
+  sourceText: string;
+  rangeParseStatus?: "parsed" | "unknown";
+}
+
+export type RuntimeRequirement =
+  | (RuntimeRequirementBase & { kind: "minimum-runtime" })
+  | (RuntimeRequirementBase & { kind: "unsupported-runtime-range"; derivedMinimum?: string });
+
 /** The single customer-facing number — see `deriveOverallConfidence` in core. */
 export interface OverallConfidence {
   score: number;
@@ -59,6 +70,7 @@ export interface BreakingChange {
    * rather than a fabricated number.
    */
   overall?: OverallConfidence | null;
+  runtime?: RuntimeRequirement | null;
   symbols: string[];
   evidence?: EvidenceRef[];
   sites: ImpactSite[];
@@ -80,6 +92,49 @@ export interface Candidate {
   risk: string;
   summary: string;
   recommendation: string | null;
+  /**
+   * What Drift established about this repository's runtime for this upgrade's
+   * runtime requirements. `null` when it announced none — deliberately not
+   * `"compatible"`, since "nothing asked" is not "asked and satisfied".
+   * Absent in recordings captured before the state existed.
+   */
+  runtimeCompatibility?: "compatible" | "incompatible" | "partial" | "unknown" | null;
+  /** The per-requirement breakdown behind {@link runtimeCompatibility}. */
+  runtimeAnalyses?: {
+    changeId: string;
+    runtime: string;
+    state: "compatible" | "incompatible" | "partial" | "unknown";
+    reason: string;
+    siteCount: number;
+    declarationCount: number;
+    unresolvedCount: number;
+    statement: string;
+  }[];
+  severity?: "affected" | "verification-failed" | "review-required" | "runtime-unresolved" | "localization-incomplete" | "evidence-missing" | "upstream-only" | "clean" | "error" | "pending";
+  independentActionableFindingCount?: number;
+  actionableImpactCount?: number;
+  actionableImpactFiles?: number;
+  runtimeDeclarationSiteCount?: number;
+  sourceCoverage?: {
+    localizationRan: boolean;
+    localizationComplete: boolean;
+    sourceFilesDiscovered: number;
+    sourceFilesIndexed: number;
+    sourceTruncated: boolean;
+    runtimeConfigsDiscovered: number;
+    runtimeConfigsIndexed: number;
+    runtimeConfigComplete: boolean;
+  };
+  /** Complete runtime-finding identity set; unlike `breaking`, never sliced. */
+  runtimeChanges?: { id: string; runtime: RuntimeRequirement["runtime"] }[];
+  dispositions?: {
+    changeId: string;
+    state: "actionable" | "review-only" | "unaffected" | "unknown";
+    reason: string;
+    siteCount: number;
+    actionableSiteCount: number;
+    runtimeState: "compatible" | "incompatible" | "partial" | "unknown" | null;
+  }[];
   breakingCount: number;
   impactCount: number;
   impactFiles: number;
@@ -169,7 +224,16 @@ function asSeverityInput(candidate: Candidate): SeverityInput {
       : confidences.includes("low")
         ? "low"
         : "none";
-  return { ...candidate, recommendation: candidate.recommendation ?? undefined, impactConfidence };
+  // Same `null`-for-absent translation as `recommendation`: an upgrade with
+  // no runtime requirement records `null`, and `severityOf` must see an
+  // absent field rather than a state it would have to interpret.
+  const { runtimeCompatibility, ...rest } = candidate;
+  return {
+    ...rest,
+    recommendation: candidate.recommendation ?? undefined,
+    impactConfidence,
+    ...(runtimeCompatibility ? { runtimeCompatibility } : {}),
+  };
 }
 
 /** Mirrors `OVERALL_LABEL` in `src/confidence/types.ts`, for recordings with no stored score to read a label from. */
@@ -229,7 +293,9 @@ export interface Totals {
   packages: number;
   affected: number;
   clean: number;
-  unchecked: number;
+  reviewRequired: number;
+  runtimeUnknown: number;
+  evidenceMissing: number;
   breaking: number;
   sites: number;
   files: number;
@@ -247,7 +313,9 @@ export function totalsOf(recording: Recording): Totals {
     // "Upstream-only" counts as clean for the summary bar: it is a package the
     // developer does not have to touch, which is the question the bar answers.
     clean: verdicts.filter((v) => v === "clean" || v === "upstream-only").length,
-    unchecked: verdicts.filter((v) => v === "unchecked").length,
+    reviewRequired: verdicts.filter((v) => v === "review-required").length,
+    runtimeUnknown: verdicts.filter((v) => v === "runtime-unresolved").length,
+    evidenceMissing: verdicts.filter((v) => v === "evidence-missing").length,
     breaking: recording.candidates.reduce((sum, c) => sum + c.breakingCount, 0),
     sites: recording.candidates.reduce((sum, c) => sum + c.impactCount, 0),
     files: files.size,
@@ -256,9 +324,12 @@ export function totalsOf(recording: Recording): Totals {
 
 /** `1699…` -> `2 Nov 2025`, for the "captured on" line under the panel. */
 export function shortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const date = new Date(iso);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Do not use Intl here: its bundled locale data can differ between the
+  // server and browser (notably "Sept" versus "Sep"), which breaks hydration.
+  // The recordings are timestamps, so UTC also keeps the date independent of
+  // the server and visitor time zones.
+  return `${date.getUTCDate()} ${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }

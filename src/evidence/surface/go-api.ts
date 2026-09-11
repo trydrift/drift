@@ -1,4 +1,5 @@
 import type { SurfaceChange } from '../type-surface.js';
+import { withArticle } from '../../util/prose.js';
 
 /**
  * Comparing two Go module versions' exported APIs.
@@ -181,7 +182,7 @@ export function diffGoApi(before: GoApi, after: GoApi): GoApiDiff {
       changes.push({
         kind: 'export-removed',
         symbol: label,
-        detail: `\`${label}\` is no longer exported (was a ${describeKind(old.kind)}).`,
+        detail: `\`${label}\` is no longer exported (was ${withArticle(describeKind(old.kind))}).`,
         before: old.signatures[0],
       });
       continue;
@@ -191,7 +192,7 @@ export function diffGoApi(before: GoApi, after: GoApi): GoApiDiff {
       changes.push({
         kind: 'kind-changed',
         symbol: label,
-        detail: `\`${label}\` changed from a ${describeKind(old.kind)} to a ${describeKind(next.kind)}.`,
+        detail: `\`${label}\` changed from ${withArticle(describeKind(old.kind))} to ${withArticle(describeKind(next.kind))}.`,
         before: old.signatures[0],
         after: next.signatures[0],
       });

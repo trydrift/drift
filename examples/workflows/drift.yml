@@ -37,6 +37,74 @@
 name: Drift
 
 on:
+  # Renovate and Dependabot open a pull request rather than pushing to a
+  # watched branch, and that PR is where the merge decision is actually made.
+  # Drift comments its verdict there, replacing its own previous comment
+  # rather than appending — a rebased bot branch would otherwise accumulate
+  # stale verdicts, which is worse than none. Needs `pull-requests: write`,
+  # already in the permissions block below.
+  pull_request:
+    paths:
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/npm-shrinkwrap.json'
+      - '**/yarn.lock'
+      - '**/pnpm-lock.yaml'
+      - '**/bun.lock'
+      - '**/requirements*.txt'
+      - '**/constraints*.txt'
+      - '**/requirements*.in'
+      - '**/constraints*.in'
+      - '**/pyproject.toml'
+      - '**/poetry.lock'
+      - '**/uv.lock'
+      - '**/Pipfile'
+      - '**/Pipfile.lock'
+      - '**/setup.py'
+      - '**/go.mod'
+      - '**/go.sum'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '**/pom.xml'
+      - '**/build.gradle'
+      - '**/build.gradle.kts'
+      - '**/gradle/libs.versions.toml'
+      - '**/gradle.lockfile'
+      - '**/build.sbt'
+      - '**/project/*.scala'
+      - '**/Gemfile'
+      - '**/Gemfile.lock'
+      - '**/*.gemspec'
+      - '**/*.csproj'
+      - '**/*.fsproj'
+      - '**/*.vbproj'
+      - '**/Directory.Packages.props'
+      - '**/packages.config'
+      - '**/packages.lock.json'
+      - '**/composer.json'
+      - '**/composer.lock'
+      - '**/mix.exs'
+      - '**/mix.lock'
+      - '**/rebar.config'
+      - '**/pubspec.yaml'
+      - '**/pubspec.yml'
+      - '**/pubspec.lock'
+      - '**/Package.swift'
+      - '**/Package@swift-*.swift'
+      - '**/Package.resolved'
+      - '**/Podfile'
+      - '**/Podfile.lock'
+      - '**/dune-project'
+      - '**/*.opam'
+      - '**/*.opam.locked'
+      - '**/conanfile.txt'
+      - '**/conanfile.py'
+      - '**/conan.lock'
+      - '**/vcpkg.json'
+      - '**/vcpkg-configuration.json'
+      - '**/library.properties'
+      - '**/platformio.ini'
+
   push:
     # Deliberately unfiltered by branch. Which branches Drift acts on is
     # `watchBranches` in .github/drift.yml (default: main, master, develop),
@@ -53,6 +121,8 @@ on:
       - '**/bun.lock'
       - '**/requirements*.txt'
       - '**/constraints*.txt'
+      - '**/requirements*.in'
+      - '**/constraints*.in'
       - '**/pyproject.toml'
       - '**/poetry.lock'
       - '**/uv.lock'
@@ -139,7 +209,7 @@ jobs:
     permissions:
       contents: write # create the fix branch
       issues: write # file and comment on the approval issue
-      pull-requests: write # let Copilot open the PR
+      pull-requests: write # let Copilot open the PR, and post the verdict on a bot's PR
       checks: write # post the Drift check run
       security-events: write # upload code scanning alerts (codeScanning.enabled in drift.yml)
 

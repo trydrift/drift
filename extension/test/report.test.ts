@@ -221,6 +221,33 @@ describe('report rendering', () => {
     assert.match(html, /No breaking changes found/);
   });
 
+  test('#114: an unknown disposition with zero sites never reads as safe', () => {
+    const state = new DriftState();
+    state.set({
+      kind: 'findings',
+      plan: plan({
+        // A breaking change exists, but Drift did not establish locality:
+        // the disposition is `unknown` with no sites and nothing actionable.
+        impactSites: [],
+        commits: [],
+        risk: 'low',
+        dispositions: [
+          { changeId: 'b1', state: 'unknown', reason: 'not-localized', sites: [], actionableSites: [] },
+        ],
+      }),
+      at: Date.now(),
+    });
+
+    const html = __renderForTest(state);
+
+    assert.doesNotMatch(html, /Safe to upgrade/);
+    assert.doesNotMatch(html, /touch code in this repository/);
+    assert.doesNotMatch(html, /class="verdict-clear"/);
+    assert.match(html, /did not establish whether these changes affect this repository/i);
+    // No automatic fix control offered when nothing is actionable.
+    assert.doesNotMatch(html, /data-command="drift\.fixAll"/);
+  });
+
   test('two candidates sharing a dependency name stay distinguishable by id', () => {
     const state = new DriftState();
     state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });

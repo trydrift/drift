@@ -1,5 +1,11 @@
 import semver from 'semver';
-import type { BumpKind } from '../types.js';
+import type { BumpKind, Ecosystem } from '../types.js';
+import {
+  classifyPackageBump,
+  isPackageDowngrade,
+  isZeroVersionBreaking,
+  packageVersionsBetween,
+} from '../version-semantics.js';
 
 /**
  * Reduce a version *range* to the concrete version it most likely resolves to.
@@ -69,32 +75,8 @@ export function normalizeVersionExact(raw: string | null | undefined): string | 
  * Anything we cannot parse becomes `unknown` rather than being guessed at —
  * `unknown` is treated as elevated risk downstream, which is the safe default.
  */
-export function classifyBump(from: string | null, to: string | null): BumpKind {
-  if (from === null && to !== null) return 'added';
-  if (from !== null && to === null) return 'removed';
-  if (from === null || to === null) return 'unknown';
-
-  const a = normalizeVersion(from);
-  const b = normalizeVersion(to);
-  if (!a || !b) return 'unknown';
-  if (semver.eq(a, b)) return 'unknown';
-
-  const diff = semver.diff(a, b);
-  switch (diff) {
-    case 'major':
-    case 'premajor':
-      return 'major';
-    case 'minor':
-    case 'preminor':
-      return 'minor';
-    case 'patch':
-    case 'prepatch':
-      return 'patch';
-    case 'prerelease':
-      return 'prerelease';
-    default:
-      return 'unknown';
-  }
+export function classifyBump(from: string | null, to: string | null, ecosystem: Ecosystem = 'npm'): BumpKind {
+  return classifyPackageBump(from, to, ecosystem);
 }
 
 /**
@@ -103,34 +85,19 @@ export function classifyBump(from: string | null, to: string | null): BumpKind {
  * Downgrades break code just as readily as upgrades but are rarer, so they get
  * flagged explicitly rather than folded into the bump classification.
  */
-export function isDowngrade(from: string | null, to: string | null): boolean {
-  const a = normalizeVersion(from);
-  const b = normalizeVersion(to);
-  if (!a || !b) return false;
-  return semver.lt(b, a);
+export function isDowngrade(from: string | null, to: string | null, ecosystem: Ecosystem = 'npm'): boolean {
+  return isPackageDowngrade(from, to, ecosystem) === true;
 }
 
 /**
  * 0.x releases treat *minor* bumps as breaking, per semver §4. Missing this is
  * one of the most common sources of surprise breakage in practice.
  */
-export function isZeroVerBreaking(from: string | null, to: string | null): boolean {
-  const a = normalizeVersion(from);
-  const b = normalizeVersion(to);
-  if (!a || !b) return false;
-  if (semver.major(a) !== 0 || semver.major(b) !== 0) return false;
-  return semver.minor(a) !== semver.minor(b);
+export function isZeroVerBreaking(from: string | null, to: string | null, ecosystem: Ecosystem = 'npm'): boolean {
+  return isZeroVersionBreaking(from, to, ecosystem);
 }
 
 /** All versions strictly after `from` and up to and including `to`. */
-export function versionsBetween(all: string[], from: string, to: string): string[] {
-  const a = normalizeVersion(from);
-  const b = normalizeVersion(to);
-  if (!a || !b) return [];
-  return all
-    .map((v) => ({ raw: v, norm: normalizeVersion(v) }))
-    .filter((v): v is { raw: string; norm: string } => v.norm !== null)
-    .filter((v) => semver.gt(v.norm, a) && semver.lte(v.norm, b))
-    .sort((x, y) => semver.compare(x.norm, y.norm))
-    .map((v) => v.raw);
+export function versionsBetween(all: string[], from: string, to: string, ecosystem: Ecosystem = 'npm'): string[] {
+  return packageVersionsBetween(all, from, to, ecosystem);
 }

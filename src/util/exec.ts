@@ -26,6 +26,16 @@ export interface CommandResult {
 export interface ExecOptions {
   cwd?: string;
   timeoutMs?: number;
+  /**
+   * Aborts the command, killing the child process.
+   *
+   * `timeoutMs` bounds one command; this bounds the *caller's* whole piece of
+   * work, which is a different question. A benchmark case that has blown its
+   * deadline, or a scan the user cancelled, would otherwise keep a `mvn test`
+   * running to its own ten-minute limit — and those abandoned builds pile up
+   * and starve whatever runs next.
+   */
+  signal?: AbortSignal;
   env?: NodeJS.ProcessEnv;
   maxBuffer?: number;
   /**
@@ -80,6 +90,7 @@ export const execCommand: Exec = (command, args, options = {}) =>
         env: options.env ?? process.env,
         windowsHide: true,
         encoding: 'utf8',
+        ...(options.signal ? { signal: options.signal } : {}),
       },
       (error, stdout, stderr) => {
         process_?.end({ code: error ? 1 : 0 });
@@ -96,7 +107,14 @@ export const execCommand: Exec = (command, args, options = {}) =>
         }
 
         const err = error as NodeJS.ErrnoException & { code?: number | string; killed?: boolean };
-        const failure = err.code === 'ENOENT' ? 'not-found' : err.killed ? 'timeout' : 'error';
+        const failure =
+          err.code === 'ENOENT'
+            ? 'not-found'
+            : // An abort and a timeout are the same fact to a caller: the command
+              // did not get to finish and its output proves nothing.
+              err.killed || err.name === 'AbortError' || err.code === 'ABORT_ERR'
+              ? 'timeout'
+              : 'error';
         recordExecCommand({
           label,
           durationMs: Date.now() - startMs,

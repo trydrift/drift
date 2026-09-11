@@ -1,7 +1,10 @@
 name: Feature request
 description: Suggest something Drift doesn't do yet.
-labels: ["enhancement"]
+labels: ["feature-request", "enhancement"]
 body:
+  - type: markdown
+    attributes:
+      value: Please search existing feature requests first. If one already represents your request, add a 👍 reaction there instead of opening a duplicate.
   - type: textarea
     id: problem
     attributes:

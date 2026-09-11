@@ -1,6 +1,6 @@
-import semver from 'semver';
-import { normalizeVersion } from '../detect/version.js';
+import type { Ecosystem } from '../types.js';
 import { fetchJson } from '../util/http.js';
+import { compareParsedVersions, parsePublishedVersion } from '../version-semantics.js';
 
 export interface ReleaseNote {
   tag: string;
@@ -37,6 +37,7 @@ export async function fetchReleaseNotes(
   githubRepo: string,
   from: string,
   to: string,
+  ecosystem: Ecosystem,
   options: { token?: string; maxReleases?: number } = {},
 ): Promise<ReleaseNote[]> {
   const { token, maxReleases = 25 } = options;
@@ -46,11 +47,13 @@ export async function fetchReleaseNotes(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const lower = normalizeVersion(from);
-  const upper = normalizeVersion(to);
+  const lower = parsePublishedVersion(from, ecosystem);
+  const upper = parsePublishedVersion(to, ecosystem);
   if (!lower || !upper) return [];
 
-  const [lo, hi] = semver.gt(upper, lower) ? [lower, upper] : [upper, lower];
+  const direction = compareParsedVersions(upper, lower);
+  if (direction === null) return [];
+  const [lo, hi] = direction > 0 ? [lower, upper] : [upper, lower];
 
   const collected: ReleaseNote[] = [];
   const PER_PAGE = 100;
@@ -68,20 +71,23 @@ export async function fetchReleaseNotes(
     for (const release of releases) {
       if (release.draft) continue;
 
-      const version = normalizeVersion(release.tag_name);
+      const version = versionFromTag(release.tag_name, ecosystem);
       if (!version) continue;
 
       // Releases come back newest-first, so once we are below the range we can
       // stop paginating instead of walking the project's entire history.
-      if (semver.lte(version, lo)) {
+      const comparedLow = compareParsedVersions(version, lo);
+      const comparedHigh = compareParsedVersions(version, hi);
+      if (comparedLow === null || comparedHigh === null) continue;
+      if (comparedLow <= 0) {
         sawOlderThanRange = true;
         continue;
       }
-      if (semver.gt(version, hi)) continue;
+      if (comparedHigh > 0) continue;
 
       collected.push({
         tag: release.tag_name,
-        version,
+        version: version.raw,
         name: release.name,
         body: release.body ?? '',
         url: release.html_url,
@@ -97,7 +103,7 @@ export async function fetchReleaseNotes(
     if (sawOlderThanRange || releases.length < PER_PAGE) break;
   }
 
-  return selectReleases(collected, maxReleases);
+  return selectReleases(collected, maxReleases, ecosystem);
 }
 
 /**
@@ -115,16 +121,29 @@ export async function fetchReleaseNotes(
  * left goes to the newest remaining releases, which is where "we broke this by
  * accident, sorry" tends to appear.
  */
-export function selectReleases(releases: readonly ReleaseNote[], max: number): ReleaseNote[] {
-  const ordered = [...releases].sort((a, b) => semver.rcompare(a.version, b.version));
+export function selectReleases(
+  releases: readonly ReleaseNote[],
+  max: number,
+  ecosystem: Ecosystem = 'npm',
+): ReleaseNote[] {
+  const parsed = (release: ReleaseNote) => parsePublishedVersion(release.version, ecosystem);
+  const ordered = [...releases].sort((a, b) => {
+    const left = parsed(a);
+    const right = parsed(b);
+    return left && right ? -(compareParsedVersions(left, right) ?? 0) : 0;
+  });
   if (ordered.length <= max) return ordered;
 
   const boundaries = ordered
     .filter((release) => {
-      const parsed = semver.parse(release.version);
-      return parsed !== null && parsed.patch === 0 && !parsed.prerelease.length;
+      const version = parsed(release);
+      return Boolean(version?.release && (version.release[2] ?? 0) === 0 && !version.prerelease);
     })
-    .sort((a, b) => semver.compare(a.version, b.version));
+    .sort((a, b) => {
+      const left = parsed(a);
+      const right = parsed(b);
+      return left && right ? (compareParsedVersions(left, right) ?? 0) : 0;
+    });
 
   const kept = new Map<string, ReleaseNote>();
   for (const release of boundaries) {
@@ -136,5 +155,22 @@ export function selectReleases(releases: readonly ReleaseNote[], max: number): R
     kept.set(release.version, release);
   }
 
-  return [...kept.values()].sort((a, b) => semver.rcompare(a.version, b.version));
+  return [...kept.values()].sort((a, b) => {
+    const left = parsed(a);
+    const right = parsed(b);
+    return left && right ? -(compareParsedVersions(left, right) ?? 0) : 0;
+  });
+}
+
+/** Keep the Git tag intact while extracting only a comparison candidate. */
+function versionFromTag(tag: string, ecosystem: Ecosystem) {
+  const direct = parsePublishedVersion(tag, ecosystem);
+  if (direct) return direct;
+  const candidates = tag.match(/v?\d[0-9A-Za-z.!+_-]*(?:\.[0-9A-Za-z!+_-]+)*/g) ?? [];
+  for (const candidate of candidates) {
+    const parsed = parsePublishedVersion(candidate, ecosystem)
+      ?? (candidate.startsWith('v') ? parsePublishedVersion(candidate.slice(1), ecosystem) : null);
+    if (parsed) return parsed;
+  }
+  return null;
 }

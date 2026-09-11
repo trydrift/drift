@@ -63,6 +63,22 @@ function listing(...files: string[]): Response {
   });
 }
 
+function tarEntry(path: string, content: string): Buffer {
+  const bytes = Buffer.from(content);
+  const header = Buffer.alloc(512);
+  header.write(path, 0, 100);
+  header.write(`${bytes.length.toString(8).padStart(11, '0')}\0`, 124);
+  header.write('0', 156);
+  return Buffer.concat([header, bytes, Buffer.alloc(Math.ceil(bytes.length / 512) * 512 - bytes.length)]);
+}
+
+function emptyPackageTarball(version: string): Buffer {
+  return Buffer.concat([
+    tarEntry('package/package.json', JSON.stringify({ name: 'demo', version, main: 'index.js' })),
+    Buffer.alloc(1024),
+  ]);
+}
+
 describe('remembering the type surface of a published version', () => {
   test('a surface is read once, however many callers ask for it', async () => {
     reset();
@@ -116,7 +132,7 @@ describe('remembering the type surface of a published version', () => {
 
     await assert.rejects(
       () => fetchTypeSurface('demo', '3.0.0'),
-      /could not be fetched/,
+      /artifact could not be inspected/,
       'an unreachable version is reported, not silently empty',
     );
 
@@ -136,6 +152,12 @@ describe('remembering the type surface of a published version', () => {
     const stub = stubFetch((url) => {
       if (isMetadataApi(url)) return listing('package.json');
       if (url.endsWith('/package.json')) return new Response('{"main":"index.js"}', { status: 200 });
+      if (url === 'https://registry.npmjs.org/demo/4.0.0') {
+        return Response.json({ version: '4.0.0', dist: { tarball: 'https://artifacts.example/demo-4.0.0.tgz' } });
+      }
+      if (url === 'https://artifacts.example/demo-4.0.0.tgz') {
+        return new Response(new Uint8Array(emptyPackageTarball('4.0.0')));
+      }
       return new Response('', { status: 404 });
     });
 

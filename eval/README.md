@@ -262,22 +262,29 @@ the wrong line.
 **D4 / false-safe** requires two things: adjudicated truth is `unsafe`, *and*
 Drift's user-facing verdict is safe-equivalent.
 
-A verdict is safe-equivalent when it tells the user their repository is
-unaffected: `no-incompatible-change-in-checked-surfaces`, `clean`, and
-`detected-not-locally-reachable`. The third is included deliberately.
-Production only emits it once localization has actually run — it is
-distinguished from `verification-incomplete` on exactly that — so it means "we
-searched this repository and the changed symbol is not used here", which is a
-conclusion about the user's code and the sentence they act on. Excluding it
-under-counted false-safes and made a genuine control case structurally
-incapable of ever scoring `correctSafe`.
+The `FindingVerdict` half of "safe-equivalent" is production's own
+`isSafeEquivalentVerdict` (`src/report/confidence.ts`), imported rather than
+re-listed — only `no-incompatible-change-in-checked-surfaces`. The two
+`UpgradeSeverity` analogs a component adapter may report instead are `clean`
+(no breaking change at all) and `upstream-only` (rendered to the user as
+"Verified safe", and only emitted behind an isolated, compile-capable
+verification that cleared every prediction).
+
+`detected-not-locally-reachable` is **not** safe-equivalent. A completed
+syntactic search that found nothing is not affirmative evidence the repository
+is unaffected — structural typing, inferred types, wrappers, generated code,
+dynamic dispatch, behavioural changes and API-ownership relationships all
+defeat it — so production treats that verdict as "review before upgrading". A
+known-breaking upgrade Drift reports that way is a conservative miss, not a
+false-safe.
 
 Every remaining verdict (`insufficient-evidence`, `verification-incomplete`,
-`unchecked`, `verification-failed`, `upstream-only`) describes a check that did
-not complete and is never read as a safety claim in either direction. Widening
-that set further is the easiest way to improve a false-safe rate without
-changing the product, which is why it is a named constant with its reasoning
-attached.
+`unchecked`, `verification-failed`, `detected-not-locally-reachable`) describes
+a check that did not complete or did not establish safety, and none is read as
+a safety claim in either direction. Widening that set is the easiest way to
+improve a false-safe rate without changing the product, which is why the
+`FindingVerdict` half is delegated to the production predicate rather than
+maintained here.
 
 An **absence of findings is never by itself safe.** A bump with no breaking
 change reduces to `no-incompatible-change-in-checked-surfaces` only when the

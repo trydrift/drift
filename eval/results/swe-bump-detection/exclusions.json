@@ -13,7 +13,7 @@
       "baseCommit": null,
       "dependency": "express-jwt",
       "fromVersion": null,
-      "toVersion": "^8.4.1",
+      "toVersion": null,
       "packageManager": "npm",
       "requiredRuntime": "v20.12.2",
       "oracleCommand": "tsc --noEmit",
@@ -21,7 +21,10 @@
       "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
       "extra": {
         "versionToIsRange": "true",
-        "manifestVersionTo": "unavailable"
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
       }
     }
   },
@@ -39,7 +42,7 @@
       "baseCommit": null,
       "dependency": "axios",
       "fromVersion": null,
-      "toVersion": "^1.6.8",
+      "toVersion": null,
       "packageManager": "npm",
       "requiredRuntime": "v20.12.2",
       "oracleCommand": "tsc --noEmit",
@@ -47,7 +50,10 @@
       "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
       "extra": {
         "versionToIsRange": "true",
-        "manifestVersionTo": "unavailable"
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
       }
     }
   }

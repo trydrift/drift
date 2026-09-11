@@ -370,8 +370,17 @@ export async function findingsFromPlan(
     }
 
     if (breakingBlocks.length === 0 && extraBlocks.length === 0) {
-      if (!includeInformational || !rationale) continue;
-      extraBlocks.push(buildOutdatedBlock(change, rationale));
+      // An upstream breaking change with no located site is *not* "safe to
+      // upgrade": a completed search that found nothing is not proof the
+      // change cannot reach this repository. It gets a review block, never
+      // `buildOutdatedBlock`'s "no breaking changes found" note.
+      if (upstreamOnlyCount > 0) {
+        if (!includeInformational) continue;
+        extraBlocks.push(buildImpactUnresolvedBlock(change, upstreamOnlyCount));
+      } else {
+        if (!includeInformational || !rationale) continue;
+        extraBlocks.push(buildOutdatedBlock(change, rationale));
+      }
     }
 
     const commit = plan.commits.find((c) => allBreaking.some((b) => c.breakingChangeIds.includes(b.id)));
@@ -762,6 +771,24 @@ function buildOutdatedBlock(change: DependencyChange, rationale: UpgradeRational
     lines: [`**Update available** (${versionMove}), with no breaking changes or advisories found.`],
     relatedCandidates: [],
     ruleNameSuffix: 'Outdated — safe to upgrade',
+  };
+}
+
+/**
+ * An upstream breaking change that localization did not tie to any code here.
+ * Not a safety claim: structural typing, wrappers, generated code, dynamic
+ * dispatch and behavioural changes all evade a syntactic search, so absence of
+ * a match is not proof of absence of impact.
+ */
+function buildImpactUnresolvedBlock(change: DependencyChange, count: number): FindingBlock {
+  const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
+  return {
+    level: 'warning',
+    lines: [
+      `**Breaking change detected upstream** (${versionMove}). ${count} upstream breaking ${plural(count, 'change was', 'changes were')} found, and no code in this repository was found to use the affected parts — but a completed search is not proof the change cannot reach this repository. Review before upgrading.`,
+    ],
+    relatedCandidates: [],
+    ruleNameSuffix: 'Outdated — review before upgrading',
   };
 }
 

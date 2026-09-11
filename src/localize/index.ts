@@ -12,6 +12,10 @@ import { isRuntimeConfigPath, type SourceFile } from '../index/walk.js';
 import { withinMember } from '../detect/workspace.js';
 import { moduleMapKey, type ModuleMaps } from './modules.js';
 import { acceptsCallOfArity, callCannotResolveTo } from '../evidence/type-surface.js';
+import {
+  analyzeRuntimeRequirement,
+  type RuntimeRequirementAnalysis,
+} from '../rationale/compatibility.js';
 
 /**
  * Localization: where does this breaking change actually bite?
@@ -80,6 +84,8 @@ export interface LocalizeOptions {
    * boundary still resolves — only the sites are scoped.
    */
   member?: string;
+  /** Every workspace member, used to keep runtime declarations out of siblings. */
+  members?: readonly string[];
   /**
    * Module names read from the published artefacts, keyed by `moduleMapKey`.
    *
@@ -99,6 +105,48 @@ export interface LocalizeOptions {
   maxReExportDepth?: number;
 }
 
+/**
+ * Everything localization found — the sites, and the runtime compatibility
+ * states that are *not* derivable from them.
+ *
+ * `localize` returns only `sites` for the many callers that need nothing
+ * else. Anything that has to decide a severity or a recommendation must use
+ * {@link localizeWithRuntime} instead, because "zero runtime sites" is
+ * produced identically by a repository that satisfies the requirement and one
+ * that never declared a runtime at all.
+ */
+/**
+ * Per-dependency localization funnel counts.
+ *
+ * Kept beside the sites, never derived from them: `sites.length === 0` cannot
+ * tell a reader whether the dependency had no importer in this repository at
+ * all, or had importers that simply never used the changed symbol. Those are
+ * different misses with different fixes, and the benchmark miss-reason funnel
+ * (`eval/src/external/impact-funnel.ts`) needs the two separated. Every count
+ * is a fact about what the search looked at, not a judgement about it.
+ */
+export interface LocalizationDiagnostic {
+  dependency: string;
+  ecosystem: Ecosystem;
+  /**
+   * Files that import this dependency (directly or through a re-export edge
+   * the graph walk followed), scoped to the member whose manifest moved.
+   * Zero means nothing in this repository imports the dependency.
+   */
+  importerCandidateFiles: number;
+  /** Breaking changes for this dependency that a source search was attempted for. */
+  changesSearched: number;
+  /** Impact sites found across every change for this dependency. */
+  sitesFound: number;
+}
+
+export interface Localization {
+  sites: ImpactSite[];
+  runtimeAnalyses: RuntimeRequirementAnalysis[];
+  /** One row per dependency a source search was attempted for. */
+  diagnostics: LocalizationDiagnostic[];
+}
+
 export function localize(
   breakingChanges: readonly BreakingChange[],
   dependencyChanges: readonly DependencyChange[],
@@ -106,7 +154,17 @@ export function localize(
   files: readonly SourceFile[],
   options: LocalizeOptions,
 ): ImpactSite[] {
-  const { logger, maxSitesPerChange = 100, member, moduleMaps, maxReExportDepth = 3 } = options;
+  return localizeWithRuntime(breakingChanges, dependencyChanges, index, files, options).sites;
+}
+
+export function localizeWithRuntime(
+  breakingChanges: readonly BreakingChange[],
+  dependencyChanges: readonly DependencyChange[],
+  index: RepoIndex,
+  files: readonly SourceFile[],
+  options: LocalizeOptions,
+): Localization {
+  const { logger, maxSitesPerChange = 100, member, members, moduleMaps, maxReExportDepth = 3 } = options;
 
   const contentByPath = new Map(files.map((f) => [f.path, f.content]));
   const indexByPath = new Map(index.files.map((f) => [f.path, f]));
@@ -125,6 +183,38 @@ export function localize(
   }
 
   const sites: ImpactSite[] = [];
+  const runtimeAnalyses: RuntimeRequirementAnalysis[] = [];
+
+  // Per-dependency funnel counts, accumulated in the same pass. `importerCandidateFiles`
+  // is the largest candidate set seen across this dependency's changes rather
+  // than a sum, because the re-export graph walk produces the same file set for
+  // every change on the same dependency — summing it would just multiply by the
+  // change count.
+  const diagnosticsByDependency = new Map<string, LocalizationDiagnostic>();
+  const recordDiagnostic = (
+    change: BreakingChange,
+    update: { importerCandidateFiles?: number; searched?: boolean; sitesFound?: number },
+  ): void => {
+    const existing =
+      diagnosticsByDependency.get(change.dependency) ??
+      ({
+        dependency: change.dependency,
+        ecosystem: (ecosystemsByName.get(change.dependency) ?? [])[0] ?? ('npm' as Ecosystem),
+        importerCandidateFiles: 0,
+        changesSearched: 0,
+        sitesFound: 0,
+      } satisfies LocalizationDiagnostic);
+    if (update.importerCandidateFiles !== undefined) {
+      existing.importerCandidateFiles = Math.max(existing.importerCandidateFiles, update.importerCandidateFiles);
+    }
+    if (update.searched) existing.changesSearched += 1;
+    if (update.sitesFound) existing.sitesFound += update.sitesFound;
+    // A site can only come from a candidate file, so the importer count can
+    // never honestly be below the site count even on the branches that do not
+    // surface their own candidate set.
+    existing.importerCandidateFiles = Math.max(existing.importerCandidateFiles, existing.sitesFound);
+    diagnosticsByDependency.set(change.dependency, existing);
+  };
 
   /**
    * `candidateFiles` walks this repository's re-export graph from every
@@ -150,23 +240,27 @@ export function localize(
     // matches comments and documentation, which is a pure false positive — the
     // fix lives in CI config, engine fields, and container images.
     if (change.kind === 'runtime-requirement') {
-      sites.push(...inMember(localizeRuntimeRequirement(change, contentByPath), member));
+      const analysis = localizeRuntimeRequirement(change, contentByPath, member, members);
+      if (analysis) {
+        runtimeAnalyses.push(analysis);
+        sites.push(...analysis.sites);
+      }
       continue;
     }
 
     if (change.kind === 'module-system-change') {
-      sites.push(
-        ...inMember(
-          localizeModuleSystemChange(
-            change,
-            index,
-            contentByPath,
-            ecosystemsByName.get(change.dependency) ?? [],
-            moduleMaps,
-          ),
-          member,
+      const moduleSites = inMember(
+        localizeModuleSystemChange(
+          change,
+          index,
+          contentByPath,
+          ecosystemsByName.get(change.dependency) ?? [],
+          moduleMaps,
         ),
+        member,
       );
+      sites.push(...moduleSites);
+      recordDiagnostic(change, { searched: true, sitesFound: moduleSites.length });
       continue;
     }
 
@@ -190,6 +284,8 @@ export function localize(
       (file) => member === undefined || withinMember(file.path, member),
     );
 
+    recordDiagnostic(change, { importerCandidateFiles: candidates.length, searched: true });
+
     if (candidates.length === 0) {
       logger.debug(`No importers found for ${change.dependency}; ${change.id} has no impact sites`);
       continue;
@@ -205,6 +301,7 @@ export function localize(
       reach,
     );
     sites.push(...found);
+    recordDiagnostic(change, { sitesFound: found.length });
 
     if (found.length >= maxSitesPerChange) {
       logger.warn(
@@ -213,7 +310,7 @@ export function localize(
     }
   }
 
-  return sites;
+  return { sites, runtimeAnalyses, diagnostics: [...diagnosticsByDependency.values()] };
 }
 
 function localizeModuleSystemChange(
@@ -318,60 +415,22 @@ function inMember(sites: readonly ImpactSite[], member: string | undefined): Imp
  * engine fields, version files, container images — and matches the declaration
  * line rather than the runtime's name. `.nvmrc` and friends contain nothing but
  * the version, so the whole file is the site.
+ *
+ * The verdict itself is not computed here. `analyzeRuntimeRequirement` owns
+ * the whole state machine (see `rationale/compatibility.ts`) and returns both
+ * the state and the sites that illustrate it, so a caller that needs to know
+ * whether compatibility was established never has to infer it from how many
+ * sites came back.
  */
 function localizeRuntimeRequirement(
   change: BreakingChange,
   contentByPath: Map<string, string>,
-): ImpactSite[] {
-  const runtime = (change.symbols[0] ?? 'node').toLowerCase().replace('.js', '');
-  const declaration = DECLARATION_MATCHERS[runtime] ?? DECLARATION_MATCHERS.node!;
-
-  const sites: ImpactSite[] = [];
-
-  for (const [path, content] of contentByPath) {
-    if (!isRuntimeConfigPath(path)) continue;
-
-    const bare = /(^|\/)\.(nvmrc|node-version|ruby-version|python-version|tool-versions)$/.test(path);
-    if (bare) {
-      sites.push({
-        breakingChangeId: change.id,
-        file: path,
-        line: 1,
-        excerpt: content.trim().split('\n')[0]?.slice(0, 200) ?? '',
-        matchedSymbol: change.symbols[0] ?? runtime,
-        confidence: 'high',
-      });
-      continue;
-    }
-
-    const lines = content.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]!;
-      if (!declaration.test(line)) continue;
-
-      sites.push({
-        breakingChangeId: change.id,
-        file: path,
-        line: i + 1,
-        excerpt: line.trim().slice(0, 200),
-        matchedSymbol: change.symbols[0] ?? runtime,
-        confidence: 'high',
-      });
-    }
-  }
-
-  return sites;
+  member?: string,
+  allMembers?: readonly string[],
+): RuntimeRequirementAnalysis | null {
+  const files = [...contentByPath].map(([path, content]) => ({ path, content }));
+  return analyzeRuntimeRequirement(change, files, member, allMembers);
 }
-
-/** Where each runtime's version is declared, per file convention. */
-const DECLARATION_MATCHERS: Record<string, RegExp> = {
-  node: /node[-_]?version\s*:|"node"\s*:|FROM\s+node:|engines/i,
-  python: /python[-_]?version\s*:|requires-python|python_requires|FROM\s+python:/i,
-  ruby: /ruby[-_]?version\s*:|^\s*ruby\s+["']|FROM\s+ruby:/i,
-  go: /go[-_]?version\s*:|^go\s+\d|FROM\s+golang:/i,
-  java: /java[-_]?version\s*:|<maven\.compiler|FROM\s+(?:openjdk|eclipse-temurin):/i,
-  rust: /rust[-_]?version\s*:|channel\s*=|FROM\s+rust:/i,
-};
 
 /**
  * Files worth searching for a given breaking change.
@@ -380,6 +439,39 @@ const DECLARATION_MATCHERS: Record<string, RegExp> = {
  * endpoint has no import edge, so those fall back to a whole-repo search. The
  * symbols there are URL paths, which are specific enough not to over-match.
  */
+/**
+ * Import roots implied by a set of fully-qualified Java symbols.
+ *
+ * `hudson.model.Run.getLog` yields `hudson.model.Run` (an `import` target) and
+ * `hudson.model` (a wildcard-import target, and what the prefix walk matches).
+ * A symbol whose last uppercase-initial segment is not at least two deep
+ * (`Run`, `getLog`) contributes nothing — there is no package to import.
+ */
+export function javaImportRootsFromSymbols(symbols: readonly string[]): string[] {
+  const roots = new Set<string>();
+  for (const raw of symbols) {
+    // Cut at the first `(` (a method's parameter list) or `<` (a generic
+    // argument). A plain index scan rather than a `.*$` regex, which
+    // backtracks on multi-line input.
+    const trimmed = raw.trim();
+    const cut = trimmed.search(/[(<]/);
+    const value = cut === -1 ? trimmed : trimmed.slice(0, cut);
+    if (!value.includes('.')) continue;
+    const parts = value.split('.').filter(Boolean);
+    let classIdx = -1;
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (/^[A-Z]/.test(parts[i]!)) {
+        classIdx = i;
+        break;
+      }
+    }
+    if (classIdx < 1) continue; // need at least `package.Class`
+    roots.add(parts.slice(0, classIdx + 1).join('.')); // import a.b.Class;
+    roots.add(parts.slice(0, classIdx).join('.')); // import a.b.*;  + prefix walk
+  }
+  return [...roots].filter(Boolean);
+}
+
 function candidateFiles(
   change: BreakingChange,
   index: RepoIndex,
@@ -392,7 +484,16 @@ function candidateFiles(
     change.kind === 'removed-endpoint' || change.kind === 'changed-endpoint';
   if (isEndpointChange) return { files: index.files, names: [], reach: new Map() };
 
-  const { names, exact } = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
+  const base = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
+  // A Maven coordinate's groupId is not the Java package it ships
+  // (`org.jenkins-ci.plugins` ships `hudson.*`; `com.google.guava` ships
+  // `com.google.common`), so deriving import names from the coordinate finds
+  // no consumer files. japicmp's own symbols *are* fully-qualified Java names,
+  // so their class and package paths are the authoritative import roots.
+  const names = ecosystemsForName.includes('maven')
+    ? [...new Set([...base.names, ...javaImportRootsFromSymbols(change.symbols)])]
+    : base.names;
+  const exact = base.exact;
   const paths = new Set<string>();
 
   for (const name of names) {
@@ -901,6 +1002,21 @@ function searchFiles(
     const { lines } = view;
 
     for (const symbol of change.symbols) {
+      const derivedOwner = ownerForDerivedSymbol(change, symbol);
+      const ownerBindings = derivedOwner
+        ? bindingsForOwner(derivedOwner, relevantImports, content, inherited?.inherited)
+        : new Set<string>();
+      const receiverBindings = derivedOwner
+        ? receiversConstructedFrom(content, ownerBindings)
+        : new Set<string>();
+      const dependencyOwnedReceivers = new Set([...ownerBindings, ...receiverBindings]);
+      const directlyImportedLeaf = derivedOwner
+        ? directlyImportsQualifiedLeaf(change, symbol, relevantImports)
+        : importedNames.has(symbol);
+      const topLevelQualifiedLeaf = derivedOwner
+        ? qualifiedLeafBelongsToDependencyRoot(change, symbol, names)
+        : false;
+
       const matcher = invocationOnly ? invocationMatcherFor(symbol) : matcherFor(symbol);
       if (!matcher) continue;
 
@@ -942,10 +1058,33 @@ function searchFiles(
           continue;
         }
 
+        if (
+          hit &&
+          change.fromKind === 'function' &&
+          (candidate.language === 'c' || candidate.language === 'cpp') &&
+          /^\s*::/.test(searchable.slice(hit.index + hit[0].length))
+        ) {
+          // A C++ function cannot own a nested name. `spdlog::level::trace`
+          // therefore cannot be a use of a removed function named
+          // `spdlog::level`; it is a namespace/type path that happens to share
+          // the prefix.
+          continue;
+        }
+
+        if (hit && declarationOccurrence(searchable, hit.index, candidate.language)) continue;
+
         // What is written immediately before the match decides whether it is a
         // use of this dependency at all, and neither rule can be expressed in
         // the matcher because both are about a *different* name.
-        if (hit && qualifiedByAnother(searchable, hit.index, importedNames, foreignNames, locallyDefined, candidate.language)) {
+        if (hit && qualifiedByAnother(
+          searchable,
+          hit.index,
+          importedNames,
+          foreignNames,
+          locallyDefined,
+          candidate.language,
+          dependencyOwnedReceivers,
+        )) {
           continue;
         }
         if (hit && isAtomLiteral(searchable, hit.index, candidate.language)) continue;
@@ -967,6 +1106,23 @@ function searchFiles(
         const resolvedByPath =
           root !== undefined &&
           (importedNames.has(root) || importedNames.has('*') || matchesImportName(root, names));
+
+        // Surface diffs retain a bare leaf beside a qualified member so direct
+        // imports and destructuring can still be found. The leaf itself is not
+        // ownership evidence. Keep it only when this occurrence is directly
+        // imported, inherited through a re-export, qualified by the imported
+        // owner (including an alias/module path), or reached through a receiver
+        // constructed from that owner. This is name-agnostic: `find`, `open`,
+        // `parse`, and every future generic leaf follow the same rule.
+        let resolvedByOwner = false;
+        if (derivedOwner && !directlyImportedLeaf) {
+          const inheritedLeaf = topLevelQualifiedLeaf && (inherited?.inherited.has(symbol) ?? false);
+          const ownerOnPath =
+            root !== undefined &&
+            (ownerBindings.has(root) || receiverBindings.has(root) || Boolean(chain?.some((part) => ownerBindings.has(part))));
+          if (!inheritedLeaf && !ownerOnPath) continue;
+          resolvedByOwner = ownerOnPath;
+        }
 
         // `this.render()`, `self.render()`, `super.render()` — a member of the
         // enclosing object, which no import ever binds. This is the single
@@ -997,7 +1153,7 @@ function searchFiles(
           importedNames.has(symbol.split('.')[0] ?? symbol) ||
           importedNames.has('*');
         const resolvable = !symbol.includes('.') && !livesInStringLiteral(symbol);
-        if (bindingsEnumerated && resolvable && !bound && !resolvedByPath) continue;
+        if (bindingsEnumerated && resolvable && !bound && !resolvedByPath && !resolvedByOwner) continue;
 
         // The compiler's answer, reached without a compiler: this call passes
         // arguments the new signature still accepts, in positions whose type
@@ -1011,7 +1167,7 @@ function searchFiles(
         // file provably bound from the dependency. `chain` is absent only for
         // an unqualified match, and for the call-opens-on-next-line fallback,
         // where there is no match index on this line to read a receiver from.
-        const unboundReceiver = root !== undefined && !resolvedByPath;
+        const unboundReceiver = root !== undefined && !resolvedByPath && !resolvedByOwner;
 
         sites.push({
           breakingChangeId: change.id,
@@ -1027,7 +1183,7 @@ function searchFiles(
           // absent is honest there, since a fix plan must not invent a
           // position Drift never established.
           ...(hit ? { column: hit.index, matchedText: hit[0] } : {}),
-          confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited, unboundReceiver),
+          confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited, unboundReceiver, resolvedByOwner),
         });
       }
     }
@@ -1117,7 +1273,9 @@ function invocationMatcherFor(symbol: string): RegExp | null {
   // A path-like symbol is a URL or a module specifier, never a callee.
   if (trimmed.startsWith('/') || trimmed.startsWith('@')) return matcherFor(trimmed);
 
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const escaped = trimmed
+    .replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+    .replace(/\\\./g, '(?:\\.|::)');
   const leading = /^\w/.test(trimmed) ? '\\b' : '(?<![\\w$])';
   // A type-argument list may contain nested angle brackets but never a brace,
   // a semicolon, or an assignment — those end the expression instead.
@@ -1279,11 +1437,13 @@ function qualifiedByAnother(
   foreignNames: ReadonlySet<string>,
   locallyDefined: ReadonlySet<string>,
   language: FileIndex['language'],
+  dependencyOwnedReceivers: ReadonlySet<string> = new Set(),
 ): boolean {
   const receiver = receiverChainOf(line, at, language)?.at(-1);
   if (!receiver) return false;
   // A receiver this file bound from *this* dependency is the opposite signal.
   if (importedNames.has(receiver) || importedNames.has('*')) return false;
+  if (dependencyOwnedReceivers.has(receiver)) return false;
   return foreignNames.has(receiver) || locallyDefined.has(receiver);
 }
 
@@ -1307,7 +1467,7 @@ function receiverChainOf(
   language: FileIndex['language'],
 ): string[] | undefined {
   const pattern =
-    language === 'php'
+    language === 'php' || language === 'c' || language === 'cpp'
       ? /([A-Za-z_$][\w$]*)\s*(?:\.|::|->)\s*$/
       : /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/;
 
@@ -1324,6 +1484,22 @@ function receiverChainOf(
   }
 
   return chain.length > 0 ? chain : undefined;
+}
+
+function declarationOccurrence(
+  line: string,
+  at: number,
+  language: FileIndex['language'],
+): boolean {
+  if (language !== 'c' && language !== 'cpp') return false;
+  const before = line.slice(0, at).trim();
+  const after = line.slice(at);
+  if (!before || !/^\w+\s*\(/.test(after)) return false;
+  if (/(?:\.|::|->)\s*$/.test(before)) return false;
+  // A one-word statement can otherwise look exactly like a one-word return
+  // type (`return dependencyCall()` versus `Widget factory()`).
+  if (/^(?:return|co_return|throw|case|delete|new)$/.test(before)) return false;
+  return /^(?:(?:virtual|static|inline|constexpr|consteval|constinit|explicit|friend|extern)\s+)*(?:const\s+)?(?:(?:unsigned|signed|long|short)\s+)*[\w:<>]+(?:\s*[*&])?$/.test(before);
 }
 
 /**
@@ -1401,7 +1577,9 @@ function matcherFor(symbol: string): RegExp | null {
   const trimmed = symbol.trim();
   if (!trimmed || trimmed.length < 2) return null;
 
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const escaped = trimmed
+    .replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+    .replace(/\\\./g, '(?:\\.|::)');
 
   // URL paths: match as a string fragment rather than an identifier, since
   // `/users` is not an identifier in any language.
@@ -1414,6 +1592,174 @@ function matcherFor(symbol: string): RegExp | null {
   const trailing = /\w$/.test(trimmed) ? '\\b' : '(?![\\w$])';
 
   return new RegExp(`${leading}${escaped}${trailing}`);
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** The owner of a qualified symbol when `symbol` is a derived bare leaf. */
+function ownerForDerivedSymbol(change: BreakingChange, symbol: string): string | undefined {
+  if (symbol.includes('.') || symbol.includes('::')) return undefined;
+  for (const candidate of change.symbols) {
+    if (candidate === symbol || (!candidate.includes('.') && !candidate.includes('::'))) continue;
+    const parts = candidate.split(/[.:]+/).filter(Boolean);
+    if (parts.at(-1) === symbol && parts.length >= 2) return parts.at(-2);
+  }
+  return undefined;
+}
+
+function qualifiedCandidatesForLeaf(change: BreakingChange, symbol: string): string[] {
+  return change.symbols.filter((candidate) => {
+    if (candidate === symbol || (!candidate.includes('.') && !candidate.includes('::'))) return false;
+    return candidate.split(/[.:]+/).filter(Boolean).at(-1) === symbol;
+  });
+}
+
+function normalizedApiPath(value: string): string {
+  return value
+    .replace(/^@/, '')
+    .replace(/::|[\\/]/g, '.')
+    .replace(/\.+/g, '.')
+    .replace(/^\.|\.$/g, '')
+    .toLowerCase();
+}
+
+/**
+ * A bare imported leaf belongs to a qualified finding only when the import's
+ * module is the finding's actual owner path. Merely importing the same package
+ * is insufficient: `QueryDataOptions.onError` is not the top-level `onError`
+ * exported from `@apollo/client/link/error`, and an internal
+ * `Backend.load_pem_private_key` is not cryptography's public serialization
+ * function of the same name.
+ */
+function directlyImportsQualifiedLeaf(
+  change: BreakingChange,
+  symbol: string,
+  imports: readonly ImportRecord[],
+): boolean {
+  for (const candidate of qualifiedCandidatesForLeaf(change, symbol)) {
+    const parts = candidate.split(/[.:]+/).filter(Boolean);
+    const ownerPath = normalizedApiPath(parts.slice(0, -1).join('.'));
+    if (!ownerPath) continue;
+    for (const record of imports) {
+      if (!record.bindings.includes(symbol)) continue;
+      const paths = new Set([record.specifier, record.packageName, ...importKeys(record)].map(normalizedApiPath));
+      if (paths.has(ownerPath)) return true;
+      // Re-export inference needs the concrete module specifier. The package
+      // root is too broad: every internal path starts with `cryptography`, but
+      // importing one public function from that package does not make it an
+      // internal Backend method with the same leaf.
+      for (const importedPath of [normalizedApiPath(record.specifier)]) {
+        if (!ownerPath.startsWith(`${importedPath}.`)) continue;
+        const implementationSuffix = ownerPath.slice(importedPath.length + 1).split('.');
+        // Static Python APIs are often re-exported one level above a lowercase
+        // implementation module (`cryptography.x509.base.Certificate` from
+        // `cryptography.x509`). Permit that accountable path relation, but not
+        // a class/member suffix such as `Backend.load_*` or
+        // `QueryDataOptions.onError`.
+        if (implementationSuffix.every((part) => /^[a-z_][a-z0-9_]*$/.test(part))) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function qualifiedLeafBelongsToDependencyRoot(
+  change: BreakingChange,
+  symbol: string,
+  dependencyNames: readonly string[],
+): boolean {
+  const roots = new Set(dependencyNames.map(normalizedApiPath));
+  return qualifiedCandidatesForLeaf(change, symbol).some((candidate) => {
+    const parts = candidate.split(/[.:]+/).filter(Boolean);
+    return roots.has(normalizedApiPath(parts.slice(0, -1).join('.')));
+  });
+}
+
+function bindingsForOwner(
+  owner: string,
+  imports: readonly ImportRecord[],
+  content: string,
+  inherited: ReadonlySet<string> | undefined,
+): Set<string> {
+  const bindings = new Set<string>();
+  if (inherited?.has(owner)) bindings.add(owner);
+
+  const lines = content.split('\n');
+  for (const record of imports) {
+    if (record.bindings.includes(owner) || record.bindings.includes('*')) bindings.add(owner);
+    // A package published through `export =` or `export default` names its API
+    // `default`, which is not a name anyone writes. The importing file chose
+    // one — `import glob from 'glob'`, `const fs = require('filesize')` — and
+    // that is what `glob.sync(...)` is written against.
+    if (owner === 'default' && record.defaultBinding) bindings.add(record.defaultBinding);
+    // Java binds a class by its simple name: `import a.b.Class;` (specifier
+    // `a.b.Class`) and `import a.b.*;` (specifier `a.b`, `*` binding) both make
+    // `Class` usable for an `owner` of `a.b.Class`. `receiversConstructedFrom`
+    // needs that simple name to match `Class c = new Class()`.
+    const ownerIsDotted = owner.includes('.');
+    const simpleName = owner.split('.').pop();
+    if (ownerIsDotted && simpleName) {
+      if (record.specifier === owner) bindings.add(simpleName);
+      if (record.bindings.includes('*') && owner.startsWith(`${record.specifier}.`)) bindings.add(simpleName);
+    }
+    const line = lines[record.line - 1] ?? '';
+    const alias = new RegExp(`\\b${escapeRegExp(owner)}\\s+as\\s+([A-Za-z_$][\\w$]*)`).exec(line)?.[1];
+    if (alias) bindings.add(alias);
+  }
+  return bindings;
+}
+
+/**
+ * Names in this file that hold a value of a type this dependency owns.
+ *
+ * This is the join that turns a member-level finding into a site. japicmp says
+ * `CommonAnnotationBeanPostProcessor.postProcessPropertyValues` was removed; the
+ * repository writes `p.postProcessPropertyValues(...)`. Nothing links the two
+ * except knowing that `p` holds one of those — so every form a language has for
+ * *binding a name to a dependency type* has to be read here, or the finding
+ * lands nowhere and the change is reported as upstream-only.
+ *
+ * The forms fall into two shapes, and only ever having read the first is what
+ * held Java localization down: an assignment (`Client q = new Client()`) was
+ * recognised, but a **method parameter** was not, because the terminator after
+ * the bound name is `)` or `,` rather than `=` or `;`. Dependency injection —
+ * constructor parameters, `@Bean` methods, handler arguments — is how Java
+ * receives a framework object *most of the time*, so the common case was the
+ * one being missed. The same hole covered TS `function f(c: Client)` and
+ * Python `def f(c: Client)`, whose annotations put the type after the name.
+ */
+function receiversConstructedFrom(content: string, owners: ReadonlySet<string>): Set<string> {
+  const receivers = new Set<string>();
+  for (const owner of owners) {
+    const escaped = escapeRegExp(owner);
+    const patterns = [
+      new RegExp(`\\b(?:const|let|var|val|final|auto|let(?:\\s+mut)?)\\s+([A-Za-z_$][\\w$]*)\\s*(?::\\s*[^=]+)?=\\s*(?:new\\s+)?${escaped}(?:::new)?\\s*[({]`, 'g'),
+      new RegExp(`\\b(?:new\\s+)?${escaped}\\s*\\(.*?\\)\\s*as\\s+([A-Za-z_$][\\w$]*)`, 'g'),
+      new RegExp(`^\\s*([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}\\s*\\(`, 'gm'),
+      new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*=\\s*new\\s+${escaped}\\s*\\(`, 'g'),
+      new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}::new\\s*\\(`, 'g'),
+      // Type-before-name: Java, Kotlin, C#, C. The terminator set is what
+      // decides which *declarations* count, and it admits `)` and `,` so a
+      // method parameter binds, and `:` (not `::`) so a for-each header
+      // (`for (Client it : list)`) does too. `(?<!\bnew\s)` keeps the call
+      // `new Client (arg)` from binding `arg` as if it were a declaration.
+      new RegExp(
+        `(?<!\\bnew\\s)\\b${escaped}(?:\\s*<[^;=(){}]+>)?(?:\\s*\\[\\])?\\s+([A-Za-z_$][\\w$]*)\\s*(?:[({;=,)]|:(?!:))`,
+        'g',
+      ),
+      // Name-before-type: TypeScript, Python, Kotlin, Swift. One pattern covers
+      // annotated parameters, class properties, constructor parameter
+      // properties, and annotated locals. The trailing `(?!\s*\.)` refuses
+      // `x: a.b.Client` matching on the package root rather than the type.
+      new RegExp(`([A-Za-z_$][\\w$]*)\\s*:\\s*(?:readonly\\s+)?${escaped}\\b(?!\\s*\\.)`, 'g'),
+    ];
+    for (const pattern of patterns) {
+      for (const match of content.matchAll(pattern)) if (match[1]) receivers.add(match[1]);
+    }
+  }
+  return receivers;
 }
 
 /**
@@ -1464,6 +1810,7 @@ function confidenceFor(
   indirect: boolean,
   inherited: ReadonlySet<string> | undefined,
   unboundReceiver: boolean,
+  resolvedByOwner = false,
 ): Confidence {
   const root = symbol.split('.')[0] ?? symbol;
 
@@ -1479,6 +1826,8 @@ function confidenceFor(
   if (importedNames.has(symbol) || importedNames.has(root) || importedNames.has('*')) {
     return 'high';
   }
+
+  if (resolvedByOwner) return 'high';
 
   // A member access on a receiver this file did not bind from the dependency
   // — `dirs.find(...)` in a file that merely happens to import `zod` too —

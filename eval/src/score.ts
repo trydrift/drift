@@ -1,6 +1,7 @@
 import type { EvalFixture } from './load.ts';
 import { sameTaxonomy, type Adjudication } from './review.ts';
 import type { OracleStageResult } from './oracle.ts';
+import { isSafeEquivalentVerdict, type FindingVerdict } from '../../dist/index.js';
 
 /**
  * v3 replaces the fake `repairOutOfScopeFiles` (always `[]`) and hard-coded
@@ -50,22 +51,27 @@ export type DriftVerdict =
   | 'pending';
 
 /**
- * Kept identical to `eval/src/evaluator/detection.ts`'s set, deliberately, and
- * for the reason argued there: `detected-not-locally-reachable` is a
- * conclusion about the user's own repository — production only emits it when
- * localization actually ran — so it is a safety claim, and treating it as
- * merely inconclusive both under-counted false-safes and made a genuine
- * control case unable to score a correct-safe. Two harnesses disagreeing about
- * what "Drift said it was safe" means would be worse than either answer.
+ * What "Drift told the user this is safe" means for scoring — kept in lockstep
+ * with production's canonical {@link isSafeEquivalentVerdict}
+ * (`src/report/confidence.ts`) plus the single `UpgradeSeverity` analog,
+ * `'clean'` (no breaking change at all).
+ *
+ * `detected-not-locally-reachable` is deliberately **excluded**: production no
+ * longer treats a completed localization with zero hits as a safety claim, so
+ * a known-breaking upgrade Drift reports that way is a conservative miss
+ * (review-needed), not a false-safe.
+ *
+ * `'upstream-only'` **is** included: production renders it as "Verified safe"
+ * and lets bulk upgrade install it, and it is only emitted now behind an
+ * isolated, compile-capable verification that cleared every prediction. Once
+ * it is shown to a user as safe it must be scored as a safety claim — a
+ * known-breaking upgrade Drift reports that way is a false-safe.
  */
-const SAFE_EQUIVALENT_VERDICTS = new Set<DriftVerdict>([
-  'no-incompatible-change-in-checked-surfaces',
-  'clean',
-  'detected-not-locally-reachable',
-]);
+const SAFE_EQUIVALENT_SEVERITY_VERDICTS = new Set<DriftVerdict>(['clean', 'upstream-only']);
 
 export function isUserFacingSafeVerdict(verdict: DriftVerdict): boolean {
-  return SAFE_EQUIVALENT_VERDICTS.has(verdict);
+  if (SAFE_EQUIVALENT_SEVERITY_VERDICTS.has(verdict)) return true;
+  return isSafeEquivalentVerdict(verdict as FindingVerdict);
 }
 
 export type RepairAction = 'repair-attempted' | 'abstained';

@@ -619,6 +619,32 @@ describe('reporting never turns an absence into an all-clear', () => {
     assert.equal(verdictFor(affected), 'locally-affected');
   });
 
+  for (const [name, symbol] of [
+    ['parent POM coordinates', 'pom:parent'],
+    ['BOM dependency management', 'pom:dependencyManagement:org.example:managed'],
+    ['POM plugin management', 'pom:pluginManagement:org.example:plugin'],
+  ] as const) {
+    test(`${name} cannot become a source-reachability all-clear`, () => {
+      const contract = planWith({
+        localizationRan: true,
+        breakingChanges: [breaking({ symbols: [symbol] })],
+      }).breakingChanges[0]!;
+
+      assert.equal(verdictFor(contract), 'verification-incomplete');
+      assert.notEqual(verdictFor(contract), 'detected-not-locally-reachable');
+    });
+  }
+
+  test('NuGet and Pub package contracts use the same non-source verdict rule', () => {
+    for (const symbol of ['nuget:msbuild:build/props.targets', 'pub:assets:assets/schema.json']) {
+      const contract = planWith({
+        localizationRan: true,
+        breakingChanges: [breaking({ symbols: [symbol] })],
+      }).breakingChanges[0]!;
+      assert.equal(verdictFor(contract), 'verification-incomplete');
+    }
+  });
+
   describe('reduceVerdict', () => {
     // The one-repository-wide-conclusion reduction, moved here from the
     // benchmark harness (`eval/src/adapters/end-to-end.ts`) so production has
@@ -773,7 +799,7 @@ describe('reporting never turns an absence into an all-clear', () => {
       assert.equal(resolvePlanVerdict(plan), 'no-incompatible-change-in-checked-surfaces');
     });
 
-    test('4. both dependencies checked, one upstream-only finding: safe-equivalent behaviour is unchanged', () => {
+    test('4. both dependencies checked, one zero-hit finding: stays detected-not-locally-reachable (review needed, not safe)', () => {
       const plan = twoDependencyPlan({
         localizationRan: true,
         checkedSurfaces: [
@@ -992,8 +1018,8 @@ describe('reporting never turns an absence into an all-clear', () => {
       assert.equal(resolvePlanVerdict(plan), 'locally-affected');
 
       const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
-      // The individual finding's own honest, hedged verdict is still there —
-      assert.match(body, /not reachable from this repository/i);
+      // The individual finding's own honest, unresolved verdict is still there —
+      assert.match(body, /could not establish whether this repository is affected/i);
       // — alongside the repository-level measured fact: no impact site means
       // no commit, so the header/commit-plan fallback carries it, reusing the
       // same blocker text the per-finding section does not repeat.

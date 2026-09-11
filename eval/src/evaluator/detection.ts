@@ -1,5 +1,6 @@
 import type { DetectionArtifact } from '../artifacts/prediction.ts';
 import type { Conclusion } from '../review.ts';
+import { isSafeEquivalentVerdict, type FindingVerdict } from '../../../dist/index.js';
 import {
   breakingChangeIdentity,
   dependencyChangeIdentity,
@@ -103,34 +104,36 @@ export interface DetectionScore {
 /**
  * The verdicts that tell a user this upgrade does not affect their repository.
  *
- * Widening this set is the single easiest way to make a false-safe rate look
- * better without changing the product, so it is a named constant with its
- * reasoning attached, and every member has to be defended.
+ * Narrowing this set is not optional: the `FindingVerdict` half now defers to
+ * production's own `isSafeEquivalentVerdict` (`src/report/confidence.ts`), so
+ * the benchmark and the product cannot disagree about what "Drift said it was
+ * safe" means. Only the two `UpgradeSeverity` analogs are listed locally.
  *
- * `no-incompatible-change-in-checked-surfaces` and `clean` are the obvious two.
- * `detected-not-locally-reachable` is the third and was previously excluded on
- * the grounds that it is inconclusive. It is not: production distinguishes it
- * from `verification-incomplete` precisely on whether localization *ran*, so it
- * means "we searched this repository and the changed symbol is not used here",
- * which is a conclusion about the user's code and the sentence they act on.
- * Excluding it was wrong in both directions — it under-counted false-safes,
- * because Drift saying "not reachable from this repository" about code that is
- * in fact affected is exactly the failure this metric exists to catch, and it
- * made a genuine control case (a real upstream break the consumer never calls)
- * structurally incapable of scoring `correctSafe`.
+ * `detected-not-locally-reachable` was previously included on the grounds that
+ * "we searched and found nothing" is a conclusion about the user's code. That
+ * reasoning is now rejected in production: a completed syntactic search misses
+ * structural typing, inferred types, wrappers, generated code, dynamic
+ * dispatch, behavioural changes and ownership relationships, so production
+ * treats that verdict as "review needed", not a safety claim. It is excluded
+ * here to match — a known-breaking upgrade Drift reports that way is a
+ * conservative miss, not a false-safe.
+ *
+ * `clean` and `upstream-only` are the `UpgradeSeverity` analogs a component
+ * adapter may report instead of a `FindingVerdict`: `clean` is no breaking
+ * change at all, and `upstream-only` is only emitted now behind an isolated,
+ * compile-capable verification that cleared every prediction (and is shown to
+ * the user as "Verified safe").
  *
  * Every remaining verdict — `insufficient-evidence`, `verification-incomplete`,
- * `unchecked`, `verification-failed`, `upstream-only` — describes a check that
- * did not complete, and an incomplete check is not a claim about anything.
+ * `unchecked`, `verification-failed`, `detected-not-locally-reachable` —
+ * describes a check that did not complete or did not establish safety, and
+ * none is a claim that the repository is unaffected.
  */
-const SAFE_EQUIVALENT = new Set([
-  'no-incompatible-change-in-checked-surfaces',
-  'clean',
-  'detected-not-locally-reachable',
-]);
+const SAFE_EQUIVALENT_SEVERITY = new Set(['clean', 'upstream-only']);
 
 export function isSafeEquivalent(verdict: string): boolean {
-  return SAFE_EQUIVALENT.has(verdict);
+  if (SAFE_EQUIVALENT_SEVERITY.has(verdict)) return true;
+  return isSafeEquivalentVerdict(verdict as FindingVerdict);
 }
 
 export interface ScoreDetectionInput {

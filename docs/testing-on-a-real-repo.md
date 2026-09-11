@@ -10,13 +10,15 @@ Four ways to try it, in ascending order of commitment. Start at 1.
 > `severityOf`'s verdict agrees with the recorded counts, that every breaking
 > change carries evidence, and that the reported impact counts are internally
 > consistent. Those recordings come from `site/scripts/capture.mjs` against
-> real, large, unrelated-to-Drift repositories (gitlab, kubernetes, deno,
+> real, unrelated-to-Drift repositories (lobsters, kubernetes, deno,
 > scrapy, and twelve others) — they run automatically in CI as part of `npm
 > test`, no network access required.
 
-> **Note:** Drift is not published to the GitHub Marketplace yet, so
-> `uses: trydrift/drift@v0` will not resolve. Until it is, reference the action
-> from your own fork or a local path — both covered below.
+> **Note:** steps 1–3 below deliberately test against a local build or your own
+> fork rather than the published `trydrift/drift@v0` — the point of this guide
+> is trying unreleased source changes before they ship. For the public,
+> released Action, see [deployment.md](deployment.md#1--github-action-recommended)
+> instead.
 
 ---
 

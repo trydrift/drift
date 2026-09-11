@@ -1,5 +1,12 @@
-import type { BreakingChangeKind, ModuleIncompatibleUsage, StructuredFinding } from '../types.js';
+import type {
+  BreakingChangeKind,
+  ModuleIncompatibleUsage,
+  RuntimeName,
+  RuntimeRequirement,
+  StructuredFinding,
+} from '../types.js';
 import { specCodeFor } from '../evidence/spec/index.js';
+import { normalizeRuntimeOperator, RUNTIME_RANGE_GRAMMARS } from './runtime-grammar.js';
 
 /**
  * Deterministic mapping from computed findings and changelog prose to
@@ -41,6 +48,8 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
     case 'exports-require-condition-removed':
     case 'package-type-changed':
       return 'module-system-change';
+    case 'runtime-requirement-raised':
+      return 'runtime-requirement';
 
     default:
       return 'unknown';
@@ -56,7 +65,24 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
   const spec = specCodeFor(code);
   if (spec) return spec.remediation(finding);
 
+  const roleContract = roleContractForSymbol(symbol);
+  if (roleContract && (code === 'export-removed' || code === 'member-removed')) {
+    return `The published ${roleContract} entry \`${symbol}\` was removed. Review the consuming manifest, build, asset, or tooling configuration and update it if it relies on this entry; assess this package-role contract independently of source call signatures.`;
+  }
+  if (roleContract && code === 'signature-changed') {
+    return `The published ${roleContract} entry \`${symbol}\` changed. Review the consuming manifest, build, asset, or tooling configuration against the new contract; this is not an ordinary call-site signature change.`;
+  }
+
   switch (code) {
+    case 'runtime-requirement-raised':
+      // Nothing about this is a call site, so the generic "review usages"
+      // ending is actively wrong: there is one edit, and it is to the build.
+      return (
+        `\`${dependency}\` is now compiled for Java ${finding.after ?? 'a newer release'}. ` +
+        `Raise this project's Java toolchain to match — the compiler release and target in the build ` +
+        `(\`maven.compiler.release\`, \`sourceCompatibility\`/\`targetCompatibility\`), the JDK used in CI, ` +
+        `and any runtime base image — or stay on the previous version. There is no source change that avoids this.`
+      );
     case 'export-removed':
       return `Every use of \`${symbol}\` from \`${dependency}\` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub \`${symbol}\` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.`;
     case 'member-removed':
@@ -127,6 +153,13 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
   }
 }
 
+function roleContractForSymbol(symbol: string): string | null {
+  if (symbol.startsWith('pom:')) return 'Maven POM contract';
+  if (symbol.startsWith('nuget:')) return 'NuGet package contract';
+  if (symbol.startsWith('pub:')) return 'Pub package contract';
+  return null;
+}
+
 /**
  * What actually has to change at a call site for one specific pair of
  * declaration shapes.
@@ -181,6 +214,21 @@ interface ProseRule {
     to?: 'commonjs' | 'esm' | 'dual';
     incompatibleUsage: ModuleIncompatibleUsage[];
   };
+  /**
+   * A refinement rule *names the kind* of a break another rule already found
+   * on the same line — it never establishes one on its own.
+   *
+   * "update the function signatures", "make it async", "use an options object"
+   * are how a maintainer describes a signature change *inside* a
+   * `BREAKING CHANGE:` footer, but the same words also describe an internal
+   * refactor in an ordinary `chore:` / `perf:` subject. A rule broad enough to
+   * catch the former in prose that names no symbol will fire on the latter
+   * too. Marking it `refinement` keeps its precision contribution (a better
+   * `kind` on a line already known to be breaking) while removing its recall
+   * contribution (turning a line breaking on its own) — `matchProse` drops
+   * every refinement match from a line that produced no other match.
+   */
+  refinement?: boolean;
 }
 
 /**
@@ -210,6 +258,72 @@ function verbForms(...stems: readonly string[]): string {
 /** Every mood "remove" is written in across a changelog or a commit subject. */
 const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted');
 
+// A word boundary after the alternation keeps `go` out of "google" and `java`
+// out of "javascript" — a runtime name only counts when it stands on its own.
+const RUNTIME_NAME = String.raw`(node(?:\.js)?|python|go|ruby|java|rust)\b`;
+// An optional `v` covers "Node v20" / "Node.js v18"; the parser strips it back
+// off before the range is normalized so the captured value stays canonical.
+// `||` is admitted as a term separator alongside comma/whitespace so a
+// disjunction like `^18.14.0 || ^20.0.0 || >=24.0.0` is captured whole rather
+// than truncated at its first branch; whether `||` is *meaningful* for the
+// named runtime is decided later, per ecosystem, in `parseRuntimeRequirement`.
+const RUNTIME_RANGE = String.raw`([<>=^~]*\s*v?\d+(?:\.\d+){0,3}(?:(?:\s*,\s*|\s*\|\|\s*|\s+)\s*[<>=^~]*\s*v?\d+(?:\.\d+){0,3})*)`;
+// The gap between "version" and the number: "is", a colon, or nothing at all.
+const RUNTIME_VERSION_SEP = String.raw`(?:versions?\s*)?(?:is\s+|:\s*)?`;
+
+/** Equivalent release-note syntax families, all with runtime/range in groups 1/2. */
+const RUNTIME_PROSE_RULES: ProseRule[] = [
+  {
+    id: 'prose-dropped-runtime-prefix',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(?:(?:dropped|drops?|removed)\s+support\s+for|no\s+longer\s+supports?)\s+${RUNTIME_NAME}\s*${RUNTIME_VERSION_SEP}${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-dropped-runtime-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b${RUNTIME_NAME}\s*(?:versions?\s*)?${RUNTIME_RANGE}\s+(?:is|are|was|were)\s+no\s+longer\s+supported`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-dropped-runtime-support-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\bsupport\s+for\s+${RUNTIME_NAME}\s*(?:versions?\s*)?${RUNTIME_RANGE}\s+(?:was|were|is|has\s+been)\s+removed`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `${m[1]} ${m[2]?.trim()} is no longer supported`,
+  },
+  {
+    id: 'prose-min-runtime-leading',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(?:requires?|required|now\s+requires?|minimum(?:\s+supported)?)\s+${RUNTIME_NAME}\s*${RUNTIME_VERSION_SEP}(?:raised\s+to\s*)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-passive',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b${RUNTIME_NAME}\s+v?${RUNTIME_RANGE}\s+is\s+now\s+required`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version is ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-supported-version',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\bminimum\s+supported\s+${RUNTIME_NAME}\s+version\s+is\s+(?:now\s+)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum ${m[1]} version is ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-min-runtime-msrv',
+    kind: 'runtime-requirement',
+    pattern: new RegExp(String.raw`\b(rust)\b\s+MSRV\s+is\s+(?:now\s+)?${RUNTIME_RANGE}`, 'i'),
+    symbolGroup: 1,
+    summarize: (m) => `Minimum Rust version is ${m[2]?.trim()}`,
+  },
+];
+
 /**
  * Prose rules.
  *
@@ -219,6 +333,7 @@ const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted
  * ordinary English words as symbols and sending an agent chasing them.
  */
 const PROSE_RULES: ProseRule[] = [
+  ...RUNTIME_PROSE_RULES.filter((rule) => rule.id.startsWith('prose-dropped-runtime')),
   {
     id: 'prose-removed',
     kind: 'removed-export',
@@ -291,6 +406,153 @@ const PROSE_RULES: ProseRule[] = [
     symbolGroup: 1,
     summarize: (m) => `\`${m[1]}\` now returns ${m[2]?.trim()}`,
   },
+  /*
+   * Signature changes stated in prose.
+   *
+   * `change_signature` is the single largest scored slice of Kong's category
+   * task, and before these rules Drift read almost every one of those commits
+   * as a bare `behaviour-change` — it saw the break, it just could not name
+   * the kind. `prose-now-requires` above already catches "`x` now takes …";
+   * these cover the rest of how a maintainer writes "the shape of this call
+   * changed". A message legitimately describing several changes still yields
+   * several findings — `matchProse` collects every rule that fires — so these
+   * running alongside `prose-breaking-change-footer` is intended, not a bug.
+   *
+   * The backtick-quoted forms carry no more false-positive risk than any
+   * other rule in this table. The two symbol-less forms fire only on the
+   * literal word "signature" next to a change verb, or on an explicit
+   * `fn(a, b) -> fn(b)` call-shape rewrite with the *same* name on both
+   * sides — phrasings that do not occur in a commit that changed nothing.
+   */
+  {
+    id: 'prose-signature-of-symbol',
+    kind: 'signature-change',
+    // The trailing change word is required: "signature of `parse`" on its own
+    // is as likely to be documentation as a break.
+    pattern: /\b(?:call|constructor|method|function|callback)?\s*signature\s+of\s+`([\w$.]+)`[^.\n]{0,40}?\b(?:changed|changes|change\b|different|new\b)/i,
+    symbolGroup: 1,
+    summarize: (m) => `the signature of \`${m[1]}\` changed`,
+  },
+  {
+    id: 'prose-symbol-signature-changed',
+    kind: 'signature-change',
+    pattern: /`([\w$.]+)`(?:\([^`]*\))?(?:\(\))?\s+(?:call|constructor|method)?\s*signature\s+(?:has\s+|have\s+|is\s+|was\s+|were\s+)?(?:been\s+)?\bchanged\b/i,
+    symbolGroup: 1,
+    summarize: (m) => `the signature of \`${m[1]}\` changed`,
+  },
+  {
+    id: 'prose-nth-argument-of-symbol',
+    kind: 'signature-change',
+    pattern: /\b(?:first|second|third|fourth|fifth|sixth|last|\d+(?:st|nd|rd|th))\s+(?:positional\s+)?(?:argument|parameter|param|arg)\s+(?:for|of|to|in|passed\s+to)\s+`([\w$.]+)`/i,
+    symbolGroup: 1,
+    summarize: (m) => `an argument of \`${m[1]}\` changed`,
+  },
+  {
+    id: 'prose-symbol-no-longer-takes',
+    kind: 'signature-change',
+    pattern: /`([\w$.]+)`(?:\([^`]*\))?(?:\(\))?(?:[\w\s,`()[\]{}$.]{0,40}?)\s+no\s+longer\s+(?:takes|accepts|expects|requires)\s+(.{2,90}?)(?:[.;]|$)/i,
+    symbolGroup: 1,
+    summarize: (m) => `\`${m[1]}\` no longer takes ${m[2]?.trim()}`,
+  },
+  {
+    id: 'prose-signature-changed-phrase',
+    kind: 'signature-change',
+    pattern: /\b(?:call|constructor|method|function|callback)?\s*signature\s+(?:of\b[^.\n]{0,80}?)?\s*(?:has\s+|have\s+|is\s+|was\s+|were\s+)?(?:been\s+)?\bchanged\b|\bchanged\s+(?:the\s+)?(?:\w+\s+){0,3}signature\b/i,
+    symbolGroup: 0,
+    summarize: () => 'a function signature changed',
+  },
+  {
+    id: 'prose-call-shape-rewrite',
+    kind: 'signature-change',
+    // One level of nested parens on each side — `fn(other(), x)` is common —
+    // and the same callee name required on both sides via the backreference.
+    pattern: /\b(?:refactor(?:ed|ing)?\s+)?([\w$.]+)\s*\((?:[^()]|\([^()]*\))*\)\s*(?:->|→|into)\s*\1\s*\(/i,
+    symbolGroup: 0,
+    summarize: () => 'a call signature was rewritten',
+  },
+  /*
+   * Refinement rules (see `ProseRule.refinement`).
+   *
+   * These name a signature change in prose that quotes no symbol — "update
+   * the function signatures", "make `x` async, drop callback support", "switch
+   * to an options object arg", "argument order changed". That phrasing is how
+   * Kong's `change_signature` commits read when they are not backtick-quoting
+   * anything (its `async/sync`, `option object` and `this argument` subtypes),
+   * but the very same words describe an internal refactor in an ordinary
+   * `perf:`/`chore:` subject. Firing standalone they cost RQ1 precision (a
+   * commit with no other breaking signal newly reads as breaking); as
+   * refinements they only sharpen `behaviour-change` → `signature-change` on a
+   * line the footer or a symbol rule already flagged, so RQ1 is untouched.
+   */
+  {
+    id: 'prose-verb-signature',
+    kind: 'signature-change',
+    refinement: true,
+    pattern:
+      /\b(?:changed?|changing|updated?|updating|revamp(?:ed)?|rework(?:ed)?|adjust(?:ed)?|modif(?:y|ied)|switch(?:ed)?|new|different|generic\s+single)\s+(?:the\s+)?[\w`.$()/,&\s-]{0,45}?\bsignatures?\b|\bsignatures?\s+(?:of\b[^.\n]{0,60}?)?\s*(?:has\s+|have\s+|is\s+|was\s+|were\s+|now\s+|changed|change[ds]|updated?)\b|\b(?:two|multiple|separate|distinct|overloaded)\s+signatures?\b|\binterfaces?\s+(?:has\s+|have\s+)?changed\b/i,
+    symbolGroup: 0,
+    summarize: () => 'a function signature changed',
+  },
+  {
+    id: 'prose-argument-list-changed',
+    kind: 'signature-change',
+    refinement: true,
+    // Argument-list edits with no word "signature": reordering, a removed or
+    // added positional argument, a switch to an options object, a `thisArg`
+    // dropped, "call pattern no longer available". Every branch names the
+    // parameter list explicitly.
+    pattern: new RegExp(
+      [
+        String.raw`\b(?:arg(?:ument)?|param(?:eter)?)s?\s+order\b`,
+        String.raw`\bargs?\s+now\s+(?:given|passed|taken)\b`,
+        String.raw`\b(?:standardi[sz]e|standardi[sz]ed)\s+(?:the\s+)?arg(?:ument)?s?\b`,
+        String.raw`\barg(?:ument)?s?\s+(?:have\s+been\s+|were\s+|are\s+|been\s+)?(?:swapped|reordered|re-ordered)\b`,
+        "\\b`?[\\w$.]+`?\\s+(?:arg(?:ument)?|param(?:eter)?)s?\\s+(?:(?:to|of|from|in|for)\\s+`?[\\w$.]+`?\\s+)?(?:have\\s+|has\\s+|have\\s+been\\s+|has\\s+been\\s+|is\\s+|are\\s+|was\\s+|were\\s+|been\\s+)?(?:removed|added|dropped|changed)\\b",
+        String.raw`\breturn\s+types?\s+(?:has\s+|have\s+|now\s+)?(?:changed|change[ds])\b`,
+        String.raw`\bupdate\s+[\w$.()]+\s+to\s+return\b`,
+        String.raw`\btype\s+changed\s+from\b`,
+        "\\breplaced?\\s+[\\w$.()`]{0,30}?\\s+args?\\s+w(?:ith|/)\\b",
+        "\\b(?:removed?|dropped?|added?)\\s+(?:the\\s+|a\\s+|an\\s+)?(?:deprecated\\s+|new\\s+|optional\\s+|required\\s+)?`?[\\w$.]+`?\\s+(?:arg(?:ument)?|param(?:eter)?)s?\\b",
+        String.raw`\bno\s+longer\s+(?:accepts?|takes?|supports?|allows?|passes?)\b[^.\n]{0,45}?(?:arg(?:ument)?s?|param(?:eter)?s?|[Ss]elector|callbacks?|thisArg)\b`,
+        String.raw`\bcall\s+pattern\s+is\s+no\s+longer\b`,
+        String.raw`\bis\s+no\s+longer\s+(?:a\s+)?valid\s+call\b`,
+        "\\b(?:`?thisArg`?|this\\s+argument)\\b[^.\\n]{0,40}?\\b(?:removed|no\\s+longer|default|undefined|dropped)\\b",
+        String.raw`\b(?:requires?|required|takes?|needs?|accepts?|expects?)\s+(?:a\s+|an\s+|the\s+)?(?:new|additional|extra|second|third|fourth)\s+(?:constructor\s+)?(?:arg(?:ument)?|param(?:eter)?)s?\b`,
+        String.raw`\b(?:constructor|function|method)\s+(?:signature\s+)?(?:now\s+)?(?:requires?|takes?|accepts?|expects?|required)\b`,
+        String.raw`\bis\s+no\s+longer\s+(?:the\s+)?(?:first|second|third|fourth|fifth|last|\d+(?:st|nd|rd|th))\s+(?:arg(?:ument)?|param(?:eter)?)\b`,
+        String.raw`\bnow\s+(?:have|has)\s+(?:two|three|multiple|several)\s+(?:arg(?:ument)?|param(?:eter)?)s?\b`,
+        String.raw`\bnow\s+(?:two|three)\s+param(?:eter)?s\b`,
+        "\\b(?:use|using|takes?|expects?|switch(?:ed)?\\s+`?[\\w$.]+`?(?:\\s+setting)?\\s+to|switch(?:ed)?\\s+to|pass(?:ing)?|is\\s+now|are\\s+now|it\\s+is\\s+now)\\s+(?:an?\\s+|two\\s+|the\\s+)?(?:object\\s+options?|options?\\s+(?:object|hash)|config(?:uration)?\\s+(?:object|hash)|`?[\\w$.]+`?\\s+option\\b)",
+        String.raw`\b(?:options?|config(?:uration)?)\s+(?:object|hash)\s+(?:as\b|instead\b|for\b)`,
+        String.raw`\bparam(?:eter)?s?\s+(?:are|is)\s+no\s+longer\s+optional\b`,
+        String.raw`\bformerly\s+a\s+config\s+object\b`,
+      ].join('|'),
+      'i',
+    ),
+    symbolGroup: 0,
+    summarize: () => 'an argument list changed',
+  },
+  {
+    id: 'prose-async-signature',
+    kind: 'signature-change',
+    refinement: true,
+    pattern:
+      /\b(?:make[s]?|made|turn(?:ed)?|change)\s+[\w`#.$()"\s]{1,40}?\s+(?:(?:in)?to\s+)?(?:be\s+)?(?:an?\s+)?a?sync(?:hronous)?(?:\s+function)?\b|\b(?:is|are|be)\s+(?:now\s+|an?\s+)*a?sync(?:hronous)?(?:\s+function|\s+now)?\b|\bnow\s+a?sync(?:hronous)?\b|\ba?sync\s+now\b|\basync\b[^.\n]{0,40}?\b(?:callback|promise|await|sync)\b|\b(?:callback|promise|sync)s?\b[^.\n]{0,40}?\basync\b|\bpromises?\s+instead\s+of\s+(?:using\s+)?callbacks?\b|\bnow\s+returns?\s+(?:a\s+|an\s+)?(?:promise|observable|thenable|query)\b|\bnow\s+return\s+promises\b|\breturns?\s+[\w"']+,?\s+not\s+(?:a\s+)?(?:promise|callback|query)\b|\b(?:needs?|has|have|dosnt\s+wait|doesn'?t\s+wait)\s+to\s+be\s+awaited\b|\bmust\s+(?:now\s+)?be\s+awaited\b|\b(?:update|change|updated)\s+(?:the\s+)?return\s+types?\b|\bdrop(?:ped|s)?\s+(?:support\s+for\s+)?callbacks?\b|\bremove[d]?\s+callback\s+support\b|\bno\s+(?:longer\s+)?(?:takes?|accepts?|using)\s+(?:a\s+|the\s+)?callbacks?\b/i,
+    symbolGroup: 0,
+    summarize: () => 'a callback/return signature changed',
+  },
+  {
+    /**
+     * "`x` is now required" — `prose-now-requires` misses it because its verb
+     * list is requires/takes/accepts/expects, not the past participle. This
+     * one is backtick-anchored, so it fires standalone like the rest.
+     */
+    id: 'prose-symbol-now-required',
+    kind: 'signature-change',
+    pattern: /`([\w$.]+)`(?:\([^`]*\))?(?:\(\))?\s+(?:is|are|becomes?|became)\s+now\s+(?:required|mandatory|non-optional)\b/i,
+    symbolGroup: 1,
+    summarize: (m) => `\`${m[1]}\` is now required`,
+  },
   {
     /**
      * "`x` must now be …" / "`x` is now …" — the same statement in the other
@@ -310,16 +572,7 @@ const PROSE_RULES: ProseRule[] = [
     replacementGroup: 2,
     summarize: (m) => `\`${m[1]}\` moved to \`${m[2]}\``,
   },
-  {
-    // `required` as well as `requires`: real release notes say
-    // "**Required Node.js >=14.16**", not "now requires Node.js".
-    id: 'prose-min-runtime',
-    kind: 'runtime-requirement',
-    pattern:
-      /\b(?:requires?|required|now requires?|minimum(?: supported)?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?([>=^~]*\s*[\d.]+)/i,
-    symbolGroup: 1,
-    summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
-  },
+  ...RUNTIME_PROSE_RULES.filter((rule) => rule.id.startsWith('prose-min-runtime')),
   {
     /**
      * ESM-only migration.
@@ -347,30 +600,45 @@ const PROSE_RULES: ProseRule[] = [
     moduleSystem: { from: 'dual', to: 'esm', incompatibleUsage: ['require'] },
   },
   {
-    id: 'prose-dropped-support',
-    kind: 'runtime-requirement',
-    pattern: /\b(?:dropped|drops|removed)\s+support\s+for\s+(.{3,60}?)(?:[.;]|$)/i,
-    symbolGroup: 1,
-    summarize: (m) => `Dropped support for ${m[1]?.trim()}`,
-  },
-  {
     /**
      * Conventional Commits' standardised breaking-change footer/trailer.
      *
-     * `BREAKING CHANGE:` (and the equally valid `BREAKING-CHANGE:`) is a
-     * maintainer stating outright, in a format this specific, that the
-     * commit breaks something — a real, widely-used convention independent
-     * of any one project's phrasing, and worth recognising for the marker
-     * alone. A backtick-quoted symbol in the same description is still
-     * caught by whichever rule above already matches that phrasing; this
-     * rule exists for the description that doesn't match any of them, so a
-     * maintainer's explicit declaration is never silently worth nothing.
+     * `BREAKING CHANGE:` (and the equally valid `BREAKING-CHANGE:`, or the
+     * plural `BREAKING CHANGES:`) is a maintainer stating outright, in a
+     * format this specific, that the commit breaks something — a real,
+     * widely-used convention independent of any one project's phrasing, and
+     * worth recognising for the marker alone. A backtick-quoted symbol in the
+     * same description is still caught by whichever rule above already matches
+     * that phrasing; this rule exists for the description that doesn't match
+     * any of them, so a maintainer's explicit declaration is never silently
+     * worth nothing.
      */
     id: 'prose-breaking-change-footer',
     kind: 'behaviour-change',
-    pattern: /^BREAKING[ -]CHANGE:\s*(.{3,160}?)(?:[.;]|$)/i,
+    pattern: /^BREAKING[ -]CHANGES?:\s*(.{3,160}?)(?:[.;]|$)/i,
     symbolGroup: 0,
     summarize: (m) => `Declared as a breaking change: ${m[1]?.trim()}`,
+  },
+  {
+    /**
+     * The same marker with nothing after it — `BREAKING CHANGE`, or the
+     * colon with an empty body. `prose-breaking-change-footer` needs three
+     * characters of description and finds none here, so before this rule a
+     * commit whose whole breaking-change footer was the bare marker read as
+     * not breaking at all. On Kong's RQ2 that accounted for most of the
+     * detection misses (15.3% recall on the bare-marker stratum versus 96.8%
+     * when the message says more).
+     *
+     * The kind is `unknown`, not `behaviour-change`: the maintainer told us
+     * *that* it breaks, not *how*, and `unknown` is the honest kind for
+     * "declared, undescribed". It carries no symbol, so downstream
+     * disposition treats it as review-only rather than an actionable edit.
+     */
+    id: 'prose-breaking-change-marker',
+    kind: 'unknown',
+    pattern: /^BREAKING[ -]CHANGES?\b\s*:?\s*(?:none|n\/a)?\s*$/i,
+    symbolGroup: 0,
+    summarize: () => 'Declared as a breaking change (no detail given)',
   },
 ];
 
@@ -380,6 +648,7 @@ export interface ProseMatch {
   summary: string;
   symbols: string[];
   replacementSymbols: string[];
+  runtime?: RuntimeRequirement;
   moduleSystem?: {
     from?: 'commonjs' | 'esm' | 'dual';
     to?: 'commonjs' | 'esm' | 'dual';
@@ -387,10 +656,55 @@ export interface ProseMatch {
   };
   /** The line the match came from, kept verbatim for the report. */
   passage: string;
+  /** See `ProseRule.refinement`. Present only when the source rule set it. */
+  refinement?: boolean;
+}
+
+/**
+ * Options for {@link matchProse}.
+ *
+ * `anchored` says the surrounding text has already declared a breaking change —
+ * a Conventional Commits `BREAKING CHANGE:` footer, or a changelog "Breaking
+ * Changes" heading — somewhere other than this line. A refinement rule
+ * (see {@link ProseRule.refinement}) then keeps its match even with no
+ * non-refinement match on the *same* line, because the footer that anchors it
+ * is a line or two up. Callers that see the whole message (`fromProseEvidence`)
+ * pass this; a caller matching one line in isolation does not.
+ */
+export interface MatchProseOptions {
+  anchored?: boolean;
+}
+
+/**
+ * True when `text` carries an explicit, format-level breaking-change
+ * declaration — a Conventional Commits `BREAKING CHANGE:` footer (the colon,
+ * an en/em dash, `*** … ***`, or a bare line), or a changelog "Breaking
+ * Changes" heading.
+ *
+ * Deliberately *not* the words "breaking change" appearing mid-sentence: a
+ * changelog bullet like `` - `deleteByQuery`: **breaking change** … `` states
+ * a break but is not the marker, and letting the anchor match it would let a
+ * refinement rule fire on a line the footer rule itself would not.
+ */
+export function declaresBreakingChange(text: string): boolean {
+  for (const raw of text.split('\n')) {
+    const line = raw
+      .replace(/\r$/, '')
+      .replace(/^\s*[-*>]+\s+/, '') // a list bullet
+      .replace(/\*{1,3}([^*\n]+?)\*{1,3}/g, '$1') // markdown emphasis wrappers
+      .replace(/\s*[-*=]{2,}\s*$/, '') // trailing rule/decoration, e.g. `BREAKING CHANGE ***`
+      .trim();
+    // The marker at the head of a line, followed by its delimiter — `:`, a
+    // dash, `*** … ***` (now stripped to nothing), or the end of the line.
+    // Not the words appearing after other prose on the line.
+    if (/^BREAKING[ -]CHANGES?\b[ \t]*(?::|[-–—][ \t]|$)/i.test(line)) return true;
+    if (/^#{1,6}[ \t].*\bbreaking\s+changes?\b/i.test(line)) return true;
+  }
+  return false;
 }
 
 /** Run every prose rule over a single changelog/release-note line. */
-export function matchProse(passage: string): ProseMatch[] {
+export function matchProse(passage: string, opts: MatchProseOptions = {}): ProseMatch[] {
   const out: ProseMatch[] = [];
   const text = passage.replace(/^[-*+]\s+/, '').trim();
   if (!text) return out;
@@ -403,13 +717,26 @@ export function matchProse(passage: string): ProseMatch[] {
     const symbol = rule.symbolGroup === 0 ? null : match[rule.symbolGroup];
     if (rule.symbolGroup !== 0 && !symbol) continue;
 
+    const runtime = rule.kind === 'runtime-requirement' ? parseRuntimeRequirement(match, rule.id) : undefined;
+    if (rule.kind === 'runtime-requirement' && !runtime) continue;
+
     const replacement = rule.replacementGroup ? match[rule.replacementGroup] : undefined;
 
     out.push({
       ruleId: rule.id,
       kind: rule.kind,
-      summary: rule.summarize(match),
+      summary: runtime
+        ? runtime.kind === 'minimum-runtime'
+          ? // A disjunction is not a floor. `18.x || 20.x || >=22` has holes in
+            // it — 19 and 21 are excluded — and calling that a "minimum" tells
+            // a reader the opposite of what upstream wrote.
+            runtime.requirement.includes('||')
+            ? `Supported ${runtime.runtime} versions are now ${runtime.requirement}`
+            : `Minimum ${runtime.runtime} version is now ${runtime.requirement}`
+          : `${runtime.runtime} ${runtime.requirement} is no longer supported`
+        : rule.summarize(match),
       symbols: symbol ? [symbol] : [],
+      ...(runtime ? { runtime } : {}),
       replacementSymbols: replacement ? [replacement] : [],
       ...(rule.moduleSystem
         ? {
@@ -419,12 +746,192 @@ export function matchProse(passage: string): ProseMatch[] {
             },
           }
         : {}),
+      ...(rule.refinement ? { refinement: true as const } : {}),
       passage: text,
     });
   }
 
-  return out;
+  // A refinement match specialises the kind of a break another rule found on
+  // this line; it is never the sole evidence a line is breaking. Keep it when
+  // a same-line rule matched, or when the caller says the message declared a
+  // breaking change elsewhere (the `BREAKING CHANGE:` footer whose body this
+  // line is). Otherwise the refinements go with the empty result.
+  if (opts.anchored || out.some((m) => !m.refinement)) return out;
+  return out.filter((m) => !m.refinement);
 }
+
+function parseRuntimeRequirement(match: RegExpMatchArray, ruleId: string): RuntimeRequirement | null {
+  const rawRuntime = match[1]?.toLowerCase().replace(/\.js$/, '') as RuntimeName | undefined;
+  const rawRequirement = match[2]?.trim();
+  if (!rawRuntime || !rawRequirement) return null;
+  if (!['node', 'python', 'go', 'ruby', 'java', 'rust'].includes(rawRuntime)) return null;
+
+  // A `||`-joined disjunction ("^18.14.0 || ^20.0.0 || >=24.0.0"): each branch
+  // is an independent range and a repository version satisfying *any* branch
+  // satisfies the requirement. The old parser's list separator was
+  // comma/whitespace only, so it stopped at the first branch and the rest was
+  // reported as absent. The full requirement is preserved here regardless of
+  // runtime; only ecosystems whose grammar defines `||` (semver — Node) go on
+  // to evaluate it, and for the rest it is carried through `unknown` rather
+  // than guessed, exactly as a caret against Python is.
+  if (rawRequirement.includes('||')) {
+    return parseRuntimeDisjunction(rawRuntime, rawRequirement, match[0]!.trim(), ruleId);
+  }
+
+  // The prose grammar allows a leading `v` ("Node v20"); it carries no meaning
+  // beyond the number it prefixes, so it is dropped before normalization.
+  // The optional operator carries its own trailing whitespace (`>= 20`); every
+  // other position is whitespace-free. Keeping a bare `\s*` next to the `\s+`
+  // separator let a run of tabs be split between the two quantifiers in
+  // quadratically many ways on a non-matching string (CodeQL js/polynomial-redos).
+  const version = /^(?:([<>=^~]+)\s*)?v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)(?:[<>=^~]+\s*)?v?\d+(?:\.\d+){0,3})*$/i.exec(rawRequirement);
+  if (!version) return null;
+  const statedOperator = version[1] ?? '';
+  const normalizedVersion = version[2]!;
+  const normalizedRequirement = rawRequirement.replace(/v?(\d+(?:\.\d+){0,3})/gi, (_m, value: string) =>
+    rawRuntime === 'java' ? value.replace(/^1\.(\d+)(?=$|\.|\s|,)/, '$1') : value,
+  );
+  const sourceText = match[0]!.trim();
+
+  const normalizedOperator = normalizeRuntimeOperator(rawRuntime, statedOperator);
+  const parseStatus = normalizedOperator.status;
+  const canonicalRequirement = normalizedRequirement.replace(/^\s*[<>=^~]*\s*/, normalizedOperator.operator || '>=');
+
+  if (ruleId.startsWith('prose-dropped-runtime')) {
+    // Dropped-support prose names the range upstream *stopped* supporting. It
+    // is never itself the new required range — inverting an arbitrary operator
+    // into "the required range" gets the meaning backwards for anything but
+    // `<`/`<=`, whose complement is unambiguous. `^16`'s complement is not
+    // ">=17": upstream may still support 17 only partially, or not at all
+    // outside a later line. So every dropped-support form is represented as
+    // what it actually is — an unsupported range — and a `derivedMinimum` is
+    // attached only for the two operators where the complement is exact.
+    //
+    // Every operator form the grammar accepts is preserved, `>=`/`>`/`=`
+    // included. "Dropped support for Node >=20" is a strange thing for a
+    // maintainer to write, but it is not unparseable — it states an
+    // unsupported line exactly as clearly as `<20` does, and returning `null`
+    // for it threw away a real, checkable fact because Drift could not derive
+    // a *floor* from it. No floor is derived; the range is simply kept as
+    // stated, which is all `unsupported-runtime-range` ever claimed to be.
+    if (statedOperator === '') {
+      const parts = normalizedVersion.split('.');
+      return {
+        kind: 'unsupported-runtime-range',
+        runtime: rawRuntime,
+        requirement: rawRequirement.includes(',') || /\s+[<>=^~]/.test(rawRequirement)
+          ? canonicalRequirement
+          : parts.length < 3 ? `${normalizedVersion}.x` : normalizedVersion,
+        sourceText,
+        ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
+      };
+    }
+    return {
+      kind: 'unsupported-runtime-range',
+      runtime: rawRuntime,
+      requirement: canonicalRequirement,
+      // Only `<` and `<=` have an exact complement, so only they carry a
+      // replacement floor. `>=20`'s complement is "everything below 20",
+      // which is not a floor and not what upstream said.
+      ...(statedOperator === '<' ? { derivedMinimum: `>=${normalizedVersion}` } : {}),
+      ...(statedOperator === '<=' ? { derivedMinimum: `>${normalizedVersion}` } : {}),
+      sourceText,
+      ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
+    };
+  }
+
+  return {
+    kind: 'minimum-runtime',
+    runtime: rawRuntime,
+    requirement: canonicalRequirement,
+    sourceText,
+    ...(parseStatus === 'unknown' ? { rangeParseStatus: parseStatus } : {}),
+  };
+}
+
+/**
+ * A bare version as the series it denotes: `18` -> `18.x`, `18.4` -> `18.4.x`.
+ *
+ * A fully-qualified `18.4.1` names one release and is already exact, and a
+ * branch carrying more than one term (`>=18 <19`) is a compound range whose
+ * meaning is already stated, so both are returned untouched.
+ */
+function seriesText(branch: string): string {
+  const single = /^v?(\d+(?:\.\d+){0,3})$/i.exec(branch.trim());
+  if (!single) return branch;
+  const version = single[1]!;
+  return version.split('.').length < 3 ? `${version}.x` : version;
+}
+
+/**
+ * Normalize a `||`-joined runtime range, branch by branch.
+ *
+ * Each branch is validated and canonicalized exactly as a standalone
+ * requirement would be — same term grammar, same leading-operator
+ * normalization, same Java `1.x` folding — then the branches are rejoined with
+ * ` || ` so the complete disjunction flows through the pipeline intact.
+ *
+ * The result is `parsed` only when the named runtime's grammar actually
+ * defines `||` *and* every branch's operator is one that grammar accepts.
+ * Otherwise the requirement is real and legible but not something Drift can
+ * evaluate for that ecosystem, so it is carried through with
+ * `rangeParseStatus: 'unknown'` — never evaluated as if the operator meant
+ * something it does not.
+ */
+function parseRuntimeDisjunction(
+  runtime: RuntimeName,
+  rawRequirement: string,
+  sourceText: string,
+  ruleId: string,
+): RuntimeRequirement | null {
+  const branches = rawRequirement
+    .split('||')
+    .map((branch) => branch.trim())
+    .filter(Boolean);
+  if (branches.length < 2) return null;
+
+  let status: 'parsed' | 'unknown' = RUNTIME_RANGE_GRAMMARS[runtime].supportsDisjunction ? 'parsed' : 'unknown';
+  const normalized: string[] = [];
+
+  for (const branch of branches) {
+    const term = /^(?:([<>=^~]+)\s*)?v?(\d+(?:\.\d+){0,3})(?:(?:\s*,\s*|\s+)(?:[<>=^~]+\s*)?v?\d+(?:\.\d+){0,3})*$/i.exec(branch);
+    if (!term) return null;
+    const statedOperator = term[1] ?? '';
+    const branchOperator = normalizeRuntimeOperator(runtime, statedOperator);
+    if (branchOperator.status === 'unknown') status = 'unknown';
+    const digitsNormalized = branch.replace(/v?(\d+(?:\.\d+){0,3})/gi, (_m, value: string) =>
+      runtime === 'java' ? value.replace(/^1\.(\d+)(?=$|\.|\s|,)/, '$1') : value,
+    );
+    // A branch that states no operator is a version *series*, never a floor.
+    // `||` is semver syntax — the only grammar here that defines it — and in
+    // semver a bare `18` is `18.x`, so rewriting it to `>=18` widens the
+    // requirement across every major above it. `18 || 20 || >=22` became
+    // `>=18 || >=20 || >=22`, which admits the 19 and 21 that upstream
+    // deliberately left out, and a repository pinned to one of them was told
+    // it was compatible. Written as `18.x` rather than left bare so the
+    // sentence a developer reads says which it is — the same rendering the
+    // single-branch dropped-support path already uses.
+    normalized.push(
+      statedOperator === ''
+        ? seriesText(digitsNormalized)
+        : digitsNormalized.replace(/^\s*[<>=^~]*\s*/, branchOperator.operator),
+    );
+  }
+
+  const shared = {
+    runtime,
+    requirement: normalized.join(' || '),
+    sourceText,
+    ...(status === 'unknown' ? { rangeParseStatus: 'unknown' as const } : {}),
+  };
+  // No `derivedMinimum` for a dropped disjunction: the complement of a union
+  // of ranges is not a single floor, the same reason `^16`'s complement is not
+  // stated as `>=17` in the single-branch dropped-support path above.
+  return ruleId.startsWith('prose-dropped-runtime')
+    ? { kind: 'unsupported-runtime-range', ...shared }
+    : { kind: 'minimum-runtime', ...shared };
+}
+
 
 /** Remediation text for a prose-derived change. */
 export function remediationForProse(match: ProseMatch, dependency: string): string {
@@ -445,6 +952,11 @@ export function remediationForProse(match: ProseMatch, dependency: string): stri
     case 'behaviour-change':
       return `Behaviour changed: ${match.summary}. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.`;
     case 'runtime-requirement':
+      if (match.runtime?.kind === 'unsupported-runtime-range') {
+        return match.runtime.derivedMinimum
+          ? `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported. That unambiguously means a floor of ${match.runtime.derivedMinimum}; update the runtime version declared in CI workflows, engine fields, and container images accordingly.`
+          : `${match.runtime.runtime} ${match.runtime.requirement} is no longer supported, but the release note does not establish a replacement minimum. Review the project's declared runtime against authoritative upstream compatibility guidance rather than inventing one.`;
+      }
       return `${match.summary}. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.`;
     case 'module-system-change':
       return `\`${dependency}\` no longer exposes a CommonJS-compatible entry point. Update each localized \`require('${dependency}')\` site to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import('${dependency}')\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;

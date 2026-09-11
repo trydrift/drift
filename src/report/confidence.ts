@@ -2,6 +2,7 @@ import type { BreakingChange, Ecosystem, RemediationPlan } from '../types.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment, ConfidenceBand, ConfidenceScore } from '../confidence/types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
 import { deriveOverallConfidence } from '../confidence/calibrate.js';
+import { roleContractForChanges } from '../rationale/assess.js';
 import { dependencyEcosystemKey } from '../util/id.js';
 
 /**
@@ -32,7 +33,7 @@ export const VERDICT_TEXT: Record<FindingVerdict, string> = {
   'no-incompatible-change-in-checked-surfaces':
     'No incompatible change detected in the surfaces that were checked',
   'detected-not-locally-reachable':
-    'Incompatible change detected upstream, but not reachable from this repository',
+    'Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading',
   'locally-affected': 'This repository is affected',
   'insufficient-evidence': 'Insufficient evidence to say',
   'verification-incomplete': 'Verification incomplete',
@@ -71,6 +72,14 @@ export function verdictFor(change: BreakingChange): FindingVerdict {
   }
 
   if (assessment.localImpact.band === 'none') {
+    // Package-role contracts are consumed by manifests and build tooling, not
+    // through ordinary source call sites. A completed source search therefore
+    // cannot establish that a POM/BOM, NuGet tooling package, or Pub
+    // asset/tooling contract is unreachable. Use the same classification as
+    // the recommendation layer so the repository verdict cannot contradict
+    // its existing "Upgrade after review" conclusion.
+    if (roleContractForChanges([change])) return 'verification-incomplete';
+
     // Distinguishing these two is the entire point of `localizationRan`.
     const notSearched = assessment.localImpact.penalties.some(
       (p) => p.code === 'localization-unavailable' || p.code === 'not-locally-checkable',
@@ -81,8 +90,40 @@ export function verdictFor(change: BreakingChange): FindingVerdict {
   return 'locally-affected';
 }
 
-/** The two verdicts that tell a developer this upgrade does not affect them. */
-const SAFE_EQUIVALENT_VERDICTS = new Set<FindingVerdict>([
+/**
+ * The verdict(s) that tell a developer this upgrade does not affect them.
+ *
+ * `detected-not-locally-reachable` is deliberately **not** here. A completed
+ * localization that found nothing is not affirmative evidence the repository is
+ * unaffected — structural typing, inferred types, wrappers, generated code,
+ * dynamic dispatch, behavioural changes and ownership relationships all defeat
+ * a syntactic search. That verdict now means "real upstream break, local
+ * impact unresolved — review", and only `no-incompatible-change-in-checked-
+ * surfaces` (reached when every breaking change was either absent or cleared
+ * by isolated verification, so `plan.breakingChanges` is empty) is a safe
+ * claim.
+ */
+export const SAFE_EQUIVALENT_VERDICTS: ReadonlySet<FindingVerdict> = new Set<FindingVerdict>([
+  'no-incompatible-change-in-checked-surfaces',
+]);
+
+/**
+ * The one place any surface — CLI, Action, extension, SARIF, benchmark harness
+ * — may ask "did Drift tell the developer this upgrade is safe for them?".
+ * A completed localization with no hits is not one of these.
+ */
+export function isSafeEquivalentVerdict(verdict: FindingVerdict): boolean {
+  return SAFE_EQUIVALENT_VERDICTS.has(verdict);
+}
+
+/**
+ * Verdicts a confirmed regression is allowed to override to `locally-affected`.
+ * Broader than {@link SAFE_EQUIVALENT_VERDICTS}: a measured regression must win
+ * over "not reachable" too, even though that is no longer itself a safe claim —
+ * it still asserts the repository is *not* broken, which the measurement
+ * contradicts.
+ */
+const REGRESSION_OVERRIDABLE_VERDICTS = new Set<FindingVerdict>([
   'no-incompatible-change-in-checked-surfaces',
   'detected-not-locally-reachable',
 ]);
@@ -154,7 +195,7 @@ export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
   const verdicts = plan.breakingChanges.map((change) => verdictFor(change));
   const reduced = reduceVerdict(verdicts, plan.breakingChanges.length === 0, plan.checkedSurfaces);
 
-  if (plan.confirmedRegressions.length > 0 && SAFE_EQUIVALENT_VERDICTS.has(reduced)) {
+  if (plan.confirmedRegressions.length > 0 && REGRESSION_OVERRIDABLE_VERDICTS.has(reduced)) {
     return 'locally-affected';
   }
 
@@ -171,11 +212,49 @@ export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
   // one dependency still wins regardless of what is incomplete for another —
   // whenever some actionable dependency's evidence is not what the verdict
   // implies it is.
-  if (SAFE_EQUIVALENT_VERDICTS.has(reduced) && !everyDependencySurfaceChecked(plan)) {
+  // `detected-not-locally-reachable` is no longer a safety claim, but it is
+  // still a claim that *this* repository is not broken by the change — and that
+  // claim cannot stand for a plan where some dependency's surface was never
+  // computed. The weakest link there is that Drift could not establish the
+  // upstream question for that dependency at all: `insufficient-evidence`.
+  if (
+    (SAFE_EQUIVALENT_VERDICTS.has(reduced) || reduced === 'detected-not-locally-reachable') &&
+    !everyDependencySurfaceChecked(plan)
+  ) {
+    return 'insufficient-evidence';
+  }
+
+  // A surface checked for one kind of breakage and not another cannot carry
+  // "no incompatible change in the checked surfaces" — the sentence is about a
+  // surface that was not checked. japicmp reads binary compatibility, so a
+  // version pair with zero binary-incompatible changes and eighteen
+  // source-incompatible ones (`commons-io 2.7 -> 2.11.0`, whose build really
+  // does fail to compile) produced exactly that false claim.
+  //
+  // Unless the project's own compiler already answered it. A compile-capable
+  // check that passed against the new version *is* the source-compatibility
+  // test, run on the only code whose answer matters — so it settles the
+  // question rather than leaving it open.
+  if (SAFE_EQUIVALENT_VERDICTS.has(reduced) && hasUnruledChanges(plan) && !compileProvenAgainstUpgrade(plan)) {
     return 'insufficient-evidence';
   }
 
   return reduced;
+}
+
+/** Did any checked surface observe changes it declined to rule on? */
+function hasUnruledChanges(plan: RemediationPlan): boolean {
+  return plan.checkedSurfaces.some(
+    (surface) => surface.surface === 'api-surface' && surface.status === 'checked' && (surface.unruledChanges ?? 0) > 0,
+  );
+}
+
+/** Did a compile-capable check actually run against the upgrade, and pass? */
+function compileProvenAgainstUpgrade(plan: RemediationPlan): boolean {
+  return (
+    plan.verification?.status === 'passed' &&
+    (plan.verification.checks ?? []).some((check) => check.compileCapable && check.status === 'passed')
+  );
 }
 
 /**
@@ -259,6 +338,18 @@ export function repositoryConclusion(plan: RemediationPlan): string {
 
   if (plan.confirmedRegressions.length > 0) {
     const measured = plan.blockers.find((blocker) => blocker.startsWith(VERIFICATION_FAILURE_BLOCKER_PREFIX));
+    // Sites the toolchain named in the failing output — see `measuredSitesFrom`
+    // in `analysis.ts`. When present, the conclusion points at them instead of
+    // saying static analysis found nothing: the compiler did.
+    const measuredSites = plan.impactSites.filter((site) => site.breakingChangeId.startsWith('measured:'));
+    if (measuredSites.length > 0) {
+      const where = measuredSites
+        .slice(0, 3)
+        .map((site) => `${site.file}:${site.line}`)
+        .join(', ');
+      const more = measuredSites.length > 3 ? `, +${measuredSites.length - 3} more` : '';
+      return `Drift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at ${where}${more}.`;
+    }
     // `verifyPlan` always writes one of these alongside a confirmedRegressions
     // entry, so `measured` being absent should not happen — but the fact
     // being reported is still true without it, and stating it plainly beats

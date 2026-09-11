@@ -17,6 +17,7 @@ import {
   summarizeRelease,
 } from '../dist/rationale/index.js';
 import { renderOne } from '../dist/report/rationale.js';
+import { summarize as summarizeCandidate } from '../dist/upgrade/summary.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
 import { clearHttpCache } from '../dist/util/http.js';
@@ -252,7 +253,7 @@ describe('maintenance facts', () => {
     assert.match(result.facts[0]!.statement, /published in error/);
   });
 
-  test('a raised runtime minimum is concerning; a lowered one is not', () => {
+  test('a changed runtime minimum is stated as context, not judged by maintenance (#110)', () => {
     const version = (requirement: string) => ({
       version: 'v',
       license: null,
@@ -262,19 +263,16 @@ describe('maintenance facts', () => {
       withdrawn: null,
     });
 
-    const raised = assessMaintenance({
-      ...base,
-      currentVersion: version('>=14'),
-      targetVersion: version('>=18'),
-    });
-    assert.ok(raised.facts.some((f) => f.concerning && /Node\.js version changed/.test(f.statement)));
-
-    const lowered = assessMaintenance({
-      ...base,
-      currentVersion: version('>=18'),
-      targetVersion: version('>=14'),
-    });
-    assert.ok(lowered.facts.some((f) => !f.concerning && /Node\.js version changed/.test(f.statement)));
+    // Both directions produce the same plain, non-blocking context fact.
+    // Whether the change matters to this repository is the canonical
+    // RuntimeRequirementAnalysis's call now, not maintenance's.
+    for (const [from, to] of [['>=14', '>=18'], ['>=18', '>=14']] as const) {
+      const result = assessMaintenance({ ...base, currentVersion: version(from), targetVersion: version(to) });
+      const fact = result.facts.find((f) => /Node\.js version changed/.test(f.statement));
+      assert.ok(fact, `${from} -> ${to}`);
+      assert.equal(fact!.concerning, false);
+      assert.equal(fact!.polarity, 'context');
+    }
   });
 
   test('raisesMinimum reads the floor out of a requirement string', () => {
@@ -647,6 +645,40 @@ describe('the upgrade assessment', () => {
     assert.equal(assessUpgrade(input()).recommendation, 'safe-to-upgrade');
   });
 
+  test('a role-specific package contract change requires review without pretending it is a code API', () => {
+    const breakingChanges = [{
+        id: 'bc-pom', dependency: 'parent', kind: 'signature-change', summary: 'parent changed',
+        remediation: 'review the POM', symbols: ['pom:parent', 'org.example:base'], confidence: 'high', citations: [],
+      }];
+    const result = assessUpgrade(input({ breakingChanges }));
+    assert.equal(result.recommendation, 'upgrade-after-review');
+    assert.match(result.reasons.join(' '), /published Maven POM contract change/);
+    assert.doesNotMatch(result.reasons.join(' '), /\bAPI\b|none of which this repository uses/);
+    assert.match(result.confidenceBasis, /computed Maven POM contract diff/);
+    const summary = summarizeCandidate(1, breakingChanges as never, [], 'parent', {
+      assessment: result,
+      security: clean,
+      gaps: [],
+    } as never);
+    assert.match(summary, /published Maven POM contract change requires review/);
+    assert.doesNotMatch(summary, /\bAPI\b|none of which this repository uses/);
+  });
+
+  test('an unlocalized upstream finding cannot be called safe when indexing was truncated', () => {
+    const finding = {
+      id: 'bc1', dependency: 'pkg', kind: 'removed-export', summary: 'removed',
+      remediation: 'review', symbols: ['old'], confidence: 'high', citations: [],
+    };
+    assert.equal(
+      assessUpgrade(input({
+        breakingChanges: [finding],
+        localizationRan: true,
+        localizationComplete: false,
+      })).recommendation,
+      'upgrade-after-review',
+    );
+  });
+
   test('resolving a vulnerability makes it recommended', () => {
     const result = assessUpgrade(
       input({ security: { ...clean, resolved: [vuln('GHSA-1', 'high')], direction: 'improves' } }),
@@ -877,6 +909,14 @@ describe('the upgrade assessment', () => {
     );
     assert.equal(withProse.confidence, 'high');
     assert.match(withProse.confidenceBasis, /computed API diff.*release notes.*OSV/);
+
+    const withOneSource = assessUpgrade(
+      input({
+        security: { ...clean, checked: false },
+        proseRead: 0,
+      }),
+    );
+    assert.equal(withOneSource.confidenceBasis, 'The computed API diff is the available evidence.');
   });
 
   test('every reason is a sentence, so a reader can disagree with a specific one', () => {
@@ -900,6 +940,47 @@ describe('assembling the rationale', () => {
   };
 
   const noNetwork = { fetch: async () => null };
+
+  // 'pkg' resolves to vercel/pkg, which is archived upstream — a confirmed
+  // `polarity: 'blocks'` maintenance fact that a couple of the tests below
+  // depend on to pin the recommendation. buildRationale learns it from two
+  // live lookups (the npm packument, then the GitHub repo), and the GitHub
+  // one is unauthenticated from CI and rate-limits intermittently, silently
+  // degrading the fact — and the recommendation with it — to
+  // "insufficient-evidence". Serve both lookups from a fixed response so the
+  // assertions exercise the rationale logic rather than GitHub's rate limiter.
+  const withArchivedPkg = async (run: () => Promise<void>) => {
+    clearHttpCache();
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = ((input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.startsWith('https://registry.npmjs.org/pkg')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              repository: { url: 'git+https://github.com/vercel/pkg.git' },
+              time: { '1.0.0': '2018-01-01T00:00:00Z', '2.0.0': '2020-01-27T00:00:00Z' },
+              versions: { '1.0.0': { license: 'MIT' }, '2.0.0': { license: 'MIT' } },
+            }),
+          ),
+        );
+      }
+      if (url === 'https://api.github.com/repos/vercel/pkg') {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ archived: true, pushed_at: '2023-01-27T00:00:00Z', html_url: 'https://github.com/vercel/pkg' }),
+          ),
+        );
+      }
+      return Promise.resolve(new Response('not found', { status: 404 }));
+    }) as typeof fetch;
+    try {
+      await run();
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+    }
+  };
 
   const osvResponse = (vulns: Record<string, unknown>[]) => ({ vulns });
 
@@ -1076,12 +1157,13 @@ describe('assembling the rationale', () => {
       const factFor = (r: (typeof rationales)[number]) =>
         r.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
 
-      assert.equal(factFor(rationales[0]!)?.concerning, false, 'the api workspace already satisfies the new floor');
-      assert.equal(
-        factFor(rationales[1]!)?.concerning,
-        true,
-        "the worker workspace does not, and must not borrow the api workspace's declaration",
-      );
+      // Maintenance states the same upstream fact for both members and
+      // fabricates no per-member verdict — cross-member runtime scoping is now
+      // the canonical discovery/analysis path's job (see rationale-runtime).
+      for (const r of rationales) {
+        assert.equal(factFor(r)?.concerning, false);
+        assert.equal(factFor(r)?.polarity, 'context');
+      }
     } finally {
       globalThis.fetch = realFetch;
       clearHttpCache();
@@ -1089,19 +1171,21 @@ describe('assembling the rationale', () => {
   });
 
   test('an unreadable dependency is insufficient evidence, and says so', async () => {
-    const [rationale] = await buildRationale(
-      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
-      { config, logger, osv: noNetwork },
-    );
+    await withArchivedPkg(async () => {
+      const [rationale] = await buildRationale(
+        { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+        { config, logger, osv: noNetwork },
+      );
 
-    // 'pkg' (vercel/pkg on GitHub) is archived upstream, which is itself a
-    // confirmed, `polarity: 'blocks'` maintenance fact -- a real finding, not
-    // an absence of one -- so it outranks "insufficient evidence" the same
-    // way a known incompatibility would. The gap this test actually exercises
-    // (OSV being unreachable) still has to surface regardless of which
-    // recommendation wins.
-    assert.equal(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
-    assert.ok(rationale!.gaps.some((g) => /OSV advisory database could not be reached/.test(g)));
+      // 'pkg' (vercel/pkg on GitHub) is archived upstream, which is itself a
+      // confirmed, `polarity: 'blocks'` maintenance fact -- a real finding, not
+      // an absence of one -- so it outranks "insufficient evidence" the same
+      // way a known incompatibility would. The gap this test actually exercises
+      // (OSV being unreachable) still has to surface regardless of which
+      // recommendation wins.
+      assert.equal(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
+      assert.ok(rationale!.gaps.some((g) => /OSV advisory database could not be reached/.test(g)));
+    });
   });
 
   test('multiple upgrades use the OSV batch seam once', async () => {
@@ -1188,18 +1272,20 @@ describe('assembling the rationale', () => {
   });
 
   test('the rendered block leads with the recommendation and ends with its reasons', async () => {
-    const [rationale] = await buildRationale(
-      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
-      { config, logger, osv: noNetwork },
-    );
+    await withArchivedPkg(async () => {
+      const [rationale] = await buildRationale(
+        { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+        { config, logger, osv: noNetwork },
+      );
 
-    const markdown = renderOne(rationale!);
-    const lines = markdown.split('\n').filter(Boolean);
-    assert.match(lines[0]!, /^### `pkg` 1\.0\.0 → 2\.0\.0$/);
-    // 'pkg' is archived upstream (see the test above), a confirmed
-    // `polarity: 'blocks'` fact that now outranks "insufficient evidence".
-    assert.match(lines[1]!, /^\*\*Recommendation: Do not upgrade yet\*\*$/);
-    assert.match(markdown, /Why Drift concluded this/);
+      const markdown = renderOne(rationale!);
+      const lines = markdown.split('\n').filter(Boolean);
+      assert.match(lines[0]!, /^### `pkg` 1\.0\.0 → 2\.0\.0$/);
+      // 'pkg' is archived upstream (see the test above), a confirmed
+      // `polarity: 'blocks'` fact that now outranks "insufficient evidence".
+      assert.match(lines[1]!, /^\*\*Recommendation: Do not upgrade yet\*\*$/);
+      assert.match(markdown, /Why Drift concluded this/);
+    });
   });
 
   test('progress is reported in named stages, not as one opaque phase', async () => {
@@ -1214,13 +1300,14 @@ describe('assembling the rationale', () => {
     // `finalizeRationale` (workspace-sensitive: maintenance onward) — see
     // `src/rationale/index.ts`. License moved earlier because it depends only
     // on package-level facts, not on this repository's own runtime.
-    assert.deepEqual(phases, [
+    assert.deepEqual(phases.filter((phase) => !/rate limited, retrying/.test(phase)), [
       'Checking package metadata',
       'Checking repository status',
       'Checking security advisories',
       'Checking license',
       'Checking maintenance signals',
     ]);
+    assert.equal(phases.every((phase) => phase.startsWith('Checking ')), true, 'retry progress remains a named stage');
   });
 });
 

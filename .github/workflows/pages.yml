@@ -40,6 +40,14 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
 
+      # `npm run build` validates recordings; the engine fingerprint folds in
+      # the Python analyzer's major.minor. Pin the same 3.12 the capture
+      # workflow uses (.github/workflows/refresh-recordings.yml) so a deploy
+      # never rejects recordings CI just accepted.
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.12'
+
       - name: Install
         run: npm ci
 

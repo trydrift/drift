@@ -150,12 +150,12 @@ describe('naming a scan by its result', () => {
     assert.notEqual(clean, broken);
   });
 
-  test('unverified is never folded into safe, even in a title', () => {
+  test('review-required uncertainty is never folded into safe, even in a title', () => {
     // The same claim the verdict refuses to make. A history entry reading "all
     // safe" for a run that could not check half of it is that claim, one level
     // further out.
     const title = scanTitle([candidate({}), candidate({ recommendation: 'insufficient-evidence' })]);
-    assert.match(title, /unverified/);
+    assert.match(title, /require review/);
     assert.doesNotMatch(title, /all safe/);
   });
 

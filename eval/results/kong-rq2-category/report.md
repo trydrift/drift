@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
-| Run date | 2026-08-24T16:17:53.371Z |
+| Drift commit | `c45d9d01ede15838d924fe9f5eb51c66632623b4` |
+| Run date | 2026-09-09T10:56:26.438Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -36,13 +36,24 @@ Read this before any rate below.
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| breaking-change detection recall | 1144/1511 (75.7%) | 73.5–77.8% |
-| category classification accuracy | 2/134 (1.5%) | 0.0–3.7% |
+| breaking-change detection recall | 1431/1511 (94.7%) | 93.6–95.8% |
+| category classification accuracy | 91/134 (67.9%) | 60.4–76.1% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
 
 **category classification accuracy** is scored on 134 of 1511 cases — the rest have a label this corpus does not record precisely enough to check (1375 ambiguous, 2 unsupported), not cases that were skipped. See "Label mapping coverage" below.
+
+### Affected-repository misses by stage
+
+Every scored positive that did not end at `locally-affected`, charged to the one pipeline stage the answer
+was lost at. This is where affected-repository recall is going — read it before proposing an engine change,
+since it sizes what each stage can recover. Buckets sum to the total; see `impact-funnel.ts` for definitions.
+
+| Stage | Cases |
+| --- | ---: |
+| _(no funnel recorded)_ | 1511 |
+| **Total** | **1511** |
 
 ### Breakdown
 
@@ -51,34 +62,34 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | breaking-change detection recall | category classification accuracy |
 | --- | --- | --- |
-| label: change_behavior | 770/1026 (75.0%) | — |
-| label: change_signature | 100/134 (74.6%) | 2/134 (1.5%) |
+| label: change_behavior | 963/1026 (93.9%) | — |
+| label: change_signature | 128/134 (95.5%) | 91/134 (67.9%) |
 | label: inline | 2/2 (100.0%) | — |
-| label: move class | 5/7 (71.4%) | — |
+| label: move class | 7/7 (100.0%) | — |
 | label: move field | 1/1 (100.0%) | — |
-| label: move method | 11/12 (91.7%) | — |
+| label: move method | 12/12 (100.0%) | — |
 | label: move module | 5/5 (100.0%) | — |
-| label: move | 1/2 (50.0%) | — |
-| label: remove class | 20/26 (76.9%) | — |
-| label: remove constant | 7/10 (70.0%) | — |
-| label: remove field | 23/27 (85.2%) | — |
+| label: move | 2/2 (100.0%) | — |
+| label: remove class | 26/26 (100.0%) | — |
+| label: remove constant | 10/10 (100.0%) | — |
+| label: remove field | 26/27 (96.3%) | — |
 | label: remove interface | 2/2 (100.0%) | — |
-| label: remove method | 97/126 (77.0%) | — |
-| label: remove module | 12/17 (70.6%) | — |
+| label: remove method | 121/126 (96.0%) | — |
+| label: remove module | 16/17 (94.1%) | — |
 | label: remove type | 1/1 (100.0%) | — |
-| label: remove | 1/2 (50.0%) | — |
-| label: rename class | 15/22 (68.2%) | — |
-| label: rename constant | 0/1 (0.0%) | — |
-| label: rename field | 23/29 (79.3%) | — |
-| label: rename interface | 3/4 (75.0%) | — |
-| label: rename method | 41/50 (82.0%) | — |
+| label: remove | 2/2 (100.0%) | — |
+| label: rename class | 21/22 (95.5%) | — |
+| label: rename constant | 1/1 (100.0%) | — |
+| label: rename field | 29/29 (100.0%) | — |
+| label: rename interface | 4/4 (100.0%) | — |
+| label: rename method | 48/50 (96.0%) | — |
 | label: rename module | 2/3 (66.7%) | — |
 | label: rename package | 1/1 (100.0%) | — |
 | label: rename | 1/1 (100.0%) | — |
 | markerBaselinePredictsBreaking: false | 0/47 (0.0%) | 0/5 (0.0%) |
-| markerBaselinePredictsBreaking: true | 1144/1464 (78.1%) | 2/129 (1.6%) |
-| messageStatesDetail: false | 60/391 (15.3%) | 1/37 (2.7%) |
-| messageStatesDetail: true | 1084/1120 (96.8%) | 1/97 (1.0%) |
+| markerBaselinePredictsBreaking: true | 1431/1464 (97.7%) | 91/129 (70.5%) |
+| messageStatesDetail: false | 340/391 (87.0%) | 23/37 (62.2%) |
+| messageStatesDetail: true | 1091/1120 (97.4%) | 68/97 (70.1%) |
 
 ## What is deliberately not reported
 
@@ -118,7 +129,7 @@ how generously the mapping was written.
 | `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
 | `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "17.0.20" 2026-07-21 | any Java case |
+| `java` | openjdk version "17.0.20.1" 2026-08-18 | any Java case |
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |

@@ -109,3 +109,56 @@ describe('listing the files at a ref from a local checkout', () => {
     });
   });
 });
+
+/**
+ * The same provider, constructed for a project *below* the repository root —
+ * which is what analysing one workspace member does.
+ *
+ * Every path git hands back is relative to the repository root, whatever
+ * directory the command ran in. Resolving those names against the project
+ * directory instead looked for `sub/package.json` inside `sub`, found nothing,
+ * and reported the file as absent. Absent is indistinguishable from "a manifest
+ * with no dependencies left", so an ordinary upgrade came out the other side as
+ * a list of *removals* and nothing was analysed at all.
+ */
+describe('a project below the repository root', () => {
+  test('reads the working-tree copy of a nested file, not a doubled path', async () => {
+    await withGitRepo(async (root, git) => {
+      const nested = join(root, 'sub');
+      await mkdir(nested, { recursive: true });
+      await writeFile(join(nested, 'package.json'), '{"dependencies":{"axios":"0.21.4"}}\n');
+      await git(['add', '-A']);
+      await git(['commit', '-m', 'add nested project']);
+      await writeFile(join(nested, 'package.json'), '{"dependencies":{"axios":"1.7.7"}}\n');
+
+      // Constructed with the project directory, as analysing a member does.
+      const provider = new LocalGitProvider(nested, { before: 'HEAD', after: WORKING_TREE });
+
+      const changed = await provider.changedFiles();
+      assert.deepEqual(changed, ['sub/package.json'], 'git names it from the root');
+
+      const after = await provider.readFile('sub/package.json', WORKING_TREE);
+      assert.ok(after, 'the working-tree copy must be readable at the name git gave');
+      assert.match(after!, /1\.7\.7/, 'the upgrade must be visible, not read as an absent file');
+
+      const before = await provider.readFile('sub/package.json', 'HEAD');
+      assert.match(before!, /0\.21\.4/, 'and the committed side still resolves too');
+    });
+  });
+
+  test('lists files from the root, so a nested manifest is discoverable', async () => {
+    await withGitRepo(async (root, git) => {
+      const nested = join(root, 'sub');
+      await mkdir(nested, { recursive: true });
+      await writeFile(join(nested, 'package.json'), '{}\n');
+      await git(['add', '-A']);
+      await git(['commit', '-m', 'add nested project']);
+
+      const provider = new LocalGitProvider(nested, { before: 'HEAD', after: WORKING_TREE });
+      const files = await provider.listFiles(WORKING_TREE);
+
+      assert.ok(files?.includes('sub/package.json'), 'nested manifest is listed at its root-relative path');
+      assert.ok(files?.includes('README.md'), 'and the listing is not scoped to the project directory');
+    });
+  });
+});

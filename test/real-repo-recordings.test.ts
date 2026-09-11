@@ -9,7 +9,7 @@ import { DriftConfigSchema } from '../dist/config/schema.js';
 /**
  * These recordings are not fixtures written for this suite. They are
  * `site/scripts/capture.mjs` output — real `drift analyze` runs against real
- * open-source repositories (gitlab, kubernetes, deno, scrapy, and eleven
+ * open-source repositories (lobsters, kubernetes, deno, scrapy, and eleven
  * others), captured once and replayed on the marketing site. Reusing them
  * here means the only end-to-end coverage of "does Drift survive a real,
  * large, messy repository" isn't limited to the single got/npm walkthrough in

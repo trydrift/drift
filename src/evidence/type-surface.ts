@@ -1,6 +1,8 @@
-import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
+import { fetchArchive, fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
 import { count, measure } from '../util/profile.js';
 import { readComputed, writeComputed } from '../util/artifact-cache.js';
+import { readArchive, type ArchiveEntry } from '../util/archive.js';
+import { withArticle } from '../util/prose.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
@@ -24,7 +26,39 @@ export type SurfaceKind =
   | 'type'
   | 'variable'
   | 'enum'
-  | 'namespace';
+  | 'namespace'
+  /**
+   * A public symbol Drift can prove *exists* but whose declaration it could
+   * not statically resolve — a Python explicit re-export (`from x import Foo`
+   * listed in `__all__`) whose target lives in a package that was not parsed.
+   * Paired with {@link SurfaceEntry.shapeUnknown}; never produced by a source
+   * a parser could actually read, so `signature`/`members` carry no meaning
+   * and {@link diffSurfaces} skips every shape comparison for it.
+   */
+  | 'unknown';
+
+/** How a single callable parameter may be supplied by a caller. */
+export type CallableParamKind =
+  | 'positional-only'
+  | 'positional-or-keyword'
+  | 'keyword-only'
+  | 'var-positional'
+  | 'var-keyword';
+
+export interface CallableParam {
+  name: string;
+  kind: CallableParamKind;
+  /** A caller must supply it — no default, not a variadic. */
+  required: boolean;
+}
+
+/**
+ * A deterministic, language-neutral account of a callable's parameters, in
+ * source order. Enough to decide caller compatibility; not a type system.
+ */
+export interface CallableShape {
+  parameters: CallableParam[];
+}
 
 export interface SurfaceEntry {
   name: string;
@@ -33,8 +67,24 @@ export interface SurfaceEntry {
   signature: string;
   /** Member names for classes/interfaces/enums, so we can diff them too. */
   members: string[];
+  /** Optional semantic signatures for members whose identity is not enough. */
+  memberSignatures?: Record<string, string>;
   /** Required member names, so optional -> required is detectable. */
   requiredMembers: string[];
+  /**
+   * The public symbol is known to exist, but its shape could not be resolved.
+   *
+   * Set only for a Python explicit re-export (`from pkg import Foo` with
+   * `Foo` in `__all__`) whose target declaration Drift could not find in the
+   * package it parsed — typically because the target is in a third-party
+   * package. Existence is proven; `kind`/`signature`/`members` are
+   * placeholders. {@link diffSurfaces} treats a shape-unknown entry as
+   * present (so no `export-removed`) but compares none of its shape (so no
+   * speculative `kind-changed`/`signature-changed`/`member-removed`). A
+   * shape-unknown symbol that later goes missing entirely is still a real
+   * `export-removed`, because existence genuinely disappeared.
+   */
+  shapeUnknown?: boolean;
   /**
    * The dependency this symbol is actually declared in.
    *
@@ -44,6 +94,22 @@ export interface SurfaceEntry {
    * it. Absent means the package declares the symbol itself.
    */
   via?: string;
+  /**
+   * A language-neutral description of how this symbol can be *called*, when the
+   * producing reader can supply one.
+   *
+   * The human-readable {@link signature} is for display and for the TypeScript
+   * text diff; it loses structure a Python signature needs to answer the only
+   * question a call-site cares about — "can every call the old shape accepted
+   * still be accepted by the new one". A single `defaults=N` count cannot say
+   * which parameters are optional, which are keyword-only, where the
+   * positional-only boundary is, or whether `*args`/`**kwargs` are present, so
+   * {@link diffSurfaces} could not tell a safe optional-parameter addition
+   * (`f(a)` → `f(a, b=None)`) from a real break and reported both. Set today by
+   * the Python surface reader; absent for readers that do not populate it, in
+   * which case the text diff is used exactly as before.
+   */
+  callable?: CallableShape;
   /**
    * Interfaces and classes this one inherits from.
    *
@@ -86,7 +152,18 @@ export type SurfaceChangeKind =
   | 'constant-value-changed'
   | 'commonjs-entry-removed'
   | 'exports-require-condition-removed'
-  | 'package-type-changed';
+  | 'package-type-changed'
+  /**
+   * The artifact now needs a newer language runtime than it did.
+   *
+   * Not an API change and not localizable to a call site: every consumer is
+   * affected or none is, depending on one fact about their toolchain. Carried
+   * here because the differ is what observes it — japicmp reads the class file
+   * format version out of the bytecode — and `analyze` turns it into the
+   * `runtime-requirement` breaking change the rest of the pipeline already
+   * knows how to reason about.
+   */
+  | 'runtime-requirement-raised';
 
 export interface SurfaceChange {
   kind: SurfaceChangeKind;
@@ -96,7 +173,7 @@ export interface SurfaceChange {
   after?: string;
   /** See `StructuredFinding.changed`. Only ever set on `signature-changed`. */
   changed?: 'parameters' | 'return-type' | 'both';
-  /** See `StructuredFinding.fromKind`/`toKind`. Only ever set on `kind-changed`. */
+  /** The old declaration kind, set for removals and kind changes. */
   fromKind?: string;
   toKind?: string;
   moduleSystem?: {
@@ -110,6 +187,10 @@ export interface SurfaceChange {
 
 const JSDELIVR_DATA = 'https://data.jsdelivr.com/v1/packages/npm';
 const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/npm';
+const NPM_REGISTRY = 'https://registry.npmjs.org';
+const MAX_NPM_TARBALL_BYTES = 50 * 1024 * 1024;
+const MAX_NPM_UNPACKED_BYTES = 200 * 1024 * 1024;
+const MAX_NPM_DECLARATION_BYTES = 20 * 1024 * 1024;
 
 export interface TypeSurface {
   api: SurfaceApi;
@@ -125,6 +206,37 @@ export interface TypeSurface {
   ownSymbols: number;
   /** Other entry points the package publishes, from its `exports` map. */
   subpaths: string[];
+  /**
+   * A public re-export edge could not be fully expanded.
+   *
+   * Set when the bounded re-export traversal stopped at {@link MAX_REEXPORT_DEPTH},
+   * ran out of {@link MAX_TOTAL_FOLLOWED_PACKAGES} budget, or failed to fetch a
+   * package that this surface re-exports from. It means a symbol absent from
+   * this surface is not necessarily absent from the package's real API, so
+   * {@link diffSurfaces} must not turn a via-dependency miss into a confident
+   * `export-removed`. A cycle is *not* incompleteness — it terminates with the
+   * full set of symbols reachable without looping.
+   */
+  incomplete: boolean;
+}
+
+/**
+ * Context threaded through a bounded public re-export traversal.
+ *
+ * `vue` re-exports `@vue/runtime-dom`, which re-exports `@vue/runtime-core`,
+ * which re-exports `@vue/reactivity` — and `ref`/`computed`/`watch` are only
+ * declared in that last hop. Following one level saw them as removed. The
+ * traversal now recurses along *public re-export edges only* (`export * from`,
+ * `export { x } from`), carrying a shared package budget and a visited set so
+ * cycles terminate and the total work stays deterministically bounded.
+ */
+export interface ReexportTraversal {
+  /** How many re-export hops deep this fetch already is. 0 at the entry package. */
+  depth: number;
+  /** `name@version` nodes already on the current path — cycle guard. */
+  visited: ReadonlySet<string>;
+  /** Shared across the whole traversal: total packages still allowed to follow. */
+  budget: { remaining: number };
 }
 
 /**
@@ -161,9 +273,24 @@ const surfaces = new Map<string, Promise<TypeSurface | null>>();
 export function fetchTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean } = {},
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal; subpath?: string } = {},
 ): Promise<TypeSurface | null> {
-  const key = `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}`;
+  // A traversal-scoped fetch depends on the path that reached it (visited set,
+  // remaining budget), so it is not safe to share through the process-wide
+  // memo keyed only by `(package, version)`. Compute it directly; the HTTP and
+  // disk layers still absorb the repeated cost of the immutable pieces.
+  if (options.traversal) {
+    // Reached only after the parent already spent one unit of the shared
+    // {@link MAX_TOTAL_FOLLOWED_PACKAGES} budget on this package, so this
+    // counter is an exact tally of packages entered through a recursive public
+    // re-export follow — the quantity the global bound constrains. Test seam.
+    recursivePublicFollows += 1;
+    return measure('surface', packageName, () => computeTypeSurface(packageName, version, options));
+  }
+
+  const key =
+    `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}` +
+    (options.subpath ? `#${options.subpath}` : '');
   const cached = surfaces.get(key);
   if (cached) {
     count('surface.cache.hit');
@@ -182,10 +309,26 @@ export function fetchTypeSurface(
   return pending;
 }
 
+/**
+ * Packages entered through a recursive public re-export follow since the last
+ * {@link clearTypeSurfaceCache}. Each increment is charged one unit of the
+ * shared {@link MAX_TOTAL_FOLLOWED_PACKAGES} budget, so a single top-level
+ * {@link fetchTypeSurface} must never leave this above that ceiling. Test seam
+ * for the global-bound regression test.
+ */
+let recursivePublicFollows = 0;
+
+/** Recursive public re-export follows since the last cache clear. Test seam. */
+export function recursivePublicFollowCount(): number {
+  return recursivePublicFollows;
+}
+
 /** Drop every memoized surface. Test seam, and the counterpart to `clearHttpCache`. */
 export function clearTypeSurfaceCache(): void {
   surfaces.clear();
   listings.clear();
+  npmArtifacts.clear();
+  recursivePublicFollows = 0;
 }
 
 /**
@@ -200,42 +343,121 @@ export function clearTypeSurfaceCache(): void {
  * cannot change, so the only way this cache can be wrong is an unbumped parser
  * change, not staleness.
  */
-const SURFACE_PARSER_VERSION = 1;
+const SURFACE_PARSER_VERSION = 3;
 
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
 
-function diskCacheKey(packageName: string, version: string, followDependencies: boolean): string {
-  return `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}`;
+function diskCacheKey(
+  packageName: string,
+  version: string,
+  followDependencies: boolean,
+  subpath?: string,
+): string {
+  return (
+    `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}` +
+    (subpath ? `#${subpath}` : '')
+  );
+}
+
+/**
+ * The declaration file a dependency publishes at one of its subpaths.
+ *
+ * `export * from 'lit-element/lit-element.js'` names an entry point, and the
+ * package's `exports` map is what says which declaration file serves it. The
+ * map is consulted first — it is the package's own answer — and the raw path is
+ * expanded as a fallback for packages that publish subpaths without one.
+ * `null` when the version publishes no such declaration, which is a hole in
+ * the parent's surface and is reported as one rather than guessed past.
+ */
+async function resolveSubpathTypesEntry(
+  packageName: string,
+  version: string,
+  pkg: Manifest | null,
+  subpath: string,
+): Promise<string | null> {
+  const declared = typesFromExports(subpathExport(pkg?.exports, subpath));
+  const candidates = [
+    ...(declared ? expandTypesEntry(normalizePath(declared)) : []),
+    ...expandTypesEntry(normalizePath(subpath)),
+  ];
+
+  const wanted = [...new Set(candidates)];
+  const published = await firstPublished(packageName, version, wanted);
+  if (published !== undefined) return published;
+  for (const candidate of wanted) {
+    if (await exists(packageName, version, candidate)) return candidate;
+  }
+  return null;
+}
+
+/** `@scope/pkg/sub` -> `@scope/pkg`; `lit-element/lit-element.js` -> `lit-element`. */
+function packageOfSpecifier(specifier: string): string {
+  const parts = specifier.split('/');
+  if (specifier.startsWith('@')) return parts.slice(0, 2).join('/');
+  return parts[0] ?? specifier;
+}
+
+/** The `exports` entry for `./<subpath>`, however the package spells the key. */
+function subpathExport(exportsField: unknown, subpath: string): unknown {
+  if (!exportsField || typeof exportsField !== 'object') return undefined;
+  const record = exportsField as Record<string, unknown>;
+  for (const key of [`./${subpath}`, subpath]) {
+    if (key in record) return record[key];
+  }
+  return undefined;
 }
 
 async function computeTypeSurface(
   packageName: string,
   version: string,
-  options: { followDependencies?: boolean },
+  options: { followDependencies?: boolean; traversal?: ReexportTraversal; subpath?: string },
 ): Promise<TypeSurface | null> {
   const followDependencies = options.followDependencies !== false;
-  const key = diskCacheKey(packageName, version, followDependencies);
+  const key = diskCacheKey(packageName, version, followDependencies, options.subpath);
   const remembered = await readComputed<StoredSurface>(key);
   if (remembered) {
     count('surface.diskCache.hit');
-    return { ...remembered, api: new Map(remembered.api) };
+    return { ...remembered, incomplete: remembered.incomplete ?? false, api: new Map(remembered.api) };
   }
   count('surface.diskCache.miss');
 
-  const manifest = await fetchManifest(packageName, version);
-  const entryPath = await resolveTypesEntry(packageName, version, manifest);
-  // No manifest and no declaration fallback is a fact about the fetch, not
-  // about the package: a yanked version, a private registry, a CDN that has not
-  // mirrored this release. Saying "publishes no declarations" there would be
-  // Drift reporting its own reach as the package's shortcoming. But if
-  // DefinitelyTyped can still answer, take that evidence instead of stopping.
-  if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version);
-  if (!entryPath) return null;
+  let manifest = await fetchManifest(packageName, version);
+  // A subpath edge names one of the package's entry points, not its root, so
+  // the root `types` field is the wrong file to read.
+  let entryPath = options.subpath
+    ? await resolveSubpathTypesEntry(packageName, version, manifest, options.subpath)
+    : await resolveOwnTypesEntry(packageName, version, manifest);
+  let sources = entryPath
+    ? await measure('surface-sources', packageName, () =>
+        collectDeclarationSources(packageName, version, entryPath!),
+      )
+    : [];
 
-  const sources = await measure('surface-sources', packageName, () =>
-    collectDeclarationSources(packageName, version, entryPath),
-  );
+  // jsDelivr is the low-latency path, not the authority. If it cannot produce
+  // a declaration surface, inspect the exact immutable artifact named by the
+  // npm registry. A successful archive inspection can prove absence; a failed
+  // download or malformed archive cannot.
+  if (!entryPath || sources.length === 0) {
+    const artifact = await fetchNpmArtifact(packageName, version);
+    if (!artifact) throw new ArtifactUnavailableError(packageName, version);
+    manifest = artifact.manifest;
+    entryPath = resolveOwnTypesEntryFromListing(packageName, manifest, artifact.files);
+    if (entryPath) {
+      sources = await measure('surface-sources', packageName, () =>
+        collectDeclarationSources(packageName, version, entryPath!, artifact),
+      );
+      if (sources.length === 0) throw new ArtifactUnavailableError(packageName, version);
+    }
+  }
+
+  if (!entryPath) {
+    entryPath = await resolveDefinitelyTypedEntry(packageName, version);
+    if (!entryPath) return null;
+    sources = await measure('surface-sources', packageName, () =>
+      collectDeclarationSources(packageName, version, entryPath!),
+    );
+  }
   count('surface.declarationFiles', sources.length);
   if (sources.length === 0) return null;
 
@@ -251,12 +473,21 @@ async function computeTypeSurface(
   const ownSymbols = api.size;
   const dependencyMerge =
     !manifest || !followDependencies
-      ? { followed: [], attempted: false }
-      : await measure('surface-deps', packageName, () => mergeDependencySurfaces(manifest, sources, api));
+      ? { followed: [], attempted: false, incomplete: false }
+      : await measure('surface-deps', packageName, () =>
+          mergeDependencySurfaces(manifest, sources, api, `${packageName}@${version}`, options.traversal),
+        );
 
   const result: TypeSurface | null =
     api.size > 0
-      ? { api, entryPath, viaDependencies: dependencyMerge.followed, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
+      ? {
+          api,
+          entryPath,
+          viaDependencies: dependencyMerge.followed,
+          ownSymbols,
+          subpaths: subpathsOf(manifest?.exports),
+          incomplete: dependencyMerge.incomplete,
+        }
       : null;
 
   // Only remembered when nothing about the answer depends on live registry
@@ -277,7 +508,7 @@ async function computeTypeSurface(
   // resolution was never required at all — no dependencies declared, none
   // referenced, or `followDependencies: false` — is safe to remember
   // indefinitely.
-  if (result && !dependencyMerge.attempted) {
+  if (result && !dependencyMerge.attempted && !result.incomplete) {
     await writeComputed(key, { ...result, api: [...result.api] } satisfies StoredSurface);
   }
 
@@ -295,7 +526,19 @@ export class VersionUnavailableError extends Error {
   }
 }
 
+/** The exact npm artifact could not be obtained and inspected authoritatively. */
+export class ArtifactUnavailableError extends Error {
+  constructor(
+    readonly packageName: string,
+    readonly version: string,
+  ) {
+    super(`${packageName}@${version} artifact could not be inspected`);
+    this.name = 'ArtifactUnavailableError';
+  }
+}
+
 interface Manifest {
+  version?: string;
   types?: string;
   typings?: string;
   type?: string;
@@ -478,9 +721,28 @@ function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
   if (!value || typeof value !== 'object') return false;
 
   const record = value as Record<string, unknown>;
-  if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
+  if ('require' in record) return exportRequireValueLooksCommonJs(record.require);
   if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
   if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
+  return false;
+}
+
+/**
+ * A target selected through an explicit `exports.require` condition is part of
+ * the package's CommonJS contract. Ambiguous `.js` files must not be
+ * reinterpreted using the root package `type`: dual-package build layouts can
+ * place a nearer `type: commonjs` marker beside that target. An explicit ESM
+ * extension remains contradictory evidence.
+ */
+function exportRequireValueLooksCommonJs(value: unknown): boolean {
+  if (typeof value === 'string') return !/\.mjs$/i.test(value);
+  if (Array.isArray(value)) return value.some(exportRequireValueLooksCommonJs);
+  if (!value || typeof value !== 'object') return false;
+
+  const record = value as Record<string, unknown>;
+  if ('require' in record) return exportRequireValueLooksCommonJs(record.require);
+  if ('node' in record && exportRequireValueLooksCommonJs(record.node)) return true;
+  if ('default' in record) return exportRequireValueLooksCommonJs(record.default);
   return false;
 }
 
@@ -514,6 +776,88 @@ function dedupeModuleMetadataChanges(changes: SurfaceChange[]): SurfaceChange[] 
 
 /** One flat file listing per package version, for this process's lifetime. */
 const listings = new Map<string, Promise<ReadonlySet<string> | null>>();
+const npmArtifacts = new Map<string, Promise<NpmArtifact | null>>();
+
+interface NpmArtifact {
+  manifest: Manifest;
+  /** Safe package-root paths only; archive wrapper `package/` is removed. */
+  files: ReadonlyMap<string, ArchiveEntry>;
+}
+
+interface NpmVersionMetadata {
+  version?: string;
+  dist?: { tarball?: string };
+}
+
+/** Read one exact npm release artifact without extracting or executing it. */
+function fetchNpmArtifact(packageName: string, version: string): Promise<NpmArtifact | null> {
+  const key = `${packageName}@${version}`;
+  const cached = npmArtifacts.get(key);
+  if (cached) return cached;
+
+  const encodedName = encodeURIComponent(packageName).replaceAll('%40', '@');
+  const pending = (async (): Promise<NpmArtifact | null> => {
+    const metadata = await fetchJson<NpmVersionMetadata>(
+      `${NPM_REGISTRY}/${encodedName}/${encodeURIComponent(version)}`,
+      { immutable: true },
+    );
+    if (!metadata?.dist?.tarball || metadata.version !== version) return null;
+
+    const downloaded = await fetchArchive(metadata.dist.tarball, {
+      maxBytes: MAX_NPM_TARBALL_BYTES,
+      timeoutMs: 60_000,
+      retries: 2,
+    });
+    if (!downloaded.ok) return null;
+
+    let entries: ArchiveEntry[];
+    try {
+      entries = readArchive(downloaded.bytes, { maxDecompressedBytes: MAX_NPM_UNPACKED_BYTES });
+    } catch {
+      return null;
+    }
+    if (entries.length === 0) return null;
+
+    const totalSize = entries.reduce((sum, entry) => sum + Math.max(0, entry.size), 0);
+    if (!Number.isSafeInteger(totalSize) || totalSize > MAX_NPM_UNPACKED_BYTES) return null;
+
+    const files = new Map<string, ArchiveEntry>();
+    for (const entry of entries) {
+      const safe = safeNpmArchivePath(entry.path);
+      if (safe === null) return null;
+      if (!safe || files.has(safe)) continue;
+      files.set(safe, entry);
+    }
+
+    const packageJson = files.get('package.json');
+    if (!packageJson || packageJson.size > 1024 * 1024) return null;
+    let manifest: Manifest;
+    try {
+      manifest = JSON.parse(packageJson.read().toString('utf8')) as Manifest;
+    } catch {
+      return null;
+    }
+    if (manifest.version !== version) return null;
+    return { manifest, files };
+  })();
+
+  npmArtifacts.set(key, pending);
+  pending.then((artifact) => {
+    if (!artifact) npmArtifacts.delete(key);
+  }, () => npmArtifacts.delete(key));
+  return pending;
+}
+
+/** Reject absolute/traversing archive names before exposing package-root paths. */
+function safeNpmArchivePath(raw: string): string | null {
+  const path = raw.replaceAll('\\', '/');
+  if (!path || path.includes('\0') || path.startsWith('/') || /^[A-Za-z]:\//.test(path)) return null;
+  const segments = path.split('/');
+  if (segments.some((segment) => segment === '..')) return null;
+  while (segments[0] === '.' || segments[0] === '') segments.shift();
+  if (segments[0] === 'package') segments.shift();
+  return segments.join('/');
+}
 
 /**
  * Every file a published version contains, as one request.
@@ -582,12 +926,39 @@ async function firstPublished(
 /* ------------------------------------------------------------------ */
 
 /**
- * How many dependencies one package's surface may be assembled from.
+ * How many *implementation-only* dependencies one package's surface may be
+ * assembled from — a dependency whose symbols merely appear in an exported
+ * signature, not one this package re-exports.
  *
  * A wrapper has a handful; anything past that is a package whose own
- * declarations are the API, and following further only buys latency.
+ * declarations are the API, and following further only buys latency. Silent
+ * truncation past this bound is acceptable *here* because an implementation
+ * reference cannot carry part of the package's own public API — see
+ * {@link isPublicReexportEdge}. Public re-export edges are deliberately *not*
+ * governed by this count: they are bounded only by {@link MAX_REEXPORT_DEPTH}
+ * and {@link MAX_TOTAL_FOLLOWED_PACKAGES}, and any public edge left unfollowed
+ * marks the surface {@link TypeSurface.incomplete}.
  */
-const MAX_FOLLOWED_DEPENDENCIES = 8;
+const MAX_IMPLEMENTATION_DEPENDENCIES = 8;
+
+/** Concurrency for the version-resolve and non-recursive surface-fetch waves. */
+const DEPENDENCY_FETCH_WIDTH = 8;
+
+/**
+ * How many public re-export hops the traversal will follow from the entry
+ * package. `vue -> @vue/runtime-dom -> @vue/runtime-core -> @vue/reactivity` is
+ * three; four leaves headroom for one more wrapper layer without letting an
+ * adversarial graph walk forever.
+ */
+const MAX_REEXPORT_DEPTH = 4;
+
+/**
+ * Total packages any single entry-surface traversal may follow, across every
+ * hop and branch. A deterministic ceiling on the work one `fetchTypeSurface`
+ * can trigger; hitting it marks the surface {@link TypeSurface.incomplete}
+ * rather than silently dropping symbols.
+ */
+const MAX_TOTAL_FOLLOWED_PACKAGES = 24;
 
 /**
  * Fold the declarations of re-exported dependencies into this surface.
@@ -621,67 +992,181 @@ const MAX_FOLLOWED_DEPENDENCIES = 8;
 interface DependencyMergeResult {
   followed: string[];
   attempted: boolean;
+  /**
+   * A public re-export edge could not be fully expanded — depth or budget
+   * exhausted, or a re-exported package failed to fetch. Propagated to
+   * {@link TypeSurface.incomplete} so a via-dependency miss is not reported as
+   * a confident removal.
+   */
+  incomplete: boolean;
+}
+
+/** Does this reference bring symbols in through a public re-export statement? */
+function isPublicReexportEdge(reference: ExternalReference): boolean {
+  return reference.star || reference.reExported.size > 0;
 }
 
 async function mergeDependencySurfaces(
   manifest: Manifest | null,
   sources: readonly DeclarationSource[],
   api: SurfaceApi,
+  selfNode: string,
+  traversal: ReexportTraversal | undefined,
 ): Promise<DependencyMergeResult> {
   const declared = { ...manifest?.dependencies, ...manifest?.peerDependencies };
-  if (Object.keys(declared).length === 0) return { followed: [], attempted: false };
+  if (Object.keys(declared).length === 0) return { followed: [], attempted: false, incomplete: false };
 
-  const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
+  const depth = traversal?.depth ?? 0;
+  const budget = traversal?.budget ?? { remaining: MAX_TOTAL_FOLLOWED_PACKAGES };
+  const visited = new Set<string>([...(traversal?.visited ?? []), selfNode]);
+
+  // A re-export can name a *subpath* of a dependency rather than the
+  // dependency itself: `lit@2` publishes nothing of its own and is entirely
+  // `export * from 'lit-element/lit-element.js'`. Matching the specifier
+  // against `dependencies` verbatim never found `lit-element`, so the edge was
+  // dropped, no symbols were merged, and the whole package resolved to "no
+  // public surface". The package is what carries the version range; the
+  // subpath is which of its entry points to read.
+  const wanted = [...externalReferences(sources, api)]
+    .map(([specifier, reference]) => {
+      const pkg = packageOfSpecifier(specifier);
+      const subpath = specifier.length > pkg.length ? specifier.slice(pkg.length + 1) : undefined;
+      return { specifier, reference, pkg, subpath };
+    })
+    .filter((edge) => declared[edge.pkg]);
   const attempted = wanted.length > 0;
+  if (!attempted) return { followed: [], attempted: false, incomplete: false };
+
   const followed: string[] = [];
+  let incomplete = false;
 
-  // Read a chunk at a time, and merge that chunk strictly in order.
+  // The traversal is split into three phases so its output is a pure function
+  // of the (deterministic) reference order and the entry budget — never of
+  // which network response happened to land first:
   //
-  // Each dependency here is a full surface fetch — a listing, its declaration
-  // files, and the parse over them — and doing them one after another made a
-  // wrapper package cost eight of those back to back. The chunk is the same
-  // size as the follow budget, so the outcome is identical to the serial loop
-  // (the first eight references that resolve, merged in reference order, with
-  // earlier ones winning a name collision); only the waiting overlaps.
-  for (let at = 0; at < wanted.length && followed.length < MAX_FOLLOWED_DEPENDENCIES; at += MAX_FOLLOWED_DEPENDENCIES) {
-    const chunk = wanted.slice(at, at + MAX_FOLLOWED_DEPENDENCIES);
-    const fetched = await mapWithConcurrency(chunk, MAX_FOLLOWED_DEPENDENCIES, async ([specifier]) => {
-      const resolved = await resolveDependencyVersion(specifier, declared[specifier]!);
-      if (!resolved) return null;
-      // One level only. The dependency's own dependencies are its business; a
-      // second hop multiplies requests without changing what this package
-      // exposes, and a cycle would otherwise be reachable.
-      // A dependency Drift cannot reach costs its symbols, never the comparison:
-      // the rest of this package's surface is still worth diffing.
-      const surface = await fetchTypeSurface(specifier, resolved, {
-        followDependencies: false,
-      }).catch(() => null);
-      return surface ? { resolved, surface } : null;
-    });
+  //   1. resolve every dependency's pinned version, concurrently. Each answer
+  //      depends only on (specifier, range), so order cannot matter.
+  //   2. decide, synchronously and strictly in reference order, which edges to
+  //      follow and how much recursion budget each draws. No await here.
+  //   3. fetch the planned surfaces and merge them in reference order.
+  //      Non-recursive fetches run concurrently; the recursive descent runs
+  //      one edge at a time so the *shared* budget is drawn down in a single
+  //      deterministic depth-first order rather than a race between subtrees.
 
-    for (const [index, [specifier, reference]] of chunk.entries()) {
-      if (followed.length >= MAX_FOLLOWED_DEPENDENCIES) break;
-      const found = fetched[index];
-      if (!found) continue;
-      const { resolved, surface } = found;
+  // Phase 1 — versions.
+  const resolvedVersions = await mapWithConcurrency(wanted, DEPENDENCY_FETCH_WIDTH, (edge) =>
+    resolveDependencyVersion(edge.pkg, declared[edge.pkg]!),
+  );
 
-      let merged = 0;
-      for (const [exportedAs, declaredAs] of reference.names(surface.api)) {
-        const entry = surface.api.get(declaredAs);
-        if (!entry) continue;
-        // Keyed by origin so a wrapper and its dependency can both publish a
-        // symbol of the same name without one silently masking the other.
-        const key = reference.reExported.has(exportedAs) ? exportedAs : `${specifier}#${exportedAs}`;
-        if (api.has(key)) continue;
-        api.set(key, { ...renameEntry(entry, exportedAs), via: specifier });
-        merged += 1;
-      }
+  // Phase 2 — plan.
+  interface EdgePlan {
+    specifier: string;
+    /** The dependency that carries the version range. */
+    pkg: string;
+    /** Which of its entry points this edge names, when not the root. */
+    subpath: string | undefined;
+    reference: ExternalReference;
+    resolved: string;
+    /** A genuine `export * from` / `export { x } from` edge. */
+    publicEdge: boolean;
+    /** Recurse into this edge's own re-exports (public edge, within depth+budget, not a cycle). */
+    recurse: boolean;
+  }
+  const plan: EdgePlan[] = [];
+  let implementationFollows = 0;
+  for (const [index, { specifier, reference, pkg, subpath }] of wanted.entries()) {
+    const resolved = resolvedVersions[index];
+    const publicEdge = isPublicReexportEdge(reference);
 
-      if (merged > 0) followed.push(`${specifier}@${resolved}`);
+    if (!resolved) {
+      // A public re-export edge whose version could not be resolved is a hole
+      // in this surface — not evidence the dependency exports nothing, so a
+      // symbol missing beyond it must not become a confident `export-removed`.
+      // An implementation-only edge that fails to resolve is skipped as before.
+      if (publicEdge) incomplete = true;
+      continue;
     }
+
+    const cycle = visited.has(`${specifier}@${resolved}`);
+
+    if (!publicEdge) {
+      // Implementation-only dependency: bounded, and silent truncation past the
+      // bound is acceptable — it cannot hide part of this package's own API.
+      if (implementationFollows >= MAX_IMPLEMENTATION_DEPENDENCIES) continue;
+      implementationFollows += 1;
+      plan.push({ specifier, pkg, subpath, reference, resolved, publicEdge, recurse: false });
+      continue;
+    }
+
+    // Public re-export edge — always inspected, never dropped for a count.
+    // Recurse when depth and budget allow and it is not a cycle; otherwise the
+    // immediate surface is still fetched (one bounded fetch) but this surface
+    // is marked incomplete, because a symbol absent beyond an unfollowed hop
+    // cannot be told apart from a removal. A cycle is *not* incompleteness — it
+    // terminates with everything reachable without looping.
+    const canRecurse = !cycle && depth < MAX_REEXPORT_DEPTH && budget.remaining > 0;
+    if (canRecurse) budget.remaining -= 1;
+    else if (!cycle) incomplete = true;
+    plan.push({ specifier, pkg, subpath, reference, resolved, publicEdge, recurse: canRecurse });
   }
 
-  return { followed, attempted };
+  // Phase 3 — fetch and merge.
+  const fetchedSurfaces = new Array<TypeSurface | null>(plan.length);
+  await mapWithConcurrency(
+    plan.map((entry, index) => ({ entry, index })),
+    DEPENDENCY_FETCH_WIDTH,
+    async ({ entry, index }) => {
+      if (entry.recurse) return; // fetched in the sequential pass below
+      fetchedSurfaces[index] = await fetchTypeSurface(entry.pkg, entry.resolved, {
+        followDependencies: false,
+        ...(entry.subpath ? { subpath: entry.subpath } : {}),
+      }).catch(() => null);
+    },
+  );
+  for (const [index, entry] of plan.entries()) {
+    if (!entry.recurse) continue;
+    fetchedSurfaces[index] = await fetchTypeSurface(entry.pkg, entry.resolved, {
+      followDependencies: true,
+      ...(entry.subpath ? { subpath: entry.subpath } : {}),
+      traversal: {
+        depth: depth + 1,
+        visited: new Set([...visited, `${entry.specifier}@${entry.resolved}`]),
+        budget,
+      },
+    }).catch(() => null);
+  }
+
+  for (const [index, entry] of plan.entries()) {
+    const surface = fetchedSurfaces[index];
+    // A public edge whose surface could not be fetched at all, or whose own
+    // traversal came back incomplete, propagates that incompleteness up.
+    if (entry.publicEdge && !surface) incomplete = true;
+    if (surface?.incomplete) incomplete = true;
+    if (!surface) continue;
+
+    let merged = 0;
+    for (const [exportedAs, declaredAs] of entry.reference.names(surface.api)) {
+      const declEntry = surface.api.get(declaredAs);
+      if (!declEntry) continue;
+      // A name the parent genuinely re-exports — `export { x } from` or
+      // `export * from` — is one of the parent's *own* public exports and is
+      // keyed bare, so a leaf removal three hops down still lines up with the
+      // wrapper's symbol on the other side of the diff. An implementation
+      // import that merely surfaced in a signature is keyed by origin, so it
+      // cannot silently mask a same-named symbol the wrapper declares itself.
+      const key =
+        entry.reference.star || entry.reference.reExported.has(exportedAs)
+          ? exportedAs
+          : `${entry.specifier}#${exportedAs}`;
+      if (api.has(key)) continue;
+      api.set(key, { ...renameEntry(declEntry, exportedAs), via: entry.specifier });
+      merged += 1;
+    }
+
+    if (merged > 0) followed.push(`${entry.specifier}@${entry.resolved}`);
+  }
+
+  return { followed, attempted, incomplete };
 }
 
 /**
@@ -843,7 +1328,7 @@ export function subpathsOf(exportsField: unknown): string[] {
  * only there), then conventional fallbacks, then DefinitelyTyped. A package
  * with no declarations simply yields no evidence from this source.
  */
-async function resolveTypesEntry(
+async function resolveOwnTypesEntry(
   packageName: string,
   version: string,
   pkg: Manifest | null,
@@ -852,6 +1337,29 @@ async function resolveTypesEntry(
   // have probed them. Asked of the listing as one question, so the common case
   // costs no requests at all beyond the listing itself; a version with no
   // listing falls back to the same sequential probing as before.
+  const wanted = typeEntryCandidates(packageName, pkg);
+
+  const published = await firstPublished(packageName, version, wanted);
+  if (published !== undefined) {
+    if (published) return published;
+  } else {
+    for (const candidate of wanted) {
+      if (await exists(packageName, version, candidate)) return candidate;
+    }
+  }
+
+  return null;
+}
+
+function resolveOwnTypesEntryFromListing(
+  packageName: string,
+  pkg: Manifest,
+  files: ReadonlyMap<string, ArchiveEntry>,
+): string | null {
+  return typeEntryCandidates(packageName, pkg).find((candidate) => files.has(candidate)) ?? null;
+}
+
+function typeEntryCandidates(packageName: string, pkg: Manifest | null): string[] {
   const wanted: string[] = [];
   if (pkg) {
     const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
@@ -864,24 +1372,46 @@ async function resolveTypesEntry(
     if (pkg.main) wanted.push(normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts'));
   }
   wanted.push(...conventionalTypeEntries(packageName));
+  return [...new Set(wanted)];
+}
 
-  const published = await firstPublished(packageName, version, wanted);
-  if (published !== undefined) {
-    if (published) return published;
-  } else {
-    for (const candidate of wanted) {
-      if (await exists(packageName, version, candidate)) return candidate;
-    }
-  }
-
-  // DefinitelyTyped ships types for the same *major* line, so this is only a
-  // sound comparison when both sides resolve; mismatches yield no evidence.
+/**
+ * The `@types/<pkg>` release line that documents *this* version.
+ *
+ * DefinitelyTyped versions its packages to match the major (and usually the
+ * minor) of what they describe: `@types/express@4` is express 4's API,
+ * `@types/express@5` is express 5's. Resolving both sides to `latest` — the
+ * same bytes twice — is what made every `@types`-only package incomparable,
+ * and it is a large slice of npm: express, lodash and everything else whose
+ * declarations live outside the package.
+ *
+ * The major line is a convention, not a guarantee, so a range that does not
+ * resolve falls back to `latest` rather than failing. When *both* sides fall
+ * back the entry paths are equal, and `computeTypeSurface` still declines to
+ * compare — nothing was learned, and saying so is the point.
+ */
+export async function resolveDefinitelyTypedEntry(
+  packageName: string,
+  version: string,
+): Promise<string | null> {
   const dtName = packageName.startsWith('@')
     ? `@types/${packageName.slice(1).replace('/', '__')}`
     : `@types/${packageName}`;
-  if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
+
+  const major = /^\D*(\d+)\./.exec(version)?.[1] ?? /^\D*(\d+)$/.exec(version)?.[1];
+  if (major && (await exists(dtName, major, 'index.d.ts'))) return `@types:${dtName}@${major}`;
+  if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}@latest`;
 
   return null;
+}
+
+/** Split `@types:@types/express@4` into the package and the range to fetch. */
+export function definitelyTypedTarget(entryPath: string): { name: string; range: string } {
+  const spec = entryPath.slice('@types:'.length);
+  const at = spec.lastIndexOf('@');
+  // `lastIndexOf` lands on the version separator, never on the scope's own
+  // leading `@`, because the range is always appended.
+  return at > 0 ? { name: spec.slice(0, at), range: spec.slice(at + 1) } : { name: spec, range: 'latest' };
 }
 
 /**
@@ -918,7 +1448,17 @@ export function expandTypesEntry(declared: string): string[] {
   // computed diff, which is the strongest evidence Drift has. That is exactly
   // how zod 4 was reported as having no breaking changes.
   const base = declared.replace(/\.(c|m)?[jt]s$/, '').replace(/\/$/, '');
-  return [`${base}.d.ts`, `${base}.d.cts`, `${base}.d.mts`, `${base}/index.d.ts`, declared];
+  const candidates = [`${base}.d.ts`, `${base}.d.cts`, `${base}.d.mts`, `${base}/index.d.ts`];
+
+  // A JavaScript file is never a declaration file, so it must not survive as
+  // the last-resort candidate. `uuid@9` publishes no `types` field and an
+  // `exports` map whose only reachable string is `./dist/esm-browser/index.js`;
+  // that path exists, so it was selected as the types entry, parsed as
+  // TypeScript to zero exported symbols, and the package was reported as
+  // having no public surface — while `@types/uuid@9` sat unread, because the
+  // DefinitelyTyped fallback only runs when *no* entry was found at all.
+  if (!/\.(c|m)?js$/.test(declared)) candidates.push(declared);
+  return candidates;
 }
 
 export function typesFromExports(exportsField: unknown): string | null {
@@ -970,14 +1510,18 @@ async function collectDeclarationSources(
   packageName: string,
   version: string,
   entryPath: string,
+  artifact?: NpmArtifact,
 ): Promise<DeclarationSource[]> {
   if (entryPath.startsWith('@types:')) {
-    const dtName = entryPath.slice('@types:'.length);
-    const content = await fetchText(`${JSDELIVR_CDN}/${dtName}@latest/index.d.ts`);
+    const target = definitelyTypedTarget(entryPath);
+    const content = await fetchText(`${JSDELIVR_CDN}/${target.name}@${target.range}/index.d.ts`);
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
-  const listing = await fileListing(packageName, version);
+  const listing = artifact
+    ? new Set(artifact.files.keys()) as ReadonlySet<string>
+    : await fileListing(packageName, version);
+  let declarationBytes = 0;
 
   // Each re-export expands to five candidate paths rather than two, so the
   // queue holds candidate *groups* and stops at the first that resolves. With
@@ -990,9 +1534,19 @@ async function collectDeclarationSources(
   const resolveGroup = async (candidates: readonly string[]): Promise<DeclarationSource | null> => {
     const published = listing ? (candidates.find((path) => listing.has(path)) ?? null) : undefined;
     for (const path of published === undefined ? candidates : published ? [published] : []) {
-      const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
-        retries: 0,
-      });
+      let content: string | null;
+      if (artifact) {
+        const entry = artifact.files.get(path);
+        if (!entry || entry.size > MAX_NPM_DECLARATION_BYTES - declarationBytes) return null;
+        const bytes = entry.read();
+        declarationBytes += bytes.length;
+        if (declarationBytes > MAX_NPM_DECLARATION_BYTES) return null;
+        content = bytes.toString('utf8');
+      } else {
+        content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
+          retries: 0,
+        });
+      }
       if (content) return { path, content };
     }
     return null;
@@ -1143,6 +1697,7 @@ export function extractExports(
 
   collectExportSpecifiers(content, locals, into, aliases);
   collectExportAssignments(content, locals, into);
+  collectDefaultExports(content, locals, into);
   // Within one file, bases are already all known. A surface assembled from
   // several files resolves again in `fetchTypeSurface`, once every source has
   // been read; doing it here as well is what makes `extractExports` usable on
@@ -1247,12 +1802,66 @@ function resolveAliases(api: SurfaceApi, aliases: readonly ExportAlias[]): void 
  * fetch Phaser's `.d.ts` successfully and still report "no declarations".
  */
 function collectExportAssignments(content: string, locals: SurfaceApi, into: SurfaceApi): void {
-  for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$]*)\s*;/g)) {
+  // The trailing semicolon is optional. `export = LRUCache` with no semicolon
+  // is valid TypeScript and is what `lru-cache@7` ships; requiring one meant
+  // its entire API — a `declare class` plus a `declare namespace`, the whole
+  // package — parsed to zero exported symbols, and the version pair was
+  // reported as having no comparable surface at all.
+  for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$.]*)\s*(?:;|$)/gm)) {
+    // `export = G` means the module *is* `G`, so `G` is an identifier internal
+    // to the package and not a name any consumer can write: an importer binds
+    // the module to a name of its own choosing. `glob@8` calls it `G`, so Drift
+    // reported `G.sync` and `G.hasMagic` -- symbols that appear in no consumer
+    // anywhere, and read as gibberish in a report -- while the line to find
+    // says `glob.sync(...)`.
+    //
+    // So the declarations are published *only* under `default`, the one name
+    // the module is reachable by. Keeping the local name as well was tried and
+    // is worse in both directions: it puts `G` in front of a reader, and it
+    // reports every change twice, once under each name (26 findings for glob
+    // 8 -> 13, where there are 13). Nothing is lost -- a named import off an
+    // `export =` namespace (`import { Glob } from 'glob'`) still matches,
+    // because `default.Glob` contributes the bare leaf `Glob`.
+    republishAs('default', match[1]!, locals, into);
+  }
+}
+
+/**
+ * Copy `local` and its members into `into` under the name consumers reach them
+ * by.
+ *
+ * The local identifier is kept as well, never replaced: it is frequently the
+ * conventional name too (`LRUCache`), and dropping it would lose a real symbol
+ * to gain a synthetic one.
+ */
+function republishAs(published: string, local: string, locals: SurfaceApi, into: SurfaceApi): void {
+  const declared = locals.get(local);
+  if (declared && !into.has(published)) into.set(published, renameEntry(declared, published));
+  for (const entry of locals.values()) {
+    if (!entry.name.startsWith(`${local}.`)) continue;
+    const name = `${published}.${entry.name.slice(local.length + 1)}`;
+    if (!into.has(name)) into.set(name, renameEntry(entry, name));
+  }
+}
+
+/**
+ * `export default class Telnet { … }`, and the other default-export forms.
+ *
+ * A default export's *published* name is `default` — it is the only name an
+ * importer can reach it by, and the local identifier is the package's own
+ * business. So the declaration is republished under that name, which is also
+ * what keeps a purely local rename from reading as a removal plus an addition.
+ *
+ * Its members come with it, and they are the part that matters: a consumer
+ * writes `client.exec(…)`, so `default.exec` is what localization has to have.
+ */
+function collectDefaultExports(content: string, locals: SurfaceApi, into: SurfaceApi): void {
+  for (const match of content.matchAll(
+    /\bexport\s+default\s+(?:abstract\s+)?(?:class|function|enum|const|let|var)?\s*([A-Za-z_$][\w$]*)/g,
+  )) {
     const local = match[1]!;
-    for (const entry of locals.values()) {
-      if (entry.name !== local && !entry.name.startsWith(`${local}.`)) continue;
-      if (!into.has(entry.name)) into.set(entry.name, entry);
-    }
+    if (!locals.has(local)) continue;
+    republishAs('default', local, locals, into);
   }
 }
 
@@ -1849,7 +2458,11 @@ export function entryPointMoved(
   };
 }
 
-export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChange[] {
+export function diffSurfaces(
+  before: SurfaceApi,
+  after: SurfaceApi,
+  context: { beforeComplete?: boolean; afterComplete?: boolean } = {},
+): SurfaceChange[] {
   const changes: SurfaceChange[] = [];
 
   for (const [key, oldEntry] of before) {
@@ -1862,20 +2475,42 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
     const origin = oldEntry.via ? ` (declared in ${oldEntry.via})` : '';
 
     if (!newEntry) {
+      // The new surface stopped short of fully expanding its public re-export
+      // graph, and this symbol came in through a followed dependency. Its
+      // absence here is as likely to be Drift's truncated traversal as a real
+      // removal, so the comparison is left incomplete rather than asserting a
+      // removal it cannot stand behind. A symbol the package declares itself is
+      // still reported — traversal limits never hid those.
+      if (context.afterComplete === false && oldEntry.via) continue;
+
       changes.push({
         kind: 'export-removed',
+        // A shape-unknown symbol going missing is still a real removal —
+        // existence, the one thing that entry did assert, has disappeared —
+        // but its `kind` was never real, so it is not quoted as one.
         symbol: name,
-        detail: `\`${name}\` is no longer exported (was a ${oldEntry.kind})${origin}.`,
+        detail: oldEntry.shapeUnknown
+          ? `\`${name}\` is no longer exported${origin}.`
+          : `\`${name}\` is no longer exported (was ${withArticle(oldEntry.kind)})${origin}.`,
         before: oldEntry.signature,
+        ...(oldEntry.shapeUnknown ? {} : { fromKind: oldEntry.kind }),
       });
       continue;
     }
+
+    // One side is a public symbol Drift proved exists but could not resolve to
+    // a declaration (a Python explicit re-export into `__all__` whose target
+    // was not in the parsed package). `newEntry` is present, so there is no
+    // removal; and its `kind`/`signature`/`members` are placeholders, so every
+    // comparison below would be inventing a change out of a value that was
+    // never the package's. Existence matched — say nothing more.
+    if (oldEntry.shapeUnknown || newEntry.shapeUnknown) continue;
 
     if (oldEntry.kind !== newEntry.kind && !interchangeable(oldEntry.kind, newEntry.kind)) {
       changes.push({
         kind: 'kind-changed',
         symbol: name,
-        detail: `\`${name}\` changed from a ${oldEntry.kind} to a ${newEntry.kind}${origin}.`,
+        detail: `\`${name}\` changed from ${withArticle(oldEntry.kind)} to ${withArticle(newEntry.kind)}${origin}.`,
         before: oldEntry.signature,
         after: newEntry.signature,
         fromKind: oldEntry.kind,
@@ -1891,6 +2526,18 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
           symbol: `${name}.${member}`,
           detail: `\`${name}.${member}\` was removed${origin}.`,
         });
+      } else {
+        const beforeMember = oldEntry.memberSignatures?.[member];
+        const afterMember = newEntry.memberSignatures?.[member];
+        if (beforeMember && afterMember && beforeMember !== afterMember) {
+          changes.push({
+            kind: 'signature-changed',
+            symbol: `${name}.${member}`,
+            detail: `The signature of \`${name}.${member}\` changed${origin}.`,
+            before: beforeMember,
+            after: afterMember,
+          });
+        }
       }
     }
 
@@ -1917,23 +2564,35 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
     // that is still `sveltekit()` and still compiles.
     const [oldSignature, newSignature] = comparableSignatures(oldEntry.signature, newEntry.signature);
 
-    if (
-      oldSignature !== newSignature &&
-      oldEntry.kind !== 'interface' &&
-      oldEntry.kind !== 'class' &&
-      // Renaming a type parameter changes the text of a declaration without
-      // changing a single thing about how it can be called. `zod` renamed `T`
-      // to `Inner` across its 3.x line and, read as text, every generic export
-      // it has "changed signature" — dozens of findings, each pointing at
-      // working code, none of them true. Two declarations that differ only in
-      // what their type parameters are spelled are the same declaration.
-      !alphaEquivalent(oldSignature, newSignature) &&
-      // And a call site cannot break on an argument it never passes. Growing
-      // `f()` into `f(options?)` is the most common shape of a minor release,
-      // and reporting it sends a developer to read code that was already
-      // correct. See `onlyRelaxesCallers`.
-      !onlyRelaxesCallers(oldSignature, newSignature)
-    ) {
+    // When both sides carry a structured callable shape (the Python reader
+    // supplies one), that shape is *authoritative* for caller compatibility.
+    // The display signature is a lossy rendering — it does not encode the `/`
+    // positional-only boundary or the bare `*` keyword-only boundary — so
+    // `def f(a)` → `def f(a, /)` and `def f(a=1)` → `def f(*, a=1)` are real
+    // breaks with byte-identical display text. Requiring display inequality
+    // here would suppress them, so the structured verdict is not gated on it.
+    // The display signature is still used only for `before`/`after` panels.
+    const structuredCallableChange = Boolean(oldEntry.callable && newEntry.callable);
+
+    const reportSignatureChange = structuredCallableChange
+      ? !callableChangeIsBackwardCompatible(oldEntry.callable!, newEntry.callable!)
+      : oldSignature !== newSignature &&
+        oldEntry.kind !== 'interface' &&
+        oldEntry.kind !== 'class' &&
+        // Renaming a type parameter changes the text of a declaration without
+        // changing a single thing about how it can be called. `zod` renamed `T`
+        // to `Inner` across its 3.x line and, read as text, every generic export
+        // it has "changed signature" — dozens of findings, each pointing at
+        // working code, none of them true. Two declarations that differ only in
+        // what their type parameters are spelled are the same declaration.
+        !alphaEquivalent(oldSignature, newSignature) &&
+        // And a call site cannot break on an argument it never passes. Growing
+        // `f()` into `f(options?)` is the most common shape of a minor release,
+        // and reporting it sends a developer to read code that was already
+        // correct. See `onlyRelaxesCallers`.
+        !onlyRelaxesCallers(oldSignature, newSignature);
+
+    if (reportSignatureChange) {
       changes.push({
         kind: 'signature-changed',
         symbol: name,
@@ -1943,7 +2602,9 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
         // must find the same text in both.
         before: oldEntry.signature,
         after: newEntry.signature,
-        ...(whatChanged(oldSignature, newSignature) ?? {}),
+        // A structured callable break is, by construction, a parameter-list
+        // incompatibility; `whatChanged` only reads call-signature text.
+        ...(structuredCallableChange ? { changed: 'parameters' as const } : (whatChanged(oldSignature, newSignature) ?? {})),
       });
     }
   }
@@ -2041,6 +2702,121 @@ export function onlyRelaxesCallers(before: string, after: string): boolean {
   return now.parameters
     .slice(old.parameters.length)
     .every((parameter) => parameter.optional || parameter.rest);
+}
+
+/**
+ * Given two {@link CallableShape}s, can every call the old shape accepted still
+ * be accepted by the new one?
+ *
+ * `true` only when that is provable. Any shape this does not model, and every
+ * genuine tightening, returns `false` so the change is still reported — an
+ * added optional parameter must not become a licence to wave through a real
+ * break. This is the check that keeps a backward-compatible Python signature
+ * expansion (`safe_url_string(url, encoding='utf8', path_encoding='utf8')` →
+ * `…, quote_path=True`) from surfacing as `signature-changed`, while a new
+ * required parameter, an optional-turned-required one, a removed parameter, a
+ * dropped `**kwargs`, and a keyword-addressable rename all still do.
+ */
+export function callableChangeIsBackwardCompatible(before: CallableShape, after: CallableShape): boolean {
+  const positional = (shape: CallableShape): CallableParam[] =>
+    shape.parameters.filter((p) => p.kind === 'positional-only' || p.kind === 'positional-or-keyword');
+  const hasVar = (shape: CallableShape, kind: CallableParamKind): boolean =>
+    shape.parameters.some((p) => p.kind === kind);
+  const keywordAddressable = (shape: CallableShape): CallableParam[] =>
+    shape.parameters.filter((p) => p.kind === 'positional-or-keyword' || p.kind === 'keyword-only');
+  const paramNamed = (shape: CallableShape, name: string): CallableParam | undefined =>
+    shape.parameters.find((p) => p.name === name);
+
+  const oldPositional = positional(before);
+  const newPositional = positional(after);
+  const oldMinPositional = oldPositional.filter((p) => p.required).length;
+  const newMinPositional = newPositional.filter((p) => p.required).length;
+  const oldMaxPositional = hasVar(before, 'var-positional') ? Infinity : oldPositional.length;
+  const newMaxPositional = hasVar(after, 'var-positional') ? Infinity : newPositional.length;
+
+  // A caller that passed the fewest positionals the old shape allowed must not
+  // now be one argument short; a caller that passed the most must still fit.
+  if (newMinPositional > oldMinPositional) return false;
+  if (newMaxPositional < oldMaxPositional) return false;
+
+  // The old shape had `*args`, so it accepted arbitrary trailing positionals —
+  // and a caller could pass extra positionals *and* a same-named keyword when
+  // `**kwargs` was also present. A new named positional slot in front of
+  // `*args` turns `f(<that position>, name=…)` into a "multiple values for
+  // argument" error and rebinds a positional a caller intended for `*args`.
+  // Any change to the positional-param list ahead of `*args` (an addition, or
+  // a keyword-only parameter reclassified into it) is therefore not provably
+  // safe.
+  if (hasVar(before, 'var-positional') && newPositional.length !== oldPositional.length) return false;
+
+  // Positional slots that existed keep their meaning: a `positional-or-keyword`
+  // parameter must not lose keyword addressability, and it must not be renamed.
+  // A rename is not provably safe even when `**kwargs` remains: `f(a=0, **kw)` →
+  // `f(b=0, **kw)` turns the old-valid `f(1, b=2)` (which bound `a=1`,
+  // `kw={'b': 2}`) into `b=1` positionally *and* `b=2` by keyword — a "multiple
+  // values for argument 'b'" error. `**kwargs` absorbs the old name's value but
+  // does not stand in for the renamed slot.
+  for (const [index, oldParam] of oldPositional.entries()) {
+    if (oldParam.kind !== 'positional-or-keyword') continue;
+    const newParam = newPositional[index];
+    if (!newParam) {
+      if (!hasVar(after, 'var-keyword')) return false;
+      continue;
+    }
+    if (newParam.kind === 'positional-only') return false;
+    if (newParam.name !== oldParam.name) return false;
+  }
+
+  // A positional-only parameter becoming keyword-addressable is normally a pure
+  // relaxation — but not when the old shape had `**kwargs`. A caller could have
+  // passed that name as a keyword (it landed in `**kwargs`) while also filling
+  // the positional-only slot: `f(a, /, **kw)` → `f(a, **kw)` turns the
+  // old-valid `f(1, a=2)` (`a=1`, `kw={'a': 2}`) into a "multiple values for
+  // argument 'a'" error.
+  if (hasVar(before, 'var-keyword')) {
+    for (const oldParam of before.parameters) {
+      if (oldParam.kind !== 'positional-only') continue;
+      const newParam = paramNamed(after, oldParam.name);
+      if (newParam && (newParam.kind === 'positional-or-keyword' || newParam.kind === 'keyword-only')) {
+        return false;
+      }
+    }
+  }
+
+  // Arbitrary keyword arguments the old shape accepted via `**kwargs` must
+  // still be accepted.
+  if (hasVar(before, 'var-keyword') && !hasVar(after, 'var-keyword')) return false;
+
+  // Every name the old shape accepted as a keyword must still be passable as
+  // one — as the same-named keyword-capable parameter, or via `**kwargs`.
+  if (!hasVar(after, 'var-keyword')) {
+    for (const oldParam of keywordAddressable(before)) {
+      const newParam = paramNamed(after, oldParam.name);
+      if (!newParam || (newParam.kind !== 'positional-or-keyword' && newParam.kind !== 'keyword-only')) {
+        return false;
+      }
+    }
+  }
+
+  // A keyword-only parameter the old shape did not require must not become
+  // required — old callers never passed it.
+  for (const newParam of after.parameters) {
+    if (newParam.kind !== 'keyword-only' || !newParam.required) continue;
+    const oldParam = paramNamed(before, newParam.name);
+    if (!oldParam || oldParam.kind !== 'keyword-only' || !oldParam.required) return false;
+  }
+
+  // An old keyword-only parameter dropped entirely, with no `**kwargs` to
+  // absorb it, is a removed accepted argument.
+  if (!hasVar(after, 'var-keyword')) {
+    for (const oldParam of before.parameters) {
+      if (oldParam.kind === 'keyword-only' && !paramNamed(after, oldParam.name)) return false;
+    }
+  }
+
+  // Losing `*args` when the old shape had it (and the new one cannot take the
+  // extra positionals) is caught by the max-positional check above.
+  return true;
 }
 
 /**

@@ -72,6 +72,14 @@ describe('the support matrix separates upgrade discovery from upgrade install', 
     assert.match(supportFor('opam', 'upgrade-discovery').note!, /opam-repository/);
   });
 
+  test('Conan and vcpkg preserve exact identities without inventing version ordering', () => {
+    for (const ecosystem of ['conan', 'vcpkg'] as const) {
+      const support = supportFor(ecosystem, 'upgrade-discovery');
+      assert.equal(support.level, 'partial');
+      assert.match(support.note!, /exact|ordering|baseline/i);
+    }
+  });
+
   test('registry-backed ecosystems have full discovery', () => {
     for (const ecosystem of ['npm', 'pypi', 'cargo', 'go', 'rubygems', 'nuget'] as const) {
       assert.equal(supportFor(ecosystem, 'upgrade-discovery').level, 'full');

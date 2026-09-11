@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { impactFunnelSchema } from './impact-funnel.ts';
 
 /**
  * One external case, and everything needed to answer "where did this code and
@@ -98,6 +99,13 @@ export const exclusionKindSchema = z.enum([
   'reproduction-failed',
   /** The dataset's label does not map onto anything Drift represents, so a comparison would not be meaningful. */
   'label-unmappable',
+  /**
+   * The dataset's own reference tools near-unanimously disagree with its
+   * ground-truth label for this case, so scoring against that label would
+   * measure the corpus's internal contradiction rather than the tool. The
+   * count is reported; the case is not silently dropped.
+   */
+  'ground-truth-contested',
   /** Drift does not support this ecosystem or file type at the stage under test. A real, reportable product limit. */
   'out-of-scope-for-drift',
   /** Excluded by the run's own selection (limit/sample), not by anything about the case. */
@@ -138,6 +146,23 @@ export const externalCaseResultSchema = z.object({
     repaired: z.boolean().optional(),
   }),
   /**
+   * Questions this case belongs to but whose truth cannot adjudicate an
+   * answer. This is distinct from an absent outcome: absence means the
+   * dataset never asks the question, while this records that it was asked and
+   * deliberately withheld from scoring, with the reason preserved.
+   */
+  notAdjudicated: z
+    .object({
+      detectedBreaking: z.string().min(1).optional(),
+      categoryCorrect: z.string().min(1).optional(),
+      detectedUpdate: z.string().min(1).optional(),
+      identifiedAffected: z.string().min(1).optional(),
+      localized: z.string().min(1).optional(),
+      falseSafe: z.string().min(1).optional(),
+      repaired: z.string().min(1).optional(),
+    })
+    .optional(),
+  /**
    * The raw binary prediction, for a dataset that has real negatives.
    *
    * Kept separate from `outcomes`, which record *correctness*. A confusion
@@ -147,6 +172,14 @@ export const externalCaseResultSchema = z.object({
    * confusion matrix would be undefined anyway.
    */
   predictedPositive: z.boolean().optional(),
+  /**
+   * Per-case consumer-impact funnel: which pipeline stage a scored positive
+   * miss was lost at, plus secondary diagnostics. Present on the consumer-
+   * impact datasets (swe-bump, bump, timemachine); absent on upstream-only
+   * detection datasets, where "affected" is not a question. See
+   * `impact-funnel.ts`.
+   */
+  impactFunnel: impactFunnelSchema.optional(),
   excluded: z
     .object({ kind: exclusionKindSchema, reason: z.string().min(1), missingRequirement: z.string().nullable() })
     .nullable(),

@@ -1,11 +1,12 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { commitWorkingTreeManifests } from '../dist/repo/local-git.js';
+import { severityOf } from '../dist/upgrade/severity.js';
 import {
   groupUpgradeCandidates,
   main,
@@ -91,6 +92,38 @@ describe('commitWorkingTreeManifests: making an uncommitted upgrade analysable',
       const { stdout: status } = await run('git', ['status', '--porcelain'], { cwd: root });
       assert.match(status, /package\.json/);
       assert.match(await readFile(join(root, 'package.json'), 'utf8'), /19\.0\.0/);
+    });
+  });
+
+  test('a project below the repository root is staged, not read as a deletion', async () => {
+    // `git status --porcelain` prints root-relative paths; `git add` resolves
+    // pathspecs against the working directory. Running the two from different
+    // places staged nothing here — `demos/npm/package.json` was looked for at
+    // `demos/npm/demos/npm/package.json` — so the commit came out with the
+    // manifest missing and every dependency in it read as *removed* rather
+    // than upgraded. That is every monorepo member analysed on its own.
+    await withGitRepo(async (root) => {
+      const nested = join(root, 'demos', 'npm');
+      await mkdir(nested, { recursive: true });
+      await writeFile(
+        join(nested, 'package.json'),
+        JSON.stringify({ dependencies: { axios: '0.21.4' } }, null, 2),
+      );
+      await run('git', ['add', '-A'], { cwd: root });
+      await run('git', ['commit', '-m', 'add nested project'], { cwd: root });
+
+      await writeFile(
+        join(nested, 'package.json'),
+        JSON.stringify({ dependencies: { axios: '1.7.7' } }, null, 2),
+      );
+
+      // Called with the *project* directory, which is what analysing one
+      // workspace member does.
+      const sha = await commitWorkingTreeManifests(nested, 'chore(deps): upgrade');
+      assert.ok(sha, 'a dirty manifest below the root still produces a commit');
+
+      const { stdout } = await run('git', ['show', `${sha}:demos/npm/package.json`], { cwd: root });
+      assert.match(stdout, /1\.7\.7/, 'the nested manifest must be in the commit, at its real path');
     });
   });
 
@@ -220,31 +253,73 @@ describe('CLI safe bulk upgrade routing', () => {
 describe('CLI safe bulk upgrade selection', () => {
   const candidateWithSeverity = (
     name: string,
-    severity: 'clean' | 'upstream-only' | 'affected' | 'verification-failed' | 'unchecked' | 'error',
+    severity:
+      | 'clean'
+      | 'upstream-only'
+      | 'impact-unresolved'
+      | 'affected'
+      | 'verification-failed'
+      | 'evidence-missing'
+      | 'error',
     manifestPath = 'package.json',
     packageManager = 'npm',
   ) => ({
     ...candidate(name, manifestPath),
     packageManager,
     status: severity === 'error' ? 'error' : 'ready',
-    breakingCount: severity === 'upstream-only' || severity === 'affected' ? 1 : 0,
+    breakingCount:
+      severity === 'upstream-only' || severity === 'impact-unresolved' || severity === 'affected' ? 1 : 0,
     impactCount: severity === 'affected' ? 1 : 0,
     impactFiles: severity === 'affected' ? 1 : 0,
-    gaps: severity === 'unchecked' ? ['no evidence'] : [],
-    verification: severity === 'verification-failed' ? { status: 'failed' } : undefined,
+    gaps: severity === 'evidence-missing' ? ['no evidence'] : [],
+    verification:
+      severity === 'verification-failed'
+        ? { status: 'failed' }
+        : // `upstream-only` is only reachable behind an isolated, compile-capable
+          // pass that cleared everything — represented by the reconciled
+          // `verifiedUnaffected` flag, not by `verification.status` alone.
+          severity === 'upstream-only'
+          ? { status: 'passed', checks: [{ label: 'typecheck', status: 'passed', compileCapable: true }], measuredWith: 1 }
+          : undefined,
+    // A `clean` candidate is only installable unattended once its checks have
+    // actually run and passed — see `safeUpgradeCandidates`. Both severities
+    // that reach the batch therefore carry the reconciled flag.
+    ...(severity === 'upstream-only' || severity === 'clean' ? { verifiedUnaffected: true } : {}),
   }) as never;
 
   test('selects only candidates Drift proved safe for this repository', () => {
     const candidates = [
       candidateWithSeverity('clean', 'clean'),
-      candidateWithSeverity('upstream', 'upstream-only'),
+      candidateWithSeverity('verified-upstream', 'upstream-only'),
+      // A real upstream break with no local site and nothing verified: bulk
+      // upgrade must never touch it.
+      candidateWithSeverity('unresolved', 'impact-unresolved'),
       candidateWithSeverity('affected', 'affected'),
       candidateWithSeverity('failed', 'verification-failed'),
-      candidateWithSeverity('unchecked', 'unchecked'),
+      candidateWithSeverity('missing', 'evidence-missing'),
       candidateWithSeverity('error', 'error'),
     ];
 
-    assert.deepEqual(safeUpgradeCandidates(candidates).map((entry) => entry.name), ['clean', 'upstream']);
+    assert.deepEqual(safeUpgradeCandidates(candidates).map((entry) => entry.name), ['clean', 'verified-upstream']);
+  });
+
+  /**
+   * A clean *prediction* is not a clean *result*.
+   *
+   * BUMP measures the prediction wrong on 3.1% of real Java breakages, and
+   * `drift upgrade` is the one place where being wrong edits somebody's
+   * repository without asking again. So the unattended batch is gated on
+   * `verifiedUnaffected` — this project's own compile-capable checks
+   * installed against the upgrade and passing — not on the static verdict.
+   */
+  test('a clean verdict whose checks never ran is not installed unattended', () => {
+    const unverified = candidateWithSeverity('clean-but-unchecked', 'clean');
+    delete (unverified as unknown as { verifiedUnaffected?: boolean }).verifiedUnaffected;
+
+    assert.deepEqual(safeUpgradeCandidates([unverified]), []);
+    // Still a clean verdict, and still installable by name — only the
+    // unattended batch is refused.
+    assert.equal(severityOf(unverified as never), 'clean');
   });
 
   test('groups one manifest and manager into one batch without reordering groups', () => {

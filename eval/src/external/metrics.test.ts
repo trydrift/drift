@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { describe, test } from 'node:test';
 import { DATASETS } from './dataset.ts';
-import { computeMetrics, exhaustivePrf, formatRate, rate } from './metrics.ts';
+import { bumpStratum, computeMetrics, exhaustivePrf, formatRate, rate } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
 
 /**
@@ -46,6 +46,26 @@ test('a rate over nothing is undefined, never zero', () => {
   assert.equal(rate(0, 0).value, null);
   assert.equal(formatRate(rate(0, 0)), 'n/a (0/0)');
   assert.equal(formatRate(rate(3, 7)), '3/7 (42.9%)');
+});
+
+test('explicitly unadjudicated cases stay out of an exact-version metric denominator', () => {
+  const reason = 'the corpus supplies a range, not an exact resolved version';
+  const metrics = computeMetrics({
+    dataset: DATASETS['swe-bump']!,
+    available: 3,
+    results: [
+      result({ caseId: 'exact', outcomes: { detectedUpdate: true } }),
+      result({ caseId: 'range-a', notAdjudicated: { detectedUpdate: reason } }),
+      result({ caseId: 'range-b', notAdjudicated: { detectedUpdate: reason } }),
+    ],
+  });
+
+  assert.deepEqual(metrics.rates['dependency-update detection rate'], { numerator: 1, denominator: 1, value: 1 });
+  assert.deepEqual(metrics.adjudication['dependency-update detection rate'], {
+    adjudicated: 1,
+    notAdjudicated: 2,
+    reasons: { [reason]: 2 },
+  });
 });
 
 test('a positive-only corpus yields no precision, no F1 and no false-positive rate', () => {
@@ -300,4 +320,55 @@ test('a completed run reports no shortfall', () => {
   const metrics = computeMetrics({ dataset: DATASETS['swe-bump']!, available: 1, results: done, selected: 1 });
   assert.equal(metrics.notRun, 0);
   assert.equal(metrics.selected, metrics.attempted);
+});
+
+/**
+ * BUMP's two strata, and the invariant that keeps them honest.
+ *
+ * `ENFORCER_FAILURE` is a Maven build-policy rule and the resolution/lock
+ * failures are the build never settling on a version. Neither produces an
+ * API-surface change, so no static differ can find one and Drift correctly
+ * answers `insufficient-evidence`. Pooled with the classes that *do* admit a
+ * signal, those cases are indistinguishable from misses and pull the headline
+ * affected-identification rate down by about six points — measuring a limit of
+ * static analysis rather than of Drift.
+ *
+ * The split exists so each number answers one question. What it must never do
+ * is quietly shrink the corpus, which is why the last assertion is the
+ * important one.
+ */
+describe('BUMP failure-class strata', () => {
+  test('build-policy and resolution failures are the no-static-signal stratum', () => {
+    assert.equal(bumpStratum('bump', 'ENFORCER_FAILURE'), 'no-api-surface-delta');
+    assert.equal(bumpStratum('bump', 'DEPENDENCY_LOCK_FAILURE'), 'no-api-surface-delta');
+    assert.equal(bumpStratum('bump', 'DEPENDENCY_RESOLUTION_FAILURE'), 'no-api-surface-delta');
+  });
+
+  test('compilation and test failures can be seen statically', () => {
+    assert.equal(bumpStratum('bump', 'COMPILATION_FAILURE'), 'static-signal-possible');
+    assert.equal(bumpStratum('bump', 'TEST_FAILURE'), 'static-signal-possible');
+    assert.equal(bumpStratum('bump', 'WERROR_FAILURE'), 'static-signal-possible');
+  });
+
+  test('every label lands in exactly one stratum, so the two denominators sum to the corpus', () => {
+    // The failure this guards is a new BUMP label appearing and silently
+    // belonging to neither stratum — the split would then quietly drop cases
+    // while both published rates still looked reasonable.
+    for (const label of [
+      'COMPILATION_FAILURE',
+      'TEST_FAILURE',
+      'WERROR_FAILURE',
+      'ENFORCER_FAILURE',
+      'DEPENDENCY_LOCK_FAILURE',
+      'DEPENDENCY_RESOLUTION_FAILURE',
+      'SOME_LABEL_BUMP_ADDS_LATER',
+    ]) {
+      assert.ok(bumpStratum('bump', label), `${label} belongs to a stratum`);
+    }
+  });
+
+  test('no other dataset is stratified this way', () => {
+    assert.equal(bumpStratum('roseau', 'COMPILATION_FAILURE'), null);
+    assert.equal(bumpStratum('bump', ''), null);
+  });
 });

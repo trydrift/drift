@@ -107,10 +107,16 @@ describe('locating a package’s declarations', () => {
       api,
     );
 
-    assert.equal(api.get('Phaser')?.kind, 'namespace');
-    assert.equal(api.get('Phaser.Actions')?.kind, 'namespace');
-    assert.equal(api.get('Phaser.Actions.AddEffectBloom')?.kind, 'function');
-    assert.deepEqual(api.get('Phaser.Game')?.members, ['destroy']);
+    // Published under `default`, not `Phaser`: `export = Phaser` makes the
+    // module *be* the namespace, and an importer binds it to a name of its own
+    // choosing. The nesting under it is what a consumer actually reaches —
+    // `Game` and `AddEffectBloom` are still the leaves localization searches
+    // for, whatever the importing file called the module.
+    assert.equal(api.get('default')?.kind, 'namespace');
+    assert.equal(api.get('default.Actions')?.kind, 'namespace');
+    assert.equal(api.get('default.Actions.AddEffectBloom')?.kind, 'function');
+    assert.deepEqual(api.get('default.Game')?.members, ['destroy']);
+    assert.equal(api.get('Phaser'), undefined);
   });
 });
 
@@ -236,6 +242,22 @@ describe('a package-level change with no declarations to compare it against', ()
     clearTypeSurfaceCache();
   }
 
+  function tarEntry(path: string, content: string): Buffer {
+    const bytes = Buffer.from(content);
+    const header = Buffer.alloc(512);
+    header.write(path, 0, 100);
+    header.write(`${bytes.length.toString(8).padStart(11, '0')}\0`, 124);
+    header.write('0', 156);
+    return Buffer.concat([header, bytes, Buffer.alloc(Math.ceil(bytes.length / 512) * 512 - bytes.length)]);
+  }
+
+  function packageWithoutDeclarations(version: string): Buffer {
+    return Buffer.concat([
+      tarEntry('package/package.json', JSON.stringify({ name: 'demo', version })),
+      Buffer.alloc(1024),
+    ]);
+  }
+
   afterEach(() => {
     globalThis.fetch = realFetch;
     reset();
@@ -262,8 +284,16 @@ describe('a package-level change with no declarations to compare it against', ()
           status: 200,
         });
       }
-      // No listing, no declaration file, no DefinitelyTyped package: this
-      // package has never shipped types.
+      if (url === 'https://registry.npmjs.org/demo/1.0.0' || url === 'https://registry.npmjs.org/demo/2.0.0') {
+        const version = url.endsWith('/1.0.0') ? '1.0.0' : '2.0.0';
+        return Response.json({ version, dist: { tarball: `https://artifacts.example/demo-${version}.tgz` } });
+      }
+      if (url.startsWith('https://artifacts.example/demo-')) {
+        const version = url.includes('1.0.0') ? '1.0.0' : '2.0.0';
+        return new Response(new Uint8Array(packageWithoutDeclarations(version)));
+      }
+      // No CDN declaration and no DefinitelyTyped package. The exact registry
+      // tarballs above are what positively prove the absence.
       return new Response('', { status: 404 });
     });
 
@@ -356,9 +386,9 @@ describe('a package-level change with no declarations to compare it against', ()
       },
     );
 
-    const gap = gaps.find((g) => g.reason === 'version-unavailable');
-    assert.ok(gap, `expected a version-unavailable gap for the unreachable version; got ${JSON.stringify(gaps)}`);
-    assert.match(gap!.detail, /could not be fetched, so nothing was compared/);
+    const gap = gaps.find((g) => g.reason === 'artifact-unavailable');
+    assert.ok(gap, `expected an artifact-unavailable gap for the unreachable version; got ${JSON.stringify(gaps)}`);
+    assert.match(gap!.detail, /could not be obtained and inspected/);
     // The specific lie this must never tell: wording indistinguishable from
     // the genuine-absence case above.
     assert.doesNotMatch(gap!.detail, /publishes no TypeScript declarations Drift could compare/);
@@ -651,8 +681,12 @@ describe('reading what a maintainer actually wrote', () => {
 
   test('still reads the plain form', () => {
     const matches = matchProse('`parse` no longer accepts a string.');
-    assert.equal(matches.length, 1);
-    assert.equal(matches[0]?.symbols[0], 'parse');
+    // "no longer accepts <noun>" is read two ways on purpose: the general
+    // `prose-no-longer` behaviour-change, and `prose-symbol-no-longer-takes`
+    // naming it as the signature change it is.
+    assert.ok(matches.every((m) => m.symbols[0] === 'parse'));
+    assert.ok(matches.some((m) => m.ruleId === 'prose-no-longer'));
+    assert.ok(matches.some((m) => m.kind === 'signature-change'));
   });
 
   test('reads the other voice too', () => {
@@ -697,7 +731,7 @@ describe('a changelog that is an index of other changelogs', () => {
 
     assert.ok(paths.includes('changelog/v3/3.90/CHANGELOG-v3.90.md'));
     assert.ok(paths.includes('changelog/v4/4.2/CHANGELOG-v4.2.0.md'));
-    assert.equal(links.find((l) => l.path.includes('3.90'))?.version, '3.90.0');
+    assert.equal(links.find((l) => l.path.includes('3.90'))?.version, '3.90');
   });
 
   test('reads the version out of the path when the link text has none', () => {

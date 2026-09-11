@@ -49,7 +49,10 @@ export const vcpkgParser: ManifestParser = {
       // `host: true` is a build-time tool (cmake, pkgconf), not something the
       // shipped binary links against.
       out.set(entry.name, {
-        version: entry['version>='] ?? null,
+        // Preserve that this is a floor rather than an exact registry
+        // identity. Losing the operator made it indistinguishable from an
+        // exact override during change detection.
+        version: entry['version>='] ? `>=${entry['version>=']}` : null,
         kind: entry.host ? 'dev' : 'runtime',
       });
     }

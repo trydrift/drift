@@ -158,6 +158,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
   const lines = source.split('\n');
 
   let depth = 0;
+  const namespaceScopes: { path: string[]; depth: number; inline: boolean }[] = [];
   /** Brace depth at which a private namespace opened, or `null` outside one. */
   let privateAt: number | null = null;
   /**
@@ -175,10 +176,15 @@ export function parseHeader(content: string): SurfaceEntry[] {
    */
   let macroPrivate = false;
 
+  const syncNamespaces = (): void => {
+    while (namespaceScopes.length > 0 && depth <= namespaceScopes.at(-1)!.depth) namespaceScopes.pop();
+  };
+
   /** Advance the depth over every line a declaration consumed. */
   const advance = (from: number, to: number): void => {
     for (let i = from; i <= to && i < lines.length; i++) depth += braceDelta(lines[i]!);
     if (privateAt !== null && depth <= privateAt) privateAt = null;
+    syncNamespaces();
   };
 
   for (let i = 0; i < lines.length; i++) {
@@ -197,10 +203,32 @@ export function parseHeader(content: string): SurfaceEntry[] {
       continue;
     }
 
-    const namespace = /^(?:inline\s+)?namespace\s+([\w:]+)?/.exec(trimmed);
+    const namespace = /^(inline\s+)?namespace\s+([\w:]+)?/.exec(trimmed);
     if (namespace) {
-      if (namespace[1] && PRIVATE_NAMESPACE.test(namespace[1]) && privateAt === null) {
+      const name = namespace[2];
+      const isInline = Boolean(namespace[1]);
+      if (!name && privateAt === null) {
+        // An anonymous namespace has internal linkage even inside a shipped
+        // public header. Its declarations cannot be named or linked by a
+        // consumer and therefore are not public surface.
         privateAt = depth;
+      } else if (name && name.split('::').some((segment) => PRIVATE_NAMESPACE.test(segment)) && privateAt === null) {
+        privateAt = depth;
+      } else if (name) {
+        // Inline namespaces are deliberately transparent to consumer lookup:
+        // `fmt::v10::print` and `fmt::v11::print` are both written as
+        // `fmt::print`. Keep a scope entry for brace bookkeeping, but do not
+        // put the ABI/version namespace into the public identity.
+        namespaceScopes.push({ path: isInline ? [] : name.split('::').filter(Boolean), depth, inline: isInline });
+      }
+      // Generated headers frequently put a declaration on the namespace
+      // opener. The namespace syntax is not the whole line; preserve the
+      // remainder for the ordinary declaration parser.
+      const open = trimmed.indexOf('{');
+      const remainder = open >= 0 ? trimmed.slice(open + 1).replace(/}\s*;?\s*$/, '').trim() : '';
+      if (remainder && privateAt === null && !macroPrivate) {
+        const declaration = parseDeclaration(remainder, namespaceScopes.flatMap((scope) => scope.path));
+        if (declaration) entries.push(declaration);
       }
       advance(i, i);
       continue;
@@ -218,7 +246,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
       continue;
     }
 
-    const aggregate = parseAggregate(lines, i);
+    const aggregate = parseAggregate(lines, i, namespaceScopes.flatMap((scope) => scope.path));
     if (aggregate) {
       entries.push(aggregate.entry);
       advance(i, aggregate.endLine);
@@ -235,7 +263,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
       continue;
     }
 
-    const declaration = parseDeclaration(statement.text);
+    const declaration = parseDeclaration(statement.text, namespaceScopes.flatMap((scope) => scope.path));
     if (declaration) entries.push(declaration);
     advance(i, statement.endLine);
     i = statement.endLine;
@@ -316,6 +344,7 @@ function parseMacro(line: string): SurfaceEntry | null {
 function parseAggregate(
   lines: readonly string[],
   start: number,
+  namespacePath: readonly string[],
 ): { entry: SurfaceEntry; endLine: number } | null {
   const head = lines[start]!.trim();
   const match =
@@ -353,13 +382,14 @@ function parseAggregate(
   const trailing = /\}\s*(\w+)\s*;/.exec(tail);
   const name = match[2] ?? trailing?.[1];
   if (!name) return null;
+  const qualifiedName = qualify(namespacePath, name);
 
   return {
     entry: {
-      name,
+      name: qualifiedName,
       kind: kindOfAggregate(keyword),
-      signature: collapse(`${keyword} ${name}`),
-      members: aggregateMembers(body.join('\n'), keyword),
+      signature: collapse(`${keyword} ${qualifiedName}`),
+      ...aggregateMemberData(body.join('\n'), keyword),
       requiredMembers: [],
     },
     endLine: end,
@@ -380,9 +410,9 @@ function kindOfAggregate(keyword: string): SurfaceKind {
  * class that reorganises its internals would otherwise produce a page of
  * findings that are all wrong.
  */
-function aggregateMembers(body: string, keyword: string): string[] {
+function aggregateMemberData(body: string, keyword: string): { members: string[]; memberSignatures?: Record<string, string> } {
   if (keyword === 'enum') {
-    return [
+    return { members: [
       ...new Set(
         body
           .replace(/\{|\}[^}]*$/g, '')
@@ -390,10 +420,11 @@ function aggregateMembers(body: string, keyword: string): string[] {
           .map((part) => /^\s*(\w+)/.exec(part)?.[1])
           .filter((name): name is string => Boolean(name)),
       ),
-    ];
+    ] };
   }
 
   const members: string[] = [];
+  const memberSignatures: Record<string, string> = {};
   // C++'s default access differs by keyword: everything before the first
   // label is private in a `class` and public in a `struct`. Getting this
   // wrong is not cosmetic — it puts every private field of every class into
@@ -424,6 +455,13 @@ function aggregateMembers(body: string, keyword: string): string[] {
     // contributing members called `return`, `if`, and `sizeof` — which is how
     // FastLED came to report seven hundred removed exports for a release that
     // had reorganised some inline code.
+    const operator = parseOperator(line);
+    if (operator) {
+      members.push(operator.identity);
+      memberSignatures[operator.identity] = operator.signature;
+      continue;
+    }
+
     const method = /(\w+)\s*\([^)]*\)\s*(?:const\s*)?(?:noexcept\s*)?[;{=]/.exec(line);
     if (method?.[1] && !RESERVED.has(method[1])) {
       members.push(method[1]);
@@ -438,7 +476,146 @@ function aggregateMembers(body: string, keyword: string): string[] {
     if (field?.[1] && !RESERVED.has(field[1]) && !PRIMITIVE.test(field[1])) members.push(field[1]);
   }
 
-  return [...new Set(members)];
+  return { members: [...new Set(members)], memberSignatures };
+}
+
+/**
+ * Canonical identity for a public C++ operator declaration.
+ *
+ * Conversion operators have no ordinary method name: the target type is the
+ * identity (`operator uint8_t`, never the fake member `uint8_t`). Symbolic
+ * operators retain their parameter types so overload/signature changes remain
+ * visible to `diffSurfaces` as a removed callable member rather than silently
+ * comparing equal.
+ */
+function canonicalOperator(line: string): string | null {
+  return parseOperator(line)?.identity ?? null;
+}
+
+function parseOperator(line: string): { identity: string; signature: string } | null {
+  const operatorAt = line.search(/\boperator\b/);
+  if (operatorAt < 0) return null;
+
+
+  const declaration = line.slice(operatorAt + 'operator'.length).trimStart();
+  const parsedName = operatorName(declaration);
+  if (!parsedName) return null;
+
+  let cursor = parsedName.end;
+  while (/\s/.test(declaration[cursor] ?? '')) cursor++;
+  if (declaration[cursor] !== '(') return null;
+  const parameters = balancedRange(declaration, cursor);
+  if (!parameters) return null;
+
+  const suffix = operatorQualifiers(declaration.slice(parameters.end + 1));
+  const name = parsedName.conversion
+    ? `operator ${parsedName.name}`
+    : /^[A-Za-z]/.test(parsedName.name)
+      ? `operator ${parsedName.name}(${parameterTypes(parameters.content)})`
+      : `operator${parsedName.name}(${parameterTypes(parameters.content)})`;
+  const prefix = normalizeOperatorPrefix(line.slice(0, operatorAt));
+  const identity = `${name}${suffix}`;
+  const signature = `${prefix ? `${prefix} ` : ''}operator ${parsedName.name}(${parameterTypes(parameters.content)})${suffix}`;
+  return { identity, signature };
+}
+
+function normalizeOperatorPrefix(raw: string): string {
+  return collapse(raw)
+    .replace(/\b(?:extern|static|inline|virtual|friend|__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+interface ParsedOperatorName {
+  name: string;
+  end: number;
+  conversion: boolean;
+}
+
+/** Every overloadable operator name whose identity is not a conversion type. */
+const SYMBOLIC_OPERATORS = [
+  '<=>', '->*', '<<=', '>>=', 'new[]', 'delete[]', '()', '[]', '->', '<<', '>>',
+  '==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=', '-=', '*=', '/=', '%=',
+  '^=', '&=', '|=', 'co_await', 'new', 'delete', '+', '-', '*', '/', '%', '^', '&',
+  '|', '~', '!', '=', '<', '>', ',',
+] as const;
+
+function operatorName(text: string): ParsedOperatorName | null {
+  // User-defined literals are spelled both `operator "" _suffix` and
+  // `operator""_suffix` in real headers. The suffix is part of the operator
+  // name and must not be confused with a conversion target.
+  const literal = /^""\s*([A-Za-z_]\w*)/.exec(text);
+  if (literal) return { name: `""${literal[1]}`, end: literal[0].length, conversion: false };
+
+  for (const candidate of SYMBOLIC_OPERATORS) {
+    const pattern = candidate === 'new[]'
+      ? /^new\s*\[\]/
+      : candidate === 'delete[]'
+        ? /^delete\s*\[\]/
+        : null;
+    const matched = pattern?.exec(text)?.[0] ?? (text.startsWith(candidate) ? candidate : null);
+    if (!matched) continue;
+    if (/^[A-Za-z_]/.test(candidate) && /[A-Za-z0-9_]/.test(text[matched.length] ?? '')) continue;
+    return { name: candidate, end: matched.length, conversion: false };
+  }
+
+  // Everything else up to the declaration's parameter list is a conversion
+  // target (`bool`, `const Widget &`, `ns::type<T>`). Angle brackets are
+  // allowed here; the first top-level parenthesis starts the mandatory empty
+  // conversion-operator parameter list.
+  let angleDepth = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (ch === '<') angleDepth++;
+    else if (ch === '>' && angleDepth > 0) angleDepth--;
+    else if (ch === '(' && angleDepth === 0) {
+      const target = collapse(text.slice(0, i));
+      return target ? { name: target, end: i, conversion: true } : null;
+    }
+  }
+  return null;
+}
+
+function balancedRange(text: string, open: number): { content: string; end: number } | null {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')') {
+      depth--;
+      if (depth === 0) return { content: text.slice(open + 1, i), end: i };
+    }
+  }
+  return null;
+}
+
+/** Canonical cv/ref/exception qualifiers; each changes overload availability. */
+function operatorQualifiers(raw: string): string {
+  const suffix = raw
+    .replace(/\s*(?:;|\{.*|=\s*(?:0|delete|default)\s*;?)\s*$/, '')
+    .trim();
+  const qualifiers: string[] = [];
+  if (/\bconst\b/.test(suffix)) qualifiers.push('const');
+  if (/\bvolatile\b/.test(suffix)) qualifiers.push('volatile');
+
+  const ref = /(&&|&)\s*(?=$|\b(?:noexcept|override|final|requires)\b)/.exec(suffix)?.[1];
+  if (ref) qualifiers.push(ref);
+
+  const noexceptAt = suffix.search(/\bnoexcept\b/);
+  if (noexceptAt >= 0) {
+    let end = noexceptAt + 'noexcept'.length;
+    while (/\s/.test(suffix[end] ?? '')) end++;
+    if (suffix[end] === '(') {
+      const expression = balancedRange(suffix, end);
+      qualifiers.push(expression ? `noexcept(${collapse(expression.content)})` : 'noexcept');
+    } else {
+      qualifiers.push('noexcept');
+    }
+  }
+
+  const requires = /\brequires\s+(.+?)(?=\s*(?:;|\{|$))/.exec(suffix)?.[1];
+  if (requires) qualifiers.push(`requires ${collapse(requires)}`);
+
+  return qualifiers.length > 0 ? ` ${qualifiers.join(' ')}` : '';
 }
 
 /**
@@ -449,8 +626,11 @@ function aggregateMembers(body: string, keyword: string): string[] {
  * changed signature would fire on every tidy-up commit. What remains — arity,
  * types, return type, constness — is exactly the set that does break a caller.
  */
-function parseDeclaration(statement: string): SurfaceEntry | null {
-  const text = statement.trim().replace(/\s+/g, ' ');
+function parseDeclaration(statement: string, namespacePath: readonly string[] = []): SurfaceEntry | null {
+  const text = statement
+    .trim()
+    .replace(/^(?:\[\[[^\]]*\]\]\s*)+/, '')
+    .replace(/\s+/g, ' ');
   if (!text || text.startsWith('#')) return null;
 
   const typedef = /^typedef\s+(.+?)\s*;$/.exec(text);
@@ -461,7 +641,7 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
     const name = pointer?.[1] ?? /(\w+)\s*(?:\[[^\]]*\])?$/.exec(typedef[1]!)?.[1];
     if (!name || RESERVED.has(name)) return null;
     return {
-      name,
+      name: qualify(namespacePath, name),
       kind: 'type',
       signature: collapse(text),
       members: [],
@@ -469,16 +649,32 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
     };
   }
 
+  const functionText = stripDeclarationPrefixes(text);
+  // Parse operators before stripping semantic specifiers. `explicit`,
+  // `constexpr`, and `consteval` affect whether a call is legal and therefore
+  // belong in the semantic signature even though they are prefixes on the
+  // declaration.
+  const operator = canonicalOperator(text);
+  if (operator) {
+    const parsed = parseOperator(text)!;
+    return {
+      name: qualify(namespacePath, parsed.identity),
+      kind: 'function',
+      signature: parsed.signature,
+      members: [],
+      requiredMembers: [],
+    };
+  }
   const fn =
-    /^(?:(?:extern|static|inline|constexpr|virtual|explicit|friend|\w+_API|\w+_EXPORT|EXTERN_C|__declspec\([^)]*\))\s+)*((?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|class\s+)*[\w:]+(?:\s*<[^>]*>)?[\s*&]+)(\w+)\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept)?\s*[;{]$/.exec(
-      text,
+    /^((?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|class\s+)*[\w:]+(?:\s*<[^>]*>)?[\s*&]+)(\w+)\s*\(([^)]*)\)\s*(const)?\s*(?:noexcept)?\s*[;{]$/.exec(
+      functionText,
     );
   if (fn) {
     const returnType = collapse(fn[1]!);
     const name = fn[2]!;
     if (RESERVED.has(name)) return null;
     return {
-      name,
+      name: qualify(namespacePath, name),
       kind: 'function',
       signature: `${returnType} ${name}(${parameterTypes(fn[3]!)})${fn[4] ? ' const' : ''}`,
       members: [],
@@ -491,7 +687,7 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
     const name = variable[2]!;
     if (RESERVED.has(name)) return null;
     return {
-      name,
+      name: qualify(namespacePath, name),
       kind: 'variable',
       signature: collapse(text.replace(/;$/, '')),
       members: [],
@@ -500,6 +696,42 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
   }
 
   return null;
+}
+
+/**
+ * Remove declaration modifiers one token at a time.
+ *
+ * Keeping repetition in this progress-guaranteed loop avoids a nested regular
+ * expression whose overlapping `__name` and `name_API` alternatives could
+ * backtrack exponentially on adversarial headers.
+ */
+function stripDeclarationPrefixes(text: string): string {
+  let rest = text;
+  while (true) {
+    const word = /^(?:extern|static|inline|constexpr|virtual|explicit|friend|EXTERN_C|__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall|__forceinline|__inline__|__restrict__|__host__|__device__|[A-Za-z_]\w*_(?:API|EXPORT))\s+/.exec(rest);
+    if (word) {
+      rest = rest.slice(word[0].length);
+      continue;
+    }
+    const annotation = /^(?:__declspec|__attribute__)\s*/.exec(rest);
+    if (!annotation) return rest;
+    let cursor = annotation[0].length;
+    if (rest[cursor] !== '(') return rest;
+    let depth = 0;
+    for (; cursor < rest.length; cursor += 1) {
+      if (rest[cursor] === '(') depth += 1;
+      else if (rest[cursor] === ')' && --depth === 0) {
+        cursor += 1;
+        break;
+      }
+    }
+    if (depth !== 0 || !/^\s+/.test(rest.slice(cursor))) return rest;
+    rest = rest.slice(cursor).trimStart();
+  }
+}
+
+function qualify(namespacePath: readonly string[], name: string): string {
+  return [...namespacePath, name].join('.');
 }
 
 /**
@@ -519,11 +751,21 @@ function parameterTypes(params: string): string {
       const stripped = withoutDefault.replace(/\s*\[[^\]]*\]\s*$/, '');
       const tokens = stripped.split(/(?<=[\s*&])/);
       if (tokens.length < 2) return stripped;
+      const last = /\b(\w+)\s*$/.exec(stripped)?.[1];
+      if (last && TYPE_ONLY_WORDS.has(last)) return stripped;
+      const words = stripped.match(/\b\w+\b/g) ?? [];
+      if (words.length === 2 && TYPE_PREFIX_WORDS.has(words[0]!)) return stripped;
       const withoutName = stripped.replace(/\b\w+\s*$/, '').trim();
       return withoutName || stripped;
     })
     .join(', ');
 }
+
+const TYPE_ONLY_WORDS = new Set([
+  'void', 'bool', 'char', 'wchar_t', 'char8_t', 'char16_t', 'char32_t', 'short',
+  'int', 'long', 'float', 'double', 'signed', 'unsigned', 'const', 'volatile',
+]);
+const TYPE_PREFIX_WORDS = new Set(['struct', 'class', 'enum', 'union', 'const', 'volatile', 'signed', 'unsigned', 'short', 'long']);
 
 /** Split on commas that are not inside `<>` or `()`. */
 function splitParameters(params: string): string[] {

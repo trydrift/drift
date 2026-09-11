@@ -67,16 +67,19 @@
  *   node site/scripts/capture.mjs --if-stale    # only what has moved
  *   node site/scripts/capture.mjs --check       # report staleness, record nothing
  *   node site/scripts/capture.mjs --no-cache    # ignore the clone cache
+ *   node site/scripts/capture.mjs --any-analyzer # record under an unpinned
+ *                                                # interpreter; CI will reject
  */
 
 import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile, readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { engineFingerprint } from './engine-fingerprint.mjs';
+import { analyzerPinMismatches, describeAnalyzerPinMismatch } from './analyzer-environment.mjs';
 
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -88,6 +91,7 @@ const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js
 const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
 const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
 const { deriveOverallConfidence } = await import(join(repoRoot, 'dist/confidence/calibrate.js'));
+const { severityOf } = await import(join(repoRoot, 'dist/upgrade/severity.js'));
 const RECORDING_SCHEMA_VERSION = 2;
 import { isSchemaStale, validateRecording } from './recording-validation.mjs';
 
@@ -173,12 +177,12 @@ const TARGETS = [
     dir: '',
   },
   {
-    id: 'gitlab',
-    label: 'gitlab',
+    id: 'lobsters',
+    label: 'Lobsters',
     ecosystem: 'rubygems',
     language: 'Ruby',
-    repo: 'https://github.com/gitlabhq/gitlabhq',
-    blurb: "GitLab's Rails monolith — one of the largest Ruby codebases in the open.",
+    repo: 'https://github.com/lobsters/lobsters',
+    blurb: 'The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.',
     dir: '',
   },
   {
@@ -236,12 +240,12 @@ const TARGETS = [
   // says so with the same tier badge the capability matrix computes, rather
   // than quietly omitting the ecosystem and letting a visitor assume.
   {
-    id: 'restsharp',
-    label: 'RestSharp',
+    id: 'solrnet',
+    label: 'SolrNet',
     ecosystem: 'nuget',
     language: 'C#',
-    repo: 'https://github.com/restsharp/RestSharp',
-    blurb: 'The HTTP client most .NET codebases reach for first.',
+    repo: 'https://github.com/SolrNet/SolrNet',
+    blurb: 'The established .NET client for Apache Solr, with exact installed versions in a committed NuGet lockfile.',
     dir: '',
   },
   {
@@ -263,13 +267,13 @@ const TARGETS = [
     dir: '',
   },
   {
-    id: 'dio',
-    label: 'dio',
+    id: 'starter-flutter',
+    label: 'Flutter Firebase Starter',
     ecosystem: 'pub',
     language: 'Dart',
-    repo: 'https://github.com/cfug/dio',
-    blurb: "Dart's most-used HTTP client, in the package that declares its dependencies.",
-    dir: 'dio',
+    repo: 'https://github.com/bizz84/starter_architecture_flutter_firebase',
+    blurb: 'A production-shaped Flutter application with exact hosted packages in its committed Pub lockfile.',
+    dir: '',
   },
   {
     // Vapor was the first choice and produced an honest, boring recording:
@@ -519,11 +523,55 @@ function slimCandidate(candidate) {
     latest: candidate.latest,
     selected: candidate.selected,
     safeLatest: candidate.safeLatest ?? null,
+    publishedVersions: candidate.versions,
+    provenance: { kind: candidate.kind, source: 'manifest' },
     status: candidate.status,
     phase: candidate.phase ?? null,
     risk: candidate.risk,
     summary: candidate.summary,
     recommendation: candidate.recommendation ?? null,
+    // Structured signal for the recording validator's "safe-to-upgrade
+    // implies real evidence" invariant -- whether a computed surface diff or
+    // actually-read compatibility prose backs this candidate's assessment, as
+    // opposed to a clean security check or a version lookup alone. `null`
+    // when no rationale was computed at all (e.g. an error candidate).
+    hasCompatibilityEvidence: candidate.rationale?.hasCompatibilityEvidence ?? null,
+    // What Drift established about this repository's runtime, as a state
+    // rather than as a count of sites -- `unknown` and `partial` both
+    // routinely come with zero sites, and the validator's job is to prove
+    // neither can render as safe. `null` when the upgrade announced no
+    // runtime requirement at all, which is deliberately NOT `compatible`.
+    runtimeCompatibility: candidate.runtimeCompatibility ?? null,
+    // The per-requirement breakdown behind the state above, so the validator
+    // can check each runtime requirement's own answer rather than only the
+    // worst one.
+    runtimeAnalyses: candidate.runtimeAnalyses ?? [],
+    // The application's actual verdict. The validator consumes this instead
+    // of reconstructing a second severity algorithm from counts.
+    severity: severityOf(candidate),
+    independentActionableFindingCount: (candidate.plan?.dispositions ?? [])
+      .filter((disposition) => disposition.state === 'actionable')
+      .filter((disposition) =>
+        (candidate.plan?.breakingChanges ?? []).some(
+          (change) => change.id === disposition.changeId && change.kind !== 'runtime-requirement',
+        ),
+      ).length,
+    actionableImpactCount: candidate.actionableImpactCount ?? 0,
+    actionableImpactFiles: candidate.actionableImpactFiles ?? 0,
+    runtimeDeclarationSiteCount: candidate.runtimeDeclarationSiteCount ?? 0,
+    sourceCoverage: candidate.sourceCoverage ?? null,
+    surfaceAssessment: candidate.surfaceAssessment ?? null,
+    runtimeChanges: (candidate.plan?.breakingChanges ?? [])
+      .filter((change) => change.kind === 'runtime-requirement' && change.runtime)
+      .map((change) => ({ id: change.id, runtime: change.runtime.runtime })),
+    dispositions: (candidate.plan?.dispositions ?? []).map((disposition) => ({
+      changeId: disposition.changeId,
+      state: disposition.state,
+      reason: disposition.reason,
+      siteCount: disposition.sites.length,
+      actionableSiteCount: disposition.actionableSites.length,
+      runtimeState: disposition.runtimeAnalysis?.state ?? null,
+    })),
     breakingCount: candidate.breakingCount,
     impactCount: candidate.impactCount,
     impactFiles: candidate.impactFiles,
@@ -553,6 +601,7 @@ function slimCandidate(candidate) {
         summary: change.summary,
         remediation: change.remediation,
         confidence: change.confidence,
+        runtime: change.runtime ?? null,
         // The single customer-facing number, computed from the same
         // assessment the extension and the Markdown report read. `null` for
         // the rare finding with no assessment at all, so the page can fall
@@ -601,6 +650,7 @@ function slimSite(site) {
     excerpt: site.excerpt.slice(0, 160),
     matchedSymbol: site.matchedSymbol,
     confidence: site.confidence,
+    ...(site.runtimeVerdict ? { runtimeVerdict: site.runtimeVerdict } : {}),
   };
 }
 
@@ -662,6 +712,25 @@ const onlyStale = has('if-stale') || has('check');
 const checkOnly = has('check');
 
 await mkdir(outDir, { recursive: true });
+
+// Refuse to record under an analyzer this repository does not pin.
+//
+// The fingerprint folds in the analyzer's version, so a capture under a
+// different interpreter produces recordings CI rejects as stale — and the
+// rejection names the recording, not the interpreter, so the diagnosis costs
+// a full re-capture to reach. Checked here rather than in
+// `engineFingerprint()` because reading a fingerprint is not the operation
+// that can go wrong; producing an artifact is. `--check` only reports, so it
+// stays allowed.
+if (!checkOnly) {
+  const mismatches = await analyzerPinMismatches();
+  if (mismatches.length > 0 && !has('any-analyzer')) {
+    console.error('Refusing to record: the analyzer environment does not match the one this repository pins.\n');
+    for (const mismatch of mismatches) console.error(`  ${describeAnalyzerPinMismatch(mismatch)}\n`);
+    console.error('  Pass --any-analyzer to record anyway. Those recordings will not pass CI.');
+    process.exit(1);
+  }
+}
 
 /** What produced the recordings that are already committed, and what would produce new ones. */
 const fingerprint = await engineFingerprint(repoRoot);
@@ -788,7 +857,7 @@ const failures = [];
  * A scan can wedge — a package manager that ignores the signal sent to it, a
  * socket that never closes, a deadlock between the probe's own workers — and
  * when it does, nothing downstream is defensive about it. The whole capture
- * hung on `gitlab`, and because the last worker never settled, Node drained the
+ * hung on a very large Rails monorepo, and because the last worker never settled, Node drained the
  * event loop and exited on an unsettled top-level await, taking with it fifteen
  * recordings that had already finished, including a Kubernetes scan that had
  * cost an hour of runner time.
@@ -849,6 +918,18 @@ async function worker() {
 
 await Promise.all(Array.from({ length: Math.min(jobs, queue.length) }, worker));
 process.stderr.write(`\nall captures finished in ${((Date.now() - startedAt) / 1000).toFixed(1)}s\n`);
+
+// A target can be replaced when its repository stops carrying exact installed
+// identities or becomes too large to record reliably. Do not leave the old
+// JSON behind: the corpus validator intentionally reads every recording file,
+// and an orphan would keep publishing stale claims even though the index and
+// replay UI no longer name it.
+const targetIds = new Set(TARGETS.map((target) => target.id));
+for (const entry of await readdir(outDir)) {
+  if (!entry.endsWith('.json') || entry === 'index.json') continue;
+  const id = entry.slice(0, -'.json'.length);
+  if (!targetIds.has(id)) await rm(join(outDir, entry));
+}
 
 // An index of what was actually captured, so the site never lists a demo whose
 // recording failed — a broken tab is worse than an absent one.

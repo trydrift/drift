@@ -97,29 +97,32 @@ describe('reanalyzeUpgrade rediscovers the same member universe the scan used', 
     assert.ok(candidate, 'left should have an upgrade candidate from the scan');
     assert.equal(candidate!.workspace, 'extension', 'left is declared in the undeclared nested member');
 
-    const runtimeFact = () =>
-      candidate!.rationale?.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
+    const runtimeState = (c: typeof candidate) =>
+      (c!.plan?.rationale ?? []).flatMap((r: { runtimeAnalyses?: { state: string }[] }) => r.runtimeAnalyses ?? [])[0]
+        ?.state;
 
-    // From the initial scan: `extension` declares `>=18`, which does not
-    // satisfy left's raised floor of `>=20` -- concerning, and naming the
-    // file it came from rather than falling back to "check this yourself".
-    assert.equal(runtimeFact()?.concerning, true);
-    assert.match(runtimeFact()?.statement ?? '', /extension\/package\.json/);
+    // From the initial scan: `extension` declares `>=18`, a range that admits
+    // versions left's raised floor of `>=20` rejects. The canonical runtime
+    // analysis says so (partial); maintenance only states the upstream fact as
+    // context.
+    assert.equal(runtimeState(candidate), 'partial', 'extension >=18 only partially satisfies left >=20');
+    assert.equal(
+      candidate!.rationale?.maintenance.facts.find((f) => /Node\.js/.test(f.statement))?.polarity,
+      'context',
+    );
 
     stubRegistry();
     const reanalyzed = await reanalyzeUpgrade({ candidate: candidate!, version: '2.0.0', root, repo, config, logger });
 
-    const reanalyzedFact = reanalyzed.rationale?.maintenance.facts.find((f) =>
-      /Node\.js version changed/.test(f.statement),
-    );
-
     // Before the fix, `allMembers` reconstructed for reanalysis dropped
     // `extension` entirely (an undeclared member `detectWorkspaces` alone
     // cannot see), so `extension/package.json#engines` could no longer be
-    // attributed to the `extension` member and the fact fell back to "check
-    // this against the runtimes this repository builds and deploys on" --
-    // silently less certain than the scan that originally found it.
-    assert.equal(reanalyzedFact?.concerning, true, 'the same finding must survive reanalysis, not regress to unverified');
-    assert.match(reanalyzedFact?.statement ?? '', /extension\/package\.json/);
+    // attributed to the `extension` member and the verdict regressed to
+    // unknown. It must survive reanalysis as the same partial result.
+    assert.equal(
+      runtimeState(reanalyzed as typeof candidate),
+      'partial',
+      'the same finding must survive reanalysis, not regress to unknown',
+    );
   });
 });

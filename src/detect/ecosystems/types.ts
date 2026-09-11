@@ -13,6 +13,12 @@ export interface ParsedDependency {
   kind: DependencyKind;
   /** Cargo.toml dependency table this entry was declared in. */
   cargo?: CargoDependencyPlacement;
+  /**
+   * Artifact platform when the ecosystem separates it from the version
+   * (a RubyGems `Gem::Platform`). Platform selects an artifact; it never
+   * participates in version ordering.
+   */
+  platform?: string;
 }
 
 /** Package name -> parsed entry. */

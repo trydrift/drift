@@ -108,6 +108,7 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
     "localizationBasis": "published",
     "files": [
       "pyproject.toml",
+      "requirements.in",
       "requirements.txt",
       "setup.py",
       "poetry.lock",
@@ -717,7 +718,8 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "note": "Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible."
       },
       "upgrade-discovery": {
-        "level": "full"
+        "level": "partial",
+        "note": "Conan version schemes are package-defined, so Drift can analyze exact version changes but does not invent an ordering to select a newer release automatically."
       },
       "upgrade-install": {
         "level": "full"
@@ -765,7 +767,8 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "note": "Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible."
       },
       "upgrade-discovery": {
-        "level": "full"
+        "level": "partial",
+        "note": "vcpkg versions are port-defined and baseline resolution can change every dependency, so Drift analyzes exact overrides but does not invent an ordering or resolve baseline moves automatically."
       },
       "upgrade-install": {
         "level": "full"

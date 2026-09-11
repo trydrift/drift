@@ -53,5 +53,7 @@ over introducing a new one.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the
-terms in [LICENSE](LICENSE).
+Drift is source-available under [PolyForm Shield 1.0.0](LICENSE.md), not an
+OSI-approved open-source license — worth knowing before you spend an evening on
+a patch. By contributing, you agree that your contributions will be licensed
+under those terms.

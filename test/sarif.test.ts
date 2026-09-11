@@ -241,6 +241,26 @@ describe('findingsFromPlan', () => {
     );
   });
 
+  test('an upstream breaking change with no located site is "review before upgrading", never "safe to upgrade"', async () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1')],
+      impactSites: [],
+      rationale: [rationale()],
+    }) as RemediationPlan;
+
+    const [finding] = await findingsFromPlan(plan, { includeInformational: true });
+    assert.ok(finding, 'a breaking change is never silent');
+    assert.equal(finding!.level, 'warning', 'not an informational note');
+    assert.equal(finding!.ruleName, 'acme-sdk: Outdated — review before upgrading');
+    assert.match(finding!.message, /Review before upgrading/i);
+    assert.match(finding!.message, /not proof/i);
+    assert.doesNotMatch(finding!.message, /safe to upgrade|no breaking changes/i);
+  });
+
   test('a package with a breaking change AND a security signal keeps the generic rule name', async () => {
     const plan = buildPlan({
       repo,
