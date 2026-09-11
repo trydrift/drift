@@ -75,6 +75,7 @@ jobs:
           - runId: timemachine-verified
             args: timemachine --experiment verified
             needsJapicmp: false
+            needsUv: true
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -109,6 +110,19 @@ jobs:
           printf '#!/bin/sh\nexec java -jar "$(cd "$(dirname "$0")/.." && pwd)/japicmp.jar" "$@"\n' > benchmarks/tools/bin/japicmp
           chmod +x benchmarks/tools/bin/japicmp
           echo "$PWD/benchmarks/tools/bin" >> "$GITHUB_PATH"
+
+      # TimeMachine's own setup instructions use `uv`, and the environment probe
+      # has always looked for it. Without it the harness falls back to pip plus
+      # ad-hoc resolution, which could not reconstruct 31 of 100 historical
+      # environments — a third of the corpus excluded as `reproduction-failed`
+      # before Drift saw any of it, and a detection rate quoted on what was
+      # left. Installing the tool the dataset documents is the difference
+      # between measuring Drift and measuring our own environment setup.
+      - name: Install uv
+        if: env.SKIP != '1' && matrix.needsUv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Fetch the dataset this run needs
         if: env.SKIP != '1'
@@ -161,7 +175,7 @@ jobs:
           done
 
       - name: Open a PR with refreshed benchmark results
-        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           commit-message: "chore(eval): refresh benchmark metrics"
           title: "chore(eval): refresh benchmark metrics"
