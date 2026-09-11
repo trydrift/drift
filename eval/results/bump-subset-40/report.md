@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `c45d9d01ede15838d924fe9f5eb51c66632623b4` |
-| Run date | 2026-09-09T11:19:03.839Z |
+| Drift commit | `64a481d7cc6738734ab88b515f7283def7bb303b` |
+| Run date | 2026-09-10T17:05:41.407Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,7 +42,7 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 28/39 (71.8%) | 56.4–84.6% |
+| affected-repository identification rate | 28/39 (71.8%) | 59.0–84.6% |
 | consumer localization rate | 12/39 (30.8%) | 15.4–46.2% |
 | dependency-update detection rate | 36/39 (92.3%) | 82.1–100.0% |
 | false-safe verdicts | 1/39 (2.6%) | 0.0–7.7% |
@@ -59,12 +59,28 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | Stage | Cases |
 | --- | ---: |
 | `dependency-update-not-detected` | 3 |
-| `consumer-usage-not-found` | 2 |
 | `dependency-import-not-found` | 2 |
+| `consumer-usage-not-found` | 2 |
 | `verification-inconclusive` | 2 |
 | `no-breaking-change-derived` | 1 |
 | `upstream-surface-unavailable` | 1 |
 | **Total** | **11** |
+
+### Failure classes that admit a static signal
+
+BUMP labels each case with why the build broke. `ENFORCER_FAILURE` (Maven build-policy rules) and the
+resolution/lock failures have no API-surface change for any static differ to find, so Drift answers
+`insufficient-evidence` — the correct answer, indistinguishable from a miss once pooled.
+
+| Stratum | affected-repository identification rate |
+| --- | --- |
+| Static signal possible (compilation, test, werror) | 22/28 (78.6%) |
+| No API-surface delta (enforcer, lock, resolution) | 6/11 (54.5%) |
+| Pooled — every case | 28/39 (71.8%) |
+
+The first row is the one that answers "does Drift find the break when a break is findable". The second
+measures a limit of static analysis, not of Drift, and only a build can settle those cases. Neither is
+omitted, and no case is excluded from the pooled rate to produce them.
 
 ### Breakdown
 
@@ -77,6 +93,8 @@ hides both directions of the interesting result, so it is never the only number 
 | label: DEPENDENCY_LOCK_FAILURE | 1/2 (50.0%) | 0/2 (0.0%) | 1/2 (50.0%) |
 | label: ENFORCER_FAILURE | 5/9 (55.6%) | 0/9 (0.0%) | 7/9 (77.8%) |
 | label: TEST_FAILURE | 13/16 (81.3%) | 6/16 (37.5%) | 16/16 (100.0%) |
+| stratum: no-api-surface-delta | 6/11 (54.5%) | 0/11 (0.0%) | 8/11 (72.7%) |
+| stratum: static-signal-possible | 22/28 (78.6%) | 12/28 (42.9%) | 28/28 (100.0%) |
 
 ## What is deliberately not reported
 

@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { DATASETS } from './dataset.ts';
 import { computeMetrics } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
-import { resultsDir, writeRun, type RunManifest } from './results.ts';
+import { resultsDir, selectionDocument, writeRun, type RunManifest } from './results.ts';
 import { select } from './selection.ts';
 
 /**
@@ -189,5 +189,52 @@ test('a resumed run carries the earlier attempt forward exactly once', async () 
     assert.equal(new Set(results.map((entry) => entry.caseId)).size, results.length, 'and no case appears twice');
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * `selection.json` is a required artifact — `site/scripts/sync-benchmarks.mjs`
+ * parses it on every build — and it had two writers producing *different*
+ * documents for the same path: the runner wrote every case id the moment the
+ * selection was decided, and `writeRun` wrote a summary that omits the ids for
+ * a whole-corpus run. A megabyte and 28KB, racing.
+ *
+ * `kong-rq1-documented/selection.json` lost that race in a way nothing caught
+ * until the site build: a complete document, then the orphaned tail of the
+ * longer one that had been written underneath it. Unparseable, and the whole
+ * benchmark refresh was unmergeable because of it.
+ *
+ * The two writers now build the document through one function, so they cannot
+ * disagree about its length.
+ */
+test('both writers of selection.json produce the same document', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'drift-selection-'));
+  try {
+    const dataset = DATASETS['roseau']!;
+    const selection = select([{ id: 'c', strata: [] }]);
+
+    await write(root, 'run-a');
+    const written = await readFile(join(resultsDir('run-a', root), 'selection.json'), 'utf8');
+
+    // The runner's early write, built from the shared helper, must be byte-identical
+    // to what the final artifact write puts down — otherwise one can outlive the other.
+    assert.equal(`${JSON.stringify(selectionDocument(selection, dataset), null, 2)}\n`, written);
+
+    // And it must parse. The failure this guards produced valid JSON followed by
+    // trailing data, which `JSON.parse` rejects and a length check would not.
+    assert.doesNotThrow(() => JSON.parse(written) as unknown);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('a whole-corpus selection omits the id list rather than restating the corpus', () => {
+  const dataset = DATASETS['roseau']!;
+  const all = select([{ id: 'a', strata: [] }, { id: 'b', strata: [] }]);
+  const doc = selectionDocument(all, dataset) as { mode: string; ids: string[]; idsOmitted?: string };
+
+  if (doc.mode === 'all') {
+    assert.deepEqual(doc.ids, [], 'a whole-corpus run writes no id list');
+    assert.match(doc.idsOmitted ?? '', /every available case/);
   }
 });
