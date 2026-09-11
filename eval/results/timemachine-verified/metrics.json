@@ -156,8 +156,7 @@
       "consumer-usage-not-found": 10,
       "consumer-match-insufficient-confidence": 2,
       "dependency-import-not-found": 5,
-      "consumer-symbol-not-resolved": 1,
-      "breaking-change-low-confidence": 1,
+      "breaking-change-low-confidence": 2,
       "dependency-update-not-detected": 2,
       "upstream-surface-unavailable": 1
     },
