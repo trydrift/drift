@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `3f60351d2b781f868ac6d380b267f5391d7e3af2` |
-| Run date | 2026-09-11T20:15:08.691Z |
+| Drift commit | `05eb7907c11bef32bf71a93d63b27b4446c23b47` |
+| Run date | 2026-09-12T00:19:10.971Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 

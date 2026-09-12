@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `3f60351d2b781f868ac6d380b267f5391d7e3af2` |
-| Run date | 2026-09-11T19:41:47.604Z |
+| Drift commit | `05eb7907c11bef32bf71a93d63b27b4446c23b47` |
+| Run date | 2026-09-11T23:44:38.487Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -61,9 +61,8 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | `consumer-usage-not-found` | 10 |
 | `dependency-import-not-found` | 5 |
 | `consumer-match-insufficient-confidence` | 2 |
+| `breaking-change-low-confidence` | 2 |
 | `dependency-update-not-detected` | 2 |
-| `consumer-symbol-not-resolved` | 1 |
-| `breaking-change-low-confidence` | 1 |
 | `upstream-surface-unavailable` | 1 |
 | **Total** | **22** |
 
