@@ -30,8 +30,8 @@
     "language": "Ruby",
     "repo": "https://github.com/lobsters/lobsters",
     "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
-    "commit": "ed722e449227b39ab6268f4260aaa66df95275bd",
-    "capturedAt": "2026-09-11T16:53:21.558Z",
+    "commit": "8fc779353aad6aacedaf97f53e1bb37c8ffb57b4",
+    "capturedAt": "2026-09-13T16:03:26.887Z",
     "packagesChecked": 37,
     "candidates": 19
   },
@@ -42,8 +42,8 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "4a6b79d1e2735e52088fe8e7932177f69d07b0cf",
-    "capturedAt": "2026-09-11T23:36:48.733Z",
+    "commit": "d5cbb79be9160faa3a7d7323e3294c3781c16ae7",
+    "capturedAt": "2026-09-13T16:04:32.146Z",
     "packagesChecked": 549,
     "candidates": 262
   },
@@ -78,8 +78,8 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "ff9b2a1c83edb7b542fa04f93407b86a5c04bcde",
-    "capturedAt": "2026-09-11T23:35:45.766Z",
+    "commit": "eea66fc32b3b971d55573c69939d1885035a2d93",
+    "capturedAt": "2026-09-13T16:03:31.663Z",
     "packagesChecked": 24,
     "candidates": 9
   },
