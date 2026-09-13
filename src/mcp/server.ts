@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -24,9 +26,28 @@ import { runScan, renderScan, renderExplanation } from '../upgrade/explain.js';
  * `util/logger.ts`), which is why it is safe to pass one in at all.
  */
 
+/**
+ * The version an agent's client shows beside "drift" in its list of servers.
+ *
+ * Read from the package rather than written here. A hardcoded string is one
+ * more thing every release has to remember, and this one was forgotten: it
+ * still said 0.1.0 while the published CLI was 0.1.5, so every editor that
+ * connected was told a version that had not existed for five releases.
+ */
+function serverVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+      version?: string;
+    };
+    return pkg.version ?? '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
 /** Build the server, wired to `scanUpgrades`. Exported for tests. */
 export function createDriftMcpServer(): McpServer {
-  const server = new McpServer({ name: 'drift', version: '0.1.0' });
+  const server = new McpServer({ name: 'drift', version: serverVersion() });
 
   server.registerTool(
     'check_upgrades',

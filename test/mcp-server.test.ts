@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { once } from 'node:events';
 
 /**
@@ -21,10 +22,14 @@ import { once } from 'node:events';
 
 interface Rpc {
   id?: number;
-  result?: { tools?: { name: string; description?: string; inputSchema?: { properties?: Record<string, unknown> } }[]; serverInfo?: { name: string } };
+  result?: { tools?: { name: string; description?: string; inputSchema?: { properties?: Record<string, unknown> } }[]; serverInfo?: { name: string; version?: string } };
 }
 
-async function handshake(): Promise<{ info: string; tools: NonNullable<NonNullable<Rpc['result']>['tools']> }> {
+async function handshake(): Promise<{
+  info: string;
+  version: string;
+  tools: NonNullable<NonNullable<Rpc['result']>['tools']>;
+}> {
   const child = spawn(process.execPath, ['dist/cli.js', 'mcp'], { stdio: ['pipe', 'pipe', 'pipe'] });
   const messages: Rpc[] = [];
   let buffer = '';
@@ -61,6 +66,7 @@ async function handshake(): Promise<{ info: string; tools: NonNullable<NonNullab
 
   return {
     info: messages.find((m) => m.id === 1)?.result?.serverInfo?.name ?? '',
+    version: messages.find((m) => m.id === 1)?.result?.serverInfo?.version ?? '',
     tools: messages.find((m) => m.id === 2)?.result?.tools ?? [],
   };
 }
@@ -73,6 +79,18 @@ describe('serving Drift over MCP', () => {
       tools.map((tool) => tool.name).sort(),
       ['check_upgrades', 'explain_upgrade'],
     );
+  });
+
+  test('reports the version it actually is', async () => {
+    // The client shows this beside the server's name. It was hardcoded, and by
+    // the time anyone looked it claimed 0.1.0 against a published 0.1.5 — a
+    // number no release had produced for five versions.
+    const { version } = await handshake();
+    const expected = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+      version: string;
+    }).version;
+
+    assert.equal(version, expected);
   });
 
   test('every tool describes itself and its arguments', async () => {
