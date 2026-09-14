@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-09-11T16:55:27.315Z",
+  "capturedAt": "2026-09-14T19:39:47.160Z",
   "commit": "ac26a4abaa34c9e5a8a346c2f92bb9fa3e8d5808",
-  "engine": "2de1e56c35ed8fd0",
-  "durationMs": 80750,
+  "engine": "efae4e77ec0573ef",
+  "durationMs": 67759,
   "packagesChecked": 6,
   "manifests": [
     "requirements-build.txt",
@@ -20,7 +20,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 101,
+      "at": 497,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
@@ -28,7 +28,7 @@
     },
     {
       "type": "progress",
-      "at": 110,
+      "at": 506,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -36,7 +36,7 @@
     },
     {
       "type": "progress",
-      "at": 111,
+      "at": 507,
       "phase": "Reading manifest",
       "detail": "requirements-build.txt",
       "done": 0,
@@ -44,7 +44,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 508,
       "candidate": {
         "id": "requirements-build.txt#flatbuffers@25.12.19",
         "name": "flatbuffers",
@@ -88,7 +88,7 @@
     },
     {
       "type": "progress",
-      "at": 118,
+      "at": 509,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
@@ -96,7 +96,7 @@
     },
     {
       "type": "progress",
-      "at": 118,
+      "at": 509,
       "phase": "Reading manifest",
       "detail": "Models/MediaPipeLandscape/CoreML/requirements.txt",
       "done": 0,
@@ -104,7 +104,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 510,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0",
         "name": "coremltools",
@@ -148,7 +148,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 510,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -192,7 +192,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 510,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -236,7 +236,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 510,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15",
         "name": "onnx2torch",
@@ -280,7 +280,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 118,
+      "at": 510,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -324,7 +324,7 @@
     },
     {
       "type": "progress",
-      "at": 118,
+      "at": 1240,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -332,7 +332,7 @@
     },
     {
       "type": "progress",
-      "at": 118,
+      "at": 1240,
       "phase": "Checking registries",
       "detail": "6 direct dependencies",
       "done": 0,
@@ -340,7 +340,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 119,
+      "at": 1240,
       "candidate": {
         "id": "requirements-build.txt#flatbuffers@25.12.19",
         "name": "flatbuffers",
@@ -384,7 +384,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 119,
+      "at": 1240,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0",
         "name": "coremltools",
@@ -428,7 +428,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 119,
+      "at": 1240,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -472,7 +472,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 119,
+      "at": 1240,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -516,7 +516,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 119,
+      "at": 1242,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15",
         "name": "onnx2torch",
@@ -560,7 +560,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 122,
+      "at": 1242,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -604,12 +604,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 577,
+      "at": 2186,
       "id": "requirements-build.txt#flatbuffers@25.12.19"
     },
     {
       "type": "progress",
-      "at": 577,
+      "at": 2186,
       "phase": "Up to date",
       "detail": "flatbuffers@25.12.19",
       "done": 1,
@@ -617,12 +617,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 612,
+      "at": 2381,
       "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15"
     },
     {
       "type": "progress",
-      "at": 612,
+      "at": 2381,
       "phase": "Up to date",
       "detail": "onnx2torch@1.5.15",
       "done": 2,
@@ -630,7 +630,7 @@
     },
     {
       "type": "progress",
-      "at": 699,
+      "at": 3222,
       "phase": "Indexing your code",
       "detail": "78 files indexed · 6 direct dependencies to check",
       "done": 0,
@@ -638,7 +638,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 953,
+      "at": 3505,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -702,28 +702,15 @@
     },
     {
       "type": "progress",
-      "at": 953,
+      "at": 3505,
       "phase": "Outdated",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 3,
       "total": 6
     },
     {
-      "type": "candidate-drop",
-      "at": 983,
-      "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0"
-    },
-    {
-      "type": "progress",
-      "at": 983,
-      "phase": "Up to date",
-      "detail": "coremltools@9.0",
-      "done": 4,
-      "total": 6
-    },
-    {
       "type": "candidate-upsert",
-      "at": 1071,
+      "at": 4603,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -778,15 +765,28 @@
     },
     {
       "type": "progress",
-      "at": 1071,
+      "at": 4603,
       "phase": "Outdated",
       "detail": "torch 2.7.0 → 2.14.0",
+      "done": 4,
+      "total": 6
+    },
+    {
+      "type": "candidate-drop",
+      "at": 4931,
+      "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0"
+    },
+    {
+      "type": "progress",
+      "at": 4931,
+      "phase": "Up to date",
+      "detail": "coremltools@9.0",
       "done": 5,
       "total": 6
     },
     {
       "type": "candidate-upsert",
-      "at": 1089,
+      "at": 5414,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -835,7 +835,7 @@
     },
     {
       "type": "progress",
-      "at": 1089,
+      "at": 5414,
       "phase": "Outdated",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 6,
@@ -843,7 +843,7 @@
     },
     {
       "type": "progress",
-      "at": 1090,
+      "at": 5414,
       "phase": "Reading release notes and changelog",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -851,7 +851,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1090,
+      "at": 5414,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -895,7 +895,7 @@
     },
     {
       "type": "progress",
-      "at": 1096,
+      "at": 5414,
       "phase": "Checking package metadata",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -903,7 +903,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1096,
+      "at": 5415,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -947,7 +947,7 @@
     },
     {
       "type": "progress",
-      "at": 1096,
+      "at": 5415,
       "phase": "Reading release notes and changelog",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -955,7 +955,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1096,
+      "at": 5415,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -999,7 +999,7 @@
     },
     {
       "type": "progress",
-      "at": 1096,
+      "at": 5415,
       "phase": "Checking package metadata",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -1007,7 +1007,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1096,
+      "at": 5415,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1051,7 +1051,7 @@
     },
     {
       "type": "progress",
-      "at": 1099,
+      "at": 5415,
       "phase": "Reading release notes and changelog",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1059,7 +1059,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1099,
+      "at": 5415,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1103,7 +1103,7 @@
     },
     {
       "type": "progress",
-      "at": 1099,
+      "at": 5418,
       "phase": "Checking package metadata",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1111,7 +1111,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1099,
+      "at": 5418,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1155,7 +1155,7 @@
     },
     {
       "type": "progress",
-      "at": 1101,
+      "at": 5418,
       "phase": "Checking repository status",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1163,7 +1163,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1101,
+      "at": 5418,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1207,7 +1207,7 @@
     },
     {
       "type": "progress",
-      "at": 1101,
+      "at": 5418,
       "phase": "Checking repository status",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -1215,7 +1215,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1101,
+      "at": 5418,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1259,7 +1259,7 @@
     },
     {
       "type": "progress",
-      "at": 1102,
+      "at": 5419,
       "phase": "Checking repository status",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1267,7 +1267,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1102,
+      "at": 5419,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1311,7 +1311,7 @@
     },
     {
       "type": "progress",
-      "at": 1545,
+      "at": 5835,
       "phase": "Checking security advisories",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1319,7 +1319,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1545,
+      "at": 5835,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1363,7 +1363,7 @@
     },
     {
       "type": "progress",
-      "at": 1545,
+      "at": 5839,
       "phase": "Checking security advisories",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1371,7 +1371,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1545,
+      "at": 5839,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1415,7 +1415,7 @@
     },
     {
       "type": "progress",
-      "at": 1645,
+      "at": 5839,
       "phase": "Checking security advisories",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 0,
@@ -1423,7 +1423,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1645,
+      "at": 5839,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1467,7 +1467,7 @@
     },
     {
       "type": "progress",
-      "at": 1995,
+      "at": 6161,
       "phase": "Checking license",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1475,7 +1475,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1995,
+      "at": 6161,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1519,59 +1519,7 @@
     },
     {
       "type": "progress",
-      "at": 2004,
-      "phase": "Checking license",
-      "detail": "onnx 1.19.1 → 1.22.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2004,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2004,
+      "at": 6167,
       "phase": "Checking license",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1579,7 +1527,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2004,
+      "at": 6167,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1623,7 +1571,59 @@
     },
     {
       "type": "progress",
-      "at": 38478,
+      "at": 6276,
+      "phase": "Checking license",
+      "detail": "onnx 1.19.1 → 1.22.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 6276,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 18550,
       "phase": "Comparing the public API surface",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1631,7 +1631,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38478,
+      "at": 18550,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1675,7 +1675,7 @@
     },
     {
       "type": "progress",
-      "at": 38487,
+      "at": 18555,
       "phase": "Reading release notes and changelog",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1683,7 +1683,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38487,
+      "at": 18555,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1727,7 +1727,7 @@
     },
     {
       "type": "progress",
-      "at": 38487,
+      "at": 18555,
       "phase": "Comparing the public API surface",
       "detail": "huggingface-hub 0.34.4 → 1.31.0 · 21 evidence sources",
       "done": 0,
@@ -1735,7 +1735,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38487,
+      "at": 18555,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1779,7 +1779,7 @@
     },
     {
       "type": "progress",
-      "at": 38506,
+      "at": 18581,
       "phase": "Searching your code for 137 breaking changes",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1787,7 +1787,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 38506,
+      "at": 18581,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1831,7 +1831,7 @@
     },
     {
       "type": "progress",
-      "at": 39124,
+      "at": 18914,
       "phase": "Weighing what this upgrade is worth",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1839,7 +1839,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 39124,
+      "at": 18914,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1883,7 +1883,7 @@
     },
     {
       "type": "progress",
-      "at": 39287,
+      "at": 19079,
       "phase": "Checking maintenance signals",
       "detail": "huggingface-hub 0.34.4 → 1.31.0",
       "done": 0,
@@ -1891,7 +1891,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 39287,
+      "at": 19079,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1935,7 +1935,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 39319,
+      "at": 19105,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -3252,7 +3252,7 @@
     },
     {
       "type": "progress",
-      "at": 39319,
+      "at": 19105,
       "phase": "Needs your attention",
       "detail": "huggingface-hub 0.34.4 → 1.31.0 · affects your code · 2 actionable sites in 2 files — not deeply verified",
       "done": 1,
@@ -3260,7 +3260,7 @@
     },
     {
       "type": "progress",
-      "at": 40546,
+      "at": 19269,
       "phase": "Comparing the public API surface",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 1,
@@ -3268,7 +3268,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 40546,
+      "at": 19270,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -3312,7 +3312,7 @@
     },
     {
       "type": "progress",
-      "at": 40548,
+      "at": 19271,
       "phase": "Reading release notes and changelog",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 1,
@@ -3320,7 +3320,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 40548,
+      "at": 19271,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -3364,7 +3364,7 @@
     },
     {
       "type": "progress",
-      "at": 40548,
+      "at": 19271,
       "phase": "Comparing the public API surface",
       "detail": "onnx 1.19.1 → 1.22.0 · 6 evidence sources",
       "done": 1,
@@ -3372,7 +3372,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 40548,
+      "at": 19271,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -3416,7 +3416,7 @@
     },
     {
       "type": "progress",
-      "at": 40550,
+      "at": 19274,
       "phase": "Searching your code for 30 breaking changes",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 1,
@@ -3424,7 +3424,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 40550,
+      "at": 19274,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -3468,7 +3468,7 @@
     },
     {
       "type": "progress",
-      "at": 40856,
+      "at": 19628,
       "phase": "Weighing what this upgrade is worth",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 1,
@@ -3476,7 +3476,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 40856,
+      "at": 19628,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -3520,7 +3520,7 @@
     },
     {
       "type": "progress",
-      "at": 40993,
+      "at": 19801,
       "phase": "Checking maintenance signals",
       "detail": "onnx 1.19.1 → 1.22.0",
       "done": 1,
@@ -3528,7 +3528,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 40993,
+      "at": 19801,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -3572,7 +3572,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 41001,
+      "at": 19805,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -4010,7 +4010,7 @@
     },
     {
       "type": "progress",
-      "at": 41001,
+      "at": 19805,
       "phase": "Needs your attention",
       "detail": "onnx 1.19.1 → 1.22.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
       "done": 2,
@@ -4018,7 +4018,7 @@
     },
     {
       "type": "progress",
-      "at": 78076,
+      "at": 64236,
       "phase": "Comparing the public API surface",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 2,
@@ -4026,7 +4026,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 78076,
+      "at": 64236,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4070,7 +4070,7 @@
     },
     {
       "type": "progress",
-      "at": 78094,
+      "at": 64254,
       "phase": "Reading release notes and changelog",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 2,
@@ -4078,7 +4078,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 78094,
+      "at": 64254,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4122,7 +4122,7 @@
     },
     {
       "type": "progress",
-      "at": 78094,
+      "at": 64254,
       "phase": "Comparing the public API surface",
       "detail": "torch 2.7.0 → 2.14.0 · 10 evidence sources",
       "done": 2,
@@ -4130,7 +4130,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 78094,
+      "at": 64254,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4174,7 +4174,7 @@
     },
     {
       "type": "progress",
-      "at": 78175,
+      "at": 64310,
       "phase": "Searching your code for 977 breaking changes",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 2,
@@ -4182,7 +4182,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 78175,
+      "at": 64310,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4226,7 +4226,7 @@
     },
     {
       "type": "progress",
-      "at": 80619,
+      "at": 67539,
       "phase": "Weighing what this upgrade is worth",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 2,
@@ -4234,7 +4234,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 80619,
+      "at": 67539,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4278,7 +4278,7 @@
     },
     {
       "type": "progress",
-      "at": 80675,
+      "at": 67631,
       "phase": "Checking maintenance signals",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 2,
@@ -4286,7 +4286,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 80675,
+      "at": 67631,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -4330,7 +4330,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 80745,
+      "at": 67752,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -12350,7 +12350,7 @@
     },
     {
       "type": "progress",
-      "at": 80745,
+      "at": 67753,
       "phase": "Needs your attention",
       "detail": "torch 2.7.0 → 2.14.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
       "done": 3,
