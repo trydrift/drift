@@ -62,6 +62,17 @@ export function parseRequirementLine(line: string): { name: string; version: str
 
   const name = normalizePyName(match[1]!);
   const spec = (match[3] ?? '').trim();
+
+  // A requirement states a name and then, if anything, a specifier. Prose
+  // states a name and then more prose, and the difference is the character
+  // that follows. Without this check every sentence in a file that merely
+  // *looked* like a requirements file became a dependency: Django ships
+  // `docs/ref/models/constraints.txt`, which `**/constraints*.txt` matches
+  // for the good reason that pip constraints files are real, and 121 English
+  // words — `creates`, `conflicts`, `exclusion`, `if`, `for` — were reported
+  // as packages nobody could resolve.
+  if (spec && !/^[<>=!~,(\[@]/.test(spec)) return null;
+
   return { name, version: spec || null };
 }
 
@@ -74,6 +85,21 @@ function parseRequirements(content: string): DependencyMap {
   const out: DependencyMap = new Map();
   const lines = content.split('\n');
   const compiled = isCompiledPythonRequirements(content);
+
+  // A file can match `**/constraints*.txt` and still be documentation.
+  // Django ships two: `docs/ref/models/constraints.txt` and
+  // `docs/ref/contrib/postgres/constraints.txt`, prose from end to end. The
+  // per-line check rejects sentences, but a bare word on its own line is
+  // shaped exactly like an unpinned requirement (`requests`), so words like
+  // `deferrable` and `condition` survived it. The file itself is the thing
+  // that is wrong, and a requirements file whose lines mostly do not parse
+  // is not one — better to read nothing from it than to invent packages.
+  const candidates = lines.filter((line) => {
+    const trimmed = line.trim();
+    return trimmed !== '' && !trimmed.startsWith('#') && !trimmed.startsWith('-');
+  });
+  const recognised = candidates.filter((line) => parseRequirementLine(line) !== null).length;
+  if (candidates.length >= 5 && recognised / candidates.length < 0.7) return out;
 
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;

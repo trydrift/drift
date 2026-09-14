@@ -97,3 +97,36 @@ describe('standalone string parsers never throw on malformed input', () => {
     );
   });
 });
+
+describe('a requirements file that is really prose', () => {
+  test('a sentence is not a dependency', () => {
+    // Django ships `docs/ref/models/constraints.txt`, and `**/constraints*.txt`
+    // matches it for the good reason that pip constraints files are real. Every
+    // sentence in those two files became a package: 121 of them, including
+    // `creates`, `conflicts`, `exclusion`, `if` and `for`, each reported as a
+    // dependency whose version nobody could resolve.
+    for (const prose of [
+      'creates an exclusion constraint on ``circle`` using ``circle_ops``.',
+      'operation- creates the index',
+      'postgresql supports exclusion constraints',
+      'if you need a name',
+    ]) {
+      assert.equal(parseRequirementLine(prose), null, prose);
+    }
+  });
+
+  test('every shape a real requirement takes still parses', () => {
+    const cases: [string, string, string | null][] = [
+      ['flask>=2.0', 'flask', '>=2.0'],
+      ['requests', 'requests', null],
+      ['django[argon2]>=4.2', 'django', '>=4.2'],
+      ['numpy==1.26.4', 'numpy', '==1.26.4'],
+      ['pytest ; python_version<"3.9"', 'pytest', null],
+    ];
+    for (const [line, name, version] of cases) {
+      const parsed = parseRequirementLine(line);
+      assert.equal(parsed?.name, name, line);
+      assert.equal(parsed?.version ?? null, version, line);
+    }
+  });
+});

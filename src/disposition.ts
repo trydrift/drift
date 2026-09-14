@@ -35,6 +35,19 @@ export function isActionableImpact(
   );
 }
 
+/** Distinct places, keyed by where and what matched. */
+function dedupeSites(sites: readonly ImpactSite[]): ImpactSite[] {
+  const seen = new Set<string>();
+  const out: ImpactSite[] = [];
+  for (const site of sites) {
+    const key = `${site.file}:${site.line}:${site.column ?? ''}:${site.matchedSymbol ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(site);
+  }
+  return out;
+}
+
 export function deriveBreakingChangeDispositions(
   changes: readonly BreakingChange[],
   sites: readonly ImpactSite[],
@@ -50,7 +63,13 @@ export function deriveBreakingChangeDispositions(
   }
 
   return changes.map((change) => {
-    const changeSites = sites.filter((site) => site.breakingChangeId === change.id);
+    // One row per place. Localization can reach the same line by more than
+    // one route — several matched symbols, several passes over a file — and
+    // every consumer counts these: `actionableImpactCount`, the file tally,
+    // the commit grouping, verification. Express reported `ci.yml:49` four
+    // times for one change, so a repository with 600 real sites advertised
+    // more, and the number a developer is asked to trust was inflated.
+    const changeSites = dedupeSites(sites.filter((site) => site.breakingChangeId === change.id));
     const analyses = analysesById.get(change.id) ?? [];
     const runtimeAnalysis = analyses.length === 1 ? analyses[0] : undefined;
     const actionableSites = changeSites.filter((site) => isActionableImpact(change, site, runtimeAnalysis));

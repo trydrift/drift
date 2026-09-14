@@ -307,3 +307,25 @@ describe('only an actionable disposition generates a fix commit', () => {
     }
   });
 });
+
+describe('one row per place', () => {
+  test('a line reached twice is reported once', () => {
+    // Localization can arrive at the same line by more than one route, and every
+    // consumer counts these rows: the actionable tally, the file count, the
+    // commit grouping, verification. Express reported `.github/workflows/ci.yml:49`
+    // four times for a single change, inflating the number a developer is asked
+    // to trust.
+    const change = { id: 'bc_1', kind: 'removed-export', summary: 'gone' } as never;
+    const site = (over: Record<string, unknown> = {}) =>
+      ({ breakingChangeId: 'bc_1', file: 'lib/response.js', line: 30, column: 4, matchedSymbol: 'require', confidence: 'high', ...over }) as never;
+
+    const dispositions = deriveBreakingChangeDispositions(
+      [change],
+      [site(), site(), site({ line: 31 })],
+      [],
+      true,
+    );
+
+    assert.equal(dispositions[0]?.sites.length, 2, 'the duplicate collapses, the distinct line survives');
+  });
+});
