@@ -157,7 +157,15 @@ export interface OutdatedView {
   /** The grouped report, and what to run next. */
   report(candidates: readonly UpgradeCandidate[], selectorFor: (c: UpgradeCandidate) => string): void;
   /** Everything is current — the short, happy ending. */
-  allCurrent(checked: number): void;
+  /**
+   * Everything Drift could check is current.
+   *
+   * `unchecked` is not decoration here. A green line clearing every
+   * dependency, printed directly above a list of twenty-five nobody looked
+   * at, is the same false completeness the rest of this report exists to
+   * refuse.
+   */
+  allCurrent(checked: number, unchecked?: number): void;
 }
 
 export function createOutdatedView(options: {
@@ -316,14 +324,21 @@ export function createOutdatedView(options: {
       if (options.interactive && candidates.length > 0) line();
     },
 
-    allCurrent(checked) {
+    allCurrent(checked, unchecked = 0) {
       // "All 0 direct dependencies are up to date" is technically true and
       // reads as a bug. A directory with no dependencies has not been given a
       // clean bill of health; there was nothing to give one to, and the caller
       // says so on its own.
       if (checked === 0) return;
+      // With dependencies nobody could look at, "all" is the wrong word: it
+      // clears the whole manifest on the strength of the part Drift reached.
+      // Spring PetClinic is the case — five versions readable, twenty-five set
+      // by a parent POM — where "All 5 direct dependencies are up to date" read
+      // as a clean bill of health for a thirty-dependency project.
       line(
-        `${c('green', c.glyph('safe'))} All ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} up to date.`,
+        unchecked > 0
+          ? `${c('green', c.glyph('safe'))} The ${checked} dependenc${checked === 1 ? 'y' : 'ies'} Drift could check ${checked === 1 ? 'is' : 'are'} up to date.`
+          : `${c('green', c.glyph('safe'))} All ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} up to date.`,
       );
       line();
     },

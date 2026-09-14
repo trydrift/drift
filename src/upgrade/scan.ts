@@ -972,6 +972,10 @@ export async function scanUpgrades(args: {
   };
 
   const all: ScanDependency[] = [];
+  // What every manifest declared but nothing could pin a version for. Carried
+  // into the scan result so the report can name it, instead of implying it
+  // was checked and found current.
+  const unresolvedDeps: UncheckedDependency[] = [];
   for (const target of targets) {
     if (!enabled.has(target.manager.ecosystem)) continue;
     report('Reading manifest', target.manifestPath);
@@ -985,9 +989,11 @@ export async function scanUpgrades(args: {
     // a scan that is working from one that is wedged. An empty row with a name
     // on it answers that immediately, and fills itself in as the answers
     // arrive.
-    const room = breadth.maxPackages > 0 ? Math.max(0, breadth.maxPackages - all.length) : found.length;
-    for (const dep of found.slice(0, room)) announce(dep, 'Waiting to be checked');
-    all.push(...found);
+    const room =
+      breadth.maxPackages > 0 ? Math.max(0, breadth.maxPackages - all.length) : found.dependencies.length;
+    for (const dep of found.dependencies.slice(0, room)) announce(dep, 'Waiting to be checked');
+    all.push(...found.dependencies);
+    unresolvedDeps.push(...found.unresolved);
   }
 
   const deps = breadth.maxPackages > 0 ? all.slice(0, breadth.maxPackages) : all;
@@ -1025,7 +1031,7 @@ export async function scanUpgrades(args: {
   /** Outdated packages whose analysis has settled — phase two's progress. */
   let done = 0;
   const candidates: UpgradeCandidate[] = [];
-  const unchecked: UncheckedDependency[] = [];
+  const unchecked: UncheckedDependency[] = [...unresolvedDeps];
 
   /**
    * Prepare the test checkouts now, while the analysis is waiting on registries
@@ -2595,15 +2601,31 @@ export interface ScanDependency {
  * is permitted, not what is on disk.
  *
  */
+export interface DirectDependencies {
+  /** Declared dependencies whose current version is known, so a scan can check them. */
+  dependencies: ScanDependency[];
+  /**
+   * Declared dependencies whose current version could not be pinned down.
+   *
+   * These used to be dropped on the floor, which is the one thing this
+   * codebase refuses to do everywhere else: a repository with no lockfile
+   * got a confident verdict about a fraction of itself and no mention of
+   * the rest. Measured on 2026-09-13: 8 of 44 dependencies were scanned in
+   * the Express repository, and 5 of 30 in Spring PetClinic, each reported
+   * as though it were the whole answer.
+   */
+  unresolved: UncheckedDependency[];
+}
+
 export async function directDependencies(
   root: string,
   target: EcosystemTarget,
   includeDev: boolean,
   fs: WorkspaceFs,
-): Promise<ScanDependency[]> {
+): Promise<DirectDependencies> {
   const parser = parserFor(target.manifestPath);
   const content = await fs.readFile(join(root, target.manifestPath));
-  if (!parser || content === null) return [];
+  if (!parser || content === null) return { dependencies: [], unresolved: [] };
 
   const declared = parser.parse(content, target.manifestPath);
 
@@ -2621,7 +2643,8 @@ export async function directDependencies(
     ? ['runtime', 'dev', 'optional', 'peer']
     : ['runtime'];
 
-  const out: ScanDependency[] = [];
+  const dependencies: ScanDependency[] = [];
+  const unresolved: UncheckedDependency[] = [];
   for (const [name, entry] of declared) {
     if (!kinds.includes(entry.kind)) continue;
     const ecosystem = target.manager.ecosystem;
@@ -2630,8 +2653,27 @@ export async function directDependencies(
     const current = resolved
       ? (semantics.exactVersion(resolved) ?? semantics.parse(resolved)?.raw ?? null)
       : semantics.exactVersion(entry.version ?? '');
-    if (!current) continue;
-    out.push({
+    if (!current) {
+      // Not knowing which version you are on is not the same as being fine.
+      // Without a lockfile a range says which versions are allowed, never
+      // which one is installed, and a Maven dependency can state no version
+      // at all because a parent POM sets it. Either way there is nothing to
+      // compare against, which is a gap to declare rather than a row to drop.
+      const declaredRange = entry.version?.trim() ?? '';
+      unresolved.push({
+        name,
+        kind: entry.kind,
+        ecosystem,
+        packageManager: target.manager.id,
+        manifestPath: target.manifestPath,
+        current: declaredRange || 'unspecified',
+        reason: declaredRange
+          ? `no lockfile entry, and "${declaredRange}" is a range rather than one version`
+          : 'no version here and none in a lockfile — it is set somewhere Drift does not read, such as a parent POM or a BOM',
+      });
+      continue;
+    }
+    dependencies.push({
       name,
       kind: entry.kind,
       ...(entry.cargo ? { cargo: entry.cargo } : {}),
@@ -2641,7 +2683,7 @@ export async function directDependencies(
     });
   }
 
-  return out;
+  return { dependencies, unresolved };
 }
 
 /** Rebuild the manifest/manager pairing a candidate came from. */

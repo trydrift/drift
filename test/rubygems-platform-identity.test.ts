@@ -128,7 +128,7 @@ describe('RubyGems platform is not part of the version', () => {
       ['/repo/Gemfile', "source 'https://rubygems.org'\ngem 'google-protobuf'\n"],
       ['/repo/Gemfile.lock', LOCKFILE],
     ]);
-    const deps = await directDependencies(
+    const { dependencies: deps } = await directDependencies(
       '/repo',
       { manager: bundler, dir: '', manifestPath: 'Gemfile', lockfilePath: 'Gemfile.lock' },
       true,

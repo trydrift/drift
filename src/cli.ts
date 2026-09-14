@@ -1576,7 +1576,7 @@ async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } 
       if (flags.json) return;
       toAnalyse = summary.outdated.length;
       if (summary.outdated.length === 0) {
-        view.allCurrent(summary.checked);
+        view.allCurrent(summary.checked, summary.unchecked.length);
         view.unchecked(summary.unchecked);
         return;
       }

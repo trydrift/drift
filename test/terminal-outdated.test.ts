@@ -302,6 +302,18 @@ describe('a repository with nothing to check', () => {
     view.allCurrent(38);
     assert.ok(text().includes('All 38 direct dependencies are up to date.'));
   });
+
+  test('will not clear a manifest it only partly read', () => {
+    // Spring PetClinic: five dependencies state a version, twenty-five inherit
+    // theirs from a parent POM Drift does not fetch. "All 5 direct dependencies
+    // are up to date" cleared a thirty-dependency project on the strength of
+    // the sixth of it that could be read.
+    const { view, text } = harness();
+    view.allCurrent(5, 25);
+
+    assert.ok(!text().includes('All 5'), '"all" cannot survive an unchecked remainder');
+    assert.match(text(), /5 dependencies Drift could check are up to date/);
+  });
 });
 
 describe('a terminal without the glyphs', () => {

@@ -57,13 +57,13 @@ describe('version lookup: the three honest outcomes', () => {
     const pip = PACKAGE_MANAGERS.find((manager) => manager.id === 'pip')!;
     const opam = PACKAGE_MANAGERS.find((manager) => manager.id === 'opam')!;
 
-    const python = await directDependencies('/repo', {
+    const { dependencies: python } = await directDependencies('/repo', {
       manager: pip,
       dir: '',
       manifestPath: 'requirements.in',
       lockfilePath: 'requirements.txt',
     }, true, fs);
-    const ocaml = await directDependencies('/repo', {
+    const { dependencies: ocaml } = await directDependencies('/repo', {
       manager: opam,
       dir: '',
       manifestPath: 'demo.opam',
@@ -72,6 +72,33 @@ describe('version lookup: the three honest outcomes', () => {
 
     assert.equal(python[0]?.current, '3.11');
     assert.equal(ocaml[0]?.current, 'v0.17.0');
+  });
+
+  test('a dependency with no resolvable version is reported, never dropped', async () => {
+    // Without a lockfile a range says which versions are *allowed*, never which
+    // one is installed, so there is nothing to compare an upgrade against. That
+    // is a gap to declare, not a row to delete: dropping them silently meant a
+    // fresh clone of Express reported on 8 of its 44 dependencies and said
+    // nothing whatsoever about the other 36.
+    const files = new Map([['/repo/package.json', JSON.stringify({ dependencies: { express: '^4.18.0' } })]]);
+    const fs = {
+      readFile: async (path) => files.get(path) ?? null,
+      readDirectory: async () => [],
+      isDirectory: async () => false,
+    };
+    const npm = PACKAGE_MANAGERS.find((manager) => manager.id === 'npm')!;
+
+    const { dependencies, unresolved } = await directDependencies(
+      '/repo',
+      { manager: npm, dir: '', manifestPath: 'package.json', lockfilePath: null },
+      true,
+      fs,
+    );
+
+    assert.deepEqual(dependencies, [], 'nothing can be checked without a resolved version');
+    assert.equal(unresolved.length, 1);
+    assert.equal(unresolved[0]?.name, 'express');
+    assert.match(unresolved[0]?.reason ?? '', /range/);
   });
 
   test('published versions preserve exact registry identity across ecosystem grammars', () => {

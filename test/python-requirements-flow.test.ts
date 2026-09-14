@@ -43,7 +43,7 @@ describe('Python source and compiled requirements flow', () => {
     assert.equal(targets[0]?.manifestPath, 'docs/requirements.in');
     assert.equal(targets[0]?.lockfilePath, 'docs/requirements.txt');
 
-    const dependencies = await directDependencies('/repo', targets[0]!, false, fs);
+    const { dependencies } = await directDependencies('/repo', targets[0]!, false, fs);
     assert.deepEqual(dependencies.map((dependency) => dependency.name).sort(), ['pydantic', 'sphinx']);
     assert.equal(dependencies.find((dependency) => dependency.name === 'pydantic')?.current, '2.10.6');
     for (const transitive of ['annotated-types', 'hpack', 'pydantic-core', 'snowballstemmer', 'typing-inspection']) {
