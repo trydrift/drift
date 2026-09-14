@@ -325,3 +325,31 @@ describe('a terminal without the glyphs', () => {
     assert.ok(!/[─-➿]/.test(out), 'no box drawing or dingbats survive');
   });
 });
+
+describe('a version Drift assumed rather than observed', () => {
+  test('is marked wherever the report prints it', () => {
+    // No lockfile means the manifest states which versions are *allowed*, never
+    // which one is installed. Drift resolves the newest release the range
+    // admits — what installing today would give you — and that number must
+    // never be presented as though a lockfile had stated it.
+    const { view, text } = harness();
+    view.report(
+      [
+        {
+          ...candidate({ name: 'cookie', current: '0.7.2', selected: '2.0.1', latest: '2.0.1' }),
+          assumed: true,
+        },
+      ],
+      () => 'cookie',
+    );
+
+    assert.match(text(), /0\.7\.2\?/, 'the assumed version carries its marker');
+  });
+
+  test('an observed version is printed plainly', () => {
+    const { view, text } = harness();
+    view.report([candidate({ name: 'cookie', current: '0.7.2', selected: '2.0.1', latest: '2.0.1' })], () => 'cookie');
+
+    assert.doesNotMatch(text(), /0\.7\.2\?/, 'a lockfile-resolved version is stated, not qualified');
+  });
+});

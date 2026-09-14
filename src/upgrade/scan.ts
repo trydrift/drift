@@ -60,7 +60,7 @@ import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey, upstreamUpgradeKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
-import { lookupVersions, versionSourceLabel, type VersionLookup } from './versions.js';
+import { publishedVersions, lookupVersions, versionSourceLabel, type VersionLookup } from './versions.js';
 import { summarize } from './summary.js';
 import { analysisConcurrency, describeParallelism, networkConcurrency } from '../util/parallelism.js';
 import { count, measure, span } from '../util/profile.js';
@@ -77,7 +77,7 @@ import {
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
 import type { CargoDependencyPlacement } from '../detect/ecosystems/types.js';
-import { versionSemantics } from '../version-semantics.js';
+import { satisfiesPackageRange, comparePackageVersions, versionSemantics } from '../version-semantics.js';
 import {
   isCompiledPythonRequirements,
   isPythonRequirementsInputFile,
@@ -997,6 +997,61 @@ export async function scanUpgrades(args: {
     for (const dep of found.dependencies.slice(0, room)) announce(dep, 'Waiting to be checked');
     all.push(...found.dependencies);
     unresolvedDeps.push(...found.unresolved);
+  }
+
+  // A declared range says which versions are *allowed*, never which one is
+  // installed, so a repository with no lockfile left most of itself
+  // unresolvable: 36 of Express's 44 dependencies, and three quarters of the
+  // average Python project. Nothing was wrong with refusing to invent a
+  // version — but there is one number that is not invented, and it is the one
+  // the developer would get by installing today: the newest published release
+  // the range admits. Checking that is strictly more useful than checking
+  // nothing, provided every renderer says the version was assumed and not
+  // observed, which `assumed` exists to force.
+  if (unresolvedDeps.length > 0) {
+    const stillUnresolved: UncheckedDependency[] = [];
+    await inParallel(unresolvedDeps, networkConcurrency(env), async (entry) => {
+      const ecosystem = entry.ecosystem;
+      // A dependency declared with no constraint at all is not a different
+      // problem from one declared with a loose range. Both say "whatever the
+      // registry has", and both install the newest release today. Python
+      // projects declare this way constantly (six entries in Flask alone, and
+      // 96 across a 50-repository sweep), so treating an absent constraint as
+      // a wildcard is what makes this pass useful beyond npm.
+      const range = entry.current === 'unspecified' ? '*' : entry.current;
+      const target = targets.find((candidate) => candidate.manifestPath === entry.manifestPath);
+      if (!target) {
+        stillUnresolved.push(entry);
+        return;
+      }
+      const published = await publishedVersions({
+        name: entry.name,
+        ecosystem,
+        current: range,
+        range,
+        ...(githubToken ? { githubToken } : {}),
+      }).catch(() => null);
+      const admitted = (published?.versions ?? []).filter(
+        (version) => satisfiesPackageRange(version, range, ecosystem) === true,
+      );
+      const newest = admitted.sort((a, b) => comparePackageVersions(b, a, ecosystem) ?? 0)[0];
+      if (!newest) {
+        stillUnresolved.push(entry);
+        return;
+      }
+      const dep: ScanDependency = {
+        name: entry.name,
+        kind: entry.kind,
+        current: newest,
+        range,
+        assumed: true,
+        target,
+      };
+      announce(dep, 'Waiting to be checked');
+      all.push(dep);
+    });
+    unresolvedDeps.length = 0;
+    unresolvedDeps.push(...stillUnresolved);
   }
 
   const deps = breadth.maxPackages > 0 ? all.slice(0, breadth.maxPackages) : all;
@@ -2225,6 +2280,11 @@ async function analyzeUpgrade(args: {
     // (potentially differently, after a custom-`dirs` scan) from scratch.
     ...(args.allMembers ? { allMembers: args.allMembers } : {}),
     current: args.dep.current,
+    // Provenance travels with the version it qualifies: every settled
+    // candidate spreads this object, so a renderer printing `current` has the
+    // fact of how `current` was obtained in the same place, and cannot report
+    // a version nobody observed as though the lockfile had stated it.
+    ...(args.dep.assumed ? { assumed: true as const } : {}),
     range: args.dep.range,
     // Passed in, never recomputed here: `args.versions` is the list the caller
     // shows, which is capped, so deriving the in-range version from it silently
@@ -2531,6 +2591,10 @@ function pendingCandidate(args: {
     ...(args.memberName ? { workspaceName: args.memberName } : {}),
     ...(args.repoRoot ? { repoRoot: args.repoRoot, repoLabel: args.repoLabel } : {}),
     current: dep.current,
+    // Travels with the version it qualifies. Every candidate is built from
+    // this object, so a renderer that prints `current` has the provenance of
+    // `current` in the same place and cannot state an assumption as a fact.
+    ...(dep.assumed ? { assumed: true as const } : {}),
     range: dep.range,
     selected: dep.current,
     latest: dep.current,

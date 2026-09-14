@@ -265,7 +265,7 @@ function versionFamily(raw: string): VersionFamily {
  */
 const MAVEN_CENTRAL = 'https://repo1.maven.org/maven2';
 
-async function publishedVersions(
+export async function publishedVersions(
   request: VersionLookupRequest,
 ): Promise<{ latest: string | null; versions: string[]; complete?: boolean } | null> {
   switch (request.ecosystem) {

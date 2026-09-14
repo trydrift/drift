@@ -232,7 +232,12 @@ export function createOutdatedView(options: {
     settled(candidate) {
       const severity = severityOf(candidate);
       const facade = FACADE[severity];
-      const versions = `${c('gray', candidate.current)} ${c.glyph('arrow')} ${c('bold', candidate.selected)}`;
+      // An assumed version is marked wherever it is printed. Drift did not
+      // observe this one — there was no lockfile and the range admits many —
+      // it is what installing today would give you, and a reader who is not
+      // told that would take it for a fact about their checkout.
+      const currentLabel = candidate.assumed ? `${candidate.current}?` : candidate.current;
+      const versions = `${c('gray', currentLabel)} ${c.glyph('arrow')} ${c('bold', candidate.selected)}`;
       const label = `${c(facade.style, facade.glyph === 'safe' ? c.glyph('safe') : c.glyph(facade.glyph))} ${packageLink(candidate)}`;
       // The verdict, not the whole rationale: the paragraph belongs in the
       // report below, where it is next to the evidence that supports it. A
@@ -293,14 +298,18 @@ export function createOutdatedView(options: {
         // detailed groups do not use columns at all, so a shared width would be
         // set by names that are never printed beside these.
         const safeNameWidth = Math.max(...group.map((entry) => entry.name.length));
-        const safeCurrentWidth = Math.max(...group.map((entry) => entry.current.length));
+        // Same constraint as the table: the marker is part of the value
+        // being aligned, not decoration added after the column was sized.
+        const currentLabel = (entry: UpgradeCandidate): string =>
+          entry.assumed ? `${entry.current}?` : entry.current;
+        const safeCurrentWidth = Math.max(...group.map((entry) => currentLabel(entry).length));
         const safeSelectedWidth = Math.max(...group.map((entry) => entry.selected.length));
         for (const candidate of group) {
           if (detailed) detailedEntry(candidate, line, c, width, selectorFor, packageLink, where);
           else
             line(
               `  ${padEnd(packageLink(candidate), safeNameWidth)}  ` +
-                c('gray', padStart(candidate.current, safeCurrentWidth)) +
+                c('gray', padStart(currentLabel(candidate), safeCurrentWidth)) +
                 c('gray', ` ${c.glyph('arrow')} `) +
                 c('gray', padEnd(candidate.selected, safeSelectedWidth)) +
                 c('gray', `  ${where(candidate)}`),
@@ -362,10 +371,11 @@ function detailedEntry(
   packageLink: (c: UpgradeCandidate) => string,
   where: (c: UpgradeCandidate) => string,
 ): void {
+  const from = candidate.assumed ? `${candidate.current}?` : candidate.current;
   const target =
     candidate.selected === candidate.latest
-      ? `${candidate.current} ${c.glyph('arrow')} ${candidate.selected}`
-      : `${candidate.current} ${c.glyph('arrow')} ${candidate.selected} (latest ${candidate.latest})`;
+      ? `${from} ${c.glyph('arrow')} ${candidate.selected}`
+      : `${from} ${c.glyph('arrow')} ${candidate.selected} (latest ${candidate.latest})`;
 
   line(`  ${c('bold', packageLink(candidate))} ${c('gray', target)}`);
   line(c('gray', `    ${candidate.ecosystem} ${c.glyph('dot')} ${where(candidate)}`));
@@ -462,7 +472,10 @@ function renderTable(rows: readonly UpgradeCandidate[], c: Palette, width: numbe
   const headers = ['Package', 'Current', 'Wanted', 'Latest', 'Declared in'];
   const cells = rows.map((row) => [
     row.name,
-    row.current,
+    // Marked here rather than at print time: the column widths below are
+    // measured from these cells, so a marker appended afterwards would be
+    // one character wider than the space reserved for it.
+    row.assumed ? `${row.current}?` : row.current,
     // `safeLatest` is the newest release the manifest's own range allows —
     // exactly npm's "wanted". When there is none, the range forbids everything
     // newer, and saying so beats repeating the installed version as though it
