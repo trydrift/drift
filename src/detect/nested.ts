@@ -116,13 +116,21 @@ export async function discoverNestedProjects(
  * sibling project is still found, but do not surface manifests below these
  * explicit fixture roots.
  */
+const FIXTURE_ROOTS = new Set(['fixtures', '__fixtures__', 'testdata', 'registry']);
+
 function isFixtureOwned(dir: string): boolean {
   const segments = dir.split('/').filter(Boolean).map((segment) => segment.toLowerCase());
-  return segments.some((segment, index) => {
-    if (segment !== 'test' && segment !== 'tests') return false;
-    const next = segments[index + 1];
-    return next === 'registry' || next === 'testdata';
-  });
+  // A fixture root is not always the first thing under `tests/`. Poetry keeps
+  // one at `tests/fixtures`, another at `tests/utils/fixtures`, and a third at
+  // `tests/masonry/builders/fixtures` — three segments down. Requiring
+  // adjacency found the first and missed the others, which is how 96 of that
+  // repository's 97 `pyproject.toml` files came back as projects it owns,
+  // deliberately malformed ones (`invalid_pyproject`, `no_name_project`)
+  // included. So the fixture root may appear anywhere below the test
+  // directory; what still has to be true is that it is below one.
+  const testIndex = segments.findIndex((segment) => segment === 'test' || segment === 'tests');
+  if (testIndex === -1) return false;
+  return segments.slice(testIndex + 1).some((segment) => FIXTURE_ROOTS.has(segment));
 }
 
 /** `/`-joined, skipping empty segments — these are all repo-relative paths. */

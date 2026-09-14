@@ -85,6 +85,65 @@ describe('undeclared sibling manifests', () => {
   });
 });
 
+describe('checked-in fixtures are inputs, not projects', () => {
+  test('a fixture root is recognised wherever it sits below the test directory', async () => {
+    // Poetry's real shape: one root manifest, and 96 under `tests/` at three
+    // different depths. Requiring the fixture root to sit directly under
+    // `tests/` found `tests/fixtures` and missed the other two.
+    const fs = tree({
+      'pyproject.toml': '[project]\nname = "poetry"',
+      'tests/fixtures/sample_project/pyproject.toml': '[project]\nname = "sample"',
+      'tests/fixtures/invalid_pyproject/pyproject.toml': 'this is deliberately not valid',
+      'tests/utils/fixtures/pyproject.toml': '[project]\nname = "utils-fixture"',
+      'tests/masonry/builders/fixtures/excluded_subpackage/pyproject.toml': '[project]\nname = "excluded"',
+      'tests/registry/demo/package.json': '{"name":"demo"}',
+      'tests/testdata/app/package.json': '{"name":"testdata-app"}',
+    });
+
+    assert.deepEqual(await discoverNestedProjects('', fs), []);
+  });
+
+  test('a real sibling project under tests/ is still found', async () => {
+    // The rule is "below a fixture root", not "below tests/". A repository
+    // that keeps a genuine helper package next to its tests still owns it.
+    const fs = tree({
+      'package.json': '{"name":"root"}',
+      'tests/helper-app/package.json': '{"name":"helper-app"}',
+    });
+
+    const found = await discoverNestedProjects('', fs);
+    assert.deepEqual(found.map((project) => project.dir), ['tests/helper-app']);
+  });
+
+  test('a fixtures directory outside any test directory is still a project', async () => {
+    // `fixtures/` at the root of a repository is as likely to be a package
+    // that serves fixtures as it is to be a pile of them, and nothing here
+    // marks it as test input. Left alone deliberately.
+    const fs = tree({
+      'package.json': '{"name":"root"}',
+      'fixtures/package.json': '{"name":"@acme/fixtures"}',
+    });
+
+    const found = await discoverNestedProjects('', fs);
+    assert.deepEqual(found.map((project) => project.dir), ['fixtures']);
+  });
+
+  test('a fixture that is its own repository is still reported as one', async () => {
+    // A vendored checkout under a fixture root is a separate repository, and
+    // the caller is entitled to offer it as its own scan root.
+    const fs = tree({
+      'package.json': '{"name":"root"}',
+      'tests/fixtures/vendored/.git': '',
+      'tests/fixtures/vendored/package.json': '{"name":"vendored"}',
+    });
+
+    const found = await discoverNestedProjects('', fs);
+    assert.deepEqual(found, [
+      { dir: 'tests/fixtures/vendored', ecosystem: 'npm', manifestPath: 'tests/fixtures/vendored/package.json', hasOwnGit: true },
+    ]);
+  });
+});
+
 describe('nested git boundaries', () => {
   test('a subdirectory with its own .git is flagged and not walked into', async () => {
     const fs = tree({
