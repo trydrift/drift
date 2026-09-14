@@ -30,8 +30,8 @@
     "language": "Ruby",
     "repo": "https://github.com/lobsters/lobsters",
     "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
-    "commit": "be215f52c3c049e42ad968b72c3f1a5b0dcabd9d",
-    "capturedAt": "2026-09-14T20:40:06.533Z",
+    "commit": "8a74ae4ca5abec03d8de330508b50830ceda6345",
+    "capturedAt": "2026-09-14T23:10:48.883Z",
     "packagesChecked": 37,
     "candidates": 19
   },
@@ -42,8 +42,8 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "467cf7b5cb246a95604681915f3b84f538c0110b",
-    "capturedAt": "2026-09-14T20:57:37.510Z",
+    "commit": "e5f62fbfa6d9e9924a4211ef20bbef72db4a104a",
+    "capturedAt": "2026-09-14T23:11:55.811Z",
     "packagesChecked": 549,
     "candidates": 262
   },
@@ -78,8 +78,8 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "5d713ad9ad3478732b1722f2e4d8464ee26ac0e0",
-    "capturedAt": "2026-09-14T20:52:25.595Z",
+    "commit": "8d61b35cdc5063fd6e267d85667963d98ec17fed",
+    "capturedAt": "2026-09-14T23:10:55.358Z",
     "packagesChecked": 31,
     "candidates": 8
   },
@@ -114,8 +114,8 @@
     "language": "Elixir",
     "repo": "https://github.com/phoenixframework/phoenix",
     "blurb": "The web framework nearly every production Elixir application is built on.",
-    "commit": "ab21d5919ec15b888e7e96076b94d866cfc1f13c",
-    "capturedAt": "2026-09-14T20:52:38.406Z",
+    "commit": "c8396bf305ebca085a841a0d8cf614dfd4ac8bda",
+    "capturedAt": "2026-09-14T23:10:48.506Z",
     "packagesChecked": 46,
     "candidates": 18
   },
