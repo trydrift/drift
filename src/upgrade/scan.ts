@@ -1,4 +1,5 @@
 import { dirname, join } from 'node:path';
+import { downloadPom, parsePomContract, type PomContract } from '../evidence/surface/java.js';
 import { readFileSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
@@ -160,6 +161,8 @@ export interface UpgradeCandidate {
   /** That root's display label. */
   repoLabel?: string;
   current: string;
+  /** `current` is assumed from the range, not observed. See `ScanDependency.assumed`. */
+  assumed?: boolean;
   range: string;
   safeLatest?: string;
   /**
@@ -2587,6 +2590,18 @@ export interface ScanDependency {
   kind: DependencyKind;
   cargo?: CargoDependencyPlacement;
   current: string;
+  /**
+   * `current` was not observed anywhere — it is the newest published version
+   * satisfying the declared range, which is what a fresh install would get
+   * today.
+   *
+   * A repository with no lockfile states which versions are *allowed*, never
+   * which one is installed. Reporting nothing for those was the old silence
+   * bug; reporting an assumption as an observation would be a worse one, so
+   * it travels with the number and every renderer that prints the number is
+   * obliged to say so.
+   */
+  assumed?: boolean;
   /** The constraint as written in the manifest, e.g. `^1.2.0`. */
   range: string;
   target: EcosystemTarget;
@@ -2601,6 +2616,86 @@ export interface ScanDependency {
  * is permitted, not what is on disk.
  *
  */
+/**
+ * The versions a Maven POM inherits rather than states.
+ *
+ * Maven projects routinely declare a dependency with no version at all: the
+ * number lives in a parent POM, or in a BOM imported into
+ * `dependencyManagement`. Spring Boot is the canonical case — a petclinic pom
+ * names thirty dependencies and states five versions — and reading only the
+ * file in front of us reported the other twenty-five as unresolvable.
+ *
+ * Resolution happens here rather than inside the parser because every
+ * ecosystem implements `parse(content, path)` synchronously, and fetching a
+ * parent POM is network I/O. Making that interface async to serve one
+ * ecosystem would reshape all twelve; doing it after the parse keeps every
+ * parser pure and confines the cost to Maven.
+ *
+ * Bounded and forgiving on purpose: eight levels of inheritance, and any
+ * failure to fetch leaves the dependency exactly as unresolved as it was,
+ * which is the honest answer rather than an invented version.
+ */
+async function mavenInheritedVersions(pomXml: string): Promise<Map<string, string>> {
+  const managed = new Map<string, string>();
+  const properties = new Map<string, string>();
+
+  const resolve = (value: string): string => {
+    let out = value;
+    for (let pass = 0; pass < 4 && out.includes('${'); pass += 1) {
+      out = out.replace(/\$\{([^}]+)\}/g, (whole, key: string) => properties.get(key) ?? whole);
+    }
+    return out;
+  };
+
+  const absorb = (contract: PomContract): string[] => {
+    for (const [key, value] of contract.properties) if (!properties.has(key)) properties.set(key, value);
+    const imports: string[] = [];
+    for (const [key, value] of contract.dependencyManagement) {
+      // `dependencyContracts` joins the contract with "|", version first.
+      const parts = value.split('|');
+      const version = parts[0] ?? '';
+      if (!version) continue;
+      // A BOM is imported, not inherited: its own dependencyManagement is
+      // where spring-boot-dependencies keeps the numbers everything else uses.
+      if (parts.includes('import')) imports.push(`${key}:${version}`);
+      else if (!managed.has(key)) managed.set(key, version);
+    }
+    return imports;
+  };
+
+  let contract: PomContract;
+  try {
+    contract = parsePomContract(pomXml);
+  } catch {
+    return managed;
+  }
+
+  // Coordinates still to read: imported BOMs and the parent chain. Both are
+  // read the same way — fetch the pom, take its managed versions — so they
+  // share one queue.
+  const queue: string[] = absorb(contract);
+  if (contract.parent) queue.push(contract.parent);
+
+  const seen = new Set<string>();
+  for (let depth = 0; depth < 8 && queue.length > 0; depth += 1) {
+    const next = queue.shift()!;
+    const [groupId, artifactId, rawVersion] = next.split(':');
+    if (!groupId || !artifactId || !rawVersion) continue;
+    const version = resolve(rawVersion);
+    const id = `${groupId}:${artifactId}:${version}`;
+    if (seen.has(id) || version.includes('${')) continue;
+    seen.add(id);
+
+    const attempt = await downloadPom({ groupId, artifactId }, version);
+    if (!attempt.ok) continue;
+    for (const bom of absorb(attempt.contract)) queue.push(bom);
+    if (attempt.contract.parent) queue.push(attempt.contract.parent);
+  }
+
+  for (const [key, value] of managed) managed.set(key, resolve(value));
+  return managed;
+}
+
 export interface DirectDependencies {
   /** Declared dependencies whose current version is known, so a scan can check them. */
   dependencies: ScanDependency[];
@@ -2669,7 +2764,9 @@ export async function directDependencies(
         current: declaredRange || 'unspecified',
         reason: declaredRange
           ? `no lockfile entry, and "${declaredRange}" is a range rather than one version`
-          : 'no version here and none in a lockfile — it is set somewhere Drift does not read, such as a parent POM or a BOM',
+          : ecosystem === 'maven'
+            ? 'no version here and none in a lockfile — it is set by a parent POM or an imported BOM, which Drift does not fetch yet'
+            : 'no version declared here, and no lockfile entry to resolve one from',
       });
       continue;
     }
@@ -2681,6 +2778,27 @@ export async function directDependencies(
       range: entry.version ?? current,
       target,
     });
+  }
+
+  // Versions this pom inherits instead of stating. Attempted only when
+  // something actually went unresolved, so a fully-pinned pom pays nothing.
+  if (unresolved.length > 0 && target.manager.ecosystem === 'maven' && target.manifestPath.endsWith('pom.xml')) {
+    const inherited = await mavenInheritedVersions(content);
+    if (inherited.size > 0) {
+      const semantics = versionSemantics('maven');
+      const stillUnresolved: UncheckedDependency[] = [];
+      for (const entry of unresolved) {
+        const inheritedVersion = inherited.get(entry.name);
+        const exact = inheritedVersion ? semantics.exactVersion(inheritedVersion) : null;
+        if (!exact) {
+          stillUnresolved.push(entry);
+          continue;
+        }
+        dependencies.push({ name: entry.name, kind: entry.kind, current: exact, range: inheritedVersion ?? exact, target });
+      }
+      unresolved.length = 0;
+      unresolved.push(...stillUnresolved);
+    }
   }
 
   return { dependencies, unresolved };

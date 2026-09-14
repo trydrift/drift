@@ -341,7 +341,7 @@ export interface PomContract {
 
 type PomAttempt = { ok: true; contract: PomContract } | { ok: false; failure: SurfaceOutcome };
 
-async function downloadPom(
+export async function downloadPom(
   coordinate: Coordinate,
   version: string,
   bases: readonly string[] = [CENTRAL],

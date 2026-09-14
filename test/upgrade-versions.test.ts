@@ -421,3 +421,25 @@ describe('scan title: a run that could not check something never claims it did',
     assert.match(scanTitle([safe], 10, 0), /all safe/);
   });
 });
+
+describe('Maven names its own release rather than implying one', () => {
+  test('the release pointer wins over the highest version under Maven ordering', async () => {
+    // commons-io publishes `20030203.000550` alongside `2.22.0`. Maven's own
+    // ComparableVersion ranks the date-style version higher — correctly, it is
+    // the larger number — so deriving "latest" from the list recommended a 2003
+    // artifact as the upgrade from 2.22.0 and computed 1,785 breaking changes
+    // against it. Central states the answer in maven-metadata.xml; this pins
+    // that we ask it.
+    const result = await lookupVersions({
+      name: 'commons-io:commons-io',
+      ecosystem: 'maven',
+      current: '2.22.0',
+      range: '2.22.0',
+    });
+
+    assert.notEqual(result.outcome, 'unchecked', 'Central answers for commons-io');
+    if (result.outcome === 'outdated') {
+      assert.doesNotMatch(result.latest, /^\d{8}\./, 'a date-style version is never the release');
+    }
+  });
+});

@@ -1,7 +1,7 @@
 import type { Ecosystem } from '../types.js';
 import { fetchRegistryInfo } from '../evidence/registry.js';
 import { fetchOpamPackageVersions } from '../evidence/opam-repository.js';
-import { fetchJson } from '../util/http.js';
+import { fetchText, fetchJson } from '../util/http.js';
 import {
   compareParsedVersions,
   parsePublishedVersion,
@@ -263,6 +263,8 @@ function versionFamily(raw: string): VersionFamily {
  * tag, so the caller derives one from the list rather than inventing an
  * authority for it.
  */
+const MAVEN_CENTRAL = 'https://repo1.maven.org/maven2';
+
 async function publishedVersions(
   request: VersionLookupRequest,
 ): Promise<{ latest: string | null; versions: string[]; complete?: boolean } | null> {
@@ -280,11 +282,56 @@ async function publishedVersions(
       return swiftTagVersions(request.name, request.githubToken);
     case 'opam':
       return opamRepositoryVersions(request.name, request.githubToken);
+    // Maven's own ordering is not a release pointer. `ComparableVersion`
+    // ranks `20030203.000550` above `2.22.0`, because a date-style version
+    // genuinely is the larger number — so deriving "latest" from the list
+    // recommended commons-io 2.22.0 -> a 2003 artifact, and computed 1,785
+    // breaking changes against it. Central publishes the answer in
+    // `maven-metadata.xml`; asking it is the difference between a downgrade
+    // dressed as an upgrade and the release the project actually ships.
+    case 'maven':
+      return mavenVersions(request.name);
     default: {
       const info = await fetchRegistryInfo(request.name, request.ecosystem, null);
       return info ? { latest: null, versions: info.versions } : null;
     }
   }
+}
+
+/**
+ * Maven Central, which states its own release rather than implying one.
+ *
+ * `<release>` is the newest non-snapshot the coordinate has published, as
+ * Central itself sees it. `<versions>` is every one ever published, which is
+ * what the caller needs to reason about the range, and which on old Apache
+ * Commons coordinates still contains date-style versions from 2003 that
+ * outrank every modern release under Maven ordering.
+ */
+async function mavenVersions(
+  coordinate: string,
+): Promise<{ latest: string | null; versions: string[] } | null> {
+  const [groupId, artifactId] = coordinate.split(':');
+  if (!groupId || !artifactId) return null;
+
+  const xml = await fetchText(`${MAVEN_CENTRAL}/${groupId.replace(/\./g, '/')}/${artifactId}/maven-metadata.xml`);
+  if (xml === null) {
+    // No metadata document: fall back to the version list, which is what
+    // this did before, rather than reporting the package unreadable.
+    const info = await fetchRegistryInfo(coordinate, 'maven', null);
+    return info ? { latest: null, versions: info.versions } : null;
+  }
+
+  const release = /<release>([^<]+)<\/release>/.exec(xml)?.[1]?.trim() ?? null;
+  const versions = [...xml.matchAll(/<version>([^<]+)<\/version>/g)].map((m) => m[1]!.trim());
+  // Something answered, but it was not a metadata document — a proxy error
+  // page served as 200, or a mirror that rewrites the path. Falling back to the
+  // version list is what this did before metadata was consulted at all, and is
+  // strictly better than reporting a readable package as unreadable.
+  if (versions.length === 0) {
+    const info = await fetchRegistryInfo(coordinate, 'maven', null);
+    return info ? { latest: null, versions: info.versions } : null;
+  }
+  return { latest: release, versions };
 }
 
 /**
