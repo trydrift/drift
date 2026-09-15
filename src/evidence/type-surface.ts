@@ -343,7 +343,7 @@ export function clearTypeSurfaceCache(): void {
  * cannot change, so the only way this cache can be wrong is an unbumped parser
  * change, not staleness.
  */
-const SURFACE_PARSER_VERSION = 3;
+const SURFACE_PARSER_VERSION = 4;
 
 /** Storable form of {@link TypeSurface} — `Map` is not JSON. */
 type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
@@ -428,36 +428,41 @@ async function computeTypeSurface(
   let entryPath = options.subpath
     ? await resolveSubpathTypesEntry(packageName, version, manifest, options.subpath)
     : await resolveOwnTypesEntry(packageName, version, manifest);
-  let sources = entryPath
+  let collected = entryPath
     ? await measure('surface-sources', packageName, () =>
         collectDeclarationSources(packageName, version, entryPath!),
       )
-    : [];
+    : { sources: [] as DeclarationSource[], truncated: false };
 
   // jsDelivr is the low-latency path, not the authority. If it cannot produce
   // a declaration surface, inspect the exact immutable artifact named by the
   // npm registry. A successful archive inspection can prove absence; a failed
   // download or malformed archive cannot.
-  if (!entryPath || sources.length === 0) {
+  if (!entryPath || collected.sources.length === 0) {
     const artifact = await fetchNpmArtifact(packageName, version);
     if (!artifact) throw new ArtifactUnavailableError(packageName, version);
     manifest = artifact.manifest;
     entryPath = resolveOwnTypesEntryFromListing(packageName, manifest, artifact.files);
     if (entryPath) {
-      sources = await measure('surface-sources', packageName, () =>
+      collected = await measure('surface-sources', packageName, () =>
         collectDeclarationSources(packageName, version, entryPath!, artifact),
       );
-      if (sources.length === 0) throw new ArtifactUnavailableError(packageName, version);
+      if (collected.sources.length === 0) throw new ArtifactUnavailableError(packageName, version);
     }
   }
 
   if (!entryPath) {
     entryPath = await resolveDefinitelyTypedEntry(packageName, version);
     if (!entryPath) return null;
-    sources = await measure('surface-sources', packageName, () =>
+    collected = await measure('surface-sources', packageName, () =>
       collectDeclarationSources(packageName, version, entryPath!),
     );
   }
+  const sources = collected.sources;
+  // Whether the declaration walk read the package's whole graph. Folded into
+  // `incomplete` below, because a surface assembled from a quarter of a
+  // package cannot support a claim that a symbol is absent from it.
+  const sourcesTruncated = collected.truncated;
   count('surface.declarationFiles', sources.length);
   if (sources.length === 0) return null;
 
@@ -486,7 +491,12 @@ async function computeTypeSurface(
           viaDependencies: dependencyMerge.followed,
           ownSymbols,
           subpaths: subpathsOf(manifest?.exports),
-          incomplete: dependencyMerge.incomplete,
+          // Two different ways of not having read the whole API, and either is
+          // enough to make an absence meaningless: a public re-export edge that
+          // could not be expanded, or a declaration graph larger than the file
+          // budget. The second was silent until now, which is how a surface
+          // holding 25 of graphql's 116 files reported itself complete.
+          incomplete: dependencyMerge.incomplete || sourcesTruncated,
         }
       : null;
 
@@ -1511,16 +1521,26 @@ async function collectDeclarationSources(
   version: string,
   entryPath: string,
   artifact?: NpmArtifact,
-): Promise<DeclarationSource[]> {
-  if (entryPath.startsWith('@types:')) {
-    const target = definitelyTypedTarget(entryPath);
-    const content = await fetchText(`${JSDELIVR_CDN}/${target.name}@${target.range}/index.d.ts`);
-    return content ? [{ path: 'index.d.ts', content }] : [];
-  }
+): Promise<{ sources: DeclarationSource[]; truncated: boolean }> {
+  // A DefinitelyTyped package is read the same way as any other. Returning its
+  // entry file alone was a silent amputation: `@types/semver` declares seven
+  // types in `index.d.ts` and publishes its entire function API through forty
+  // `import x = require("./functions/y")` re-exports in sibling files, none of
+  // which were ever fetched — so `valid`, `satisfies`, `coerce` and `gt` were
+  // absent from a surface that reported itself complete. The only thing that
+  // differs here is which CDN path the files are read from.
+  const dt = entryPath.startsWith('@types:') ? definitelyTypedTarget(entryPath) : null;
+  const cdnBase = dt ? `${dt.name}@${dt.range}` : `${packageName}@${version}`;
+  const startPath = dt ? 'index.d.ts' : entryPath;
 
-  const listing = artifact
-    ? new Set(artifact.files.keys()) as ReadonlySet<string>
-    : await fileListing(packageName, version);
+  // A DefinitelyTyped range (`4`, `latest`) is not an exact version, so there
+  // is no file listing to ask — candidates are probed in order, which is the
+  // same path taken for any package whose listing is unavailable.
+  const listing = dt
+    ? null
+    : artifact
+      ? (new Set(artifact.files.keys()) as ReadonlySet<string>)
+      : await fileListing(packageName, version);
   let declarationBytes = 0;
 
   // Each re-export expands to five candidate paths rather than two, so the
@@ -1529,7 +1549,7 @@ async function collectDeclarationSources(
   // one fetch; without one it degrades to probing them in order, as before.
   const sources: DeclarationSource[] = [];
   const seen = new Set<string>();
-  const queue: string[][] = [[entryPath]];
+  const queue: string[][] = [[startPath]];
 
   const resolveGroup = async (candidates: readonly string[]): Promise<DeclarationSource | null> => {
     const published = listing ? (candidates.find((path) => listing.has(path)) ?? null) : undefined;
@@ -1543,7 +1563,7 @@ async function collectDeclarationSources(
         if (declarationBytes > MAX_NPM_DECLARATION_BYTES) return null;
         content = bytes.toString('utf8');
       } else {
-        content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
+        content = await fetchText(`${JSDELIVR_CDN}/${cdnBase}/${path}`, {
           retries: 0,
         });
       }
@@ -1558,6 +1578,23 @@ async function collectDeclarationSources(
   // one wave instead — bounded, because this is still someone else's CDN, and
   // in input order, so which sources are read (and therefore which symbols win
   // a name collision) does not depend on which response happened to land first.
+  // Whether the file budget stopped this walk short of the package's real
+  // declaration graph.
+  //
+  // It routinely does. graphql's entry reaches 116 declaration files and the
+  // budget is 25, so three quarters of the package is never read — and which
+  // quarter survives is decided by breadth-first arrival order, not by
+  // anything meaningful. `./type/index.js` lands inside the budget and
+  // `GraphQLSchema` is found; `./utilities/index.js` does not and
+  // `buildSchema`, `printSchema` and thirty siblings are simply absent.
+  //
+  // Reporting that as a complete surface is the part that does real damage.
+  // `diffSurfaces` survives it because a symbol missing from *both* sides
+  // cancels out, but anything asking a single surface "does this export
+  // exist?" is told no, confidently, about an API that is right there in the
+  // package. So the walk now says when it gave up.
+  let truncated = false;
+
   while (queue.length > 0 && sources.length < MAX_FILES) {
     const wave: string[][] = [];
     while (queue.length > 0 && wave.length + sources.length < MAX_FILES) {
@@ -1572,6 +1609,9 @@ async function collectDeclarationSources(
     );
 
     for (const source of resolved) {
+      // A file that resolved and was then dropped for want of budget is a
+      // symbol set this surface does not contain and cannot account for.
+      if (source && sources.length >= MAX_FILES) truncated = true;
       if (!source || sources.length >= MAX_FILES) continue;
       sources.push(source);
       for (const specifier of relativeReExports(source.content)) {
@@ -1583,7 +1623,16 @@ async function collectDeclarationSources(
     }
   }
 
-  return sources;
+  // Anything still queued is a file the walk knew about and never read — but
+  // only if it is genuinely unread. The queue holds candidate *groups*, five
+  // speculative paths per re-export (`./x.d.ts`, `./x/index.d.ts`, …), and a
+  // group whose every path was already visited represents no unread file at
+  // all. Counting those as truncation marked zod and yaml incomplete when
+  // their graphs had been read in full, which refused perfectly good surfaces
+  // and — through the `writeComputed` gate — stopped caching them too.
+  if (queue.some((group) => group.some((path) => !seen.has(path)))) truncated = true;
+
+  return { sources, truncated };
 }
 
 /** How many declaration files of one package are fetched at once. */
@@ -1605,6 +1654,19 @@ export function relativeReExports(content: string): string[] {
   const pattern =
     /\bexport\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s+from\s+['"](\.[^'"]+)['"]/g;
   for (const match of content.matchAll(pattern)) out.add(match[1]!);
+
+  // `import semverValid = require("./functions/valid")` — TypeScript's
+  // import-equals form, which a declaration file pairs with a plain
+  // `export { semverValid as valid }` further down. No `export … from`
+  // statement is ever written, so matching only that form saw a file with
+  // nothing to follow: `@types/semver` publishes its entire function API
+  // through forty of these, and its surface came back holding the seven types
+  // its entry file happens to declare. The name bound here is resolved by
+  // `collectExportSpecifiers` once the target file has been read; this is only
+  // what puts the target in the queue.
+  const importEquals = /\bimport\s+[A-Za-z_$][\w$]*\s*=\s*require\((['"])(\.[^'"]+)\1\)/g;
+  for (const match of content.matchAll(importEquals)) out.add(match[2]!);
+
   return [...out];
 }
 
@@ -1695,6 +1757,7 @@ export function extractExports(
     if (parsed.exported) add(into, parsed.entry);
   }
 
+  collectNamespaceImports(content, locals);
   collectExportSpecifiers(content, locals, into, aliases);
   collectExportAssignments(content, locals, into);
   collectDefaultExports(content, locals, into);
@@ -1745,6 +1808,48 @@ function resolveInheritedMembers(api: SurfaceApi, extra?: SurfaceApi): void {
 export interface ExportAlias {
   exported: string;
   local: string;
+}
+
+/**
+ * `import * as z from './x'` — a namespace binding that is later exported.
+ *
+ * zod's entry file is the whole case for this. It ends:
+ *
+ *   import * as z from "./v4/classic/external.js";
+ *   export * from "./v4/classic/external.js";
+ *   export { z, z as default };
+ *
+ * The star export expands and contributes 891 symbols, so the surface looks
+ * healthy — and `z`, the one name essentially every consumer of zod imports,
+ * is not among them. `collectExportSpecifiers` looks `z` up in `locals`, finds
+ * nothing (a namespace binding declares no type), files it as an unresolved
+ * alias, and `resolveAliases` drops it. The surface then reports itself
+ * complete while missing the package's entry point, and thirteen correct
+ * imports in this very repository were reported as errors because of it.
+ *
+ * What the namespace object *is* cannot be resolved here: it stands for every
+ * export of another module, which may not even have been read yet. But that it
+ * **exists** is not in doubt — the file says so. That is exactly the
+ * distinction {@link SurfaceEntry.shapeUnknown} carries, and this is its first
+ * producer on the npm side (the Python provider is the other). `diffSurfaces`
+ * treats such an entry as present and compares none of its shape, so this can
+ * never manufacture a `kind-changed` or `signature-changed` finding — it can
+ * only stop a real export from being called missing.
+ */
+function collectNamespaceImports(content: string, locals: SurfaceApi): void {
+  const pattern = /\bimport\s+\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s+['"][^'"]+['"]/g;
+  for (const match of content.matchAll(pattern)) {
+    const name = match[1]!;
+    if (locals.has(name)) continue;
+    locals.set(name, {
+      name,
+      kind: 'namespace',
+      signature: '',
+      members: [],
+      requiredMembers: [],
+      shapeUnknown: true,
+    });
+  }
 }
 
 /**
