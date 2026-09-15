@@ -22,9 +22,9 @@
       "value": 0.6885245901639344
     },
     "consumer localization rate": {
-      "numerator": 38,
+      "numerator": 37,
       "denominator": 61,
-      "value": 0.6229508196721312
+      "value": 0.6065573770491803
     },
     "false-safe verdicts": {
       "numerator": 0,
@@ -85,9 +85,9 @@
         "value": 0.6885245901639344
       },
       "consumer localization rate": {
-        "numerator": 38,
+        "numerator": 37,
         "denominator": 61,
-        "value": 0.6229508196721312
+        "value": 0.6065573770491803
       }
     },
     "versionToIsRange: true": {
@@ -102,9 +102,9 @@
         "value": 0.6724137931034483
       },
       "consumer localization rate": {
-        "numerator": 36,
+        "numerator": 35,
         "denominator": 58,
-        "value": 0.6206896551724138
+        "value": 0.603448275862069
       }
     },
     "versionToIsRange: false": {
@@ -136,9 +136,9 @@
         "value": 0.6885245901639344
       },
       "consumer localization rate": {
-        "numerator": 38,
+        "numerator": 37,
         "denominator": 61,
-        "value": 0.6229508196721312
+        "value": 0.6065573770491803
       }
     }
   },
@@ -155,7 +155,7 @@
     },
     "consumer localization rate": {
       "low": 0.4918032786885246,
-      "high": 0.7377049180327869,
+      "high": 0.7213114754098361,
       "iterations": 2000
     },
     "false-safe verdicts": {
@@ -171,8 +171,7 @@
     "total": 19,
     "byReason": {
       "consumer-usage-not-found": 5,
-      "verification-inconclusive": 5,
-      "consumer-match-insufficient-confidence": 1,
+      "verification-inconclusive": 6,
       "verification-install-failed": 8
     },
     "unclassified": 0
