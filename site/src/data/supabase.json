@@ -6,10 +6,10 @@
   "language": "TypeScript",
   "repo": "https://github.com/supabase/supabase-js",
   "blurb": "The official Supabase client for JavaScript and TypeScript.",
-  "capturedAt": "2026-09-14T23:33:01.836Z",
+  "capturedAt": "2026-09-15T02:24:16.986Z",
   "commit": "29b978d5da37cbb1927b1e8a8013c6f47e7223c8",
-  "engine": "080b83b704b5dd01",
-  "durationMs": 4568,
+  "engine": "125c600b0d9646a6",
+  "durationMs": 20300,
   "packagesChecked": 22,
   "manifests": [
     "package.json",
@@ -27,7 +27,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 102,
+      "at": 318,
       "phase": "Looking for manifests",
       "detail": "supabase/supabase-js",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 122,
+      "at": 537,
       "phase": "Reading the workspace",
       "detail": "10 packages · pnpm-workspace",
       "done": 0,
@@ -43,7 +43,7 @@
     },
     {
       "type": "progress",
-      "at": 127,
+      "at": 542,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
@@ -51,7 +51,7 @@
     },
     {
       "type": "progress",
-      "at": 860,
+      "at": 3532,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/package.json",
       "done": 0,
@@ -59,7 +59,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 861,
+      "at": 3533,
       "candidate": {
         "id": "packages/core/auth-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -103,7 +103,7 @@
     },
     {
       "type": "progress",
-      "at": 862,
+      "at": 3533,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/example/react/package.json",
       "done": 0,
@@ -111,7 +111,7 @@
     },
     {
       "type": "progress",
-      "at": 862,
+      "at": 3533,
       "phase": "Reading manifest",
       "detail": "packages/core/functions-js/package.json",
       "done": 0,
@@ -119,7 +119,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 862,
+      "at": 3533,
       "candidate": {
         "id": "packages/core/functions-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -163,7 +163,7 @@
     },
     {
       "type": "progress",
-      "at": 862,
+      "at": 3533,
       "phase": "Reading manifest",
       "detail": "packages/core/postgrest-js/package.json",
       "done": 0,
@@ -171,7 +171,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 863,
+      "at": 3534,
       "candidate": {
         "id": "packages/core/postgrest-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -215,7 +215,7 @@
     },
     {
       "type": "progress",
-      "at": 863,
+      "at": 3534,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/package.json",
       "done": 0,
@@ -223,7 +223,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 863,
+      "at": 3534,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5",
         "name": "@supabase/phoenix",
@@ -267,7 +267,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 863,
+      "at": 3534,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -311,7 +311,7 @@
     },
     {
       "type": "progress",
-      "at": 863,
+      "at": 3534,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/example/package.json",
       "done": 0,
@@ -319,7 +319,7 @@
     },
     {
       "type": "progress",
-      "at": 863,
+      "at": 3534,
       "phase": "Reading manifest",
       "detail": "packages/core/storage-js/package.json",
       "done": 0,
@@ -327,7 +327,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 863,
+      "at": 3534,
       "candidate": {
         "id": "packages/core/storage-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -371,7 +371,7 @@
     },
     {
       "type": "progress",
-      "at": 863,
+      "at": 3534,
       "phase": "Reading manifest",
       "detail": "packages/core/supabase-js/package.json",
       "done": 0,
@@ -379,7 +379,7 @@
     },
     {
       "type": "progress",
-      "at": 864,
+      "at": 3556,
       "phase": "Reading manifest",
       "detail": "packages/shared/tracing/package.json",
       "done": 0,
@@ -387,7 +387,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 864,
+      "at": 3556,
       "candidate": {
         "id": "packages/shared/tracing/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -431,7 +431,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 911,
+      "at": 3888,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.15",
         "name": "@radix-ui/react-label",
@@ -475,7 +475,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 917,
+      "at": 3927,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.3.3",
         "name": "@radix-ui/react-slot",
@@ -519,7 +519,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 918,
+      "at": 3928,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#class-variance-authority@0.7.1",
         "name": "class-variance-authority",
@@ -563,7 +563,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 919,
+      "at": 3929,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#clsx@2.1.1",
         "name": "clsx",
@@ -607,7 +607,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 921,
+      "at": 3931,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next-themes@0.4.6",
         "name": "next-themes",
@@ -651,7 +651,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 950,
+      "at": 3931,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -695,7 +695,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1002,
+      "at": 4231,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.11",
         "name": "@radix-ui/react-checkbox",
@@ -739,7 +739,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1011,
+      "at": 4268,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.24",
         "name": "@radix-ui/react-dropdown-menu",
@@ -783,7 +783,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1023,
+      "at": 4306,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -827,7 +827,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1035,
+      "at": 4339,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.7.0",
         "name": "tailwind-merge",
@@ -871,7 +871,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1213,
+      "at": 5163,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.3.0",
         "name": "react",
@@ -915,7 +915,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1240,
+      "at": 5220,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.3.0",
         "name": "react",
@@ -959,7 +959,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1284,
+      "at": 5387,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.3.0",
         "name": "react-dom",
@@ -1003,7 +1003,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1306,
+      "at": 5452,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.3.0",
         "name": "react-dom",
@@ -1047,7 +1047,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11799,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next@16.3.5",
         "name": "next",
@@ -1091,7 +1091,7 @@
     },
     {
       "type": "progress",
-      "at": 2373,
+      "at": 11799,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -1099,7 +1099,7 @@
     },
     {
       "type": "progress",
-      "at": 2373,
+      "at": 11799,
       "phase": "Checking registries",
       "detail": "22 direct dependencies",
       "done": 0,
@@ -1107,7 +1107,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11799,
       "candidate": {
         "id": "packages/core/auth-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1151,7 +1151,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/functions-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1195,7 +1195,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/postgrest-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1239,7 +1239,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5",
         "name": "@supabase/phoenix",
@@ -1283,7 +1283,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1327,7 +1327,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/storage-js/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1371,7 +1371,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/shared/tracing/package.json#tslib@2.8.1",
         "name": "tslib",
@@ -1415,7 +1415,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.15",
         "name": "@radix-ui/react-label",
@@ -1459,7 +1459,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.3.3",
         "name": "@radix-ui/react-slot",
@@ -1503,7 +1503,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#class-variance-authority@0.7.1",
         "name": "class-variance-authority",
@@ -1547,7 +1547,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#clsx@2.1.1",
         "name": "clsx",
@@ -1591,7 +1591,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2373,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next-themes@0.4.6",
         "name": "next-themes",
@@ -1635,7 +1635,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -1679,7 +1679,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.11",
         "name": "@radix-ui/react-checkbox",
@@ -1723,7 +1723,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.24",
         "name": "@radix-ui/react-dropdown-menu",
@@ -1767,7 +1767,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11800,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -1811,7 +1811,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11801,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.7.0",
         "name": "tailwind-merge",
@@ -1855,7 +1855,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11801,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react@19.3.0",
         "name": "react",
@@ -1899,7 +1899,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11801,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react@19.3.0",
         "name": "react",
@@ -1943,7 +1943,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11801,
       "candidate": {
         "id": "packages/core/auth-js/example/react/package.json#react-dom@19.3.0",
         "name": "react-dom",
@@ -1987,7 +1987,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11801,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#react-dom@19.3.0",
         "name": "react-dom",
@@ -2031,7 +2031,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2374,
+      "at": 11801,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#next@16.3.5",
         "name": "next",
@@ -2075,12 +2075,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-label@2.1.15"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "@radix-ui/react-label@2.1.15",
       "done": 1,
@@ -2088,12 +2088,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-slot@1.3.3"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "@radix-ui/react-slot@1.3.3",
       "done": 2,
@@ -2101,12 +2101,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#class-variance-authority@0.7.1"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "class-variance-authority@0.7.1",
       "done": 3,
@@ -2114,12 +2114,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#clsx@2.1.1"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "clsx@2.1.1",
       "done": 4,
@@ -2127,12 +2127,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#next-themes@0.4.6"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "next-themes@0.4.6",
       "done": 5,
@@ -2140,7 +2140,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2450,
+      "at": 11958,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2186,7 +2186,7 @@
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Outdated",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 6,
@@ -2194,12 +2194,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-checkbox@1.3.11"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "@radix-ui/react-checkbox@1.3.11",
       "done": 7,
@@ -2207,12 +2207,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#@radix-ui/react-dropdown-menu@2.1.24"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "@radix-ui/react-dropdown-menu@2.1.24",
       "done": 8,
@@ -2220,7 +2220,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2450,
+      "at": 11958,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2283,7 +2283,7 @@
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Outdated",
       "detail": "lucide-react 0.511.0 → 1.46.0",
       "done": 9,
@@ -2291,12 +2291,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#tailwind-merge@3.7.0"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "tailwind-merge@3.7.0",
       "done": 10,
@@ -2304,12 +2304,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/auth-js/example/react/package.json#react@19.3.0"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "react@19.3.0",
       "done": 11,
@@ -2317,12 +2317,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#react@19.3.0"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "react@19.3.0",
       "done": 12,
@@ -2330,12 +2330,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/auth-js/example/react/package.json#react-dom@19.3.0"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "react-dom@19.3.0",
       "done": 13,
@@ -2343,12 +2343,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#react-dom@19.3.0"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "react-dom@19.3.0",
       "done": 14,
@@ -2356,12 +2356,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2450,
+      "at": 11958,
       "id": "packages/core/realtime-js/example/package.json#next@16.3.5"
     },
     {
       "type": "progress",
-      "at": 2450,
+      "at": 11958,
       "phase": "Up to date",
       "detail": "next@16.3.5",
       "done": 15,
@@ -2369,25 +2369,25 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2479,
-      "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5"
+      "at": 12097,
+      "id": "packages/core/auth-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 2479,
+      "at": 12097,
       "phase": "Up to date",
-      "detail": "@supabase/phoenix@0.4.5",
+      "detail": "tslib@2.8.1",
       "done": 16,
       "total": 22
     },
     {
       "type": "candidate-drop",
-      "at": 2479,
-      "id": "packages/core/auth-js/package.json#tslib@2.8.1"
+      "at": 12097,
+      "id": "packages/core/functions-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 2479,
+      "at": 12097,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 17,
@@ -2395,12 +2395,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2479,
-      "id": "packages/core/functions-js/package.json#tslib@2.8.1"
+      "at": 12097,
+      "id": "packages/core/postgrest-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 2479,
+      "at": 12097,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 18,
@@ -2408,12 +2408,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2479,
-      "id": "packages/core/postgrest-js/package.json#tslib@2.8.1"
+      "at": 12097,
+      "id": "packages/core/realtime-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 2479,
+      "at": 12097,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 19,
@@ -2421,12 +2421,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2479,
-      "id": "packages/core/realtime-js/package.json#tslib@2.8.1"
+      "at": 12097,
+      "id": "packages/core/storage-js/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 2479,
+      "at": 12097,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 20,
@@ -2434,12 +2434,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2479,
-      "id": "packages/core/storage-js/package.json#tslib@2.8.1"
+      "at": 12097,
+      "id": "packages/shared/tracing/package.json#tslib@2.8.1"
     },
     {
       "type": "progress",
-      "at": 2479,
+      "at": 12097,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 21,
@@ -2447,20 +2447,20 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2479,
-      "id": "packages/shared/tracing/package.json#tslib@2.8.1"
+      "at": 12098,
+      "id": "packages/core/realtime-js/package.json#@supabase/phoenix@0.4.5"
     },
     {
       "type": "progress",
-      "at": 2479,
+      "at": 12098,
       "phase": "Up to date",
-      "detail": "tslib@2.8.1",
+      "detail": "@supabase/phoenix@0.4.5",
       "done": 22,
       "total": 22
     },
     {
       "type": "progress",
-      "at": 2480,
+      "at": 12100,
       "phase": "Reading release notes and changelog",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2468,7 +2468,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2480,
+      "at": 12100,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2512,7 +2512,7 @@
     },
     {
       "type": "progress",
-      "at": 2481,
+      "at": 12101,
       "phase": "Checking package metadata",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2520,7 +2520,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2481,
+      "at": 12101,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2564,7 +2564,7 @@
     },
     {
       "type": "progress",
-      "at": 2481,
+      "at": 12101,
       "phase": "Reading release notes and changelog",
       "detail": "lucide-react 0.511.0 → 1.46.0",
       "done": 0,
@@ -2572,7 +2572,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2481,
+      "at": 12101,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2616,7 +2616,7 @@
     },
     {
       "type": "progress",
-      "at": 2481,
+      "at": 12101,
       "phase": "Checking package metadata",
       "detail": "lucide-react 0.511.0 → 1.46.0",
       "done": 0,
@@ -2624,7 +2624,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2481,
+      "at": 12101,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2668,7 +2668,7 @@
     },
     {
       "type": "progress",
-      "at": 2505,
+      "at": 12230,
       "phase": "Checking repository status",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2676,7 +2676,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2505,
+      "at": 12230,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2720,7 +2720,7 @@
     },
     {
       "type": "progress",
-      "at": 2513,
+      "at": 12343,
       "phase": "Checking security advisories",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2728,7 +2728,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2513,
+      "at": 12343,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -2772,7 +2772,59 @@
     },
     {
       "type": "progress",
-      "at": 2547,
+      "at": 12343,
+      "phase": "Checking license",
+      "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 12343,
+      "candidate": {
+        "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
+        "name": "iceberg-js",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/storage-js/package.json",
+        "workspace": "packages/core/storage-js",
+        "workspaceName": "@supabase/storage-js",
+        "current": "0.8.1",
+        "latest": "0.8.1",
+        "selected": "0.8.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 12434,
       "phase": "Checking repository status",
       "detail": "lucide-react 0.511.0 → 1.46.0",
       "done": 0,
@@ -2780,7 +2832,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2547,
+      "at": 12435,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2824,7 +2876,7 @@
     },
     {
       "type": "progress",
-      "at": 2559,
+      "at": 12521,
       "phase": "Checking security advisories",
       "detail": "lucide-react 0.511.0 → 1.46.0",
       "done": 0,
@@ -2832,7 +2884,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2559,
+      "at": 12521,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2876,59 +2928,7 @@
     },
     {
       "type": "progress",
-      "at": 3179,
-      "phase": "Checking license",
-      "detail": "iceberg-js 0.8.1 → 1.0.0",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3179,
-      "candidate": {
-        "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
-        "name": "iceberg-js",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/storage-js/package.json",
-        "workspace": "packages/core/storage-js",
-        "workspaceName": "@supabase/storage-js",
-        "current": "0.8.1",
-        "latest": "0.8.1",
-        "selected": "0.8.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3179,
+      "at": 12521,
       "phase": "Checking license",
       "detail": "lucide-react 0.511.0 → 1.46.0",
       "done": 0,
@@ -2936,7 +2936,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3179,
+      "at": 12521,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -2980,7 +2980,7 @@
     },
     {
       "type": "progress",
-      "at": 3180,
+      "at": 12865,
       "phase": "Reading release notes and changelog",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -2988,7 +2988,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3180,
+      "at": 12865,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3032,7 +3032,7 @@
     },
     {
       "type": "progress",
-      "at": 3180,
+      "at": 12865,
       "phase": "Comparing the public API surface",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · 6 evidence sources",
       "done": 0,
@@ -3040,7 +3040,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3180,
+      "at": 12865,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3084,111 +3084,7 @@
     },
     {
       "type": "progress",
-      "at": 3184,
-      "phase": "Reading release notes and changelog",
-      "detail": "lucide-react 0.511.0 → 1.46.0",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3184,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
-        "name": "lucide-react",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "0.511.0",
-        "latest": "0.511.0",
-        "selected": "0.511.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3184,
-      "phase": "Comparing the public API surface",
-      "detail": "lucide-react 0.511.0 → 1.46.0 · 4 evidence sources",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3184,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
-        "name": "lucide-react",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "0.511.0",
-        "latest": "0.511.0",
-        "selected": "0.511.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3231,
+      "at": 12869,
       "phase": "Searching your code for 27 breaking changes",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -3196,7 +3092,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3231,
+      "at": 12869,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3240,59 +3136,7 @@
     },
     {
       "type": "progress",
-      "at": 3231,
-      "phase": "Searching your code for 3882 breaking changes",
-      "detail": "lucide-react 0.511.0 → 1.46.0",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3231,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
-        "name": "lucide-react",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "0.511.0",
-        "latest": "0.511.0",
-        "selected": "0.511.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Searching your code for 3882 breaking changes",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3431,
+      "at": 14652,
       "phase": "Indexing your code",
       "detail": "389 files indexed · 22 direct dependencies to check",
       "done": 0,
@@ -3300,7 +3144,7 @@
     },
     {
       "type": "progress",
-      "at": 3711,
+      "at": 15914,
       "phase": "Weighing what this upgrade is worth",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -3308,7 +3152,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3711,
+      "at": 15914,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3352,59 +3196,7 @@
     },
     {
       "type": "progress",
-      "at": 4437,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "lucide-react 0.511.0 → 1.46.0",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4437,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
-        "name": "lucide-react",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "0.511.0",
-        "latest": "0.511.0",
-        "selected": "0.511.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4522,
+      "at": 16216,
       "phase": "Checking maintenance signals",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
@@ -3412,7 +3204,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 4522,
+      "at": 16216,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3455,60 +3247,8 @@
       }
     },
     {
-      "type": "progress",
-      "at": 4525,
-      "phase": "Checking maintenance signals",
-      "detail": "lucide-react 0.511.0 → 1.46.0",
-      "done": 0,
-      "total": 2
-    },
-    {
       "type": "candidate-upsert",
-      "at": 4525,
-      "candidate": {
-        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
-        "name": "lucide-react",
-        "ecosystem": "npm",
-        "manifestPath": "packages/core/realtime-js/example/package.json",
-        "workspace": "packages/core/realtime-js/example",
-        "workspaceName": null,
-        "current": "0.511.0",
-        "latest": "0.511.0",
-        "selected": "0.511.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4565,
+      "at": 16218,
       "candidate": {
         "id": "packages/core/storage-js/package.json#iceberg-js@0.8.1",
         "name": "iceberg-js",
@@ -3895,15 +3635,275 @@
     },
     {
       "type": "progress",
-      "at": 4566,
+      "at": 16218,
       "phase": "Checked",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · review required · 27 breaking changes upstream; drift found no usage in this repository but could not prove none — verify before upgrading",
       "done": 1,
       "total": 2
     },
     {
+      "type": "progress",
+      "at": 17452,
+      "phase": "Reading release notes and changelog",
+      "detail": "lucide-react 0.511.0 → 1.46.0",
+      "done": 1,
+      "total": 2
+    },
+    {
       "type": "candidate-upsert",
-      "at": 4566,
+      "at": 17452,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
+        "name": "lucide-react",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "0.511.0",
+        "latest": "0.511.0",
+        "selected": "0.511.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 17452,
+      "phase": "Comparing the public API surface",
+      "detail": "lucide-react 0.511.0 → 1.46.0 · 4 evidence sources",
+      "done": 1,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 17452,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
+        "name": "lucide-react",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "0.511.0",
+        "latest": "0.511.0",
+        "selected": "0.511.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 17584,
+      "phase": "Searching your code for 3882 breaking changes",
+      "detail": "lucide-react 0.511.0 → 1.46.0",
+      "done": 1,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 17584,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
+        "name": "lucide-react",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "0.511.0",
+        "latest": "0.511.0",
+        "selected": "0.511.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Searching your code for 3882 breaking changes",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 19870,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "lucide-react 0.511.0 → 1.46.0",
+      "done": 1,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 19870,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
+        "name": "lucide-react",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "0.511.0",
+        "latest": "0.511.0",
+        "selected": "0.511.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 20152,
+      "phase": "Checking maintenance signals",
+      "detail": "lucide-react 0.511.0 → 1.46.0",
+      "done": 1,
+      "total": 2
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 20152,
+      "candidate": {
+        "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
+        "name": "lucide-react",
+        "ecosystem": "npm",
+        "manifestPath": "packages/core/realtime-js/example/package.json",
+        "workspace": "packages/core/realtime-js/example",
+        "workspaceName": null,
+        "current": "0.511.0",
+        "latest": "0.511.0",
+        "selected": "0.511.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 20280,
       "candidate": {
         "id": "packages/core/realtime-js/example/package.json#lucide-react@0.511.0",
         "name": "lucide-react",
@@ -35131,7 +35131,7 @@
     },
     {
       "type": "progress",
-      "at": 4567,
+      "at": 20299,
       "phase": "Checked",
       "detail": "lucide-react 0.511.0 → 1.46.0 · review required · 3882 breaking changes upstream; drift found no usage in this repository but could not prove none — verify before upgrading",
       "done": 2,
