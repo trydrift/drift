@@ -67,7 +67,26 @@ export type UncheckedReason =
   | 'no-imports'
   | 'version-unknown'
   /** Multi-name imports with no source to tell a rename from a second export. */
-  | 'ambiguous-bindings';
+  | 'ambiguous-bindings'
+  /**
+   * Not one imported name resolved, which says more about the read than the code.
+   *
+   * `incomplete` answers "did the re-export traversal finish", not "is every
+   * exported binding represented". Zod's entry ends with
+   * `import * as z from "./v4/classic/external.js"; export { z }` — the star
+   * expansion completes, 891 symbols are recorded, and the namespace object
+   * `z` is not one of them because it is not a declaration the parser can
+   * resolve. The surface is therefore complete *and* missing the single name
+   * every consumer imports, and thirteen correct imports were reported as
+   * errors.
+   *
+   * A repository where every name imported from a package is wrong is not a
+   * thing that happens; a surface that failed to represent that package's
+   * entry point is. So nothing resolving at all is treated as a failed read.
+   * A partial result — some names found, some not — is left alone, because
+   * that is what a real finding looks like.
+   */
+  | 'nothing-resolved';
 
 export interface PackageOutcome {
   packageName: string;
