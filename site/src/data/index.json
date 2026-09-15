@@ -30,8 +30,8 @@
     "language": "Ruby",
     "repo": "https://github.com/lobsters/lobsters",
     "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
-    "commit": "2d572859dd426e48eefe007b139476a5c6661cc5",
-    "capturedAt": "2026-09-15T02:24:10.835Z",
+    "commit": "c5b47dd648e13cf030e30f5c7a0bc29a6d9299c9",
+    "capturedAt": "2026-09-15T03:01:48.917Z",
     "packagesChecked": 37,
     "candidates": 19
   },
