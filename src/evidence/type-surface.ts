@@ -1630,7 +1630,8 @@ async function collectDeclarationSources(
   // all. Counting those as truncation marked zod and yaml incomplete when
   // their graphs had been read in full, which refused perfectly good surfaces
   // and — through the `writeComputed` gate — stopped caching them too.
-  if (queue.some((group) => group.some((path) => !seen.has(path)))) truncated = true;
+  const residualUnread = queue.some((group) => group.some((path) => !seen.has(path)));
+  if (residualUnread) truncated = true;
 
   return { sources, truncated };
 }
@@ -1638,8 +1639,30 @@ async function collectDeclarationSources(
 /** How many declaration files of one package are fetched at once. */
 const DECLARATION_FETCH_CONCURRENCY = 8;
 
-/** How many declaration files one package's surface is assembled from. */
-const MAX_FILES = 25;
+/**
+ * How many declaration files one package's surface is assembled from.
+ *
+ * Was 25, which is below what ordinary packages need, and the shortfall was
+ * silent. Measured against real ones:
+ *
+ *   graphql@17.0.2   25 files -> 275 symbols, truncated   150 -> 590, complete
+ *   zod@4.5.4        25 files -> 955 symbols, truncated   150 -> 1261, complete
+ *   yaml@2.9.0       25 files -> 107 symbols, truncated   150 -> 111, complete
+ *
+ * graphql alone reaches 116 files. At 25 it lost `buildSchema`, `parse` and
+ * `execute` — three of the most-imported names in the package — and reported
+ * the result as a complete API.
+ *
+ * Raising it looks like it should cost more and costs less. A truncated
+ * surface is never persisted (see the `writeComputed` gate: it refuses
+ * anything `incomplete`), so every scan re-fetched those 25 files from the CDN
+ * again, every time, forever. A complete surface is written once and read from
+ * disk after that. The one-off 1.7s replaces a recurring 0.77s.
+ *
+ * The environment override exists so the next person to question this number
+ * can measure it the way it was measured, rather than argue about it.
+ */
+const MAX_FILES = Number(process.env.DRIFT_MAX_DECLARATION_FILES) || 150;
 
 /**
  * `export * from './x'` / `export { a } from './x'` — relative targets only.
@@ -1837,10 +1860,8 @@ export interface ExportAlias {
  * only stop a real export from being called missing.
  */
 function collectNamespaceImports(content: string, locals: SurfaceApi): void {
-  const pattern = /\bimport\s+\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s+['"][^'"]+['"]/g;
-  for (const match of content.matchAll(pattern)) {
-    const name = match[1]!;
-    if (locals.has(name)) continue;
+  const bind = (name: string): void => {
+    if (locals.has(name)) return;
     locals.set(name, {
       name,
       kind: 'namespace',
@@ -1849,6 +1870,28 @@ function collectNamespaceImports(content: string, locals: SurfaceApi): void {
       requiredMembers: [],
       shapeUnknown: true,
     });
+  };
+
+  for (const match of content.matchAll(/\bimport\s+\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s+['"][^'"]+['"]/g)) {
+    bind(match[1]!);
+  }
+
+  // `import semverValid = require("./functions/valid")`, paired further down
+  // with `export { semverValid as valid }`. This is how `@types/semver`
+  // publishes its entire function API — forty of them — and why `valid`,
+  // `satisfies`, `coerce` and `gt` were absent from its surface.
+  //
+  // The binding cannot be resolved to the target's own declaration, and that
+  // is not a shortcut being taken here. `functions/valid.d.ts` ends in
+  // `export = valid`, which `collectExportAssignments` deliberately republishes
+  // under `default` rather than its internal name — so forty sibling files each
+  // contribute a `default` key to one flat surface and collide, and picking the
+  // right one back out is not possible from this side. What *is* certain is
+  // that the module exists and is exported under the name the export statement
+  // gives it, which is precisely a shape-unknown entry: no false absence, and
+  // no invented shape to compare.
+  for (const match of content.matchAll(/\bimport\s+([A-Za-z_$][\w$]*)\s*=\s*require\(['"][^'"]+['"]\)/g)) {
+    bind(match[1]!);
   }
 }
 
