@@ -241,6 +241,8 @@ drift — dependency changes, proven and fixed
 Usage:
   drift analyze [options]     Analyse a local repository and print the report
   drift outdated [options]    Scan for available upgrades, not just past ones
+  drift check [options]       Whether this code is already wrong about the
+                              versions it has installed — no upgrade involved
   drift upgrade [options]     Install every upgrade *measured* safe for this
                               code: each one is installed in a throwaway
                               worktree and this project's own checks are run
@@ -406,6 +408,46 @@ Exit code 1 when any candidate is affected or failed verification, so a CI job
 can gate on it directly. Exit code 0 when every candidate is safe or unchecked,
 and when there is nothing to check at all. A run that could not be made — an
 unreadable repository, a config that does not parse — is also 1.
+`.trim(),
+
+  check: `
+drift check — is this code already wrong about the versions it has installed
+
+Usage:
+  drift check [options]
+
+Options:
+  --dir <path>                Local checkout to check.   Default: cwd
+  --only <package>            Check one package instead of every dependency
+  --no-dev                    Skip dev/optional/peer dependencies (checked by
+                              default alongside runtime ones)
+  --json                      Emit the full result as JSON
+  --log-level <level>         debug | info | warn | error. Default: info
+
+Every other command asks what an upgrade would do. This one asks nothing about
+upgrades. The version on disk exports a set of names, this repository imports a
+set of names, and an import naming something that version does not export is an
+error that already exists — no upgrade required for it to be true, and no test
+run to find it.
+
+It happens for ordinary reasons: a range resolved forward on a fresh install
+and took a major with it, a lockfile was regenerated on another machine, a
+dependency was bumped without anyone reading what moved. The build can still
+pass while it is wrong, because a missing type export is invisible at runtime
+and a missing runtime export is invisible until the line runs.
+
+npm only. Reading an installed API surface is an npm capability; every other
+ecosystem is reported as not checked rather than guessed at. What could not be
+checked is always listed with the reason, because a clean answer is a claim
+about absence and absence is only as good as the search behind it.
+
+It reads the names an import binds, not what is later reached through them, so
+a clean result means every name you import exists — not that your use of the
+package is correct.
+
+Exit code 1 when any import names something the installed version does not
+export, so a CI job can gate on it. Exit code 0 otherwise, including when
+nothing could be checked.
 `.trim(),
 
   upgrade: `
@@ -659,6 +701,7 @@ the last resort, not the first.
 const COMMANDS = [
   'analyze',
   'outdated',
+  'check',
   'upgrade',
   'fix',
   'pr',
@@ -972,7 +1015,7 @@ function defaultBaselineCacheDir(): string | null {
 const OPTIONLESS_COMMANDS = new Set(['action', 'serve', 'mcp']);
 
 /** Commands that operate on a repository, and so get a repo-local run log. */
-const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'upgrade', 'fix', 'pr', 'explain']);
+const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'check', 'upgrade', 'fix', 'pr', 'explain']);
 
 async function gitHeadShort(repoRoot: string): Promise<string> {
   const result = await execCommand('git', ['rev-parse', '--short', 'HEAD'], { cwd: repoRoot, timeoutMs: 5000 });
@@ -1022,6 +1065,8 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       return withFlagCheck('analyze', rest, analyzeCommand);
     case 'outdated':
       return withFlagCheck('outdated', rest, outdatedCommand);
+    case 'check':
+      return withFlagCheck('check', rest, checkCommand);
     case 'upgrade':
       return withFlagCheck('upgrade', rest, upgradeCommand);
     case 'fix':
@@ -1481,6 +1526,41 @@ function describeUnavailable(reason: Extract<IssueBranchOutcome, { kind: 'unavai
  * not chosen to install yet. See `verification/upgrade-probe.ts` for what
  * that worktree does and does not have access to.
  */
+/**
+ * Is this repository already wrong about the versions it has installed?
+ *
+ * No registry lookup, no version comparison, no upgrade: this reads the API of
+ * what is on disk and checks it against what the code imports. Deliberately
+ * not routed through `scanUpgrades`, which would pay for a full network scan
+ * and would skip every dependency already at its latest version — precisely
+ * where the question is most worth asking.
+ */
+async function checkCommand(flags: Flags): Promise<number> {
+  const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
+  const { runInstalledCheck, renderInstalledCheck } = await import('./upgrade/run-installed-check.js');
+
+  const run = await runInstalledCheck({
+    directory: workspace,
+    ...(typeof flags.only === 'string' ? { only: flags.only } : {}),
+    // `--no-dev` parses to the key `no-dev`, whole and hyphenated — it does
+    // not become a negated `dev`. Reading the negated form instead meant the
+    // flag was accepted and then silently ignored, which is what the
+    // help-vocabulary guard in `cli-help.test.ts` exists to catch.
+    includeDev: flags['no-dev'] !== true,
+  });
+
+  if (flags.json) {
+    console.log(JSON.stringify(run, null, 2));
+  } else {
+    console.log(`\n${renderInstalledCheck(run)}\n`);
+  }
+
+  // A finding here is a present-tense error in the checkout, so it fails a CI
+  // job. Nothing checkable is not a failure: it is an answer of "unknown", and
+  // the report says so in words rather than in an exit code.
+  return run.missing.length > 0 ? 1 : 0;
+}
+
 async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } = {}): Promise<number> {
   const logLevel = (typeof flags['log-level'] === 'string' ? flags['log-level'] : 'info') as LogLevel;
   const logger = createLogger(logLevel);

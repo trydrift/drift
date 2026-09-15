@@ -5,6 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 
 import { runScan, renderScan, renderExplanation } from '../upgrade/explain.js';
+import { runInstalledCheck, renderInstalledCheck } from '../upgrade/run-installed-check.js';
 
 /**
  * Drift as a tool a coding agent can call.
@@ -116,6 +117,38 @@ export function createDriftMcpServer(): McpServer {
         verify: verify ?? false,
       });
       return { content: [{ type: 'text', text: renderExplanation(candidates[0], name) }] };
+    },
+  );
+
+  server.registerTool(
+    'check_installed',
+    {
+      title: 'Check this code against the versions installed',
+      description:
+        'Whether this repository is already wrong about the dependency versions it has on disk — not whether an ' +
+        'upgrade would break it. Drift reads the API of each installed version and checks every name the code ' +
+        'imports against it, so an import naming something that version does not export is an error that exists ' +
+        'right now, with no upgrade involved.\n\n' +
+        'Use this when a build fails on a missing export, after a lockfile changed, or before blaming code you ' +
+        'did not touch. It reports what it could not check and why, and a clean result means every name imported ' +
+        'exists — not that the package is used correctly, since it does not follow member access through an ' +
+        'imported object.',
+      inputSchema: {
+        directory: z
+          .string()
+          .optional()
+          .describe('Repository to check. Defaults to the current working directory.'),
+        only: z.string().optional().describe('Restrict the check to one package name.'),
+        includeDev: z.boolean().optional().describe('Include dev/optional/peer dependencies. Default true.'),
+      },
+    },
+    async ({ directory, only, includeDev }) => {
+      const run = await runInstalledCheck({
+        directory: directory ?? process.cwd(),
+        ...(only ? { only } : {}),
+        includeDev: includeDev ?? true,
+      });
+      return { content: [{ type: 'text', text: renderInstalledCheck(run) }] };
     },
   );
 

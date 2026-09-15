@@ -49,6 +49,12 @@
         "icon": "$(search)"
       },
       {
+        "command": "drift.checkInstalled",
+        "title": "Check Code Against Installed Versions",
+        "category": "Drift",
+        "icon": "$(verified)"
+      },
+      {
         "command": "drift.fixAll",
         "title": "Fix All Breaking Changes",
         "category": "Drift",

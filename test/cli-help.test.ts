@@ -97,7 +97,7 @@ test('every flag the CLI reads is documented somewhere in its help', async () =>
 
   const { out } = await run(['--help']);
   const topics = await Promise.all(
-    ['analyze', 'outdated', 'upgrade', 'fix', 'pr'].map(async (command) => (await run(['help', command])).out),
+    ['analyze', 'outdated', 'check', 'upgrade', 'fix', 'pr'].map(async (command) => (await run(['help', command])).out),
   );
   const documented = [out, ...topics].join('\n');
 

@@ -72,12 +72,12 @@ async function handshake(): Promise<{
 }
 
 describe('serving Drift over MCP', () => {
-  test('completes a handshake and advertises both tools', async () => {
+  test('completes a handshake and advertises every tool', async () => {
     const { info, tools } = await handshake();
     assert.equal(info, 'drift');
     assert.deepEqual(
       tools.map((tool) => tool.name).sort(),
-      ['check_upgrades', 'explain_upgrade'],
+      ['check_installed', 'check_upgrades', 'explain_upgrade'],
     );
   });
 

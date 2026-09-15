@@ -343,6 +343,34 @@ function registerCommands(
   register('drift.nextChange', () => reviewUi.revealNext());
   register('drift.reviewChanges', () => home.reveal());
   register('drift.scanDependencies', () => home.scanDependencies());
+  // A different question from the scan above: not "what could I upgrade to"
+  // but "is this code already wrong about what it has". The answer is prose —
+  // findings, and an account of what could not be checked — so it goes to the
+  // output channel verbatim rather than into the panel's candidate table,
+  // which has no row shape for it.
+  register('drift.checkInstalled', async () => {
+    // The checkout's path, not its git facts: `activeRoot.repo` is a
+    // `LocalRepoInfo` (branch, shas, slug) and carries no directory.
+    const root = state.workspaceRoot;
+    if (!root) {
+      void vscode.window.showInformationMessage('Drift: no repository is open.');
+      return;
+    }
+    output.show(true);
+    output.info('Checking this code against the versions installed…');
+    try {
+      const { runInstalledCheck, renderInstalledCheck } = await import('../../src/upgrade/run-installed-check.js');
+      const run = await runInstalledCheck({ directory: root, includeDev: true });
+      for (const line of renderInstalledCheck(run).split('\n')) output.info(line);
+      void vscode.window.showInformationMessage(
+        run.missing.length === 0
+          ? `Drift: every name imported from ${run.checkedPackages} package${run.checkedPackages === 1 ? '' : 's'} exists in the version installed.`
+          : `Drift: ${run.missing.length} import${run.missing.length === 1 ? '' : 's'} name something the installed version does not export.`,
+      );
+    } catch (error) {
+      output.error(`Drift: the installed-version check failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  });
   register('drift.newSession', () => home.newSession());
   register('drift.history', () => home.showHistory());
   register('drift.clearHistory', () => home.clearHistory());
