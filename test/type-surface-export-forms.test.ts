@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractExports, expandTypesEntry } from '../dist/evidence/type-surface.js';
+import { extractExports, expandTypesEntry, relativeImports } from '../dist/evidence/type-surface.js';
 
 /**
  * Three ways a package can publish its API that produced *zero* exported
@@ -40,6 +40,179 @@ describe('export forms that carry a package API', () => {
     );
     assert.deepEqual([...api.keys()].sort(), ['default', 'default.sync']);
     assert.ok(!api.has('G.sync'), 'the package-internal name is not a consumer-visible symbol');
+  });
+
+  test('an export list needs no space after `export`', () => {
+    // `ansis@4.3.1` ships one minified line: `export{a as default,Ansis,…,a as
+    // blue,a as magenta,…};`. Requiring whitespace after `export` left the
+    // surface holding the two `export type` aliases it spells out, and every
+    // colour the package actually publishes was reported missing from it.
+    const api = extractExports(
+      'declare const a: object, fg: object;\nexport{a as default,fg,a as blue,a as magenta};\n',
+      'index.d.ts',
+    );
+    assert.ok(api.has('blue'), 'a minified export list is still an export list');
+    assert.ok(api.has('magenta'));
+    assert.ok(api.has('fg'));
+  });
+
+  test('a binding imported from a sibling and re-exported is followed', () => {
+    // `socket.io-client@4.8.3` imports `Socket` from `./socket.js` and
+    // publishes it in an `export { … }` list with no `from` clause. Nothing
+    // queued the file that declares it, so the alias never resolved and
+    // `Socket` — the type most of its users name — was absent from a surface
+    // that reported itself complete.
+    assert.deepEqual(
+      relativeImports('import { Socket } from "./socket.js";\nexport { Socket, lookup as io };\n'),
+      ['./socket.js'],
+    );
+  });
+
+  test('a file with nothing to resolve follows no imports', () => {
+    // Queueing every relative import would spend the declaration-file budget
+    // on files contributing only private locals, and exhausting it marks the
+    // surface incomplete — a wrong answer traded for no answer.
+    assert.deepEqual(relativeImports('import { Socket } from "./socket.js";\nexport { Socket } from "./socket.js";\n'), []);
+  });
+
+  test('declarations inside `declare module "pkg"` are exported without saying so', () => {
+    // `mongoose@9.9.4` splits its API across twenty-five `types/*.d.ts` files
+    // reached by triple-slash reference, each re-opening `declare module
+    // 'mongoose'` around a bare `class Document`. All of it parsed as private
+    // locals: 604 symbols in the surface, and `Document` reported absent.
+    const api = extractExports(
+      "declare module 'mongoose' {\n  class Document { save(): void }\n  namespace Types { class ObjectId {} }\n}\n",
+      'document.d.ts',
+      undefined,
+      undefined,
+      'mongoose',
+    );
+    assert.ok(api.has('Document'), 'an ambient module block exports what it declares');
+    assert.ok(api.has('Types'));
+  });
+
+  test('a module block augmenting another package is not credited to this one', () => {
+    // The same syntax is how a package augments someone else's module. Putting
+    // `Request` in this package's surface would let the check answer "yes, that
+    // export exists" about a package that never published it — wrong in the
+    // direction that hides real breakage.
+    const api = extractExports(
+      "declare module 'express' {\n  interface Request { user: object }\n}\n",
+      'index.d.ts',
+      undefined,
+      undefined,
+      'my-express-plugin',
+    );
+    assert.ok(!api.has('Request'), "another package's module is not this package's surface");
+  });
+
+  test('a DefinitelyTyped package declares the module it provides types for', () => {
+    // `@types/react` declares `declare module 'react'`, not `declare module
+    // '@types/react'`, so the owning check has to see through the prefix.
+    const api = extractExports(
+      "declare module 'react' {\n  function useState(): void;\n}\n",
+      'index.d.ts',
+      undefined,
+      undefined,
+      '@types/react',
+    );
+    assert.ok(api.has('useState'));
+  });
+
+  test('`export * as NS from` binds the name, not just the file', () => {
+    // `typedoc@0.28.19` publishes `JSONOutput` and `OptionDefaults` this way,
+    // two barrels deep. Every sibling in the same export statements resolved,
+    // so a 282-symbol surface looked healthy while both were reported missing.
+    const api = extractExports('export * as JSONOutput from "./schema.js";\n', 'index.d.ts');
+    assert.ok(api.has('JSONOutput'));
+    assert.equal(api.get('JSONOutput')?.shapeUnknown, true, 'its members live in a file this side cannot see');
+  });
+
+  test('a name imported under an alias and re-exported resolves', () => {
+    // `tsdown@0.23.0` imports `d as UserConfig` and `t as defineConfig` from
+    // generated chunks and re-exports them. The export names `UserConfig`; the
+    // target file exports `d`, so the alias resolved to nothing and both names
+    // a consumer writes were absent from a 106-symbol surface.
+    const api = extractExports(
+      'import { d as UserConfig, t as defineConfig } from "./chunk.mjs";\nexport { UserConfig, defineConfig };\n',
+      'index.d.ts',
+    );
+    assert.ok(api.has('UserConfig'));
+    assert.ok(api.has('defineConfig'));
+  });
+
+  test('`export { X }` inside a namespace publishes `N.X`', () => {
+    // `@fastify/ajv-compiler@4.0.6`: `StandaloneValidator` is declared at file
+    // scope, listed inside `declare namespace AjvCompiler`, and reached through
+    // `export = AjvCompiler` — so a consumer imports it as a named export.
+    const api = extractExports(
+      'declare function StandaloneValidator(o: object): void;\n' +
+        'declare namespace AjvCompiler {\n  export { StandaloneValidator }\n}\n' +
+        'export = AjvCompiler;\n',
+      'index.d.ts',
+    );
+    assert.ok(api.has('default.StandaloneValidator'), 'reachable as a named import off the module');
+  });
+
+  test('`export type * as NS from` binds the name too', () => {
+    // `meriyah@7.3.3` publishes the namespace `prettier` imports from it as
+    // `export type * as ESTree from './estree.ts'` — the same publication with
+    // the values left out.
+    const api = extractExports("export type * as ESTree from './estree.ts';\n", 'index.d.ts');
+    assert.ok(api.has('ESTree'));
+  });
+
+  test("a package's own module block outranks a declaration it bundles", () => {
+    // `cypress` ships `cy-blob-util`, `lodash` and `sinon` declarations beside
+    // its own. One of those claimed `default` first, and first-writer-wins
+    // locked out `declare module 'cypress' { … export = cypress }` — so
+    // `defineConfig`, the one export a `cypress.config.js` names, existed
+    // nowhere in a 223-symbol surface.
+    const api = extractExports(
+      'declare const vendored: { somethingElse(): void };\nexport = vendored;\n' +
+        "declare module 'cypress' {\n" +
+        '  interface CypressNpmApi { defineConfig(config: object): object }\n' +
+        '  const cypress: CypressNpmApi\n' +
+        '  export = cypress\n' +
+        '}\n',
+      'index.d.ts',
+      undefined,
+      undefined,
+      'cypress',
+    );
+    assert.ok(
+      (api.get('default')?.members ?? []).includes('defineConfig'),
+      "the package's own module block wins",
+    );
+  });
+
+  test('a generic method is a member', () => {
+    // A member name followed by `<` was not matched at all, so every generic
+    // method on every interface and class was missing from every surface —
+    // invisible to presence checks *and* to the diff, on both sides.
+    //
+    // `cypress@14.5.4` is the case that exposed it: `defineConfig<
+    // ComponentDevServerOpts = any>(config: …)` sits one line above the plain
+    // `defineComponentFramework(config: …)`. The plain one was a member; the
+    // generic one did not exist.
+    const api = extractExports(
+      'export interface Api {\n' +
+        '  plain(c: object): object\n' +
+        '  generic<T = any>(c: object): T\n' +
+        '  prop: string\n' +
+        '  optionalGeneric?<T>(x: T): T\n' +
+        '}\n',
+      'index.d.ts',
+    );
+    const members = api.get('Api')?.members ?? [];
+    assert.ok(members.includes('generic'), 'a generic method is still a method');
+    assert.ok(members.includes('plain'));
+    assert.ok(members.includes('prop'));
+    assert.ok(members.includes('optionalGeneric'));
+
+    const required = api.get('Api')?.requiredMembers ?? [];
+    assert.ok(required.includes('generic'), '`<` marks type parameters, not optionality');
+    assert.ok(!required.includes('optionalGeneric'), '`?` still means optional');
   });
 
   test('a default-exported class publishes its members under `default`', () => {

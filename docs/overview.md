@@ -11,6 +11,15 @@ dependency bump → what changed upstream? → where does it bite here? → is i
      detect             evidence                  localize              rationale       dispatch
 ```
 
+One command sits outside that flow. `drift check` starts with no bump at all: it
+asks whether this repository is already wrong about the versions it has
+installed. The API of the version on disk is read, every name the code imports
+is checked against it, and an import naming something that version does not
+export is an error that exists right now — nothing to upgrade, nothing to
+decide. A build can pass while it is wrong, because a missing type export is
+invisible at runtime and a missing runtime export is invisible until the line
+runs.
+
 Drift does not merge changes for you.
 
 ## What Drift optimizes for

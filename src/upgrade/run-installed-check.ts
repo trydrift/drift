@@ -1,8 +1,9 @@
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 
-import { nodeWorkspaceFs } from '../detect/workspace.js';
+import { detectWorkspaces, memberName, nodeWorkspaceFs } from '../detect/workspace.js';
 import { buildIndex } from '../index/metarag.js';
 import { walkSourceFiles } from '../index/walk.js';
+import { versionSemantics } from '../version-semantics.js';
 import { checkInstalled, type InstalledCheckResult, type PackageOutcome } from './installed-check.js';
 import { directDependencies, discoverTargets } from './scan.js';
 
@@ -32,6 +33,18 @@ export interface InstalledCheckRunRequest {
 export interface InstalledCheckRun extends InstalledCheckResult {
   /** Dependencies skipped because no lockfile pins what is actually installed. */
   assumedSkipped: number;
+  /**
+   * Dependencies skipped because this repository publishes them itself.
+   *
+   * A workspace member resolves to its own source, not to the registry copy the
+   * lockfile names, so the published surface is not the artifact the code loads.
+   */
+  workspaceSkipped: number;
+  /**
+   * Dependencies skipped because the version resolved is outside the declared
+   * range — proof the lockfile entry picked is not the copy this code loads.
+   */
+  mismatchSkipped: number;
   /** Files walked, so a caller can say how much of the repository was read. */
   filesRead: number;
   /**
@@ -49,18 +62,55 @@ export async function runInstalledCheck(request: InstalledCheckRunRequest): Prom
   const root = resolve(request.directory);
   const fs = nodeWorkspaceFs();
 
-  // Both halves are independent: one reads manifests, the other reads source.
-  const [{ targets }, walked] = await Promise.all([
+  // All three are independent: manifests, source, and the workspace layout.
+  const [{ targets }, walked, layouts] = await Promise.all([
     discoverTargets(root, [''], new Map(), fs),
     walkSourceFiles(root),
+    detectWorkspaces(root, fs),
   ]);
+
+  // Package names this repository publishes itself.
+  //
+  // A monorepo member is resolved from source, not from the registry: jest
+  // imports `jest-util` and gets `packages/jest-util/src`, which is version
+  // 30.5.1 and exports `isError`, while the lockfile still names a published
+  // 29.7.0 that is not even installed. Checking the code against that
+  // published surface compares it to an artifact it never loads, and reported
+  // fifteen names missing from a package whose real source exports them.
+  //
+  // The proportional guard cannot catch this — fifteen missing out of a
+  // hundred and forty checked is nowhere near a majority — so the member has
+  // to be recognised and left alone.
+  const ownPackages = new Set<string>();
+  for (const layout of layouts) {
+    for (const member of layout.members) if (member.name) ownPackages.add(member.name);
+  }
+  // The declared members are not the whole set: the root package sits above
+  // them and has a name of its own, and a repository with no workspace
+  // declaration at all still has one here.
+  for (const target of targets) {
+    const name = await memberName(
+      root,
+      fs,
+      target.dir,
+      basename(target.manifestPath),
+      target.manager.ecosystem,
+    ).catch(() => null);
+    if (name) ownPackages.add(name);
+  }
 
   const installed = new Map<string, { version: string | null; ecosystem: string }>();
   let assumedSkipped = 0;
+  let workspaceSkipped = 0;
+  let mismatchSkipped = 0;
 
   for (const target of targets) {
     const { dependencies } = await directDependencies(root, target, request.includeDev ?? true, fs);
     for (const dependency of dependencies) {
+      if (ownPackages.has(dependency.name)) {
+        workspaceSkipped += 1;
+        continue;
+      }
       // `assumed` means the version was inferred from the declared range
       // because nothing pinned it — what a fresh install *would* get, not what
       // is on disk. This check is about the code against what it actually has,
@@ -68,6 +118,24 @@ export async function runInstalledCheck(request: InstalledCheckRunRequest): Prom
       if (dependency.assumed) {
         assumedSkipped += 1;
         continue;
+      }
+      // A lockfile can hold several versions of one package, and the parser
+      // keeps the highest — the right answer for "what is out of date", the
+      // wrong one here. jest declares `execa: ^5.1.1` and its lockfile holds
+      // both `execa@^5.1.1` (5.1.1) and a transitive `execa@^9.6.1` (9.6.1);
+      // checking v5 code against v9's surface reported `sync` missing, which
+      // is true of 9 and false of the version actually installed.
+      //
+      // A resolved version outside the declared range is therefore proof the
+      // wrong artifact was picked, and a wrong version cannot produce a right
+      // answer — so the dependency is skipped rather than guessed at.
+      if (dependency.range && dependency.current !== 'unspecified') {
+        const semantics = versionSemantics(target.manager.ecosystem);
+        const parsed = semantics.parse(dependency.current);
+        if (parsed && semantics.satisfies(parsed, dependency.range) === false) {
+          mismatchSkipped += 1;
+          continue;
+        }
       }
       if (installed.has(dependency.name)) continue;
       installed.set(dependency.name, {
@@ -88,6 +156,8 @@ export async function runInstalledCheck(request: InstalledCheckRunRequest): Prom
   return {
     ...result,
     assumedSkipped,
+    workspaceSkipped,
+    mismatchSkipped,
     filesRead: walked.length,
     sourceComplete: !coverage.sourceTruncated && coverage.oversizedSourceSkipped === 0,
   };
@@ -137,6 +207,18 @@ export function renderInstalledCheck(run: InstalledCheckRun): string {
     lines.push(
       `${run.assumedSkipped} dependenc${run.assumedSkipped === 1 ? 'y was' : 'ies were'} skipped: no lockfile pins what is installed, ` +
         'so there is no installed version to check against.',
+    );
+  }
+  if (run.mismatchSkipped > 0) {
+    lines.push(
+      `${run.mismatchSkipped} dependenc${run.mismatchSkipped === 1 ? 'y was' : 'ies were'} skipped: the version the lockfile ` +
+        'resolves is outside the range the manifest declares, so it is not the copy this code loads.',
+    );
+  }
+  if (run.workspaceSkipped > 0) {
+    lines.push(
+      `${run.workspaceSkipped} dependenc${run.workspaceSkipped === 1 ? 'y was' : 'ies were'} skipped: this repository publishes ` +
+        'them itself, so the code resolves them from source rather than from the installed copy.',
     );
   }
 

@@ -307,7 +307,9 @@ describe('a renamed import names the export, not the alias', () => {
     const result = await checkInstalled({
       index: indexOf(files),
       installed: installed(),
-      fetchSurface: async () => surface([]),
+      // A surface that exports *something* — an empty one proves nothing at
+      // all and is refused before ambiguity is ever reached.
+      fetchSurface: async () => surface(['kept']),
     });
 
     assert.deepEqual(result.missing, []);
@@ -357,10 +359,125 @@ describe('scoping', () => {
         ['other', { version: '3.0.0', ecosystem: 'npm' }],
       ]),
       only: 'pkg',
-      fetchSurface: async () => surface([]),
+      fetchSurface: async () => surface(['kept']),
     });
 
     assert.deepEqual(result.packages.map((p) => p.packageName), ['pkg']);
     assert.deepEqual(result.missing.map((m) => m.symbol), ['gone']);
+  });
+});
+
+describe('a surface that cannot enumerate what it exports', () => {
+  /** `declare namespace X { … } declare const X: X.Static; export = X` */
+  const unenumerable = (dottedTypes: string[] = []) => {
+    const api = new Map<string, unknown>();
+    api.set('default', { name: 'default', kind: 'namespace', signature: '', members: [], requiredMembers: [] });
+    for (const name of dottedTypes) {
+      api.set(`default.${name}`, {
+        name: `default.${name}`,
+        kind: 'interface',
+        signature: '',
+        members: [],
+        requiredMembers: [],
+      });
+    }
+    return { api, entryPath: 'index.d.ts', viaDependencies: [], ownSymbols: api.size, subpaths: [], incomplete: false };
+  };
+
+  test('is refused rather than reporting every import as missing', async () => {
+    // sinon's real shape: one exported const whose type is a namespace. The
+    // values are never declared, so nothing can be concluded from their
+    // absence — and concluding anyway reported `createSandbox` missing from
+    // the package that defines it.
+    const files = { 'src/s.ts': "import { createSandbox } from 'pkg';\nexport default createSandbox;\n" };
+
+    const result = await checkInstalled({
+      index: indexOf(files),
+      contents: new Map(Object.entries(files)),
+      installed: installed(),
+      fetchSurface: async () => unenumerable(['MatchPartialArguments', 'DeepPartialOrMatcher']) as never,
+    });
+
+    assert.deepEqual(result.missing, []);
+    assert.equal(result.packages[0]?.unchecked?.reason, 'unenumerable-surface');
+  });
+
+  test('dotted type keys are not evidence the values were read', async () => {
+    // 46 `default.<Type>` keys and an empty member list is exactly sinon, and
+    // counting those keys as enumeration is what let the refusal be skipped.
+    const files = { 'src/t.ts': "import { alsoGone } from 'pkg';\nexport default alsoGone;\n" };
+
+    const result = await checkInstalled({
+      index: indexOf(files),
+      contents: new Map(Object.entries(files)),
+      installed: installed(),
+      fetchSurface: async () => unenumerable(Array.from({ length: 46 }, (_, i) => `Type${i}`)) as never,
+    });
+
+    assert.deepEqual(result.missing, []);
+    assert.equal(result.packages[0]?.unchecked?.reason, 'unenumerable-surface');
+  });
+
+  test('but an enumerated export object still answers', async () => {
+    // undici's shape: `default` with real members. Absence there is real.
+    const files = { 'src/u.ts': "import { Agent, nope } from 'pkg';\nexport default [Agent, nope];\n" };
+    const withMembers = {
+      api: new Map<string, unknown>([
+        ['default', { name: 'default', kind: 'namespace', signature: '', members: ['Agent', 'Pool'], requiredMembers: [] }],
+      ]),
+      entryPath: 'index.d.ts',
+      viaDependencies: [],
+      ownSymbols: 1,
+      subpaths: [],
+      incomplete: false,
+    };
+
+    const result = await checkInstalled({
+      index: indexOf(files),
+      contents: new Map(Object.entries(files)),
+      installed: installed(),
+      fetchSurface: async () => withMembers as never,
+    });
+
+    assert.deepEqual(result.missing.map((m) => m.symbol), ['nope'], 'Agent resolves through default.members; nope does not exist');
+  });
+});
+
+describe('an import of a subpath is checked against that entry point', () => {
+  test('`pkg/config` is fetched as a subpath, not as the package root', async () => {
+    // vitest's root surface has 140 symbols and no `defineConfig`;
+    // `vitest/config` has it. Judging the import against the root reported the
+    // most ordinary line in a vitest project as naming a missing export.
+    const files = { 'src/v.ts': "import { defineConfig } from 'pkg/config';\nexport default defineConfig({});\n" };
+    const asked: (string | undefined)[] = [];
+
+    const result = await checkInstalled({
+      index: indexOf(files),
+      contents: new Map(Object.entries(files)),
+      installed: installed(),
+      fetchSurface: async (_name, _version, subpath) => {
+        asked.push(subpath);
+        return surface(subpath === 'config' ? ['defineConfig'] : ['somethingElse']) as never;
+      },
+    });
+
+    assert.deepEqual(asked, ['config'], 'the subpath reached the fetch');
+    assert.deepEqual(result.missing, []);
+  });
+
+  test('root and subpath imports of one package are judged separately', async () => {
+    const files = {
+      'src/w.ts': "import { rootThing } from 'pkg';\nimport { subThing } from 'pkg/config';\nexport default [rootThing, subThing];\n",
+    };
+
+    const result = await checkInstalled({
+      index: indexOf(files),
+      contents: new Map(Object.entries(files)),
+      installed: installed(),
+      fetchSurface: async (_name, _version, subpath) =>
+        surface(subpath === 'config' ? ['subThing'] : ['rootThing']) as never,
+    });
+
+    assert.deepEqual(result.missing, [], 'each name exists in its own entry point');
   });
 });

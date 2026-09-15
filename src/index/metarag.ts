@@ -1,3 +1,4 @@
+import { maskComments } from '../evidence/type-surface.js';
 import { languageOf, type Language, type SourceFile } from './walk.js';
 
 /**
@@ -520,7 +521,17 @@ export function includeRoot(specifier: string): string {
   return first.replace(/\.(h|hpp|hh|hxx|inl|tpp|h\+\+)$/i, '').toLowerCase();
 }
 
-function extractJsImports(content: string): ImportRecord[] {
+function extractJsImports(rawContent: string): ImportRecord[] {
+  // A comment is not an import. `prettier` documents its types with JSDoc
+  // `@import {ESTree as MeriyahESTree} from "meriyah";` blocks, and reading
+  // those as real imports had Drift check names against `meriyah`'s installed
+  // API and report them missing — a finding about a line that imports nothing.
+  //
+  // Masked rather than stripped: every line number reported to a user is
+  // derived from an offset into this string, and shortening it would move
+  // every one of them.
+  const content = maskComments(rawContent);
+
   const out: ImportRecord[] = [];
   const lineStarts = lineStartOffsets(content);
   const lineOf = (offset: number): number => lineOfOffset(lineStarts, offset);

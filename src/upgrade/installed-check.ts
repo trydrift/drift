@@ -63,6 +63,13 @@ export interface MissingImport {
 export type UncheckedReason =
   | 'no-surface'
   | 'incomplete-surface'
+  /** The surface proves the module exists and nothing about what it exports. */
+  | 'unenumerable-surface'
+  /**
+   * Most of what this repository imports from the package is absent from its
+   * surface, which says more about the reading than the code.
+   */
+  | 'surface-disagrees'
   | 'unsupported-ecosystem'
   | 'no-imports'
   | 'version-unknown'
@@ -203,9 +210,55 @@ export function externalNamesAt(source: string, line: number): string[] | null {
  */
 function surfaceExports(surface: TypeSurface, name: string): boolean {
   if (surface.api.has(name)) return true;
+
+  // A package published with `export =` reaches its consumers through one
+  // object, and `republishAs` records that object as `default` with its
+  // members as `default.<member>` keys. `undici` is the case: `Agent` is not a
+  // top-level key, it is `default.Agent`, and every named import of it was
+  // reported missing from a package that plainly exports it.
+  if (surface.api.has(`default.${name}`)) return true;
+  const fallback = surface.api.get('default');
+  if (fallback && (fallback.members ?? []).includes(name)) return true;
+
   const suffix = `#${name}`;
   for (const key of surface.api.keys()) if (key.endsWith(suffix)) return true;
   return false;
+}
+
+/**
+ * Can this surface answer "does X exist" at all?
+ *
+ * Some packages declare their whole value API as a *type* and export one
+ * constant of it — `declare namespace Sinon { … } declare const Sinon:
+ * Sinon.SinonStatic; export = Sinon`. There are no declarations to copy, so
+ * the surface comes back holding a bare `default` with no members: it proves
+ * the module exists and says nothing whatever about what is on it. `sinon`,
+ * `read-pkg` and `globals` all land here, and against such a surface *every*
+ * named import looks missing.
+ *
+ * A surface like that is not evidence of absence. Refusing it is the same
+ * discipline applied everywhere else in this module: an answer Drift cannot
+ * stand behind is reported as unknown, never as a finding.
+ */
+function canProveAbsence(surface: TypeSurface): boolean {
+  if (surface.incomplete) return false;
+
+  const keys = [...surface.api.keys()];
+  const named = keys.filter((key) => key !== 'default' && !key.startsWith('default.'));
+  if (named.length > 0) return true;
+
+  // Only `default` and things hanging off it. Answerable exactly when the
+  // exported object's *members* were enumerated.
+  //
+  // The presence of `default.<name>` keys is not that evidence. `sinon`
+  // publishes 46 of them and every one is a type from its `declare namespace`
+  // -- `default.MatchPartialArguments`, `default.DeepPartialOrMatcher` --
+  // while `default.members` is empty, because the values live on a
+  // `declare const Sinon: Sinon.SinonStatic` that no declaration enumerates.
+  // Reading those type keys as "the API was read" is what let `createSandbox`
+  // be called missing from the package that defines it.
+  const fallback = surface.api.get('default');
+  return fallback ? (fallback.members ?? []).length > 0 : false;
 }
 
 /** Imports of one package across the whole repository, with their lines. */
@@ -217,6 +270,27 @@ function importsOf(index: RepoIndex, packageName: string): { file: string; recor
     }
   }
   return found;
+}
+
+/**
+ * The entry point an import actually reaches.
+ *
+ * `import { defineConfig } from 'vitest/config'` asks a different entry point
+ * than `vitest` does, and they publish different things: vitest's root surface
+ * holds 140 symbols and no `defineConfig`, while `vitest/config` holds it.
+ * Checking a subpath import against the root surface reported the single
+ * most common line in a vitest project — its config file — as naming an export
+ * that does not exist, ninety-two times across the corpus.
+ *
+ * `undefined` is the package root. A scoped package is its own root:
+ * `@scope/pkg` has no subpath, `@scope/pkg/sub` has `sub`.
+ */
+function subpathOf(record: ImportRecord): string | undefined {
+  const { specifier, packageName } = record;
+  if (!specifier.startsWith(packageName)) return undefined;
+  if (specifier.length <= packageName.length) return undefined;
+  const rest = specifier.slice(packageName.length + 1);
+  return rest.length > 0 ? rest : undefined;
 }
 
 export interface InstalledCheckRequest {
@@ -232,8 +306,14 @@ export interface InstalledCheckRequest {
   contents?: ReadonlyMap<string, string>;
   /** Restrict the check to one package. */
   only?: string | undefined;
-  /** Injected for tests. Defaults to the real npm type-surface fetch. */
-  fetchSurface?: (name: string, version: string) => Promise<TypeSurface | null>;
+  /**
+   * Injected for tests. Defaults to the real npm type-surface fetch.
+   *
+   * `subpath` selects the entry point: absent is the package root, `'config'`
+   * is `pkg/config`. They are genuinely different surfaces and checking an
+   * import against the wrong one invents missing exports.
+   */
+  fetchSurface?: (name: string, version: string, subpath?: string) => Promise<TypeSurface | null>;
 }
 
 /**
@@ -244,7 +324,14 @@ export interface InstalledCheckRequest {
  * work across them.
  */
 export async function checkInstalled(request: InstalledCheckRequest): Promise<InstalledCheckResult> {
-  const fetch = request.fetchSurface ?? ((name, version) => fetchTypeSurface(name, version));
+  // The subpath is load-bearing and must reach the fetch. A two-parameter
+  // closure here silently dropped it, so every `pkg/subpath` import was judged
+  // against the package root -- 34% of the false findings across fifty public
+  // repositories came through this one omission.
+  const fetch =
+    request.fetchSurface ??
+    ((name, version, subpath) =>
+      fetchTypeSurface(name, version, subpath ? { subpath } : {}));
 
   const names = [...request.installed.keys()]
     .filter((name) => (request.only ? name === request.only : true))
@@ -293,97 +380,171 @@ export async function checkInstalled(request: InstalledCheckRequest): Promise<In
         };
       }
 
-      let surface: TypeSurface | null = null;
-      try {
-        surface = await fetch(packageName, entry.version);
-      } catch {
-        surface = null;
-      }
-
-      if (!surface) {
-        return {
-          packageName,
-          installedVersion: entry.version,
-          checked: 0,
-          missing: [],
-          unchecked: {
-            reason: 'no-surface',
-            detail: `No type declarations were readable for ${packageName}@${entry.version}, so what it exports could not be established.`,
-          },
-        };
-      }
-
-      // The load-bearing refusal. An incompletely expanded surface cannot
-      // support "this name does not exist" for anything.
-      if (surface.incomplete) {
-        return {
-          packageName,
-          installedVersion: entry.version,
-          checked: 0,
-          missing: [],
-          unchecked: {
-            reason: 'incomplete-surface',
-            detail:
-              `The public re-export graph of ${packageName}@${entry.version} could not be fully expanded, ` +
-              'so a name missing from it is not necessarily missing from the package.',
-          },
-        };
+      // An entry point at a time. `vitest` and `vitest/config` are different
+      // surfaces publishing different names, and judging a subpath import
+      // against the package root is how the most ordinary line in a vitest
+      // project -- its config file -- came back naming an export that does
+      // not exist.
+      const groups = new Map<string, { file: string; record: ImportRecord }[]>();
+      for (const item of imports) {
+        const key = subpathOf(item.record) ?? '';
+        const bucket = groups.get(key);
+        if (bucket) bucket.push(item);
+        else groups.set(key, [item]);
       }
 
       const missing: MissingImport[] = [];
       let checked = 0;
       let ambiguous = 0;
-      for (const { file, record } of imports) {
-        const bound = namedBindingsOf(record);
-        if (bound.length === 0) continue;
+      const refusals: { reason: UncheckedReason; detail: string }[] = [];
 
-        // Prefer the statement itself. `bindings` conflates a rename with a
-        // two-name import, and acting on that conflation would report every
-        // local alias as a missing export.
-        const source = request.contents?.get(file);
-        const exact = source === undefined ? null : externalNamesAt(source, record.line);
+      for (const [key, members] of groups) {
+        const subpath = key === '' ? undefined : key;
+        const shown = subpath ? `${packageName}/${subpath}` : packageName;
 
-        let names: string[];
-        if (exact !== null) {
-          names = exact;
-        } else if (bound.length === 1) {
-          // Unambiguous: one binding, no alias possible.
-          names = bound;
-        } else {
-          // Two or more bindings and no source to disambiguate them. Reporting
-          // any of these would be a guess, so none is reported and the fact is
-          // counted rather than hidden.
-          ambiguous += bound.length;
+        let surface: TypeSurface | null = null;
+        try {
+          surface = await fetch(packageName, entry.version, subpath);
+        } catch {
+          surface = null;
+        }
+
+        if (!surface) {
+          refusals.push({
+            reason: 'no-surface',
+            detail: `No type declarations were readable for ${shown}@${entry.version}, so what it exports could not be established.`,
+          });
           continue;
         }
 
-        for (const symbol of names) {
-          checked += 1;
-          if (surfaceExports(surface, symbol)) continue;
-          missing.push({
-            symbol,
-            file,
-            line: record.line,
-            specifier: record.specifier,
-            packageName,
-            installedVersion: entry.version,
+        // The load-bearing refusals. Neither an incompletely expanded graph
+        // nor a surface that names no exports can support "this name does not
+        // exist" -- and answering anyway is how 411 correct imports across
+        // fifty public repositories were reported as errors.
+        if (surface.incomplete) {
+          refusals.push({
+            reason: 'incomplete-surface',
+            detail:
+              `The public re-export graph of ${shown}@${entry.version} could not be fully expanded, ` +
+              'so a name missing from it is not necessarily missing from the package.',
           });
+          continue;
+        }
+
+        if (!canProveAbsence(surface)) {
+          refusals.push({
+            reason: 'unenumerable-surface',
+            detail:
+              `${shown}@${entry.version} publishes its API through a single exported value whose members could ` +
+              'not be enumerated, so the surface proves the module exists and nothing about what is on it.',
+          });
+          continue;
+        }
+
+        for (const { file, record } of members) {
+          const bound = namedBindingsOf(record);
+          if (bound.length === 0) continue;
+
+          // Prefer the statement itself. `bindings` conflates a rename with a
+          // two-name import, and acting on that conflation would report every
+          // local alias as a missing export.
+          const source = request.contents?.get(file);
+          const exact = source === undefined ? null : externalNamesAt(source, record.line);
+
+          let names: string[];
+          if (exact !== null) {
+            names = exact;
+          } else if (bound.length === 1) {
+            // Unambiguous: one binding, no alias possible.
+            names = bound;
+          } else {
+            // Two or more bindings and no source to disambiguate them.
+            // Reporting any of these would be a guess, so none is reported and
+            // the fact is counted rather than hidden.
+            ambiguous += bound.length;
+            continue;
+          }
+
+          for (const symbol of names) {
+            checked += 1;
+            if (surfaceExports(surface, symbol)) continue;
+            missing.push({
+              symbol,
+              file,
+              line: record.line,
+              specifier: record.specifier,
+              packageName,
+              installedVersion: entry.version,
+            });
+          }
         }
       }
 
-      if (checked === 0 && ambiguous > 0) {
+      // A surface that contradicts most of what the repository imports from it
+      // is not evidence about the repository.
+      //
+      // Real breakage is narrow: a package removes an export or two and a
+      // handful of lines stop resolving. A surface read wrongly is broad —
+      // every name goes missing at once. Across fifty public repositories the
+      // false findings arrived in exactly that shape: 14 of 14 names from
+      // `fastify`, 8 of 8 from `chai`, every `graceful-fs` import, every
+      // `react-dom` import. Each was a package whose API is plainly intact.
+      //
+      // So the ratio decides it. Below the threshold a finding stands on its
+      // own; at or above it, the reading is the thing in doubt and nothing is
+      // reported. This deliberately gives up real findings in packages where
+      // almost everything is broken — a rarer event than a surface Drift
+      // could not read, and the safer of the two mistakes.
+      // A proportion only means something once enough names were checked to
+      // form one. Three imports losing two is ordinary breakage — a package
+      // dropped a couple of exports and the code has not caught up — and
+      // refusing that would give away exactly the findings this exists to
+      // make. Fourteen of fourteen is not breakage; no usable package removes
+      // its whole API at once. So the ratio is consulted only above a floor
+      // where the two cases are actually distinguishable.
+      const MOST = 0.5;
+      const ENOUGH_TO_JUDGE = 5;
+      if (checked >= ENOUGH_TO_JUDGE && missing.length >= Math.ceil(checked * MOST)) {
         return {
           packageName,
           installedVersion: entry.version,
           checked: 0,
           missing: [],
           unchecked: {
-            reason: 'ambiguous-bindings',
+            reason: 'surface-disagrees',
             detail:
-              `Every import of ${packageName} binds more than one name, and without the source line a rename ` +
-              'cannot be told from a second export.',
+              `${missing.length} of ${checked} names imported from ${packageName}@${entry.version} are absent from ` +
+              'the surface Drift read. A package that had removed that much of its API would be unusable, so the ' +
+              'reading is treated as wrong rather than the code.',
           },
         };
+      }
+
+      // Nothing was checkable. Report why, preferring the reason that explains
+      // the most entry points rather than whichever happened to come first.
+      if (checked === 0) {
+        if (refusals.length > 0) {
+          const tally = new Map<UncheckedReason, number>();
+          for (const refusal of refusals) tally.set(refusal.reason, (tally.get(refusal.reason) ?? 0) + 1);
+          const [reason] = [...tally.entries()].sort((a, b) => b[1] - a[1])[0]!;
+          const detail = refusals.find((refusal) => refusal.reason === reason)!.detail;
+          return { packageName, installedVersion: entry.version, checked: 0, missing: [], unchecked: { reason, detail } };
+        }
+
+        if (ambiguous > 0) {
+          return {
+            packageName,
+            installedVersion: entry.version,
+            checked: 0,
+            missing: [],
+            unchecked: {
+              reason: 'ambiguous-bindings',
+              detail:
+                `Every import of ${packageName} binds more than one name, and without the source line a rename ` +
+                'cannot be told from a second export.',
+            },
+          };
+        }
       }
 
       return { packageName, installedVersion: entry.version, checked, missing };

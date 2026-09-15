@@ -149,6 +149,7 @@ Two deliberately separate actions:
 | **Drift: Conversation History** | Reopen an earlier conversation |
 | **Drift: Clear Conversation History** | Delete every saved conversation in this workspace |
 | **Drift: Check for Breaking Changes** | Analyse the dependency change in git |
+| **Drift: Check Code Against Installed Versions** | Whether this code is already wrong about the versions installed — no upgrade involved |
 | **Drift: Review Changes** | Open the panel on what's waiting |
 | **Drift: Go to Next Change** | Jump to the next unresolved hunk (`Alt+D`) |
 | **Drift: Keep All Changes** / **Undo All Changes** | Resolve everything at once |

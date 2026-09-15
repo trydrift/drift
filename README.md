@@ -103,6 +103,7 @@ claude mcp add drift -- npx -y @usedrift/cli mcp
 | --- | --- |
 | `drift outdated` | Find available upgrades and check their impact. |
 | `drift analyze` | Check a dependency change already in git. |
+| `drift check` | Whether this code is already wrong about the versions it has installed. |
 | `drift upgrade` | Install only the upgrades Drift found safe. |
 | `drift fix` | Prepare fixes, push a branch, open a PR. |
 | `drift explain <package>` | What changed in one upgrade, and where it lands. |
@@ -110,6 +111,24 @@ claude mcp add drift -- npx -y @usedrift/cli mcp
 | `drift mcp` | Serve Drift to a coding agent over MCP. |
 
 Add `--verify` to install each upgrade in a scratch worktree and run your project's own checks against it.
+
+`drift check` is the one that asks nothing about upgrades. The version on disk exports a set of names, this repository imports a set of names, and an import naming something that version does not export is an error that already exists — no upgrade required for it to be true, and no test run to find it. It happens for ordinary reasons: a range resolved forward on a fresh install, a lockfile regenerated on another machine, a dependency bumped without anyone reading what moved.
+
+```console
+$ drift check
+
+1 import in 1 file names something the installed version does not export.
+
+  src/app.js:1  GlobSync  —  not exported by glob@13.0.6
+
+Checked 2 packages against 2 files.
+
+This compares the names your code imports against the API of the version on disk.
+It does not follow member access through an imported object, so a clean result
+means every name you import exists — not that your use of the package is correct.
+```
+
+That last paragraph is printed on every run, clean or not, along with a count of what could not be checked and why. Across 50 public repositories — jest, nest, eslint, prettier, react-router, vue, axios and more — it checked 372 packages and reported **zero findings**. It also declined to judge 179 packages it was asked about, because their API could not be enumerated from the published declarations: a name missing from a surface Drift cannot read is not evidence of anything, and saying so is the difference between a finding and a guess.
 
 ## Ecosystems
 

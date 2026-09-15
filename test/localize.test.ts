@@ -80,6 +80,36 @@ export function makeClient(options: Options) {
     assert.ok(acme?.bindings.includes('Options'));
   });
 
+  test('an `@import` inside a JSDoc comment is not an import', () => {
+    // `prettier` documents its types with JSDoc `@import` blocks. Reading them
+    // as real imports had Drift check those names against the installed API
+    // and report them missing — a finding about a line that imports nothing.
+    const index = buildIndex([
+      file(
+        'src/parse.js',
+        'javascript',
+        '/**\n@import {ESTree as MeriyahESTree} from "meriyah";\n*/\nconst x = 1;\n',
+      ),
+    ]);
+    assert.deepEqual(index.files[0]!.imports, []);
+  });
+
+  test('a commented-out import is not an import, and line numbers still hold', () => {
+    // Comments are masked rather than stripped precisely so that every line
+    // number reported to a user keeps pointing at the right line.
+    const index = buildIndex([
+      file(
+        'src/parse.js',
+        'javascript',
+        "// import { gone } from 'acme-sdk';\n/* import { alsoGone } from 'acme-sdk'; */\nimport { real } from 'acme-sdk';\n",
+      ),
+    ]);
+    const imports = index.files[0]!.imports;
+    assert.equal(imports.length, 1, 'only the real import counts');
+    assert.ok(imports[0]!.bindings.includes('real'));
+    assert.equal(imports[0]!.line, 3, 'masking preserves offsets, so the line is still 3');
+  });
+
   test('recovers names from destructured require', () => {
     const index = buildIndex([
       file('src/legacy.js', 'javascript', `const { createClient } = require('acme-sdk');`),

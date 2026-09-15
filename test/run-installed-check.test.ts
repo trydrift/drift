@@ -17,6 +17,8 @@ const run = (over: Record<string, unknown> = {}) => ({
   checkedPackages: 0,
   uncheckedPackages: 0,
   assumedSkipped: 0,
+  workspaceSkipped: 0,
+  mismatchSkipped: 0,
   filesRead: 0,
   sourceComplete: true,
   ...over,
@@ -148,6 +150,32 @@ describe('what could not be checked is always said', () => {
     const text = renderInstalledCheck(run({ checkedPackages: 2, assumedSkipped: 1 }) as never);
 
     assert.match(text, /1 dependency was skipped/);
+  });
+
+  test("a repository's own packages are reported as skipped, with the reason", () => {
+    const text = renderInstalledCheck(run({ checkedPackages: 2, workspaceSkipped: 15 }) as never);
+
+    assert.match(text, /15 dependencies were skipped: this repository publishes them itself/);
+    assert.match(text, /resolves them from source rather than from the installed copy/);
+  });
+
+  test('one skipped workspace member reads as one', () => {
+    const text = renderInstalledCheck(run({ checkedPackages: 2, workspaceSkipped: 1 }) as never);
+
+    assert.match(text, /1 dependency was skipped: this repository publishes/);
+  });
+
+  test('a version outside the declared range is reported as skipped, with the reason', () => {
+    const text = renderInstalledCheck(run({ checkedPackages: 2, mismatchSkipped: 3 }) as never);
+
+    assert.match(text, /3 dependencies were skipped: the version the lockfile resolves is outside the range/);
+    assert.match(text, /not the copy this code loads/);
+  });
+
+  test('a repository that publishes nothing of its own makes no such claim', () => {
+    const text = renderInstalledCheck(run({ checkedPackages: 2 }) as never);
+
+    assert.doesNotMatch(text, /this repository publishes/);
   });
 });
 
