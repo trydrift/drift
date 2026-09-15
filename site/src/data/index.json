@@ -7,7 +7,7 @@
     "repo": "https://github.com/supabase/supabase-js",
     "blurb": "The official Supabase client for JavaScript and TypeScript.",
     "commit": "29b978d5da37cbb1927b1e8a8013c6f47e7223c8",
-    "capturedAt": "2026-09-15T10:07:04.040Z",
+    "capturedAt": "2026-09-15T14:17:54.344Z",
     "packagesChecked": 22,
     "candidates": 2
   },
@@ -18,8 +18,8 @@
     "language": "Python",
     "repo": "https://github.com/scrapy/scrapy",
     "blurb": "The web crawling framework that most Python scrapers are built on.",
-    "commit": "bb22ac044b0ce8fc64828b8e027e106f37e5aa51",
-    "capturedAt": "2026-09-15T10:07:05.649Z",
+    "commit": "2af4532c9dfa05415fba8c2a71cc37c58b5a6694",
+    "capturedAt": "2026-09-15T14:17:55.984Z",
     "packagesChecked": 33,
     "candidates": 2
   },
@@ -30,8 +30,8 @@
     "language": "Ruby",
     "repo": "https://github.com/lobsters/lobsters",
     "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
-    "commit": "c5b47dd648e13cf030e30f5c7a0bc29a6d9299c9",
-    "capturedAt": "2026-09-15T10:07:07.470Z",
+    "commit": "52f4f2b78533ee8f56de60dc6f15085d020efa90",
+    "capturedAt": "2026-09-15T14:17:56.034Z",
     "packagesChecked": 37,
     "candidates": 19
   },
@@ -42,8 +42,8 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "83619fca3eed26f9f7cba894d74c00ddb79dfded",
-    "capturedAt": "2026-09-15T10:12:22.481Z",
+    "commit": "ca16e32a4f08a6095e3cd93a3c2de965c79246d0",
+    "capturedAt": "2026-09-15T14:19:37.612Z",
     "packagesChecked": 549,
     "candidates": 262
   },
@@ -55,7 +55,7 @@
     "repo": "https://github.com/denoland/deno",
     "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
     "commit": "c8401c52c2b8f4c914ad6bd33585f4eb9ddc8e1d",
-    "capturedAt": "2026-09-15T10:10:41.684Z",
+    "capturedAt": "2026-09-15T14:18:38.559Z",
     "packagesChecked": 208,
     "candidates": 11
   },
@@ -67,7 +67,7 @@
     "repo": "https://github.com/elastic/elasticsearch-java",
     "blurb": "Elasticsearch's official Java API client.",
     "commit": "3aa22e633b5c35bf6577e387fad1edaa5c0f4bcb",
-    "capturedAt": "2026-09-15T10:09:09.279Z",
+    "capturedAt": "2026-09-15T14:18:26.451Z",
     "packagesChecked": 19,
     "candidates": 13
   },
@@ -78,8 +78,8 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "e737dc8daca325f459f0f8045d0fcc0c055761fe",
-    "capturedAt": "2026-09-15T10:09:25.238Z",
+    "commit": "e163ae5299a4bcb61a904b450b8d38ca32895a9c",
+    "capturedAt": "2026-09-15T14:18:10.728Z",
     "packagesChecked": 31,
     "candidates": 8
   },
@@ -91,7 +91,7 @@
     "repo": "https://github.com/SolrNet/SolrNet",
     "blurb": "The established .NET client for Apache Solr, with exact installed versions in a committed NuGet lockfile.",
     "commit": "8e7c9e654ba105743765202a691cb3baa5b29349",
-    "capturedAt": "2026-09-15T10:09:41.623Z",
+    "capturedAt": "2026-09-15T14:18:38.166Z",
     "packagesChecked": 105,
     "candidates": 64
   },
@@ -103,7 +103,7 @@
     "repo": "https://github.com/guzzle/guzzle",
     "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
     "commit": "93939470950a9b11e2e84204166ef5e048c55fe4",
-    "capturedAt": "2026-09-15T10:09:36.052Z",
+    "capturedAt": "2026-09-15T14:18:32.706Z",
     "packagesChecked": 10,
     "candidates": 4
   },
@@ -115,7 +115,7 @@
     "repo": "https://github.com/phoenixframework/phoenix",
     "blurb": "The web framework nearly every production Elixir application is built on.",
     "commit": "0e02edbe0c6dfdc130fe2212fe34a2623cb6605b",
-    "capturedAt": "2026-09-15T10:10:08.375Z",
+    "capturedAt": "2026-09-15T14:18:40.351Z",
     "packagesChecked": 46,
     "candidates": 18
   },
@@ -127,7 +127,7 @@
     "repo": "https://github.com/bizz84/starter_architecture_flutter_firebase",
     "blurb": "A production-shaped Flutter application with exact hosted packages in its committed Pub lockfile.",
     "commit": "c5b1940cbd6b2647a39394a9f4e516ad2c332131",
-    "capturedAt": "2026-09-15T10:09:59.976Z",
+    "capturedAt": "2026-09-15T14:18:42.601Z",
     "packagesChecked": 20,
     "candidates": 19
   },
@@ -139,7 +139,7 @@
     "repo": "https://github.com/pointfreeco/swift-composable-architecture",
     "blurb": "The state-management library much of the Swift app ecosystem builds on.",
     "commit": "377da4061db10d26337a71bb279c506bb951f50f",
-    "capturedAt": "2026-09-15T10:11:05.300Z",
+    "capturedAt": "2026-09-15T14:18:43.259Z",
     "packagesChecked": 17,
     "candidates": 11
   },
@@ -151,7 +151,7 @@
     "repo": "https://github.com/layoutBox/FlexLayout",
     "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
     "commit": "320a19f1e842f335f0d636dd810e07498eae9f0b",
-    "capturedAt": "2026-09-15T10:10:39.662Z",
+    "capturedAt": "2026-09-15T14:18:42.050Z",
     "packagesChecked": 5,
     "candidates": 3
   },
@@ -163,7 +163,7 @@
     "repo": "https://github.com/mirage/ocaml-cohttp",
     "blurb": "OCaml's HTTP library, from the MirageOS project.",
     "commit": "1193aaeef7dcb9590e999ea9ed455c3649d7bc15",
-    "capturedAt": "2026-09-15T10:10:44.725Z",
+    "capturedAt": "2026-09-15T14:18:42.762Z",
     "packagesChecked": 38,
     "candidates": 0
   },
@@ -175,7 +175,7 @@
     "repo": "https://github.com/an-tao/trantor",
     "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
     "commit": "60f9c1e29a8186714c48080d085110e77caa51d2",
-    "capturedAt": "2026-09-15T10:10:44.039Z",
+    "capturedAt": "2026-09-15T14:18:42.787Z",
     "packagesChecked": 3,
     "candidates": 0
   },
@@ -187,7 +187,7 @@
     "repo": "https://github.com/royshil/obs-backgroundremoval",
     "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
     "commit": "ac26a4abaa34c9e5a8a346c2f92bb9fa3e8d5808",
-    "capturedAt": "2026-09-15T10:11:08.717Z",
+    "capturedAt": "2026-09-15T14:18:45.646Z",
     "packagesChecked": 6,
     "candidates": 3
   }
