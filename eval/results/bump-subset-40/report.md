@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `05eb7907c11bef32bf71a93d63b27b4446c23b47` |
-| Run date | 2026-09-11T23:56:46.925Z |
+| Drift commit | `725ce1199b8160bab386d002f6d72f05d76a34a8` |
+| Run date | 2026-09-15T15:52:05.740Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -43,7 +43,7 @@ Every exclusion, with its reason:
 | Question | Result | 95% interval |
 | --- | --- | --- |
 | affected-repository identification rate | 28/39 (71.8%) | 56.4–84.6% |
-| consumer localization rate | 12/39 (30.8%) | 15.4–46.2% |
+| consumer localization rate | 12/39 (30.8%) | 17.9–46.2% |
 | dependency-update detection rate | 36/39 (92.3%) | 82.1–100.0% |
 | false-safe verdicts | 1/39 (2.6%) | 0.0–7.7% |
 
@@ -59,8 +59,8 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | Stage | Cases |
 | --- | ---: |
 | `dependency-update-not-detected` | 3 |
-| `consumer-usage-not-found` | 2 |
 | `dependency-import-not-found` | 2 |
+| `consumer-usage-not-found` | 2 |
 | `verification-inconclusive` | 2 |
 | `no-breaking-change-derived` | 1 |
 | `upstream-surface-unavailable` | 1 |

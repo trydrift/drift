@@ -188,7 +188,7 @@
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.15384615384615385,
+      "low": 0.1794871794871795,
       "high": 0.46153846153846156,
       "iterations": 2000
     },
@@ -205,8 +205,8 @@
     "total": 11,
     "byReason": {
       "dependency-update-not-detected": 3,
-      "consumer-usage-not-found": 2,
       "dependency-import-not-found": 2,
+      "consumer-usage-not-found": 2,
       "no-breaking-change-derived": 1,
       "verification-inconclusive": 2,
       "upstream-surface-unavailable": 1
