@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `05eb7907c11bef32bf71a93d63b27b4446c23b47` |
-| Run date | 2026-09-12T00:19:10.971Z |
+| Drift commit | `29e2a7f79ff1b6450fb801852cad26737bfb6c71` |
+| Run date | 2026-09-15T04:17:39.424Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,8 +42,8 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 42/61 (68.9%) | 57.4–80.3% |
-| consumer localization rate | 38/61 (62.3%) | 49.2–73.8% |
+| affected-repository identification rate | 43/61 (70.5%) | 59.0–82.0% |
+| consumer localization rate | 38/61 (62.3%) | 50.8–73.8% |
 | dependency-update detection rate | 61/61 (100.0%) | 100.0–100.0% |
 | false-safe verdicts | 0/61 (0.0%) | 0.0–0.0% |
 
@@ -60,9 +60,9 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | --- | ---: |
 | `verification-install-failed` | 8 |
 | `consumer-usage-not-found` | 5 |
-| `verification-inconclusive` | 5 |
+| `verification-inconclusive` | 4 |
 | `consumer-match-insufficient-confidence` | 1 |
-| **Total** | **19** |
+| **Total** | **18** |
 
 ### Breakdown
 
@@ -71,10 +71,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| exactVersionAdjudicated: true | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
-| label: known-breaking-upgrade | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
+| exactVersionAdjudicated: true | 43/61 (70.5%) | 38/61 (62.3%) | 61/61 (100.0%) |
+| label: known-breaking-upgrade | 43/61 (70.5%) | 38/61 (62.3%) | 61/61 (100.0%) |
 | versionToIsRange: false | 3/3 (100.0%) | 2/3 (66.7%) | 3/3 (100.0%) |
-| versionToIsRange: true | 39/58 (67.2%) | 36/58 (62.1%) | 58/58 (100.0%) |
+| versionToIsRange: true | 40/58 (69.0%) | 36/58 (62.1%) | 58/58 (100.0%) |
 
 ## What is deliberately not reported
 

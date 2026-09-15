@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `05eb7907c11bef32bf71a93d63b27b4446c23b47` |
-| Run date | 2026-09-11T23:56:46.925Z |
+| Drift commit | `29e2a7f79ff1b6450fb801852cad26737bfb6c71` |
+| Run date | 2026-09-15T03:54:47.932Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -59,8 +59,8 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | Stage | Cases |
 | --- | ---: |
 | `dependency-update-not-detected` | 3 |
-| `consumer-usage-not-found` | 2 |
 | `dependency-import-not-found` | 2 |
+| `consumer-usage-not-found` | 2 |
 | `verification-inconclusive` | 2 |
 | `no-breaking-change-derived` | 1 |
 | `upstream-surface-unavailable` | 1 |

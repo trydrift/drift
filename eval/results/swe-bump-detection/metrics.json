@@ -17,9 +17,9 @@
       "value": 1
     },
     "affected-repository identification rate": {
-      "numerator": 42,
+      "numerator": 43,
       "denominator": 61,
-      "value": 0.6885245901639344
+      "value": 0.7049180327868853
     },
     "consumer localization rate": {
       "numerator": 38,
@@ -80,9 +80,9 @@
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 42,
+        "numerator": 43,
         "denominator": 61,
-        "value": 0.6885245901639344
+        "value": 0.7049180327868853
       },
       "consumer localization rate": {
         "numerator": 38,
@@ -97,9 +97,9 @@
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 39,
+        "numerator": 40,
         "denominator": 58,
-        "value": 0.6724137931034483
+        "value": 0.6896551724137931
       },
       "consumer localization rate": {
         "numerator": 36,
@@ -131,9 +131,9 @@
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 42,
+        "numerator": 43,
         "denominator": 61,
-        "value": 0.6885245901639344
+        "value": 0.7049180327868853
       },
       "consumer localization rate": {
         "numerator": 38,
@@ -149,12 +149,12 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.5737704918032787,
-      "high": 0.8032786885245902,
+      "low": 0.5901639344262295,
+      "high": 0.819672131147541,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.4918032786885246,
+      "low": 0.5081967213114754,
       "high": 0.7377049180327869,
       "iterations": 2000
     },
@@ -168,10 +168,10 @@
     "exact": 63
   },
   "affectedMisses": {
-    "total": 19,
+    "total": 18,
     "byReason": {
       "consumer-usage-not-found": 5,
-      "verification-inconclusive": 5,
+      "verification-inconclusive": 4,
       "consumer-match-insufficient-confidence": 1,
       "verification-install-failed": 8
     },

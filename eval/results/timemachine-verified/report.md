@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `05eb7907c11bef32bf71a93d63b27b4446c23b47` |
-| Run date | 2026-09-11T23:44:38.487Z |
+| Drift commit | `29e2a7f79ff1b6450fb801852cad26737bfb6c71` |
+| Run date | 2026-09-15T03:41:45.357Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -42,8 +42,8 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 47/69 (68.1%) | 56.5–79.7% |
-| consumer localization rate | 40/69 (58.0%) | 46.4–69.6% |
+| affected-repository identification rate | 41/69 (59.4%) | 47.8–71.0% |
+| consumer localization rate | 36/69 (52.2%) | 40.6–63.8% |
 | dependency-update detection rate | 67/69 (97.1%) | 92.8–100.0% |
 | false-safe verdicts | 0/69 (0.0%) | 0.0–0.0% |
 
@@ -58,13 +58,14 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 
 | Stage | Cases |
 | --- | ---: |
-| `consumer-usage-not-found` | 10 |
+| `consumer-usage-not-found` | 11 |
+| `consumer-match-insufficient-confidence` | 7 |
 | `dependency-import-not-found` | 5 |
-| `consumer-match-insufficient-confidence` | 2 |
-| `breaking-change-low-confidence` | 2 |
 | `dependency-update-not-detected` | 2 |
+| `consumer-symbol-not-resolved` | 1 |
+| `breaking-change-low-confidence` | 1 |
 | `upstream-surface-unavailable` | 1 |
-| **Total** | **22** |
+| **Total** | **28** |
 
 ### Breakdown
 
@@ -73,9 +74,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: migration-failure-easy | 26/44 (59.1%) | 23/44 (52.3%) | 42/44 (95.5%) |
+| label: migration-failure-easy | 24/44 (54.5%) | 21/44 (47.7%) | 42/44 (95.5%) |
 | label: migration-failure-hard | 2/2 (100.0%) | 2/2 (100.0%) | 2/2 (100.0%) |
-| label: migration-failure-medium | 19/23 (82.6%) | 15/23 (65.2%) | 23/23 (100.0%) |
+| label: migration-failure-medium | 15/23 (65.2%) | 13/23 (56.5%) | 23/23 (100.0%) |
 
 ## What is deliberately not reported
 
@@ -117,7 +118,7 @@ how generously the mapping was written.
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |
-| `uv` | uv 0.12.13 (x86_64-unknown-linux-gnu) | TimeMachine's documented environment setup |
+| `uv` | uv 0.12.14 (x86_64-unknown-linux-gnu) | TimeMachine's documented environment setup |
 | `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
