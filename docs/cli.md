@@ -14,6 +14,7 @@ Requires Node.js 22.6 or newer.
 | --- | --- |
 | `drift analyze` | Check a dependency change already in git. Read-only. |
 | `drift outdated` | Find available upgrades and check their impact. Read-only unless `--upgrade` is used. |
+| `drift check` | Whether this code is already wrong about the versions it has installed — no upgrade involved. Read-only. |
 | `drift upgrade` | Install all upgrades Drift proved safe for this repository. |
 | `drift fix` | Analyse, prepare fixes in an isolated worktree, push a branch, and open a PR. |
 | `drift pr` | Push the current branch and open a PR. |
