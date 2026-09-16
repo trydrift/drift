@@ -40,6 +40,21 @@ export const DRIFT_PREAMBLE_HEADER = [
   '',
 ].join('\n');
 
+/**
+ * The header for `drift-agent-brief`: says what follows, nothing more. The
+ * brief carries its own operational instructions, and those are production
+ * text (`AGENT_BRIEF_INSTRUCTIONS`), identical to what `drift analyze --agent`
+ * and `plan_upgrade` print.
+ */
+export const DRIFT_BRIEF_HEADER = ['---', '', "Drift's agent brief for this upgrade follows, verbatim.", ''].join('\n');
+
+/**
+ * The whole of what `drift-mcp` adds to the prompt: that the tools exist.
+ * When to call which tool is the server's own MCP `instructions`, which the
+ * client places in context for any user who connects Drift.
+ */
+export const DRIFT_MCP_PREAMBLE = ['---', '', "Drift's MCP tools are available in this session."].join('\n');
+
 export function composePrompt(task: string, preamble: string): string {
   return preamble ? `${task}\n\n${preamble}` : task;
 }
