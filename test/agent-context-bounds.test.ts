@@ -340,3 +340,19 @@ describe('evidence detail — text and JSON bounded and pageable', () => {
     }
   });
 });
+
+describe('untrusted text cannot make grouping slow', () => {
+  test('a gap surface of thousands of " of " repetitions groups in linear time', () => {
+    const plan = huge({ findings: 1, sitesPerFinding: 1 });
+    const surface = `x${' of'.repeat(50_000)} of`;
+    (plan.gaps as unknown[]).push(
+      { stage: 'localize', dependency: 'acme', surface, reason: 'r', severity: 'significant', automaticExecution: 'degrades', remediation: 'm' },
+      { stage: 'localize', dependency: 'acme', surface: `${surface}2`, reason: 'r', severity: 'significant', automaticExecution: 'degrades', remediation: 'm' },
+    );
+    const started = performance.now();
+    const brief = buildAgentBrief(plan);
+    renderAgentBrief(brief, { budget: { targetTokens: 400, maxTokens: 2000 } });
+    assert.ok(performance.now() - started < 2000, `${performance.now() - started}ms`);
+    assert.equal(brief.gaps.find((g) => g.surfaces.includes(surface))?.surfaces.length, 2);
+  });
+});

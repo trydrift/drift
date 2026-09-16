@@ -369,7 +369,7 @@ function collectChecks(plan: RemediationPlan, available: readonly { label: strin
 function groupGaps(gaps: readonly AnalysisGap[]): AgentGap[] {
   const groups = new Map<string, AgentGap>();
   for (const gap of gaps) {
-    const key = [gap.stage, gap.severity, gap.automaticExecution, gap.remediation, gap.surface.replace(/ of .*$/, '')].join(' ');
+    const key = [gap.stage, gap.severity, gap.automaticExecution, gap.remediation, surfaceKind(gap.surface)].join('\u0000');
     const existing = groups.get(key);
     if (existing) {
       existing.surfaces = unique([...existing.surfaces, gap.surface]);
@@ -430,4 +430,10 @@ function unique(values: readonly string[]): string[] {
 /** Locale-independent, so the brief is byte-identical on every machine. */
 function compare(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** `reachability of winston.Logger` → `reachability`. Linear, unlike a ` of .*$` pattern on untrusted text. */
+function surfaceKind(surface: string): string {
+  const index = surface.indexOf(' of ');
+  return index === -1 ? surface : surface.slice(0, index);
 }

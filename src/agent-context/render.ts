@@ -436,7 +436,7 @@ function renderGaps(gaps: readonly AgentGap[], level: 'full' | 'summary'): strin
   if (level === 'summary') {
     const names = gaps.map((gap) => {
       const who = gap.dependencies.length > 0 ? ` [${gap.dependencies.join(', ')}]` : '';
-      const what = gap.surfaces.length === 1 ? gap.surfaces[0] : `${gap.surfaces.length} × ${gap.surfaces[0]!.replace(/ of .*$/, '')}`;
+      const what = gap.surfaces.length === 1 ? gap.surfaces[0] : `${gap.surfaces.length} × ${surfaceKind(gap.surfaces[0]!)}`;
       return `- ${what}${who}: ${gap.remediation}`;
     });
     return `## What Drift could not establish (none of it is evidence of safety)\n\n${names.join('\n')}`;
@@ -483,4 +483,10 @@ function renderFooter(brief: AgentBrief, retrieval: DetailRetrieval, omittedForB
 
 function unique(values: readonly string[]): string[] {
   return [...new Set(values)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/** `reachability of winston.Logger` → `reachability`. Linear, unlike a ` of .*$` pattern on untrusted text. */
+function surfaceKind(surface: string): string {
+  const index = surface.indexOf(' of ');
+  return index === -1 ? surface : surface.slice(0, index);
 }
