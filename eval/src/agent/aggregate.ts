@@ -71,14 +71,18 @@ export function relativeDifference(baselineRate: number | null, driftRate: numbe
   return driftRate / baselineRate - 1;
 }
 
-/** Groups valid headline-condition trials by case. Invalid trials are excluded here, and only here. */
-export function groupByCase(trials: readonly TrialArtifact[]): CaseTrials[] {
+/**
+ * Groups valid trials by case, the baseline against one treatment condition
+ * (`drift`, the full report, unless another is named — the `drift` field then
+ * holds that condition's trials). Invalid trials are excluded here, and only here.
+ */
+export function groupByCase(trials: readonly TrialArtifact[], treatment: Condition = 'drift'): CaseTrials[] {
   const byCase = new Map<string, CaseTrials>();
   for (const trial of trials) {
     if (!trial.validity.valid) continue;
-    if (trial.condition !== 'baseline' && trial.condition !== 'drift') continue;
+    if (trial.condition !== 'baseline' && trial.condition !== treatment) continue;
     const entry = byCase.get(trial.caseId) ?? { caseId: trial.caseId, baseline: [], drift: [] };
-    entry[trial.condition].push(trial);
+    (trial.condition === 'baseline' ? entry.baseline : entry.drift).push(trial);
     byCase.set(trial.caseId, entry);
   }
   return [...byCase.values()].sort((a, b) => a.caseId.localeCompare(b.caseId));
