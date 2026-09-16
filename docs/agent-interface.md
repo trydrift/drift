@@ -21,6 +21,8 @@ The human report did not get smaller. The agent got a different renderer.
 
 `buildAgentBrief(plan)` in [`src/agent-context/brief.ts`](../src/agent-context/brief.ts) is pure and deterministic, and it makes no new decisions: dispositions, confidence, blockers and gaps come from the stages that own them.
 
+**Measured sites are real files.** A verification diagnostic becomes a measured site only if its path resolves, after symlinks, to a regular file inside the checkout and outside `.git`. Tool output that merely looks like `path:line` (Node's `test at test/files.test.js:1:1`, a stack frame) is dropped, and the regression points at the dependency's declaration instead. When verification ran, the build/typecheck/test gap says what it found (a measured regression, a pass, or why it could not run) rather than that no checks were run.
+
 **What goes in.** An upstream breaking change is a finding in the brief when its disposition is `actionable` (a high-confidence located site, or a runtime requirement this repository was shown to violate) or `review-only` (located, but not confidently enough to act on), or when a planned commit unit addresses it. Measured regressions (compiler or test errors the project's own checks reported after the upgrade was installed) are always included, first, with the compiler's message on each line.
 
 **What is counted instead.** Every other upstream change is left out and counted by reason: *no located usage* (the search finished and found nothing, which is not proof of safety), *not searched* (localization did not run or did not finish), and *unaffected*. The counts are broken down by kind. Evidence records are cited by id, never inlined.
@@ -68,7 +70,23 @@ The server's MCP `instructions` (a few sentences, since a client includes them o
 - **`get_finding`**, **`get_evidence`** — as above.
 - **`verify_upgrade`** — runs the project's own build, typecheck and test commands in the working tree as it is now, including the agent's edits. Returns pass/fail per check, the first compiler errors, and each upgraded npm dependency's declared version (so a "fix" that moved the dependency back is visible). Full output goes to log files whose paths are returned. Unlike Deep Verification, nothing is installed or copied.
 
-Tools return text by default. `format: "json"` returns the same selection as a flat structured object, under the same ceiling (JSON is less dense, so it may name more findings as omitted). The object is returned both as `structuredContent` and as its text serialization, never alongside the prose: Claude Code 2.1.267 passes `structuredContent` to the model *instead of* a tool's text when both are present.
+Tools return text by default. `format: "json"` (and `--json` on the CLI) returns a bounded structured view under the same ceiling. The object is returned both as `structuredContent` and as its text serialization, never alongside the prose: Claude Code 2.1.267 passes `structuredContent` to the model *instead of* a tool's text when both are present.
+
+### Structured views are hard-bounded
+
+No surface can exceed its budget by asking for JSON. Each structured view ([`src/agent-context/fit.ts`](../src/agent-context/fit.ts)) places an irreducible core, then its sections in a fixed priority order, each as a prefix of whole items, measuring the serialized object after every addition. Every list has an exact "not shown" count beside it; a core that cannot fit raises `AgentBudgetExceededError` instead of returning something larger. The prose is rendered from the same view, so text and JSON carry the same selection.
+
+| Surface | Priority after the core |
+| --- | --- |
+| Brief | dependencies · protected files and blockers · findings · checks · gaps · execution units · upstream notes · ids of findings not shown |
+| Finding | protected files · sites · units · evidence records · related findings · gaps · symbols · replacement symbols · before/after (as a pair) |
+| Evidence | every record's identity · then an even share per record of structured findings and content (whole lines when narrowed; a page ending at a line, with `nextOffset` in characters, when paged) |
+
+Safety comes before findings in the brief on purpose: an agent told where to edit but not what it must not edit is the worse failure.
+
+### Which plan a call reads
+
+The plan for the change detected in the checkout is held per directory and reused. A `plan_upgrade` with an explicit `before`/`after` is held separately under that range: it never replaces, and is never returned as, the checkout's plan, and its brief says which plan id to pass. `get_finding` and `get_evidence` read the checkout's plan, or exactly the plan named by `plan`. A `refresh` replaces its plan atomically — a refresh that finds no change clears it, so an older plan cannot stay reachable.
 
 Two client behaviours worth knowing:
 
