@@ -28,7 +28,7 @@ This directory holds the cases and the suites. The harness is
 
 ---
 
-## The two conditions
+## Conditions
 
 **Baseline.** The agent receives this task and nothing else:
 
@@ -73,6 +73,51 @@ Two ablations exist for diagnostics — `drift-evidence-only` (the report with
 impact sites removed) and `drift-localization-only` (the report with evidence
 excerpts withheld). Both go through the production renderer and neither ever
 enters a headline.
+
+### The agent-interface conditions
+
+The first result (runs `v1-dev-1`, `v1-dev-2`) measured the condition above
+and it did not help: the report is written for a person reviewing a pull
+request, and the agent re-read all of it on every turn. The product now has a
+separate agent interface ([`docs/agent-interface.md`](../../docs/agent-interface.md)),
+and two conditions measure it. The condition above keeps its stored id,
+`drift`, so every artifact recorded under it keeps its meaning, and is
+labelled **`drift-full-report`** in comparisons and on the command line. It
+is the ablation that shows why the interface changed, not the product's agent
+path.
+
+**`drift-agent-brief`.** The identical task, one header sentence
+(`DRIFT_BRIEF_HEADER`), and the production agent brief — the same text as
+
+```sh
+drift analyze --before <base> --after <start> --agent --verify
+```
+
+built by `buildAgentBrief` and rendered by `renderAgentBrief` with no
+retrieval named, because the session has no Drift tools. Only findings that
+reach the repository, under a 2,000-token ceiling; everything else counted.
+
+**`drift-mcp`.** The identical task, one sentence saying Drift's MCP tools are
+available (`DRIFT_MCP_PREAMBLE`), and the production MCP server
+(`dist/cli.js mcp`, which is what `claude mcp add drift -- drift mcp` starts)
+connected to the session. Nothing is analysed before the session: the agent
+calls `plan_upgrade` and the detail tools, or does not. When to call which
+tool is the server's own MCP `instructions`, which Claude Code shows any user
+who connects Drift. Drift's analysis time therefore falls inside the agent's
+wall-clock time for this condition, as it does for a user.
+
+Same model, effort, permissions, tools, network policy, timeout, start tree,
+task and validation as every other condition. Each trial records an
+`agentContext` block: Drift text in the initial prompt (characters and
+estimated tokens), Drift tool calls and what they returned, findings in the
+plan and in the brief, findings pulled on demand, deterministic versus
+residual sites, provider usage before and after the first edit, and literal
+research signals (reads of the package's own source, registry queries,
+changelog reads). Estimated sizes use the brief's own 3-bytes-per-token
+estimator; every other token count is provider-reported.
+
+These three cases were used to design the agent interface. For it they are
+**development cases**, and nothing measured on them is held-out evidence.
 
 ## What one trial produces
 
@@ -141,13 +186,32 @@ Each trial:
 2. audits it: any path named like private material (`hidden`, `.drift-hidden`,
    `hidden.yml`, `reference.patch`) or any symlink leaving the workspace throws;
 3. installs dependencies, so both conditions start from an installed tree;
-4. runs Drift (Drift condition only) and then the agent, with browsing tools
-   (`WebFetch`, `WebSearch`) disabled by default for both conditions, user
-   settings, plugins, hooks and MCP servers excluded (`--safe-mode
-   --strict-mcp-config`), no session persistence, and permissions bypassed so
-   the session runs unattended;
+4. runs Drift (the report and brief conditions only) and then the agent, with
+   browsing tools (`WebFetch`, `WebSearch`) disabled by default for every
+   condition, no user or repository CLAUDE.md, memory, settings, plugins,
+   hooks or MCP servers from the machine (see *Session isolation* below), no
+   session persistence, and permissions bypassed so the session runs
+   unattended;
 5. captures the diff, then copies the hidden tests into `.drift-hidden/`, runs
    every validation layer, and deletes them again.
+
+### Session isolation
+
+`v1-dev-1` and `v1-dev-2` ran every session with `--safe-mode
+--strict-mcp-config`. `--safe-mode` disables every MCP server, including one
+passed with `--mcp-config`, so it cannot run `drift-mcp`, and all conditions in
+a comparison must share one session setup. Runs from `v2` on use
+`--clean-environment isolated` (the default) for every condition:
+`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`, `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`,
+`--setting-sources local`, `--strict-mcp-config` and an explicit
+`--mcp-config` (the Drift server for `drift-mcp`, an empty set otherwise).
+Compared with a `v1-dev-2` session's init record on Claude Code 2.1.267 it
+exposes the same skills, slash commands, plugins (none) and memory (none), and
+does not load the repository's CLAUDE.md (the ESLint case ships one); the tool
+list gains `TodoWrite`, which is therefore disallowed, and the agent list
+gains the built-in `statusline-setup`, present in every condition. Runs under
+different isolation modes are never pooled; `compare` shows the first result
+beside the new runs as history.
 
 This is a **workspace audit, not an OS sandbox**: the case's private half is
 readable elsewhere on the host by a process the agent starts. Every trial
@@ -264,8 +328,22 @@ slots whose trial was excluded for an infrastructure failure such as a
 provider rate limit; the excluded artifact is kept as `*.attempt-N.*` and a
 valid trial is never retried, whatever its outcome), `--notes`.
 
-Conditions alternate order on every repetition (baseline first on odd
-repetitions, Drift first on even), so neither is systematically first.
+Conditions alternate order on every repetition (the listed order on odd
+repetitions, reversed on even), so no condition is systematically first.
+
+To compare every Drift condition with the baseline from the same runs:
+
+```sh
+npm run benchmark:agent -- --suite agent-upgrade-v1 --runs 3 \
+  --conditions baseline,drift-full-report,drift-agent-brief,drift-mcp --run-id v2-dev-1
+node --experimental-strip-types eval/src/agent/cli.ts compare --runs v2-dev-1 \
+  --reference-runs v1-dev-1,v1-dev-2 --name agent-context-v2
+```
+
+`compare` writes `eval/results/agent/comparisons/<name>.json` and
+`eval/reports/agent/<name>.md`. It uses the canonical summary's statistics and
+never changes `latest.json`, which stays baseline against the full report
+until a frozen suite says otherwise.
 
 **Requirements.** Node 22.6+, git, the `claude` CLI on `PATH` and signed in
 (or `ANTHROPIC_API_KEY` set), network access for the package registry and the
