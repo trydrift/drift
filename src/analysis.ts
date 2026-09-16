@@ -46,7 +46,7 @@ import { behaviouralFindingKind, runBehaviouralVerification } from './verificati
 import { fetchedPackageEnvironment } from './verification/environment.js';
 import { probeDependencyChange, type UpgradeVerification } from './verification/upgrade-probe.js';
 import type { VerificationDiagnostic } from './verification/diagnostics.js';
-import { applyVerificationToPlan, combineVerifications, describeVerification } from './verification/apply.js';
+import { applyVerificationToPlan, combineVerifications, describeVerification, reconcileVerificationGap } from './verification/apply.js';
 import { detectPackageManagers, type PackageManagerId } from './detect/package-manager.js';
 import type { CheckKind } from './detect/checks.js';
 import { dependencyEcosystemKey } from './util/id.js';
@@ -914,7 +914,7 @@ async function verifyPlan(
   }
 
   const combined = combineVerifications(parts);
-  if (combined) verifiedPlan = { ...verifiedPlan, verification: combined };
+  if (combined) verifiedPlan = reconcileVerificationGap({ ...verifiedPlan, verification: combined });
 
   // A verification failure is evidence of real breakage even where static
   // analysis predicted none — the exact case a green build was supposed to

@@ -14,6 +14,7 @@ import {
 } from '../dist/agent-context/index.js';
 import { renderPullRequestBody } from '../dist/report/markdown.js';
 import { DEFAULT_CONFIG } from '../dist/config/schema.js';
+import { applyVerificationToPlan, reconcileVerificationGap } from '../dist/verification/apply.js';
 import type { RemediationPlan } from '../dist/types.js';
 
 /**
@@ -534,5 +535,42 @@ describe('agent brief — real plans from the first agent benchmark', () => {
     for (const finding of brief.findings) {
       for (const file of finding.files) assert.doesNotMatch(file, /^at |^\//, file);
     }
+  });
+});
+
+describe('verification messaging is consistent with what ran', () => {
+  const notRun = {
+    stage: 'verify',
+    surface: 'build, typecheck, and test',
+    reason: 'No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile.',
+    severity: 'significant',
+    automaticExecution: 'degrades',
+    remediation: 'Configure the repository checks Drift should run.',
+  };
+  const withVerification = (verification: unknown) =>
+    ({ ...plan({ measured: false }), gaps: [notRun], verification } as unknown as RemediationPlan);
+  const check = (label: string, status: string) => ({ kind: 'test', label, compileCapable: false, status, durationMs: 1, output: '' });
+
+  test('a failed verification never sits beside "No checks were run"', () => {
+    const reconciled = reconcileVerificationGap(withVerification({ status: 'failed', checks: [check('npm test', 'failed')], failedFiles: [] }));
+    const { text } = renderAgentBrief(buildAgentBrief(reconciled));
+    assert.match(text, /Verification: failed/);
+    assert.doesNotMatch(text, /No checks were run/);
+    assert.match(text, /npm test\) ran with the upgrade installed and failed where they passed before: a measured regression/);
+    // The uncertainty is kept, at the same weight.
+    assert.equal(reconciled.gaps[0]!.severity, 'significant');
+    assert.equal(reconciled.gaps[0]!.automaticExecution, 'degrades');
+  });
+
+  test('passed, could-not-run and not-run each say what actually happened', () => {
+    assert.match(reconcileVerificationGap(withVerification({ status: 'passed', checks: [check('npm run build', 'passed')], failedFiles: [] })).gaps[0]!.reason, /passed with the upgrade installed, before any fix/);
+    assert.match(reconcileVerificationGap(withVerification({ status: 'skipped', reason: '`npm install` failed', checks: [], failedFiles: [] })).gaps[0]!.reason, /Verification did not run the project's checks: `npm install` failed/);
+    const untouched = { ...plan({ measured: false }), gaps: [notRun], verification: undefined } as unknown as RemediationPlan;
+    assert.equal(reconcileVerificationGap(untouched).gaps[0]!.reason, notRun.reason);
+  });
+
+  test('applying a verification result reconciles the gap on every path', () => {
+    const applied = applyVerificationToPlan(withVerification(undefined), { status: 'failed', checks: [check('npm test', 'failed')], failedFiles: [] } as never);
+    assert.doesNotMatch(applied.gaps[0]!.reason, /No checks were run/);
   });
 });

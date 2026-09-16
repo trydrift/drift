@@ -75,6 +75,53 @@ export function applyVerificationToPlan(
   verification: UpgradeVerification,
   workspace?: string,
 ): RemediationPlan {
+  return reconcileVerificationGap(foldVerification(plan, verification, workspace));
+}
+
+/** The gap `buildPlan` records when a plan has commits and nothing checked them. */
+export const VERIFICATION_GAP_SURFACE = 'build, typecheck, and test';
+
+/**
+ * Restate the plan's build/typecheck/test gap to match what verification did.
+ *
+ * `buildPlan` runs before Deep Verification and, for a plan with commits,
+ * records "No checks were run against this plan". Left as-is after the
+ * project's checks had in fact run, a reader saw "Verification: failed" and
+ * "No checks were run" in the same brief. The uncertainty is real in every
+ * case — nothing has checked a *fix* yet — so the gap is kept at the same
+ * severity and consequence, and only its statement changes to the state that
+ * applies: not run, could not run, ran and measured a regression, ran and
+ * passed. A plan with no such gap gains none.
+ */
+export function reconcileVerificationGap(plan: RemediationPlan): RemediationPlan {
+  const index = plan.gaps.findIndex((gap) => gap.stage === 'verify' && gap.surface === VERIFICATION_GAP_SURFACE);
+  const verification = plan.verification;
+  if (index === -1 || !verification) return plan;
+  const ran = verification.checks.filter((check) => check.status === 'passed' || check.status === 'failed');
+  const labels = ran.map((check) => check.label).join(', ');
+  let reason: string;
+  let remediation: string;
+  if (verification.status === 'failed') {
+    reason = `This project's checks (${labels || 'the configured checks'}) ran with the upgrade installed and failed where they passed before: a measured regression. No fix has been checked against them yet.`;
+    remediation = 'Fix the measured failures, then run the same checks again before merging.';
+  } else if (verification.status === 'passed' && ran.length > 0) {
+    reason = `This project's checks (${labels}) passed with the upgrade installed, before any fix. They confirm only what they exercise; findings on code they do not reach remain unconfirmed.`;
+    remediation = 'Review the findings the checks do not exercise, and run the checks again after any fix.';
+  } else {
+    const why = verification.reason?.replace(/\s+/g, ' ').trim();
+    reason = `Verification did not run the project's checks${why ? `: ${why.length > 200 ? `${why.slice(0, 199)}…` : why}` : ''}. Nothing measured confirms or refutes the findings.`;
+    remediation = 'Resolve what stopped verification, or review the resulting pull request against CI before merging.';
+  }
+  const gaps = [...plan.gaps];
+  gaps[index] = { ...gaps[index]!, reason, remediation };
+  return { ...plan, gaps };
+}
+
+function foldVerification(
+  plan: RemediationPlan,
+  verification: UpgradeVerification,
+  workspace?: string,
+): RemediationPlan {
   if (verification.status !== 'passed') return { ...plan, verification };
 
   // A passing test suite proves nothing about a signature or an export: only a
