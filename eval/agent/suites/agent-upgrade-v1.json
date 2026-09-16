@@ -16,6 +16,12 @@
       "caseHash": "de70b704f7fa8621d949230141a8ab4bc7ff28e74b180b5d8559ee2b93ea169b",
       "admittedAt": "2026-09-16T10:53:01.584Z",
       "driftCommit": "5a5e3a8ab752cc9b6b9aaead92bf554923ec79ec"
+    },
+    {
+      "id": "gh-aw-firewall-eslint-10",
+      "caseHash": "0c9707a46644dcd83d07aaad0455479f55a3056b01a79d04f74431dc100984b0",
+      "admittedAt": "2026-09-16T11:06:03.092Z",
+      "driftCommit": "b4aed4756b1b0236c10fe75d8dda1e9ec9da1bce"
     }
   ],
   "removed": []

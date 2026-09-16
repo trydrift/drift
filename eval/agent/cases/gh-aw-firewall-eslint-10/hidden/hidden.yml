@@ -1,0 +1,54 @@
+schemaVersion: drift-agent-case-v1
+caseId: gh-aw-firewall-eslint-10
+referencePatch: reference.patch
+referencePatchOrigin: maintainer
+expectedSymbols:
+  - RuleTester
+  - ESLint
+  - Linter
+tests:
+  - id: lint-config-behaviour
+    description: >
+      The linter, run on fixture files placed among the project's own sources,
+      still enforces what the configuration enforced before the upgrade: an
+      unused variable is an error (@typescript-eslint/no-unused-vars),
+      child_process usage is an error (security/detect-child-process), the
+      project's custom no-unsafe-execa rule fires on a template-literal command,
+      and clean code passes. Independent of whether the configuration is an
+      .eslintrc or a flat config.
+    files:
+      - lint-config-behaviour.mjs
+    command: node .drift-hidden/lint-config-behaviour.mjs
+    timeoutSeconds: 600
+forbidden:
+  - kind: file-present
+    paths:
+      - eslint-rules/no-unsafe-execa.js
+      - eslint-rules/no-unsafe-execa.test.js
+    description: The custom rule and its RuleTester test must still exist.
+  - kind: path-unchanged
+    paths:
+      - eslint-rules/no-unsafe-execa.js
+    description: The rule implementation is not what the upgrade broke; rewriting it is not the migration.
+  - kind: no-test-deletions
+    globs:
+      - "src/**/*.test.ts"
+      - "tests/**"
+      - "eslint-rules/*.test.js"
+    description: The project's own tests must not be deleted.
+  - kind: pattern-not-added
+    glob: "src/**/*.test.ts"
+    pattern: "\\.skip\\(|\\bxit\\(|\\bxdescribe\\(|\\bit\\.todo\\("
+    description: Tests may not be disabled.
+notes: >
+  ESLint 8 -> 10 in a Dependabot "linting group" bump. ESLint 9 made flat
+  config the only format and dropped --ext, and RuleTester takes
+  languageOptions instead of parserOptions; typescript-eslint 6 does not
+  support ESLint 10 (npm ci needs legacy peer deps at the start state, which
+  is why the install command passes it). The maintainer's fix — the two
+  commits after the bot's on the PR — replaces .eslintrc.js with
+  eslint.config.mjs, registers the local rule as a plugin, updates the
+  RuleTester test and the disable comments, moves typescript-eslint to v8,
+  and adds .npmrc. The project's docker-manager unit tests need a real root
+  /etc/passwd and fail on this machine at every state, so the unit-test check
+  excludes that one file.

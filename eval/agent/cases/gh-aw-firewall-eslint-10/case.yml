@@ -1,0 +1,67 @@
+schemaVersion: drift-agent-case-v1
+id: gh-aw-firewall-eslint-10
+title: eslint 8.57.1 → 10.0.0 in github/gh-aw-firewall (Dependabot PR #581)
+provenance: historical
+role: development
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/github/gh-aw-firewall.git
+  licence: MIT
+  baseCommit: 4aad0e5e358ac8e51351e8f6ba98570bbe5a30da
+  startCommit: c3563d07c30b9e36d8ffd45ef36eedcdf08678c5
+  startPatch: null
+  fixCommit: fea24a51c378477e139b328e9d08ddcc59715cba
+  reference: https://github.com/github/gh-aw-firewall/pull/581
+workspaceDir: ""
+dependency:
+  name: eslint
+  fromVersion: 8.57.1
+  toVersion: 10.0.0
+  updateClass: major
+  category: tooling
+  section: devDependencies
+environment:
+  runtime: node >=18.0.0 (declared); ESLint 10 needs >=20.12; run on the host Node
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm ci --ignore-scripts --legacy-peer-deps
+  installTimeoutSeconds: 900
+  checks:
+    - name: eslint on src
+      kind: lint
+      command: npx eslint src
+      timeoutSeconds: 600
+    - name: custom rule RuleTester test
+      kind: test
+      command: node eslint-rules/no-unsafe-execa.test.js
+      timeoutSeconds: 300
+    - name: build (tsc)
+      kind: build
+      command: npx tsc
+      timeoutSeconds: 600
+    - name: unit tests (excluding the root-only docker-manager suite)
+      kind: test
+      command: npx jest --config jest.config.js --testPathIgnorePatterns=src/docker-manager.test.ts
+      timeoutSeconds: 900
+  installedVersion: node -p "require('eslint/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 120
+  repositorySourceLines: 15000
+  failureMode: configuration
+  knownAffectedLocations: 6
+  migrationGuideAvailable: true
+  multiLocation: true
+  notes: >
+    The real Dependabot commit is the start state (manifest and lockfile
+    only). At the start state ESLint 10 finds no flat configuration and the
+    RuleTester test throws; the build passes. The reference fix is the
+    maintainer's own.

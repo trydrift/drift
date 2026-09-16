@@ -214,7 +214,10 @@ export async function auditWorkspace(repo: string, privateRoot: string): Promise
       }
       count += 1;
       if (entry.isSymbolicLink()) {
-        const target = resolve(dir, await readlink(path));
+        // Resolved from the directory's *real* path: on macOS the temp root
+        // is itself a symlink (/var -> /private/var), and a relative link
+        // inside the repository must not read as escaping it.
+        const target = resolve(await realpathSafe(dir), await readlink(path));
         if (!target.startsWith(repoReal + sep) && target !== repoReal) {
           throw new Error(`Workspace symlink ${relative(repo, path)} points outside the workspace (${target}).`);
         }

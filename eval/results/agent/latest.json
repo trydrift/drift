@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "suite": "smoke",
+  "suiteStatus": "draft",
+  "suiteDescription": "Development suite: synthetic fixtures that exercise the harness end to end. Never publishable.",
+  "generatedAt": "2026-09-16T10:09:46.260Z",
+  "runIds": [
+    "smoke-dev-1"
+  ],
+  "driftCommit": "d1101f875d9abc2f69e2956eb73f62dfdab8d08b",
+  "driftTreeDirty": true,
+  "driftVersion": "0.1.11",
+  "provider": "claude-code",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "requestedModel": "claude-sonnet-5",
+  "confirmedModels": {
+    "claude-sonnet-5": 2
+  },
+  "requestedEffort": "high",
+  "runsPerCondition": 1,
+  "caseCount": 1,
+  "caseProvenance": {
+    "synthetic": 1
+  },
+  "caseRoles": {
+    "development": 1
+  },
+  "ecosystems": {
+    "npm": 1
+  },
+  "task": {
+    "taskHashes": [
+      "8d602a7fe74a6f01820b6e67c58cedfa1af20293bffbfdc55950e980771bd5e9"
+    ],
+    "identicalAcrossConditions": true
+  },
+  "configuration": {
+    "networkPolicies": [
+      "registry-and-provider; web tools disabled"
+    ],
+    "permissionModes": [
+      "bypassPermissions"
+    ],
+    "cleanEnvironments": [
+      "safe-mode"
+    ],
+    "disallowedTools": [
+      "WebFetch",
+      "WebSearch"
+    ],
+    "timeoutSeconds": [
+      900
+    ],
+    "driftVerify": true
+  },
+  "efficiency": {
+    "metric": "median of case-level reductions in gross agent input tokens (1 - driftMedian / baselineMedian per case)",
+    "pairedCaseCount": 1,
+    "medianInputTokenReductionPct": -50.57073373209307,
+    "meanInputTokenReductionPct": -50.57073373209307,
+    "reductionIqrPct": {
+      "q1": -50.57073373209307,
+      "q3": -50.57073373209307
+    },
+    "reductionDistributionPct": [
+      -50.57073373209307
+    ],
+    "medianBaselineInputTokens": 375832,
+    "medianDriftInputTokens": 565893,
+    "medianBaselineUncachedInputTokens": 45104,
+    "medianDriftUncachedInputTokens": 35954,
+    "medianUncachedReductionPct": 20.286449095423908,
+    "medianWallClockChangePct": -1.2489788508668422,
+    "medianFilesReadChangePct": null,
+    "medianToolCallChangePct": 25,
+    "medianDriftAnalysisMs": 4709,
+    "confidenceInterval95": {
+      "medianReduction": {
+        "low": -0.5057073373209306,
+        "high": -0.5057073373209306,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      },
+      "meanReduction": {
+        "low": -0.5057073373209306,
+        "high": -0.5057073373209306,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      }
+    }
+  },
+  "effectiveness": {
+    "metric": "successful dependency remediations / valid trials, per condition; difference in percentage points",
+    "validBaselineTrials": 1,
+    "successfulBaselineTrials": 1,
+    "baselineSuccessRate": 1,
+    "validDriftTrials": 1,
+    "successfulDriftTrials": 1,
+    "driftSuccessRate": 1,
+    "differencePercentagePoints": 0,
+    "relativeDifference": 0,
+    "caseLevel": {
+      "improved": 0,
+      "tied": 1,
+      "baselineBetter": 0,
+      "medianDifferencePp": 0,
+      "meanDifferencePp": 0
+    },
+    "confidenceInterval95": {
+      "differencePercentagePoints": {
+        "low": 0,
+        "high": 0,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      },
+      "baselineSuccessRate": {
+        "low": 1,
+        "high": 1,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      },
+      "driftSuccessRate": {
+        "low": 1,
+        "high": 1,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      }
+    }
+  },
+  "secondary": {
+    "baselineInputTokensPerSuccessfulFix": 375832,
+    "driftInputTokensPerSuccessfulFix": 565893,
+    "baselineMedianInputTokensAmongSuccesses": 375832,
+    "driftMedianInputTokensAmongSuccesses": 565893,
+    "note": "Secondary. Conditioning on success selects for the runs that went well and is not a substitute for the two primary metrics."
+  },
+  "conditions": [
+    {
+      "condition": "baseline",
+      "trials": 1,
+      "validTrials": 1,
+      "invalidTrials": 0,
+      "infrastructureFailures": {},
+      "successfulTrials": 1,
+      "successRate": 1,
+      "medianInputTokens": 375832,
+      "medianUncachedInputTokens": 45104,
+      "medianOutputTokens": 2120,
+      "medianWallClockMs": 55085,
+      "medianFilesRead": 0,
+      "medianToolCalls": 8,
+      "medianShellCommands": 7,
+      "medianFilesChanged": 1,
+      "failureReasons": {},
+      "agentStatuses": {
+        "completed": 1
+      },
+      "inputTokensPerSuccessfulFix": 375832,
+      "medianInputTokensAmongSuccesses": 375832,
+      "totalCostUsd": 0.2647366
+    },
+    {
+      "condition": "drift",
+      "trials": 1,
+      "validTrials": 1,
+      "invalidTrials": 0,
+      "infrastructureFailures": {},
+      "successfulTrials": 1,
+      "successRate": 1,
+      "medianInputTokens": 565893,
+      "medianUncachedInputTokens": 35954,
+      "medianOutputTokens": 2734,
+      "medianWallClockMs": 54397,
+      "medianFilesRead": 2,
+      "medianToolCalls": 10,
+      "medianShellCommands": 7,
+      "medianFilesChanged": 1,
+      "failureReasons": {},
+      "agentStatuses": {
+        "completed": 1
+      },
+      "inputTokensPerSuccessfulFix": 565893,
+      "medianInputTokensAmongSuccesses": 565893,
+      "totalCostUsd": 0.2460488
+    }
+  ],
+  "cases": [
+    {
+      "caseId": "smoke-glob-sync",
+      "validBaselineTrials": 1,
+      "validDriftTrials": 1,
+      "baselineSuccesses": 1,
+      "driftSuccesses": 1,
+      "baselineSuccessRate": 1,
+      "driftSuccessRate": 1,
+      "successDifferencePp": 0,
+      "medianBaselineInputTokens": 375832,
+      "medianDriftInputTokens": 565893,
+      "inputTokenReduction": -0.5057073373209306,
+      "medianBaselineUncachedInputTokens": 45104,
+      "medianDriftUncachedInputTokens": 35954,
+      "medianBaselineWallClockMs": 55085,
+      "medianDriftWallClockMs": 54397,
+      "medianBaselineFilesRead": 0,
+      "medianDriftFilesRead": 2,
+      "medianBaselineToolCalls": 8,
+      "medianDriftToolCalls": 10,
+      "medianDriftAnalysisMs": 4709,
+      "baselineFailureReasons": {},
+      "driftFailureReasons": {},
+      "driftIdentifiedBreakingChange": 1,
+      "driftIdentifiedLocalCode": 1
+    }
+  ],
+  "exclusions": [],
+  "pipelineDiagnostics": {
+    "driftAnalysisStatuses": {
+      "completed": 1
+    },
+    "driftIdentifiedBreakingChangeRate": 1,
+    "driftIdentifiedLocalCodeRate": 1
+  },
+  "methodology": {
+    "inputTokenDefinition": "Gross agent input tokens: for one agent session, the sum over every model the session used of the provider-reported input_tokens + cache_read_input_tokens + cache_creation_input_tokens, read from the coding agent CLI's own cumulative per-model usage record at the end of the session (Claude Code: the `modelUsage` block of the `result` event in `--output-format stream-json`). Every model turn in the session is included, not only the first prompt. Cache reads are counted at their full token size. \"Uncached input tokens\" (input_tokens + cache_creation_input_tokens) is reported as a secondary metric.",
+    "successDefinition": "A trial succeeds only if, after the agent exits: the dependency is still declared at the upgraded version and a fresh install resolves and installs it at that version; every one of the project's own declared checks passes; every hidden regression test — staged into the workspace only after the agent exited — passes; and no case-specific prohibited-workaround rule fires. A session that timed out or errored fails. No partial credit.",
+    "bootstrap": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement",
+    "toolCounting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads.",
+    "isolation": "Each trial runs in a fresh temporary git repository built from the case source with exactly two commits (before and after the bump), no remote and no later history, audited to contain no hidden material. Hidden tests, the reference patch and case metadata live outside that directory and are copied in only after the agent process has exited. This is a workspace audit, not an OS sandbox: the private files remain readable elsewhere on the host by a process the agent starts. Package manager caches are shared across trials and conditions."
+  },
+  "publication": {
+    "eligible": false,
+    "gates": [
+      {
+        "name": "minimum-cases",
+        "passed": false,
+        "detail": "1 case(s), minimum 10"
+      },
+      {
+        "name": "minimum-paired-cases",
+        "passed": false,
+        "detail": "1 paired case(s), minimum 10"
+      },
+      {
+        "name": "minimum-runs-per-condition",
+        "passed": false,
+        "detail": "1 run(s) per condition, minimum 3"
+      },
+      {
+        "name": "minimum-valid-trials",
+        "passed": false,
+        "detail": "1 valid trial(s) in the smaller condition, minimum 30"
+      },
+      {
+        "name": "frozen-suite",
+        "passed": false,
+        "detail": "suite status draft"
+      },
+      {
+        "name": "historical-cases-only",
+        "passed": false,
+        "detail": "1 synthetic case(s) in the result"
+      },
+      {
+        "name": "freshness",
+        "passed": true,
+        "detail": "0 day(s) old, maximum 180"
+      },
+      {
+        "name": "infrastructure-exclusions",
+        "passed": true,
+        "detail": "0/2 trial(s) excluded as infrastructure failures"
+      },
+      {
+        "name": "hidden-validation-complete",
+        "passed": true,
+        "detail": "every valid trial ran hidden validation"
+      },
+      {
+        "name": "same-task",
+        "passed": true,
+        "detail": "one task hash per case across conditions"
+      },
+      {
+        "name": "one-model",
+        "passed": true,
+        "detail": "confirmed models: claude-sonnet-5"
+      },
+      {
+        "name": "success-rate-integrity",
+        "passed": true,
+        "detail": "both success rates are defined"
+      },
+      {
+        "name": "clean-drift-tree",
+        "passed": false,
+        "detail": "Drift source tree had uncommitted changes"
+      },
+      {
+        "name": "required-metadata",
+        "passed": true,
+        "detail": "commit, agent version and model recorded"
+      }
+    ],
+    "thresholds": {
+      "minimumCases": 10,
+      "minimumPairedCases": 10,
+      "minimumRunsPerCondition": 3,
+      "minimumValidTrialsPerCondition": 30,
+      "maximumAgeDays": 180,
+      "requireFrozenSuite": true,
+      "requireHistoricalCases": true,
+      "maximumInfrastructureExclusionRate": 0.2
+    }
+  }
+}

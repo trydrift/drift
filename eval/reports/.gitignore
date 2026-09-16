@@ -4,3 +4,5 @@
 !audits/
 !audits/*.json
 !audits/*.md
+!agent/
+!agent/*.md
