@@ -49,6 +49,7 @@ export interface ConditionRow {
   medianDriftToolCalls: number | null;
   medianDriftToolReturnedTokens: number | null;
   medianFindingsRetrievedOnDemand: number | null;
+  medianFindingsInInitialBrief: number | null;
   driftToolCallsByName: Record<string, number>;
   medianTokensBeforeFirstEdit: number | null;
   medianTokensAfterFirstEdit: number | null;
@@ -57,6 +58,13 @@ export interface ConditionRow {
   medianRegistryQueries: number | null;
   medianChangelogAccesses: number | null;
   medianDriftAnalysisMs: number | null;
+  /** Wall-clock decomposition medians; see `agentContext.timing`. */
+  medianEndToEndMs: number | null;
+  medianSessionMs: number | null;
+  medianPreSessionDriftMs: number | null;
+  medianDriftToolMs: number | null;
+  /** Median of case-level changes in end-to-end wall time against the baseline. */
+  medianCaseEndToEndChangePct?: number | null;
   /** Against the baseline in the same runs. `null` for the baseline itself. */
   vsBaseline: {
     pairedCases: number;
@@ -76,6 +84,7 @@ export interface CaseCell {
   medianUncachedInputTokens: number | null;
   medianCostUsd: number | null;
   medianWallClockMs: number | null;
+  medianEndToEndMs: number | null;
   medianToolCalls: number | null;
   medianUniqueFilesRead: number | null;
   medianInitialDriftContextTokens: number | null;
@@ -92,13 +101,17 @@ export interface ComparisonSection {
   cleanEnvironments: string[];
   conditions: ConditionRow[];
   cases: { caseId: string; cells: Record<string, CaseCell> }[];
+  exclusions: { trialId: string; condition: string; reason: string; detail: string }[];
+  /** How many times each condition ran in each schedule position (1-based index). */
+  positions: Record<string, number[]>;
 }
 
 export interface Comparison {
   name: string;
   generatedAt: string;
   current: ComparisonSection;
-  reference: ComparisonSection | null;
+  /** Earlier runs shown for context, each labelled, never pooled into `current`. */
+  history: { label: string; section: ComparisonSection }[];
   notes: string[];
 }
 
@@ -108,7 +121,95 @@ const changePct = (baseline: number | null, treatment: number | null): number | 
 };
 const med = (values: (number | null | undefined)[]): number | null => median(values.filter((v): v is number => typeof v === 'number'));
 
-export async function buildComparisonSection(runIds: readonly string[], root: string): Promise<ComparisonSection & { derivedDiagnostics: number }> {
+export class IncompatibleRunsError extends Error {
+  readonly problems: string[];
+  constructor(problems: string[]) {
+    super(`These runs cannot be pooled into one comparison:\n  - ${problems.join('\n  - ')}`);
+    this.name = 'IncompatibleRunsError';
+    this.problems = problems;
+  }
+}
+
+/**
+ * Why a set of runs cannot be pooled as one experiment. Empty means they can.
+ *
+ * Runs may cover different cases — one case per process is how a parallel
+ * experiment is run — but everything that defines the experiment must agree:
+ * the agent and its settings, the Drift build, the session isolation and what
+ * the sessions actually loaded, and, for every case, its content, starting
+ * tree and task. A slot recorded twice would be counted twice, so that is
+ * refused too, as is a run marked aborted.
+ */
+export function compatibilityProblems(
+  runs: readonly { manifest: RunManifest; trials: readonly TrialArtifact[]; aborted: boolean }[],
+): string[] {
+  const problems: string[] = [];
+  const differ = (label: string, values: (string | number | boolean | null | undefined)[]) => {
+    const distinct = [...new Set(values.map((v) => JSON.stringify(v ?? null)))];
+    if (distinct.length > 1) problems.push(`${label} differs: ${distinct.join(' vs ')}`);
+  };
+  for (const run of runs) if (run.aborted) problems.push(`run ${run.manifest.runId} is marked aborted (ABORTED.md) and is exploratory only`);
+
+  const manifests = runs.map((run) => run.manifest);
+  const trials = runs.flatMap((run) => run.trials);
+  differ('suite', manifests.map((m) => m.suite));
+  differ('provider', manifests.map((m) => m.provider));
+  differ('requested model', manifests.map((m) => m.requestedModel));
+  differ('requested effort', manifests.map((m) => m.requestedEffort));
+  differ('agent CLI version', manifests.map((m) => m.agentCliVersion));
+  differ('Drift commit', manifests.map((m) => m.driftCommit));
+  for (const m of manifests) if (m.driftTreeDirty) problems.push(`run ${m.runId} was built from a Drift tree with uncommitted changes`);
+  differ('schedule design', manifests.map((m) => m.scheduleDesign));
+  differ('web tools', manifests.map((m) => m.webTools));
+  differ('budget (USD)', manifests.map((m) => m.maxBudgetUsd));
+  differ('turn cap', manifests.map((m) => m.maxTurns));
+  differ('Drift --verify', manifests.map((m) => m.driftVerify));
+  differ('runs per condition', manifests.map((m) => m.runsPerCondition));
+  differ('conditions', manifests.map((m) => [...m.conditions].sort().join(',')));
+  differ('trial schema', trials.map((t) => t.schemaVersion));
+  const environments: (string | undefined)[] = [
+    ...trials.map((t) => t.metadata.agentConfiguration.cleanEnvironment),
+    ...manifests.map((m) => m.cleanEnvironment ?? trials.find((t) => t.runId === m.runId)?.metadata.agentConfiguration.cleanEnvironment),
+  ];
+  differ('clean environment', environments);
+  differ('network policy', trials.map((t) => t.metadata.networkPolicy));
+
+  const sessions = trials.filter((t) => t.validity.valid || t.validity.infrastructureFailure === 'environment_mismatch');
+  const unrecorded = sessions.filter((t) => !t.metadata.agentConfiguration.environment);
+  if (unrecorded.length > 0) problems.push(`${unrecorded.length} trial(s) did not record the session environment (e.g. ${unrecorded[0]!.trialId})`);
+  differ('session environment (excluding Drift MCP)', sessions.map((t) => t.metadata.agentConfiguration.environment?.fingerprint));
+
+  const byCase = new Map<string, TrialArtifact[]>();
+  for (const trial of trials) byCase.set(trial.caseId, [...(byCase.get(trial.caseId) ?? []), trial]);
+  for (const [caseId, caseTrials] of byCase) {
+    differ(`case ${caseId} content hash`, caseTrials.map((t) => t.caseHash));
+    differ(`case ${caseId} start tree`, caseTrials.map((t) => t.metadata.startTreeHash));
+    differ(`case ${caseId} task`, caseTrials.map((t) => t.metadata.taskHash));
+    differ(`case ${caseId} timeout`, caseTrials.map((t) => t.metadata.timeoutSeconds));
+    const seen = new Map<string, string>();
+    for (const t of caseTrials) {
+      const slot = `${t.condition}#${t.repetition}`;
+      if (seen.has(slot)) problems.push(`case ${caseId} ${slot} is recorded by both ${seen.get(slot)} and ${t.runId}`);
+      else seen.set(slot, t.runId);
+    }
+  }
+  return problems;
+}
+
+export async function buildComparisonSection(
+  runIds: readonly string[],
+  root: string,
+  options: { pooled?: boolean } = {},
+): Promise<ComparisonSection & { derivedDiagnostics: number }> {
+  if (options.pooled ?? true) {
+    const runs = [];
+    for (const runId of runIds) {
+      const aborted = await readFile(join(resultsRoot(root), 'raw', runId, 'ABORTED.md'), 'utf8').then(() => true, () => false);
+      runs.push({ manifest: await readRunManifest(runId, root), trials: await readTrials(runId, root), aborted });
+    }
+    const problems = compatibilityProblems(runs);
+    if (problems.length > 0) throw new IncompatibleRunsError(problems);
+  }
   const manifests: RunManifest[] = [];
   const trials: TrialArtifact[] = [];
   let derivedDiagnostics = 0;
@@ -196,6 +297,7 @@ export function comparisonFromTrials(trials: readonly TrialArtifact[], manifests
       medianDriftToolCalls: med(ctx.map((c) => c.driftToolCalls)),
       medianDriftToolReturnedTokens: med(ctx.map((c) => c.driftToolReturnedEstimatedTokens)),
       medianFindingsRetrievedOnDemand: med(ctx.map((c) => c.findingsRetrievedOnDemand)),
+      medianFindingsInInitialBrief: med(ctx.map((c) => c.findingsInInitialBrief)),
       driftToolCallsByName: byName,
       medianTokensBeforeFirstEdit: med(ctx.map((c) => c.tokensBeforeFirstEdit?.grossInputTokens)),
       medianTokensAfterFirstEdit: med(ctx.map((c) => c.tokensAfterFirstEdit?.grossInputTokens)),
@@ -204,6 +306,20 @@ export function comparisonFromTrials(trials: readonly TrialArtifact[], manifests
       medianRegistryQueries: med(ctx.map((c) => c.research.registryQueries)),
       medianChangelogAccesses: med(ctx.map((c) => c.research.changelogAccesses)),
       medianDriftAnalysisMs: med(valid.map((t) => (t.context.driftStatus === 'not-applicable' ? null : t.context.driftAnalysisMs))),
+      medianEndToEndMs: med(ctx.map((c) => c.timing?.endToEndMs)),
+      medianSessionMs: med(ctx.map((c) => c.timing?.sessionMs)),
+      medianPreSessionDriftMs: med(ctx.map((c) => c.timing?.preSessionDriftMs)),
+      medianDriftToolMs: med(ctx.map((c) => c.timing?.driftToolMs)),
+      medianCaseEndToEndChangePct:
+        condition === 'baseline'
+          ? null
+          : med(
+              [...new Set(valid.map((t) => t.caseId))].map((caseId) => {
+                const endToEnd = (cond: Condition) =>
+                  med(trials.filter((t) => t.caseId === caseId && t.condition === cond && t.validity.valid).map((t) => t.agentContext?.timing?.endToEndMs));
+                return changePct(endToEnd('baseline'), endToEnd(condition));
+              }),
+            ),
       vsBaseline,
     };
   });
@@ -228,6 +344,7 @@ export function comparisonFromTrials(trials: readonly TrialArtifact[], manifests
         medianUncachedInputTokens: uncached,
         medianCostUsd: med(valid.map((t) => t.usage.costUsd)),
         medianWallClockMs: med(valid.map((t) => t.agent.durationMs)),
+        medianEndToEndMs: med(valid.map((t) => t.agentContext?.timing?.endToEndMs)),
         medianToolCalls: med(valid.map((t) => t.tools.toolCalls)),
         medianUniqueFilesRead: med(valid.map((t) => t.tools.uniqueFilesRead)),
         medianInitialDriftContextTokens: med(valid.map((t) => t.agentContext?.initialDriftContextEstimatedTokens)),
@@ -255,34 +372,54 @@ export function comparisonFromTrials(trials: readonly TrialArtifact[], manifests
     cleanEnvironments: [...new Set(trials.map((t) => t.metadata.agentConfiguration.cleanEnvironment))].sort(),
     conditions: rows,
     cases,
+    exclusions: trials
+      .filter((t) => !t.validity.valid)
+      .map((t) => ({ trialId: t.trialId, condition: CONDITION_LABELS[t.condition], reason: t.validity.infrastructureFailure ?? 'unknown', detail: (t.validity.detail ?? '').split('\n')[0]!.slice(0, 200) })),
+    positions: Object.fromEntries(
+      conditions.map((condition) => {
+        const counts = conditions.map(() => 0);
+        for (const t of trials.filter((x) => x.condition === condition && x.schedule)) counts[t.schedule!.position - 1] = (counts[t.schedule!.position - 1] ?? 0) + 1;
+        return [CONDITION_LABELS[condition], counts];
+      }),
+    ),
   };
 }
 
-export async function buildComparison(args: { name: string; runIds: string[]; referenceRunIds?: string[]; root: string; now?: Date }): Promise<Comparison> {
+export async function buildComparison(args: {
+  name: string;
+  runIds: string[];
+  history?: { label: string; runIds: string[] }[];
+  root: string;
+  now?: Date;
+}): Promise<Comparison> {
   const { derivedDiagnostics: derivedCurrent, ...current } = await buildComparisonSection(args.runIds, args.root);
-  const referenceWithCount = args.referenceRunIds?.length ? await buildComparisonSection(args.referenceRunIds, args.root) : null;
-  const derived = derivedCurrent + (referenceWithCount?.derivedDiagnostics ?? 0);
-  const reference = referenceWithCount ? (({ derivedDiagnostics: _, ...section }) => section)(referenceWithCount) : null;
+  let derived = derivedCurrent;
+  const history: Comparison['history'] = [];
+  for (const entry of args.history ?? []) {
+    if (entry.runIds.length === 0) continue;
+    // History is shown, never pooled, so its runs are not held to one configuration.
+    const { derivedDiagnostics, ...section } = await buildComparisonSection(entry.runIds, args.root, { pooled: false });
+    derived += derivedDiagnostics;
+    history.push({ label: entry.label, section });
+  }
   const notes = [
     'Development cases only. These cases were used to select the agent interface and are not held-out evidence.',
-    'Not a publishable result: the canonical publication gates (10+ cases, frozen suite, 30+ valid trials per condition) are not met.',
+    'Diagnostic, not publishable: the canonical publication gates (10+ cases, frozen suite, 30+ valid trials per condition) are not met.',
+    'Every Drift condition is compared with the baseline trials of the same experiment. The runs in the current section passed the compatibility check (same agent, settings, Drift build, isolation, loaded environment, case content, start trees and tasks).',
     'Token changes are case-level medians: (condition median / baseline median - 1) per case, then the median across cases. Negative is fewer tokens.',
     'Drift context and tool sizes are estimated at 3 bytes per token (the production brief estimator), not provider counts. Every other token figure is provider-reported.',
     'Tokens before/after the first edit come from the per-message usage ledger of the main model and exclude the CLI auxiliary model.',
+    'End-to-end wall = Drift analysis before the session + the agent session. For drift-mcp, Drift runs inside the session and is already in the session time; Drift tool time is shown as a part of it, not added.',
   ];
   if (derived > 0) {
     notes.push(
       `${derived} trial(s) predate the agentContext diagnostics; theirs were derived from the session stream stored beside the artifact (gitignored, kept locally) and the preamble the artifact recorded. The artifacts were not modified.`,
     );
   }
-  if (reference) {
-    const envs = new Set([...current.cleanEnvironments, ...reference.cleanEnvironments]);
-    const commits = new Set([...current.manifests, ...reference.manifests].map((m) => m.driftCommit));
-    notes.push(
-      `Reference runs (${reference.runIds.join(', ')}) are shown as history and never pooled: ${envs.size > 1 ? `session isolation differs (${[...envs].join(' vs ')})` : 'same session isolation'}; ${commits.size > 1 ? 'Drift commits differ' : 'same Drift commit'}.`,
-    );
+  for (const entry of history) {
+    notes.push(`History section "${entry.label}" (${entry.section.runIds.join(', ')}) is shown for context only and never pooled into the current estimates.`);
   }
-  return { name: args.name, generatedAt: (args.now ?? new Date()).toISOString(), current, reference, notes };
+  return { name: args.name, generatedAt: (args.now ?? new Date()).toISOString(), current, history, notes };
 }
 
 export async function writeComparison(comparison: Comparison, root: string): Promise<{ json: string; markdown: string }> {
@@ -312,9 +449,9 @@ export function renderComparison(comparison: Comparison): string {
   for (const note of comparison.notes) out.push(`- ${note}`);
   out.push('');
   out.push(...renderSection('Current runs', comparison.current));
-  if (comparison.reference) {
+  for (const entry of comparison.history) {
     out.push('', '---', '');
-    out.push(...renderSection('Reference: the first result (history, not pooled)', comparison.reference));
+    out.push(...renderSection(`History, not pooled: ${entry.label}`, entry.section));
   }
   return out.join('\n');
 }
@@ -326,14 +463,27 @@ function renderSection(title: string, section: ComparisonSection): string[] {
   }
   out.push(`- Session isolation: ${section.cleanEnvironments.join(', ')}.`, '');
 
+  if (Object.values(section.positions).some((counts) => counts.some((n) => n > 0))) {
+    out.push('### Schedule positions (trials per position, 1 = first in its block)', '');
+    for (const [label, counts] of Object.entries(section.positions)) out.push(`- ${label}: ${counts.join(' / ')}`);
+    out.push('');
+  }
   out.push('### By condition', '');
-  out.push('| Condition | Successes / valid | Median gross input | Median uncached input | Median cost | Median wall | Median tool calls | Median unique files read | Median Drift context (est.) | Median Drift tool returns (est.) |');
-  out.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
+  out.push('| Condition | Successes / valid | Median gross input | Median uncached input | Median model calls | Median cost | Median end-to-end wall | Median session wall | Median tool calls | Median unique files read | Median Drift context (est.) | Median Drift tool returns (est.) |');
+  out.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
   for (const row of section.conditions) {
     const a = row.aggregate;
     out.push(
-      `| ${row.label} | ${a.successfulTrials}/${a.validTrials}${a.invalidTrials ? ` (${a.invalidTrials} excluded)` : ''} | ${fmtInt(a.medianInputTokens)} | ${fmtInt(a.medianUncachedInputTokens)} | ${fmtUsd(row.medianCostUsd)} | ${fmtSec(a.medianWallClockMs)} | ${fmtInt(a.medianToolCalls)} | ${fmtInt(row.medianUniqueFilesRead)} | ${fmtInt(row.medianInitialDriftContextTokens)} | ${fmtInt(row.medianDriftToolReturnedTokens)} |`,
+      `| ${row.label} | ${a.successfulTrials}/${a.validTrials}${a.invalidTrials ? ` (${a.invalidTrials} excluded)` : ''} | ${fmtInt(a.medianInputTokens)} | ${fmtInt(a.medianUncachedInputTokens)} | ${fmtInt(row.medianModelCalls)} | ${fmtUsd(row.medianCostUsd)} | ${fmtSec(row.medianEndToEndMs)} | ${fmtSec(row.medianSessionMs ?? a.medianWallClockMs)} | ${fmtInt(a.medianToolCalls)} | ${fmtInt(row.medianUniqueFilesRead)} | ${fmtInt(row.medianInitialDriftContextTokens)} | ${fmtInt(row.medianDriftToolReturnedTokens)} |`,
     );
+  }
+  out.push('');
+  out.push('### Wall-clock decomposition', '');
+  out.push('End-to-end = Drift analysis before the session + session. Drift tool time is inside the session (MCP), not added to it.', '');
+  out.push('| Condition | Median end-to-end | Median Drift before session | Median session | Median Drift tool time (in session) | Median case change in end-to-end vs baseline |');
+  out.push('| --- | ---: | ---: | ---: | ---: | ---: |');
+  for (const row of section.conditions) {
+    out.push(`| ${row.label} | ${fmtSec(row.medianEndToEndMs)} | ${fmtSec(row.medianPreSessionDriftMs)} | ${fmtSec(row.medianSessionMs)} | ${fmtSec(row.medianDriftToolMs)} | ${fmtPct(row.medianCaseEndToEndChangePct ?? null)} |`);
   }
   out.push('');
 
@@ -351,7 +501,7 @@ function renderSection(title: string, section: ComparisonSection): string[] {
 
   const labels = section.conditions.map((r) => r.label);
   out.push('### By case', '');
-  out.push('| Case | Condition | Successes / valid | Median gross input | Change vs baseline | Median uncached | Change vs baseline | Median cost | Median wall | Tool calls | Unique files read | Drift context (est.) | Drift tool returns (est.) | Failure reasons |');
+  out.push('| Case | Condition | Successes / valid | Median gross input | Change vs baseline | Median uncached | Change vs baseline | Median cost | Median end-to-end wall | Tool calls | Unique files read | Drift context (est.) | Drift tool returns (est.) | Failure reasons |');
   out.push('| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |');
   for (const { caseId, cells } of section.cases) {
     for (const label of labels) {
@@ -359,7 +509,7 @@ function renderSection(title: string, section: ComparisonSection): string[] {
       if (!c) continue;
       const reasons = Object.entries(c.failureReasons).map(([r, n]) => `${r} ×${n}`).join(', ') || '—';
       out.push(
-        `| ${caseId} | ${label} | ${c.successes}/${c.valid}${c.excluded ? ` (+${c.excluded} excl.)` : ''} | ${fmtInt(c.medianGrossInputTokens)} | ${fmtPct(c.grossChangeVsBaselinePct)} | ${fmtInt(c.medianUncachedInputTokens)} | ${fmtPct(c.uncachedChangeVsBaselinePct)} | ${fmtUsd(c.medianCostUsd)} | ${fmtSec(c.medianWallClockMs)} | ${fmtInt(c.medianToolCalls)} | ${fmtInt(c.medianUniqueFilesRead)} | ${fmtInt(c.medianInitialDriftContextTokens)} | ${fmtInt(c.medianDriftToolReturnedTokens)} | ${reasons} |`,
+        `| ${caseId} | ${label} | ${c.successes}/${c.valid}${c.excluded ? ` (+${c.excluded} excl.)` : ''} | ${fmtInt(c.medianGrossInputTokens)} | ${fmtPct(c.grossChangeVsBaselinePct)} | ${fmtInt(c.medianUncachedInputTokens)} | ${fmtPct(c.uncachedChangeVsBaselinePct)} | ${fmtUsd(c.medianCostUsd)} | ${fmtSec(c.medianEndToEndMs ?? c.medianWallClockMs)} | ${fmtInt(c.medianToolCalls)} | ${fmtInt(c.medianUniqueFilesRead)} | ${fmtInt(c.medianInitialDriftContextTokens)} | ${fmtInt(c.medianDriftToolReturnedTokens)} | ${reasons} |`,
       );
     }
   }
@@ -376,14 +526,18 @@ function renderSection(title: string, section: ComparisonSection): string[] {
   out.push('');
 
   out.push('### Drift tools and independent research', '');
-  out.push('| Condition | Median Drift tool calls | Calls by tool (all trials) | Median findings pulled on demand | Median dependency-source accesses | Median registry queries | Median changelog accesses |');
-  out.push('| --- | ---: | --- | ---: | ---: | ---: | ---: |');
+  out.push('| Condition | Median findings supplied up front | Median Drift tool calls | Calls by tool (all trials) | Median findings pulled on demand | Median dependency-source accesses | Median registry queries | Median changelog accesses |');
+  out.push('| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |');
   for (const row of section.conditions) {
     const calls = Object.entries(row.driftToolCallsByName).sort((a, b) => b[1] - a[1]).map(([n, c]) => `${n} ×${c}`).join(', ') || '—';
     out.push(
-      `| ${row.label} | ${fmtInt(row.medianDriftToolCalls)} | ${calls} | ${fmtInt(row.medianFindingsRetrievedOnDemand)} | ${fmtInt(row.medianDependencySourceAccesses)} | ${fmtInt(row.medianRegistryQueries)} | ${fmtInt(row.medianChangelogAccesses)} |`,
+      `| ${row.label} | ${fmtInt(row.medianFindingsInInitialBrief)} | ${fmtInt(row.medianDriftToolCalls)} | ${calls} | ${fmtInt(row.medianFindingsRetrievedOnDemand)} | ${fmtInt(row.medianDependencySourceAccesses)} | ${fmtInt(row.medianRegistryQueries)} | ${fmtInt(row.medianChangelogAccesses)} |`,
     );
   }
+  out.push('');
+  out.push('### Exclusions', '');
+  const excluded = section.exclusions;
+  out.push(excluded.length === 0 ? 'No trial was excluded.' : excluded.map((e) => `- ${e.trialId}: ${e.reason} — ${e.detail}`).join('\n'));
   return out;
 }
 

@@ -352,6 +352,12 @@ export const INFRASTRUCTURE_FAILURES = [
   'validation_unavailable',
   /** The harness itself threw. */
   'runner_error',
+  /**
+   * The session loaded a different environment from the one its condition
+   * declares: an unexpected or missing MCP server, a plugin, memory. It did not
+   * run the condition it is labelled as.
+   */
+  'environment_mismatch',
 ] as const;
 export type InfrastructureFailure = (typeof INFRASTRUCTURE_FAILURES)[number];
 
@@ -483,6 +489,27 @@ export const agentContextSchema = z.object({
    */
   tokensBeforeFirstEdit: tokenSplitSchema.nullable(),
   tokensAfterFirstEdit: tokenSplitSchema.nullable(),
+  /**
+   * Wall-clock decomposition, in milliseconds.
+   *
+   * `preSessionDriftMs` — Drift's analysis before the session (full report and
+   * brief conditions); 0 for baseline and MCP.
+   * `sessionMs` — the coding-agent session, start to exit. For MCP it already
+   * contains Drift's analysis, because `plan_upgrade` runs inside it.
+   * `driftToolMs` — time between each Drift tool call and its result, from the
+   * CLI's event timestamps; a part of `sessionMs`, not in addition to it.
+   * `endToEndMs` — `preSessionDriftMs + sessionMs`: from the start of Drift's
+   * work (or the session, where there is none) to the agent's exit. Workspace
+   * setup, install and validation are the same for every condition and not in it.
+   */
+  timing: z
+    .object({
+      preSessionDriftMs: z.number().int().nonnegative(),
+      sessionMs: z.number().int().nonnegative(),
+      driftToolMs: z.number().int().nonnegative(),
+      endToEndMs: z.number().int().nonnegative(),
+    })
+    .optional(),
   /** How the agent researched the dependency itself, whatever Drift gave it. */
   research: z.object({
     /** Read/Grep/Glob calls, and shell commands, that touch the upgraded package inside node_modules. */
@@ -507,6 +534,10 @@ export const trialSchema = z
     repetition: z.number().int().positive(),
     /** Position of this trial in the run's schedule, so temporal ordering is auditable. */
     scheduleIndex: z.number().int().nonnegative(),
+    /** The trial's preassigned slot in the counterbalanced design. Absent on artifacts recorded before it existed. */
+    schedule: z
+      .object({ design: z.string(), block: z.number().int().nonnegative(), row: z.number().int().nonnegative(), position: z.number().int().positive() })
+      .optional(),
     metadata: z.object({
       repository: z.string(),
       baseCommit: z.string(),
@@ -533,6 +564,23 @@ export const trialSchema = z
         /** Tools the session actually had, from the provider's init record. */
         tools: z.array(z.string()),
         mcpServers: z.array(z.string()),
+        /** Everything the session reported loading. Absent on artifacts recorded before it was captured. */
+        environment: z
+          .object({
+            tools: z.array(z.string()),
+            mcpServers: z.array(z.object({ name: z.string(), status: z.string() })),
+            skills: z.array(z.string()),
+            slashCommands: z.array(z.string()),
+            agents: z.array(z.string()),
+            plugins: z.array(z.string()),
+            memoryPaths: z.array(z.string()),
+            outputStyle: z.string().nullable(),
+            apiKeySource: z.string().nullable(),
+            /** Hash of the environment without Drift's MCP server and tools. Equal across conditions of one experiment. */
+            fingerprint: z.string(),
+          })
+          .nullable()
+          .optional(),
         argv: z.array(z.string()),
       }),
       startedAt: z.string(),
@@ -648,6 +696,13 @@ export const runManifestSchema = z
     agentCliVersion: z.string(),
     runsPerCondition: z.number().int().positive(),
     conditions: z.array(conditionSchema),
+    /** Absent on manifests recorded before these settings were written down. */
+    scheduleDesign: z.string().optional(),
+    cleanEnvironment: z.string().optional(),
+    webTools: z.string().optional(),
+    maxBudgetUsd: z.number().nullable().optional(),
+    maxTurns: z.number().int().nullable().optional(),
+    driftVerify: z.boolean().optional(),
     caseIds: z.array(z.string()),
     node: z.string(),
     platform: z.string(),
