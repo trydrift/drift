@@ -100,3 +100,22 @@ describe('subtractBaseline', () => {
     assert.equal(subtractBaseline(after, []).length, 0);
   });
 });
+
+describe('parseVerificationDiagnostics — JavaScript stack frames', () => {
+  test('a Node stack frame is never read as a file:line diagnostic', () => {
+    // Real output from a mocha + ts-node run inside a verification worktree.
+    const output = [
+      "src/lib/logger.ts:5:3 - error TS2345: Argument of type '{ name: string; }' is not assignable.",
+      '    at Object.<anonymous> (/private/var/folders/T/drift-agent-x/repo/.git/drift-worktrees/9517-f0ef7c83/change-71a5c1b/src/lib/aws-segments/dynamo.ts:1:2561)',
+      '    at createTSError (/private/var/folders/T/x/node_modules/ts-node/src/index.ts:261:12)',
+      '    at /private/var/folders/T/x/node_modules/nyc/node_modules/append-transform/index.js:62:4',
+      '    at Module.load (node:internal/modules/cjs/loader:1651:32)',
+      '    at Object.<anonymous> (C:\\Users\\Jane Doe\\repo\\src\\x.ts:3:1)',
+    ].join('\n');
+    const found = parseVerificationDiagnostics(output);
+    assert.deepEqual(
+      found.map((d) => `${d.file}:${d.line}`),
+      ['src/lib/logger.ts:5'],
+    );
+  });
+});

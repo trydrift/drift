@@ -60,6 +60,20 @@ const TS_LINE = /^\s*(?:\x1b\[[0-9;]*m)*([^\s()][^()]*?)(?:\((\d+),(\d+)\)|:(\d+
 const JAVAC_BRACKET = /^\s*(?:\[(?:ERROR|WARNING)\]\s*)?(\/?[^\s:]+\.(?:java|kt|scala)):\[(\d+),(\d+)\]\s*(.*)$/;
 const JAVAC_COLON = /^\s*(?:\[(?:ERROR|WARNING)\]\s*)?(\/?[^\s:]+\.(?:java|kt|scala)):(\d+):\s*(error|warning)\s*:\s*(.*)$/i;
 
+/**
+ * A JavaScript stack frame: `    at fn (/abs/file.ts:1:2561)` or `    at /abs/file.js:62:4`.
+ *
+ * Not a diagnostic, and never read as one. `GENERIC` below used to accept it:
+ * `at Object.<anonymous> (/tmp/worktree/src/x.ts:1:2561)` parsed as a file
+ * literally named `at Object.<anonymous> (/tmp/worktree/src/x.ts` at line 1,
+ * with the column as its message. Those became measured impact sites whose
+ * "file" was an absolute scratch-worktree path inside a sentence. Even parsed
+ * correctly, a Node frame is a poor location: under ts-node or a bundler it
+ * names the transpiled position (line 1, column 2561), not a line anyone
+ * wrote. The compiler diagnostics in the same output carry the real ones.
+ */
+const JS_STACK_FRAME = /^\s*at\s+(?:.*?\((?:[A-Za-z]:)?[^()]+:\d+:\d+\)|(?:[A-Za-z]:)?\S+:\d+:\d+)\s*$/;
+
 /** Last-resort generic `path:line:col: message` / `path:line: message`. */
 const GENERIC = /^\s*([^\s:][^:]*\.\w+):(\d+)(?::(\d+))?:\s*(.*)$/;
 
@@ -220,6 +234,8 @@ export function parseVerificationDiagnostics(output: string, root?: string): Ver
       });
       continue;
     }
+
+    if (JS_STACK_FRAME.test(rawLine)) continue;
 
     const generic = GENERIC.exec(rawLine);
     if (generic) {

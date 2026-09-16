@@ -1105,6 +1105,10 @@ async function measuredSitesFrom(
 
   for (const diagnostic of diagnostics) {
     if (/(^|\/)(node_modules|\.venv|venv|site-packages|target\/|dist\/|build\/)/.test(diagnostic.file)) continue;
+    // A path the parser could not make repo-relative names somewhere outside
+    // this checkout — a scratch worktree, a global cache — and cannot be a
+    // place in this repository to send anyone.
+    if (/^(?:[A-Za-z]:)?[\\/]/.test(diagnostic.file)) continue;
     let file = dir && !diagnostic.file.startsWith(`${dir}/`) ? `${dir}/${diagnostic.file}` : diagnostic.file;
     if (diagnostic.origin === 'stack-frame') {
       const resolved = await resolveStackFrameFile(workspace, dir, diagnostic.file, await moduleDirs());
