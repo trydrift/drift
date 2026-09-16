@@ -1211,6 +1211,17 @@ test('candidate outlines defer individual remediation and evidence sections', ()
   assert.match(renderCandidateSection(c, 'evidence:evidence-one') ?? '', /EVIDENCE_SENTINEL/);
 });
 
+test('unmatched upstream changes do not claim the upgrade cannot touch this code', () => {
+  const c = candidate({ plan: plan({ breakingChanges: [{
+    id: 'break-one', kind: 'signature-change', summary: 'Signature changed',
+    remediation: '', symbols: ['run'], citations: [], confidence: 'high',
+  } as never] }) });
+  const html = renderCandidateBody(c);
+  assert.match(html, /1 upstream change with no local match found/);
+  assert.match(html, /A static search alone cannot prove the upgrade is safe/);
+  assert.doesNotMatch(html, /does not touch your code|not because there is anything to do/);
+});
+
 test('a markdown link folded into the one-line verdict renders as a link, not literal brackets', () => {
   // `summarize()` folds rationale gap text (which can carry `[label](url)` links,
   // e.g. release-notes citations) straight into `candidate.summary` when there is

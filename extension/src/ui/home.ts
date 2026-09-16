@@ -1513,7 +1513,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       let found: UpgradeCandidate[] = [];
       const nestedGitRepos: NestedProject[] = [];
       /** Dependencies whose version lookup never returned. Never silently dropped. */
-      const unlooked: UncheckedDependency[] = [];
+      const unlooked: (UncheckedDependency & { repoLabel?: string })[] = [];
       let checked = 0;
       let failures = 0;
 
@@ -1618,7 +1618,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           );
 
           checked += result.checked;
-          unlooked.push(...result.unchecked);
+          unlooked.push(...result.unchecked.map((dependency) => ({ ...dependency, ...(repoLabel ? { repoLabel } : {}) })));
           nestedGitRepos.push(...result.nestedGitRepos);
         } catch (err) {
           failures += 1;
@@ -1676,11 +1676,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // skipped" is something they will assume was unimportant — and the whole
       // point of tracking these separately is that they are not.
       if (unlooked.length > 0) {
-        const lines = unlooked.map((dep) => `- \`${dep.name}\` (${dep.current}) — ${dep.reason}`);
         this.session.notice(
           'warn',
-          `${unlooked.length} dependenc${unlooked.length === 1 ? 'y' : 'ies'} could not be checked for upgrades. ` +
-            `This is not the same as being up to date:\n\n${lines.join('\n')}`,
+          uncheckedNotice(unlooked),
         );
       }
 
@@ -6485,10 +6483,8 @@ function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {
 /**
  * The sentence above the results.
  *
- * Leads with how many upgrades touch this repository, because that is the number
- * that decides what the developer does next. The count of upstream breaking
- * changes is not mentioned here at all — it is available on each package, where
- * it has the context that makes it meaningful.
+ * Names affected, safe, review-only, and unchecked counts separately. Upstream
+ * breaking-change counts belong on each package, where they have context.
  */
 /**
  * A few package names, for a title that has to fit on one line.
@@ -6504,14 +6500,10 @@ function namesOf(names: readonly string[]): string {
   return `${unique.slice(0, 2).join(', ')} +${unique.length - 2}`;
 }
 
-function headline(
+export function headline(
   candidates: readonly UpgradeCandidate[],
   checked: number,
-  /**
-   * Dependencies whose version lookup never returned, so they never became
-   * candidates. Counted into the caveat below rather than left out: a
-   * dependency Drift could not reach is not one it found nothing wrong with.
-   */
+  /** Dependencies whose version lookup never returned, so they never became candidates. */
   unlooked = 0,
 ): string {
   // A failed verification has no located call site, but it is measured
@@ -6521,9 +6513,9 @@ function headline(
   // just upstream of this function instead of in it.
   const affected =
     candidates.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length;
-  const uncertain = candidates.filter((candidate) =>
+  const review = candidates.filter((candidate) =>
     ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
-  ).length + unlooked;
+  ).length;
 
   // Rows a manifest produced that nothing has looked at yet. They are counted
   // separately and never folded into `safe`: while a scan is running the list
@@ -6540,8 +6532,10 @@ function headline(
     );
   }
 
-  const safe = candidates.length - affected - (uncertain - unlooked);
-  const scope = checked > 0 ? ` out of ${checked} checked` : '';
+  const safe = candidates.filter((candidate) =>
+    severityOf(candidate) === 'clean' || severityOf(candidate) === 'upstream-only',
+  ).length;
+  const scope = checked > 0 ? ` among ${checked} dependencies scanned` : '';
 
   if (candidates.length === 0) {
     return unlooked > 0
@@ -6549,23 +6543,31 @@ function headline(
       : 'No newer versions available.';
   }
 
-  // Never folded into "safe". A headline that counts an unverified upgrade as
-  // safe is the same claim that put zod 4 and typescript 7 into this
-  // repository, one level further up the page.
-  const caveat =
-    uncertain === 0
-      ? ''
-      : ` ${uncertain} ${uncertain === 1 ? 'requires review before upgrading' : 'require review before upgrading'}.`;
+  const facts = [`**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}.`];
+  if (affected > 0) facts.push(`${affected} affect${affected === 1 ? 's' : ''} code in this repository.`);
+  if (safe > 0) facts.push(`${safe} ${safe === 1 ? 'is' : 'are'} safe to upgrade.`);
+  if (review > 0) facts.push(`${review} ${review === 1 ? 'requires' : 'require'} review before upgrading.`);
+  if (unlooked > 0) facts.push(`${unlooked} ${unlooked === 1 ? 'dependency could' : 'dependencies could'} not be checked for upgrades.`);
+  return facts.join(' ');
+}
 
-  if (affected === 0 && safe === candidates.length) {
-    return `**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}, and none of them affect code in this repository. Safe to take.`;
+/** Group repeated registry failures while retaining every declaration's location. */
+export function uncheckedNotice(dependencies: readonly (UncheckedDependency & { repoLabel?: string })[]): string {
+  const groups = new Map<string, { dependency: UncheckedDependency & { repoLabel?: string }; paths: Set<string> }>();
+  for (const dependency of dependencies) {
+    const key = JSON.stringify([dependency.repoLabel, dependency.ecosystem, dependency.name, dependency.current, dependency.reason]);
+    const group = groups.get(key);
+    if (group) group.paths.add(dependency.manifestPath);
+    else groups.set(key, { dependency, paths: new Set([dependency.manifestPath]) });
   }
-
-  if (affected === 0) {
-    return `**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}. ${safe === 0 ? 'None' : `${safe}`} affect${safe === 1 ? 's' : ''} code in this repository.${caveat}`;
-  }
-
-  return `**${affected} of ${candidates.length} upgrade${candidates.length === 1 ? '' : 's'}**${scope} affect${affected === 1 ? 's' : ''} code in this repository.${safe > 0 ? ` ${safe} ${safe === 1 ? 'is' : 'are'} safe to take as-is.` : ''}${caveat}`;
+  const lines = [...groups.values()].map(({ dependency, paths }) => {
+    const locations = [...paths].sort();
+    const label = `\`${dependency.name}\` (${dependency.current})${dependency.repoLabel ? ` in ${dependency.repoLabel}` : ''}`;
+    return `- ${label} — ${dependency.reason} Declared in ${locations.length} manifest${locations.length === 1 ? '' : 's'}:\n` +
+      locations.map((path) => `  - \`${path}\``).join('\n');
+  });
+  return `${dependencies.length} dependency declaration${dependencies.length === 1 ? '' : 's'} could not be checked for upgrades. ` +
+    `This is not the same as being up to date:\n\n${lines.join('\n')}`;
 }
 
 function combinePlans(repo: RepoContext, config: DriftConfig, plans: RemediationPlan[]): RemediationPlan {

@@ -1718,8 +1718,8 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
     ${
       unmatched.length
         ? `<details class="sub" data-key="unmatched:${escapeAttr(candidate.name)}">
-            <summary>${unmatched.length} upstream change${unmatched.length === 1 ? '' : 's'} that ${unmatched.length === 1 ? 'does' : 'do'} not touch your code</summary>
-            <p class="hint">Drift found ${unmatched.length === 1 ? 'this' : 'these'} in the release notes, then searched this repository for the affected APIs and found nothing. Listed so you can check the reasoning, not because there is anything to do.</p>
+            <summary>${unmatched.length} upstream change${unmatched.length === 1 ? '' : 's'} with no local match found</summary>
+            <p class="hint">Drift found ${unmatched.length === 1 ? 'this change' : 'these changes'} upstream but located no matching use in this repository. A static search alone cannot prove the upgrade is safe; review the evidence and verification result.</p>
             ${unmatched.map((change) => renderBreak(candidate, change, plan, false, lazySections)).join('')}
           </details>`
         : ''
