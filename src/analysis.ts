@@ -31,6 +31,7 @@ import { connectAnthropic } from './analyze/llm.js';
 import { findCommunityRecipe } from './remediation/registry.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
 import { buildPlan } from './plan/index.js';
+import { resolveMeasuredPath } from './verification/measured-path.js';
 import { buildRationale } from './rationale/index.js';
 import {
   findNodeDeclarations,
@@ -1105,13 +1106,15 @@ async function measuredSitesFrom(
 
   for (const diagnostic of diagnostics) {
     if (/(^|\/)(node_modules|\.venv|venv|site-packages|target\/|dist\/|build\/)/.test(diagnostic.file)) continue;
-    // A path the parser could not make repo-relative names somewhere outside
-    // this checkout — a scratch worktree, a global cache — and cannot be a
-    // place in this repository to send anyone.
-    if (/^(?:[A-Za-z]:)?[\\/]/.test(diagnostic.file)) continue;
-    let file = dir && !diagnostic.file.startsWith(`${dir}/`) ? `${dir}/${diagnostic.file}` : diagnostic.file;
+    let file: string;
     if (diagnostic.origin === 'stack-frame') {
       const resolved = await resolveStackFrameFile(workspace, dir, diagnostic.file, await moduleDirs());
+      if (!resolved) continue;
+      file = resolved;
+    } else {
+      // The invariant every other format relies on: a measured site names a
+      // real file in this checkout. See `resolveMeasuredPath`.
+      const resolved = await resolveMeasuredPath(workspace, dir, diagnostic.file);
       if (!resolved) continue;
       file = resolved;
     }
