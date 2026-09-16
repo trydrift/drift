@@ -29,6 +29,7 @@ interface Harness {
   plannerCalls: { before?: string; after?: string; verify: boolean }[];
   checkerCalls: { only?: readonly string[]; changes?: { name: string }[] }[];
   list: () => Promise<{ name: string; description?: string }[]>;
+  instructions: () => string;
 }
 
 async function harness(plan: RemediationPlan | null = eslint()): Promise<Harness> {
@@ -59,6 +60,7 @@ async function harness(plan: RemediationPlan | null = eslint()): Promise<Harness
     plannerCalls,
     checkerCalls,
     list: async () => (await client.listTools()).tools,
+    instructions: () => client.getInstructions() ?? '',
     call: async (name, args = {}) => {
       const result = (await client.callTool({ name, arguments: { directory: '/repo', ...args } })) as {
         content: { text: string }[];
@@ -81,6 +83,15 @@ describe('MCP agent tools — planning', () => {
     }
     assert.match(tools.find((t) => t.name === 'plan_upgrade')!.description!, /under 2,000 tokens/);
     assert.match(tools.find((t) => t.name === 'plan_upgrade')!.description!, /rather than reading the package changelog or API yourself/);
+  });
+
+  test('the server tells the client which tool answers which question, briefly', async () => {
+    const h = await harness();
+    const instructions = h.instructions();
+    assert.match(instructions, /call plan_upgrade first/);
+    assert.match(instructions, /check_upgrades or explain_upgrade/);
+    // Paid on every turn of every session with Drift connected.
+    assert.ok(Buffer.byteLength(instructions) < 700, `${Buffer.byteLength(instructions)} bytes`);
   });
 
   test('plan_upgrade returns the compact brief, not the report', async () => {

@@ -62,6 +62,8 @@ Unknown ids are errors that say what a valid id looks like.
 
 Served by `drift mcp` alongside `check_upgrades`, `explain_upgrade` and `check_installed`, which are unchanged and remain the tools for deciding *whether* to upgrade.
 
+The server's MCP `instructions` (a few sentences, since a client includes them on every turn) say to call `plan_upgrade` first when asked to make an upgrade work, and `check_upgrades` / `explain_upgrade` when deciding whether to upgrade.
+
 - **`plan_upgrade`** — the brief for the dependency change already in the checkout: an uncommitted manifest edit, else the last commit that touched a manifest, or an explicit `before`/`after`. Verified by default: Drift installs the change in a scratch worktree and runs the project's checks, which takes a minute or more and turns predicted locations into measured compiler errors. The plan is computed once per checkout and reused (`refresh: true` re-analyses), because once the agent edits `package.json`, re-detecting "the change in this checkout" would find the agent's own edit.
 - **`get_finding`**, **`get_evidence`** — as above.
 - **`verify_upgrade`** — runs the project's own build, typecheck and test commands in the working tree as it is now, including the agent's edits. Returns pass/fail per check, the first compiler errors, and each upgraded npm dependency's declared version (so a "fix" that moved the dependency back is visible). Full output goes to log files whose paths are returned. Unlike Deep Verification, nothing is installed or copied.

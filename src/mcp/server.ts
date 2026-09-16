@@ -48,13 +48,28 @@ function serverVersion(): string {
 }
 
 /**
+ * What a client tells its model about this server before any tool is called.
+ *
+ * Claude Code places server instructions in the model's context and loads the
+ * tools themselves only on demand, so this is where an agent learns which tool
+ * answers which question. Kept to a few sentences: it is paid for on every turn
+ * of every session that has Drift connected, whether or not Drift is used.
+ */
+export const SERVER_INSTRUCTIONS =
+  'Drift analyses dependency upgrades from the published artifacts of both versions and searches this repository for ' +
+  'code that uses what changed. When asked to make a dependency upgrade work, call plan_upgrade first: it returns a ' +
+  'short plan with the findings that reach this repository and their file:line locations, so there is no need to read ' +
+  "the package's changelog or API yourself. Use get_finding or get_evidence only when the plan is not enough, and " +
+  'verify_upgrade to run the checks. To decide whether to upgrade at all, use check_upgrades or explain_upgrade.';
+
+/**
  * Build the server, wired to `scanUpgrades`. Exported for tests.
  *
  * `session` holds the agent tools' plans; tests pass one with a fixture
  * planner so the protocol can be exercised without running an analysis.
  */
 export function createDriftMcpServer(session?: AgentPlanSession): McpServer {
-  const server = new McpServer({ name: 'drift', version: serverVersion() });
+  const server = new McpServer({ name: 'drift', version: serverVersion() }, { instructions: SERVER_INSTRUCTIONS });
 
   server.registerTool(
     'check_upgrades',
