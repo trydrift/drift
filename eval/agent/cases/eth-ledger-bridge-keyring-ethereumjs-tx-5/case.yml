@@ -1,0 +1,64 @@
+schemaVersion: drift-agent-case-v1
+id: eth-ledger-bridge-keyring-ethereumjs-tx-5
+title: "@ethereumjs/tx 4.2.0 → 5.3.0 in MetaMask/eth-ledger-bridge-keyring"
+provenance: mined
+role: development
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/MetaMask/eth-ledger-bridge-keyring.git
+  licence: ISC
+  baseCommit: 127eb744ca0ba4de74e9bcdb3a8c997dfccdb644
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/kitcedric/swe-bump-bench (task MetaMask__eth-ledger-bridge-keyring-@ethereumjs-slash-tx__^5.3.0)
+workspaceDir: ""
+dependency:
+  name: "@ethereumjs/tx"
+  fromVersion: 4.2.0
+  toVersion: 5.3.0
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node ^16.20 || ^18.16 || >=20 (declared); run on the host Node
+  packageManager: yarn
+  timezone: UTC
+  locale: C
+commands:
+  install: corepack yarn install --immutable
+  installTimeoutSeconds: 900
+  checks:
+    - name: build (tsc)
+      kind: build
+      command: corepack yarn build
+      timeoutSeconds: 600
+    - name: jest (with the project's coverage thresholds)
+      kind: test
+      command: corepack yarn jest
+      timeoutSeconds: 900
+    - name: eslint
+      kind: lint
+      command: corepack yarn lint:eslint
+      timeoutSeconds: 600
+  installedVersion: node -p "JSON.parse(require('fs').readFileSync('node_modules/@ethereumjs/tx/package.json','utf8')).version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: yarn.lock
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 60
+  repositorySourceLines: 2500
+  failureMode: mixed
+  knownAffectedLocations: 6
+  migrationGuideAvailable: true
+  multiLocation: true
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the
+    exact published @ethereumjs/tx 5.3.0 (manifest and lockfile via yarn 3)
+    is the public start patch. Compile fails at the start state (seven type
+    errors in the signing path) and the project's own keyring test suite
+    fails at runtime because its v3 Common is rejected by tx 5.

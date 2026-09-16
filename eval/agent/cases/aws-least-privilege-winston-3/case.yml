@@ -1,0 +1,62 @@
+schemaVersion: drift-agent-case-v1
+id: aws-least-privilege-winston-3
+title: winston 2.4.4 → 3.13.0 in functionalone/aws-least-privilege
+provenance: mined
+role: development
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/functionalone/aws-least-privilege.git
+  licence: MIT
+  baseCommit: 6273006ae69d7570fbf6c79fc67a8b37c8fe3c65
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/kitcedric/swe-bump-bench (task functionalone__aws-least-privilege-winston__^3.13.0)
+workspaceDir: ""
+dependency:
+  name: winston
+  fromVersion: 2.4.4
+  toVersion: 3.13.0
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node >=6.10.0 (declared); run on the host Node
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm ci --ignore-scripts
+  installTimeoutSeconds: 600
+  checks:
+    - name: compile (tsc)
+      kind: build
+      command: npm run compile
+      timeoutSeconds: 600
+    - name: unit tests (offline subset)
+      kind: test
+      command: env AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy AWS_REGION=us-east-1 npx mocha --require ts-node/register --require source-map-support/register --grep "utils test|createPolicyMapped|checkExcessPolicyPermissions" src/test/utils.test.ts src/test/iam-policy-utils.test.ts
+      timeoutSeconds: 600
+  installedVersion: node -p "require('winston/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 40
+  repositorySourceLines: 1500
+  failureMode: mixed
+  knownAffectedLocations: 4
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the
+    exact published winston 3.13.0 (manifest and regenerated lockfile) is the
+    case's public start patch; the reference fix is benchmark-authored and
+    follows winston's UPGRADE-3.0 guide. Compile fails at the start state
+    (TransportInstance removed, transport option shapes changed, logform
+    declarations unparseable by TypeScript 3.0) and the logging semantics
+    change at runtime.

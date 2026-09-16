@@ -1,0 +1,62 @@
+schemaVersion: drift-agent-case-v1
+caseId: eth-ledger-bridge-keyring-ethereumjs-tx-5
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - getMessageToSign
+  - TxData
+  - TransactionFactory.fromTxData
+  - toJSON
+tests:
+  - id: keyring-signing
+    description: >
+      Through the keyring's public signTransaction, with the device simulated by
+      a known private key: the bytes handed to the device are the transaction's
+      unsigned signing payload (RLP-encoded field list for a legacy
+      transaction, the typed payload for EIP-1559), the transaction handed back
+      verifies, recovers the key's address, and serializes byte-for-byte to the
+      transaction signed directly with the key, and frozenness is preserved.
+      Independent of the project's own tests, which mock TransactionFactory.
+    files:
+      - keyring-signing.test.ts
+    command: corepack yarn jest --coverage=false --testMatch "**/.drift-hidden/*.test.ts"
+    timeoutSeconds: 600
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The build, test and lint scripts the checks invoke must not be rewritten.
+  - kind: path-unchanged
+    paths:
+      - jest.config.js
+      - .yarnrc.yml
+      - tsconfig.json
+      - tsconfig.build.json
+    description: Coverage thresholds, the package-manager policy and compiler strictness are not part of this migration.
+  - kind: no-test-deletions
+    globs:
+      - "src/**/*.test.ts"
+      - "test/**"
+    description: The project's own tests must not be deleted.
+  - kind: pattern-not-added
+    glob: "src/**/*.test.ts"
+    pattern: "\\.skip\\(|\\bxit\\(|\\bxdescribe\\(|\\bit\\.todo\\("
+    description: Tests may be updated to the new API; they may not be disabled.
+  - kind: pattern-not-added
+    glob: src/ledger-keyring.ts
+    pattern: "@ts-ignore|@ts-expect-error|\\bas any\\b|:\\s*any\\b"
+    description: Silencing the type errors in the keyring is not a migration of it (the file's pre-existing ts-expect-error lines on the ethereumjs-tx v1 branch stay).
+  - kind: file-present
+    paths:
+      - src/ledger-keyring.ts
+      - src/ledger-keyring.test.ts
+    description: The keyring module and its test suite must still exist.
+notes: >
+  @ethereumjs/tx 4 -> 5 moved the ethereumjs stack from Buffer to Uint8Array:
+  getMessageToSign() takes no argument and returns the unhashed payload (a
+  field array for legacy transactions, bytes for typed ones), TxData became a
+  per-type map (TypedTxData is the union), v/r/s in TxData are BigIntLike,
+  and transactions must be built with a v4 @ethereumjs/common — the project's
+  test suite constructs its transactions with a v3 Common devDependency,
+  which tx 5 rejects at runtime. A correct migration updates the keyring's
+  signing path, the tests' use of getMessageToSign, and the common
+  devDependency. The reference fix was authored for this benchmark.

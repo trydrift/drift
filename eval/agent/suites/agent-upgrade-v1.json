@@ -4,6 +4,19 @@
   "description": "The first public suite: real historical dependency upgrades with a known maintainer or benchmark-authored fix and hidden regression tests. Frozen once its cases are admitted; a material change to any case or its validation starts agent-upgrade-v2.",
   "frozenAt": null,
   "runsPerCondition": 5,
-  "cases": [],
+  "cases": [
+    {
+      "id": "aws-least-privilege-winston-3",
+      "caseHash": "4519d5b24f24d18b4779de08b167a479f096121f4a629fdc8257093245bf4748",
+      "admittedAt": "2026-09-16T10:37:56.613Z",
+      "driftCommit": "5a5e3a8ab752cc9b6b9aaead92bf554923ec79ec"
+    },
+    {
+      "id": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+      "caseHash": "de70b704f7fa8621d949230141a8ab4bc7ff28e74b180b5d8559ee2b93ea169b",
+      "admittedAt": "2026-09-16T10:53:01.584Z",
+      "driftCommit": "5a5e3a8ab752cc9b6b9aaead92bf554923ec79ec"
+    }
+  ],
   "removed": []
 }

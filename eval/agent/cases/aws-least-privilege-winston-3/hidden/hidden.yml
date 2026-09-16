@@ -1,0 +1,54 @@
+schemaVersion: drift-agent-case-v1
+caseId: aws-least-privilege-winston-3
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - TransportInstance
+  - configure
+  - transports.Console
+  - transports.File
+tests:
+  - id: logger-behaviour
+    description: >
+      The project typechecks, and then, through the compiled logger module: errors print to the console at the
+      default level and info does not; changeConsoleLevel('info') makes info
+      print; outside Lambda a debug message still reaches xray-scan.log while
+      staying off the console; inside Lambda no log file is written. These are
+      the behaviours the winston 2 configuration had, and winston 3's
+      logger-level filtering silently drops the file-only debug line unless the
+      migration accounts for it.
+    files:
+      - logger-behaviour.mjs
+    command: node .drift-hidden/logger-behaviour.mjs
+    timeoutSeconds: 300
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The compile and test scripts the checks invoke must not be rewritten.
+  - kind: no-test-deletions
+    globs:
+      - "src/test/**"
+    description: The project's own tests must not be deleted.
+  - kind: file-present
+    paths:
+      - src/lib/logger.ts
+    description: The logger module the upgrade broke must still exist; every source file imports it.
+  - kind: path-unchanged
+    paths:
+      - src/test/**
+    description: The tests never touch winston; an edit there is not part of this migration.
+  - kind: pattern-not-added
+    glob: src/lib/logger.ts
+    pattern: "@ts-ignore|@ts-expect-error|:\\s*any\\b|\\bas any\\b"
+    description: Silencing the type errors in the logger module is not a migration of it.
+notes: >
+  winston 2 -> 3 rewrote the API: transports take a `format` pipeline instead
+  of `timestamp`/`colorize`/`prettyPrint` flags, `TransportInstance` is gone,
+  `name` is no longer a transport option, and the logger's own level now
+  filters before transports do. winston 3.13's `logform` declarations also do
+  not parse under the project's TypeScript 3.0, so a correct migration either
+  skips library checks or upgrades TypeScript. The project's own test suite has
+  a pre-existing Node 24 incompatibility in one nock-recorded test
+  (`#getCombinedStatementsForRole`) and the x-ray fetch tests depend on it, so
+  the checks run the subset that is deterministic offline; none of those tests
+  exercise the logger, which is why the hidden test does.

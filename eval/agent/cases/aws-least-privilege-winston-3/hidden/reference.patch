@@ -1,0 +1,110 @@
+diff --git a/src/lib/logger.ts b/src/lib/logger.ts
+index ea7b293..1538845 100644
+--- a/src/lib/logger.ts
++++ b/src/lib/logger.ts
+@@ -1,32 +1,37 @@
+ import * as winston from 'winston';
+ 
+-const transports: winston.TransportInstance[] = [];
+-const consoleTransport = new (winston.transports.Console)({
+-  name: 'console-log',
++const consoleTransport = new winston.transports.Console({
+   level: 'error',
+-  timestamp: true,
+-  colorize: true,
+-  prettyPrint: true,
++  format: winston.format.combine(
++    winston.format.timestamp(),
++    winston.format.colorize(),
++    winston.format.prettyPrint(),
++    winston.format.simple(),
++  ),
+ });
+-transports.push(consoleTransport);
++const transports: winston.transport[] = [consoleTransport];
+ 
+ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+   transports.push(
+     new winston.transports.File({
+-      name: 'file-log',
+       filename: 'xray-scan.log',
+       level: 'debug',
+-      timestamp: true,
+-      json: false,
+-      prettyPrint: true,
++      format: winston.format.combine(
++        winston.format.timestamp(),
++        winston.format.prettyPrint(),
++        winston.format.simple(),
++      ),
+       maxsize: 1024 * 1024 * 100,
+       maxFiles: 10,
+       tailable: true,
+     }));
+ }
+ 
++// winston 3 filters at the logger before any transport sees a message, so the
++// logger itself must admit everything the most verbose transport wants; each
++// transport's own level then restricts what it prints.
+ winston.configure({
+-  level: 'error',
++  level: 'debug',
+   transports,
+ });
+ 
+diff --git a/tsconfig.json b/tsconfig.json
+index 68d1eac..b6c56f7 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -1,25 +1,26 @@
+-{
+-  "compileOnSave": true,
+-  "compilerOptions": {    
+-    "strict": true,
+-    "noUnusedLocals": true,
+-    "outDir": "./dist",
+-    "declaration": true,
+-    "rootDir": "src",    
+-    "target": "es6",
+-    "moduleResolution": "node",
+-    "module": "commonjs",
+-    "esModuleInterop": true,
+-    "sourceMap": true,
+-    "newLine": "LF",
+-    "lib": [
+-      "es6",
+-      "es2015.promise",
+-      "esnext.asynciterable"
+-    ]
+-  },
+-  "exclude": [
+-    "node_modules",
+-    "dist",
+-  ]
+-}
++{
++  "compileOnSave": true,
++  "compilerOptions": {    
++    "strict": true,
++    "noUnusedLocals": true,
++    "outDir": "./dist",
++    "declaration": true,
++    "rootDir": "src",    
++    "target": "es6",
++    "moduleResolution": "node",
++    "module": "commonjs",
++    "esModuleInterop": true,
++    "sourceMap": true,
++    "skipLibCheck": true,
++    "newLine": "LF",
++    "lib": [
++      "es6",
++      "es2015.promise",
++      "esnext.asynciterable"
++    ]
++  },
++  "exclude": [
++    "node_modules",
++    "dist",
++  ]
++}

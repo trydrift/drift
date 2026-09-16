@@ -1,0 +1,252 @@
+diff --git a/package.json b/package.json
+index 289a3b7..0359e60 100644
+--- a/package.json
++++ b/package.json
+@@ -44,7 +44,7 @@
+     "hdkey": "^2.1.0"
+   },
+   "devDependencies": {
+-    "@ethereumjs/common": "^3.1.1",
++    "@ethereumjs/common": "^4.3.0",
+     "@lavamoat/allow-scripts": "^2.5.1",
+     "@ledgerhq/hw-app-eth": "^6.32.0",
+     "@ledgerhq/types-cryptoassets": "^7.6.0",
+diff --git a/src/ledger-keyring.test.ts b/src/ledger-keyring.test.ts
+index 82c1801..fcfb654 100644
+--- a/src/ledger-keyring.test.ts
++++ b/src/ledger-keyring.test.ts
+@@ -1,6 +1,6 @@
+ import { Common, Chain, Hardfork } from '@ethereumjs/common';
+ import { RLP } from '@ethereumjs/rlp';
+-import { TransactionFactory } from '@ethereumjs/tx';
++import { TransactionFactory, TypedTxData } from '@ethereumjs/tx';
+ import * as ethUtil from '@ethereumjs/util';
+ import * as sigUtil from '@metamask/eth-sig-util';
+ import EthereumTx from 'ethereumjs-tx';
+@@ -525,7 +525,7 @@ describe('LedgerKeyring', function () {
+           {
+             ...newFakeTx.toJSON(),
+             ...expectedRSV,
+-          },
++          } as TypedTxData,
+           { freeze: false },
+         );
+ 
+@@ -543,7 +543,7 @@ describe('LedgerKeyring', function () {
+             expect(params).toStrictEqual({
+               hdPath: "m/44'/60'/0'/0",
+               tx: Buffer.from(
+-                RLP.encode(newFakeTx.getMessageToSign(false)),
++                RLP.encode(newFakeTx.getMessageToSign()),
+               ).toString('hex'),
+             });
+             return expectedRSV;
+@@ -574,7 +574,7 @@ describe('LedgerKeyring', function () {
+             ...fakeTypeTwoTx.toJSON(),
+             type: fakeTypeTwoTx.type,
+             ...expectedRSV,
+-          },
++          } as TypedTxData,
+           { common: commonEIP1559, freeze: false },
+         );
+         jest
+@@ -590,7 +590,9 @@ describe('LedgerKeyring', function () {
+           .mockImplementation(async (params) => {
+             expect(params).toStrictEqual({
+               hdPath: "m/44'/60'/0'/0",
+-              tx: fakeTypeTwoTx.getMessageToSign(false).toString('hex'),
++              tx: Buffer.from(
++                fakeTypeTwoTx.getMessageToSign() as Uint8Array,
++              ).toString('hex'),
+             });
+             return expectedRSV;
+           });
+diff --git a/src/ledger-keyring.ts b/src/ledger-keyring.ts
+index c875a85..57a5d8e 100644
+--- a/src/ledger-keyring.ts
++++ b/src/ledger-keyring.ts
+@@ -1,5 +1,9 @@
+ import { RLP } from '@ethereumjs/rlp';
+-import { TransactionFactory, TxData, TypedTransaction } from '@ethereumjs/tx';
++import {
++  TransactionFactory,
++  TypedTransaction,
++  TypedTxData,
++} from '@ethereumjs/tx';
+ import * as ethUtil from '@ethereumjs/util';
+ import type { MessageTypes, TypedMessage } from '@metamask/eth-sig-util';
+ import {
+@@ -326,23 +330,27 @@ export class LedgerKeyring extends EventEmitter {
+     // Note also that `getMessageToSign` will return valid RLP for all transaction types, whereas the
+     // `serialize` method will not for any transaction type except legacy. This is because `serialize` includes
+     // empty r, s and v values in the encoded rlp. This is why we use `getMessageToSign` here instead of `serialize`.
+-    const messageToSign = tx.getMessageToSign(false);
++    // In @ethereumjs/tx v5 `getMessageToSign` takes no argument, returns the
++    // unhashed message, and hands back the raw field array for legacy
++    // transactions (which still needs RLP encoding) and already-encoded bytes
++    // for typed ones. `getHashedMessageToSign` is the hashing variant.
++    const messageToSign = tx.getMessageToSign();
+ 
+-    rawTxHex = Buffer.isBuffer(messageToSign)
+-      ? messageToSign.toString('hex')
+-      : Buffer.from(RLP.encode(messageToSign)).toString('hex');
++    rawTxHex = Array.isArray(messageToSign)
++      ? Buffer.from(RLP.encode(messageToSign)).toString('hex')
++      : Buffer.from(messageToSign).toString('hex');
+ 
+     return this.#signTransaction(address, rawTxHex, (payload) => {
+       // Because tx will be immutable, first get a plain javascript object that
+       // represents the transaction. Using txData here as it aligns with the
+       // nomenclature of ethereumjs/tx.
+-      const txData: TxData = tx.toJSON();
++      const txData = tx.toJSON() as TypedTxData;
+       // The fromTxData utility expects a type to support transactions with a type other than 0
+       txData.type = tx.type;
+       // The fromTxData utility expects v,r and s to be hex prefixed
+-      txData.v = ethUtil.addHexPrefix(payload.v);
+-      txData.r = ethUtil.addHexPrefix(payload.r);
+-      txData.s = ethUtil.addHexPrefix(payload.s);
++      txData.v = BigInt(ethUtil.addHexPrefix(payload.v));
++      txData.r = BigInt(ethUtil.addHexPrefix(payload.r));
++      txData.s = BigInt(ethUtil.addHexPrefix(payload.s));
+       // Adopt the 'common' option from the original transaction and set the
+       // returned object to be frozen if the original is frozen.
+       return TransactionFactory.fromTxData(txData, {
+diff --git a/yarn.lock b/yarn.lock
+index f71caad..207b5c8 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -493,7 +493,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@ethereumjs/common@npm:^3.1.1, @ethereumjs/common@npm:^3.2.0":
++"@ethereumjs/common@npm:^3.2.0":
+   version: 3.2.0
+   resolution: "@ethereumjs/common@npm:3.2.0"
+   dependencies:
+@@ -1635,7 +1635,7 @@ __metadata:
+   version: 0.0.0-use.local
+   resolution: "@metamask/eth-ledger-bridge-keyring@workspace:."
+   dependencies:
+-    "@ethereumjs/common": ^3.1.1
++    "@ethereumjs/common": ^4.3.0
+     "@ethereumjs/rlp": ^4.0.0
+     "@ethereumjs/tx": 5.3.0
+     "@ethereumjs/util": ^8.0.0
+@@ -1710,15 +1710,6 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@noble/curves@npm:1.1.0, @noble/curves@npm:~1.1.0":
+-  version: 1.1.0
+-  resolution: "@noble/curves@npm:1.1.0"
+-  dependencies:
+-    "@noble/hashes": 1.3.1
+-  checksum: 2658cdd3f84f71079b4e3516c47559d22cf4b55c23ac8ee9d2b1f8e5b72916d9689e59820e0f9d9cb4a46a8423af5b56dc6bb7782405c88be06a015180508db5
+-  languageName: node
+-  linkType: hard
+-
+ "@noble/curves@npm:1.4.2, @noble/curves@npm:~1.4.0":
+   version: 1.4.2
+   resolution: "@noble/curves@npm:1.4.2"
+@@ -1728,27 +1719,13 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@noble/hashes@npm:1.3.1":
+-  version: 1.3.1
+-  resolution: "@noble/hashes@npm:1.3.1"
+-  checksum: 7fdefc0f7a0c1ec27acc6ff88841793e3f93ec4ce6b8a6a12bfc0dd70ae6b7c4c82fe305fdfeda1735d5ad4a9eebe761e6693b3d355689c559e91242f4bc95b1
+-  languageName: node
+-  linkType: hard
+-
+-"@noble/hashes@npm:1.4.0, @noble/hashes@npm:~1.4.0":
++"@noble/hashes@npm:1.4.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:~1.4.0":
+   version: 1.4.0
+   resolution: "@noble/hashes@npm:1.4.0"
+   checksum: 8ba816ae26c90764b8c42493eea383716396096c5f7ba6bea559993194f49d80a73c081f315f4c367e51bd2d5891700bcdfa816b421d24ab45b41cb03e4f3342
+   languageName: node
+   linkType: hard
+ 
+-"@noble/hashes@npm:^1.3.1, @noble/hashes@npm:~1.3.0, @noble/hashes@npm:~1.3.1":
+-  version: 1.3.2
+-  resolution: "@noble/hashes@npm:1.3.2"
+-  checksum: fe23536b436539d13f90e4b9be843cc63b1b17666a07634a2b1259dded6f490be3d050249e6af98076ea8f2ea0d56f578773c2197f2aa0eeaa5fba5bc18ba474
+-  languageName: node
+-  linkType: hard
+-
+ "@nodelib/fs.scandir@npm:2.1.5":
+   version: 2.1.5
+   resolution: "@nodelib/fs.scandir@npm:2.1.5"
+@@ -1835,31 +1812,13 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@scure/base@npm:^1.1.3, @scure/base@npm:~1.1.0":
+-  version: 1.1.3
+-  resolution: "@scure/base@npm:1.1.3"
+-  checksum: 1606ab8a4db898cb3a1ada16c15437c3bce4e25854fadc8eb03ae93cbbbac1ed90655af4b0be3da37e12056fef11c0374499f69b9e658c9e5b7b3e06353c630c
+-  languageName: node
+-  linkType: hard
+-
+-"@scure/base@npm:~1.1.6":
++"@scure/base@npm:^1.1.3, @scure/base@npm:~1.1.6":
+   version: 1.1.9
+   resolution: "@scure/base@npm:1.1.9"
+   checksum: 120820a37dfe9dfe4cab2b7b7460552d08e67dee8057ed5354eb68d8e3440890ae983ce3bee957d2b45684950b454a2b6d71d5ee77c1fd3fddc022e2a510337f
+   languageName: node
+   linkType: hard
+ 
+-"@scure/bip32@npm:1.3.1":
+-  version: 1.3.1
+-  resolution: "@scure/bip32@npm:1.3.1"
+-  dependencies:
+-    "@noble/curves": ~1.1.0
+-    "@noble/hashes": ~1.3.1
+-    "@scure/base": ~1.1.0
+-  checksum: 394d65f77a40651eba21a5096da0f4233c3b50d422864751d373fcf142eeedb94a1149f9ab1dbb078086dab2d0bc27e2b1afec8321bf22d4403c7df2fea5bfe2
+-  languageName: node
+-  linkType: hard
+-
+ "@scure/bip32@npm:1.4.0":
+   version: 1.4.0
+   resolution: "@scure/bip32@npm:1.4.0"
+@@ -1871,16 +1830,6 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@scure/bip39@npm:1.2.1":
+-  version: 1.2.1
+-  resolution: "@scure/bip39@npm:1.2.1"
+-  dependencies:
+-    "@noble/hashes": ~1.3.0
+-    "@scure/base": ~1.1.0
+-  checksum: c5bd6f1328fdbeae2dcdd891825b1610225310e5e62a4942714db51066866e4f7bef242c7b06a1b9dcc8043a4a13412cf5c5df76d3b10aa9e36b82e9b6e3eeaa
+-  languageName: node
+-  linkType: hard
+-
+ "@scure/bip39@npm:1.3.0":
+   version: 1.3.0
+   resolution: "@scure/bip39@npm:1.3.0"
+@@ -4059,19 +4008,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"ethereum-cryptography@npm:^2.0.0, ethereum-cryptography@npm:^2.1.2":
+-  version: 2.1.2
+-  resolution: "ethereum-cryptography@npm:2.1.2"
+-  dependencies:
+-    "@noble/curves": 1.1.0
+-    "@noble/hashes": 1.3.1
+-    "@scure/bip32": 1.3.1
+-    "@scure/bip39": 1.2.1
+-  checksum: 2e8f7b8cc90232ae838ab6a8167708e8362621404d26e79b5d9e762c7b53d699f7520aff358d9254de658fcd54d2d0af168ff909943259ed27dc4cef2736410c
+-  languageName: node
+-  linkType: hard
+-
+-"ethereum-cryptography@npm:^2.1.3, ethereum-cryptography@npm:^2.2.1":
++"ethereum-cryptography@npm:^2.0.0, ethereum-cryptography@npm:^2.1.2, ethereum-cryptography@npm:^2.1.3, ethereum-cryptography@npm:^2.2.1":
+   version: 2.2.1
+   resolution: "ethereum-cryptography@npm:2.2.1"
+   dependencies:
