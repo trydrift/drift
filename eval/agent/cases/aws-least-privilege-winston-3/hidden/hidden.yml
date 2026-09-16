@@ -40,7 +40,7 @@ forbidden:
   - kind: pattern-not-added
     glob: src/lib/logger.ts
     pattern: "@ts-ignore|@ts-expect-error"
-    description: Suppressing the type errors in the logger module with a directive is not a migration of it. (Narrowed on 2026-09-16 from also forbidding `any`: a live trial used `any` legitimately to read winston's splat symbol, and the behavioural test is the real guard.)
+    description: "Suppressing the type errors in the logger module with a directive is not a migration of it. Narrowed on 2026-09-16 from also forbidding any-typing, because a live trial used any legitimately to read winston's splat symbol; the behavioural test is the real guard."
 notes: >
   winston 2 -> 3 rewrote the API: transports take a `format` pipeline instead
   of `timestamp`/`colorize`/`prettyPrint` flags, `TransportInstance` is gone,
