@@ -17,9 +17,10 @@ const run = promisify(execFile);
  *                                           model response and a final
  *                                           `result` event with the CLI's own
  *                                           cumulative per-model accounting
- *   --safe-mode --strict-mcp-config         no user CLAUDE.md, skills, plugins,
- *                                           hooks or MCP servers from this
- *                                           machine leak into the session
+ *   isolation (see `cleanEnvironment`)      no user or repository CLAUDE.md,
+ *                                           memory, settings, plugins, hooks
+ *                                           or MCP servers from this machine
+ *                                           leak into the session
  *   --no-session-persistence                nothing is written to the user's
  *                                           session history
  *   --disallowedTools WebFetch WebSearch    (default) the agent cannot browse
@@ -70,7 +71,10 @@ export interface ParsedStream {
   } | null;
   /** One entry per distinct assistant message id, with the last usage seen for it. */
   ledger: { messageId: string; model: string; usage: UsageRecord; parentToolUseId: string | null }[];
-  toolUses: { id: string; name: string; input: Record<string, unknown> }[];
+  /** `ledgerIndex` is the position in `ledger` of the model call that issued the tool use. */
+  toolUses: { id: string; name: string; input: Record<string, unknown>; ledgerIndex: number }[];
+  /** Tool results as the session recorded them, by tool_use id: characters of content handed back to the model. */
+  toolResults: Map<string, { chars: number; isError: boolean }>;
   result: {
     subtype: string | null;
     isError: boolean;
@@ -90,7 +94,7 @@ export interface ParsedStream {
 }
 
 export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
-  const parsed: ParsedStream = { init: null, ledger: [], toolUses: [], result: null, unparsedLines: 0 };
+  const parsed: ParsedStream = { init: null, ledger: [], toolUses: [], toolResults: new Map(), result: null, unparsedLines: 0 };
   const ledgerIndex = new Map<string, number>();
   const seenToolUses = new Set<string>();
 
@@ -148,7 +152,18 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
           id,
           name: typeof block['name'] === 'string' ? block['name'] : 'unknown',
           input: (block['input'] as Record<string, unknown> | undefined) ?? {},
+          ledgerIndex: ledgerIndex.get(messageId)!,
         });
+      }
+      continue;
+    }
+
+    if (type === 'user') {
+      const message = event['message'] as Record<string, unknown> | undefined;
+      const content = Array.isArray(message?.['content']) ? (message!['content'] as Record<string, unknown>[]) : [];
+      for (const block of content) {
+        if (block['type'] !== 'tool_result' || typeof block['tool_use_id'] !== 'string') continue;
+        parsed.toolResults.set(block['tool_use_id'], { chars: toolResultChars(block['content']), isError: block['is_error'] === true });
       }
       continue;
     }
@@ -175,6 +190,17 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
   }
 
   return parsed;
+}
+
+/** Characters of text a tool result carried back to the model: a string, or text blocks. */
+function toolResultChars(content: unknown): number {
+  if (typeof content === 'string') return content.length;
+  if (!Array.isArray(content)) return 0;
+  let chars = 0;
+  for (const part of content as Record<string, unknown>[]) {
+    if (typeof part['text'] === 'string') chars += part['text'].length;
+  }
+  return chars;
 }
 
 const n = (value: number | undefined): number => (typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0);
@@ -321,21 +347,62 @@ export function toolMetricsFromStream(parsed: ParsedStream): ToolMetrics {
   };
 }
 
+/**
+ * How a session is kept clean of this machine's configuration.
+ *
+ * `safe-mode` is what #320's runs used: `--safe-mode`, which drops user and
+ * repository CLAUDE.md, skills, plugins, hooks — and every MCP server,
+ * including one passed with `--mcp-config`. It cannot run the MCP condition.
+ *
+ * `isolated` reproduces that session without disabling MCP:
+ * `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` and `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
+ * (no CLAUDE.md from the user or the repository, no memory),
+ * `--setting-sources local` (none of the user's or project's settings,
+ * permissions or hooks; a workspace has no local settings file), and
+ * `--strict-mcp-config` with an explicit `--mcp-config` (only the servers the
+ * condition declares, an empty set for every non-MCP condition). Checked
+ * against a #320 session's init record on 2.1.267: identical skills, slash
+ * commands, plugins (none) and memory (none); the tool list differs only by
+ * `TodoWrite`, which is therefore disallowed; the agent list adds the
+ * built-in `statusline-setup`, which no condition can remove and all share.
+ *
+ * `bare` needs ANTHROPIC_API_KEY. `none` is for debugging only.
+ */
+export type CleanEnvironment = 'safe-mode' | 'isolated' | 'bare' | 'none';
+
+export const ISOLATED_ENVIRONMENT: Readonly<Record<string, string>> = {
+  CLAUDE_CODE_DISABLE_CLAUDE_MDS: '1',
+  CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1',
+};
+
+/** Present in an `isolated` session and absent under `--safe-mode`; disallowed so both expose the same tools. */
+export const ISOLATED_EXTRA_TOOLS = ['TodoWrite'];
+
 export interface ClaudeCodeProviderOptions {
   command?: string;
-  /** `safe-mode` (default, works with OAuth) or `bare` (needs ANTHROPIC_API_KEY) or `none`. */
-  cleanEnvironment?: 'safe-mode' | 'bare' | 'none';
+  cleanEnvironment?: CleanEnvironment;
   /** Seam for tests: replaces the spawn with a scripted stream. */
   spawnImpl?: typeof spawn;
 }
 
-export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns'>, options: ClaudeCodeProviderOptions): {
+export function buildClaudeArgs(
+  request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns' | 'mcpServers'>,
+  options: ClaudeCodeProviderOptions,
+): {
   argv: string[];
+  env: Record<string, string>;
   disallowedTools: string[];
   cleanEnvironment: string;
 } {
   const clean = options.cleanEnvironment ?? 'safe-mode';
-  const disallowedTools = request.webTools === 'disabled' ? [...DEFAULT_DISALLOWED_WEB_TOOLS] : [];
+  const servers = request.mcpServers ?? {};
+  if (clean === 'safe-mode' && Object.keys(servers).length > 0) {
+    throw new Error('--safe-mode disables every MCP server; an MCP condition needs cleanEnvironment "isolated".');
+  }
+  const disallowedTools = [
+    ...(request.webTools === 'disabled' ? DEFAULT_DISALLOWED_WEB_TOOLS : []),
+    ...(clean === 'isolated' ? ISOLATED_EXTRA_TOOLS : []),
+  ];
   const argv = [
     '-p',
     '--output-format',
@@ -345,6 +412,7 @@ export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort
     '--no-session-persistence',
     '--strict-mcp-config',
     ...(clean === 'safe-mode' ? ['--safe-mode'] : clean === 'bare' ? ['--bare'] : []),
+    ...(clean === 'isolated' ? ['--setting-sources', 'local', '--mcp-config', JSON.stringify({ mcpServers: servers })] : []),
     '--model',
     request.model,
     '--effort',
@@ -353,7 +421,7 @@ export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort
     ...(request.maxBudgetUsd !== null ? ['--max-budget-usd', String(request.maxBudgetUsd)] : []),
     ...(request.maxTurns !== null ? ['--max-turns', String(request.maxTurns)] : []),
   ];
-  return { argv, disallowedTools, cleanEnvironment: clean };
+  return { argv, env: clean === 'isolated' ? { ...ISOLATED_ENVIRONMENT } : {}, disallowedTools, cleanEnvironment: clean };
 }
 
 export class ClaudeCodeProvider implements AgentProvider {
@@ -378,7 +446,7 @@ export class ClaudeCodeProvider implements AgentProvider {
   }
 
   async run(request: AgentRunRequest): Promise<AgentRunResult> {
-    const { argv, disallowedTools, cleanEnvironment } = buildClaudeArgs(request, this.options);
+    const { argv, env, disallowedTools, cleanEnvironment } = buildClaudeArgs(request, this.options);
     const spawnImpl = this.options.spawnImpl ?? spawn;
     const started = Date.now();
     const lines: string[] = [];
@@ -387,7 +455,7 @@ export class ClaudeCodeProvider implements AgentProvider {
     const outcome = await new Promise<{ code: number | null; timedOut: boolean; launchError: string | null }>((resolve) => {
       let child: ReturnType<typeof spawn>;
       try {
-        child = spawnImpl(this.command, argv, { cwd: request.cwd, env: request.env, windowsHide: true });
+        child = spawnImpl(this.command, argv, { cwd: request.cwd, env: { ...request.env, ...env }, windowsHide: true });
       } catch (err) {
         resolve({ code: null, timedOut: false, launchError: (err as Error).message });
         return;
