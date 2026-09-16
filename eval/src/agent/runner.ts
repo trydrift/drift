@@ -1,8 +1,9 @@
 import { arch, platform, release } from 'node:os';
 import { hashCase, loadCase, loadHidden, loadSuite, suiteHashMismatches } from './cases.ts';
 import { agentContextDiagnostics } from './agent-context.ts';
+import { blockOrder, SCHEDULE_DESIGN, type ScheduleSlot } from './schedule.ts';
 import { buildDriftContext, type DriftContext } from './drift-context.ts';
-import { parseClaudeStream } from './providers/claude-code.ts';
+import { environmentProblems, parseClaudeStream } from './providers/claude-code.ts';
 import type { AgentProvider, AgentRunResult } from './providers/types.ts';
 import {
   AGENT_TRIAL_SCHEMA_VERSION,
@@ -25,10 +26,9 @@ import { captureDiff, materializeWorkspace, projectEnv, runCommand, type Workspa
  *   materialize → install → (Drift analysis, Drift condition only) → agent
  *   session → capture diff → validate → write artifact
  *
- * and the schedule that runs them. Conditions alternate order on every
- * repetition — repetition 1 runs baseline then Drift for each case,
- * repetition 2 runs Drift then baseline — so neither condition is
- * systematically first when the provider is slow or the registry is warm.
+ * and the schedule that runs them. Condition order follows a Williams design
+ * (`schedule.ts`), fixed before the first trial, so no condition is
+ * systematically early or late when the provider is slow or the registry warm.
  */
 
 export const MAX_DIFF_CHARS = 2_000_000;
@@ -56,6 +56,8 @@ export interface RunOptions {
    * could not start). Valid trials are never retried, whatever their outcome.
    */
   retryInfrastructure?: boolean;
+  /** Recorded in the run manifest; the provider applies it. */
+  cleanEnvironment?: string;
   onProgress?: (message: string) => void;
 }
 
@@ -104,6 +106,12 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
       agentCliVersion: detected.version,
       runsPerCondition: options.runs,
       conditions,
+      scheduleDesign: SCHEDULE_DESIGN,
+      cleanEnvironment: options.cleanEnvironment ?? 'unrecorded',
+      webTools: options.webTools ?? 'disabled',
+      maxBudgetUsd: options.maxBudgetUsd ?? null,
+      maxTurns: options.maxTurns ?? null,
+      driftVerify: options.driftVerify ?? true,
       caseIds: wanted,
       node: process.version,
       platform: platform(),
@@ -118,9 +126,13 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
   let skipped = 0;
   let scheduleIndex = 0;
 
+  // The whole experiment's order is fixed here, before any trial runs: each
+  // (case, repetition) block takes a row of a Williams design, indexed by the
+  // case's position in the suite so parallel per-case runs share one design.
+  const suiteOrder = manifest.cases.map((entry) => entry.id);
   for (let repetition = 1; repetition <= options.runs; repetition += 1) {
-    const order = repetition % 2 === 1 ? conditions : [...conditions].reverse();
     for (const caseId of wanted) {
+      const { order, slots } = blockOrder(conditions, suiteOrder.indexOf(caseId), repetition, options.runs);
       const agentCase = await loadCase(caseId, root);
       const caseHash = await hashCase(caseId, root);
       const hidden = await loadHidden(caseId, root);
@@ -143,6 +155,7 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
           condition,
           repetition,
           scheduleIndex,
+          schedule: slots.get(condition)!,
           runId,
           suite: manifest.suite,
           provider: options.provider,
@@ -183,6 +196,8 @@ export interface TrialOptions {
   condition: Condition;
   repetition: number;
   scheduleIndex: number;
+  /** This trial's preassigned slot in the counterbalanced design. */
+  schedule?: ScheduleSlot;
   runId: string;
   suite: string;
   provider: AgentProvider;
@@ -251,6 +266,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
     condition,
     repetition: options.repetition,
     scheduleIndex: options.scheduleIndex,
+    ...(options.schedule ? { schedule: options.schedule } : {}),
   });
 
   const metadata = (agent: AgentRunResult | null, promptText: string, endedAt: Date, ws: Workspace | null): TrialArtifact['metadata'] => ({
@@ -276,6 +292,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       cleanEnvironment: agent?.session.cleanEnvironment ?? 'unavailable',
       tools: agent?.session.tools ?? [],
       mcpServers: agent?.session.mcpServers ?? [],
+      environment: agent?.session.environment ?? null,
       argv: agent?.session.argv ?? [],
     },
     startedAt: startedAt.toISOString(),
@@ -430,12 +447,19 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
     });
     timing.agentMs = Date.now() - t3;
 
+    // The session must have run the condition it is labelled as.
+    const expectedServers = Object.keys(driftContext?.mcpServers ?? {});
+    const environmentIssues = agent.status === 'launch-failure' ? [] : environmentProblems(agent.session.environment, expectedServers);
+
     if (agent.status === 'launch-failure') {
       infrastructureFailure = 'agent_launch_failure';
       infrastructureDetail = agent.stderr.trim() || 'the agent produced no model response';
     } else if (agent.status === 'provider-error') {
       infrastructureFailure = 'provider_error';
       infrastructureDetail = `api error status ${agent.apiErrorStatus}: ${agent.finalMessage.slice(0, 500)}`;
+    } else if (environmentIssues.length > 0 && agent.session.cleanEnvironment === 'isolated') {
+      infrastructureFailure = 'environment_mismatch';
+      infrastructureDetail = environmentIssues.join('; ');
     }
 
     // 5. The diff.
@@ -488,6 +512,8 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       brief: driftContext?.brief ?? null,
       findingsInPlan: driftContext?.plan?.breakingChanges ?? null,
       dependency: agentCase.dependency.name,
+      preSessionDriftMs: driftContext && driftContext.status !== 'not-applicable' ? driftContext.analysisMs : 0,
+      sessionMs: agent.durationMs,
     });
 
     const endedAt = new Date();

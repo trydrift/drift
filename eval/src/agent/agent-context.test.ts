@@ -1,10 +1,10 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { agentContextDiagnostics, interfaceFor, researchSignals } from './agent-context.ts';
-import { comparisonFromTrials, renderComparison } from './compare.ts';
+import { compatibilityProblems, comparisonFromTrials, renderComparison } from './compare.ts';
 import { buildDriftContext, DRIFT_CLI } from './drift-context.ts';
-import { buildClaudeArgs, ISOLATED_ENVIRONMENT, parseClaudeStream } from './providers/claude-code.ts';
-import { CONDITION_LABELS, parseCondition, type RunManifest } from './schema.ts';
+import { buildClaudeArgs, environmentProblems, ISOLATED_ENVIRONMENT, parseClaudeStream, sessionEnvironmentFrom } from './providers/claude-code.ts';
+import { CONDITION_LABELS, parseCondition, type RunManifest, type TrialArtifact } from './schema.ts';
 import { DRIFT_MCP_PREAMBLE } from './task.ts';
 import { makeTrial } from './test-helpers.ts';
 import type { Workspace } from './workspace.ts';
@@ -27,15 +27,16 @@ describe('isolated sessions', () => {
     );
     assert.equal(cleanEnvironment, 'isolated');
     assert.equal(argv.includes('--safe-mode'), false);
-    assert.deepEqual(argv.slice(argv.indexOf('--setting-sources'), argv.indexOf('--setting-sources') + 2), ['--setting-sources', 'local']);
+    // No user, project or local settings at all: `local` still applied .claude/settings.local.json env.
+    assert.deepEqual(argv.slice(argv.indexOf('--setting-sources'), argv.indexOf('--setting-sources') + 2), ['--setting-sources', '']);
     assert.ok(argv.includes('--strict-mcp-config'));
     const config = JSON.parse(argv[argv.indexOf('--mcp-config') + 1]!);
     assert.deepEqual(config, { mcpServers: { drift: { command: 'node', args: ['dist/cli.js', 'mcp'] } } });
     assert.deepEqual(env, { ...ISOLATED_ENVIRONMENT });
     assert.equal(env['CLAUDE_CODE_DISABLE_CLAUDE_MDS'], '1');
     assert.equal(env['CLAUDE_CODE_DISABLE_AUTO_MEMORY'], '1');
-    // TodoWrite exists in an isolated session and not under --safe-mode; disallowing it keeps the tool lists equal.
-    assert.deepEqual(disallowedTools, ['WebFetch', 'WebSearch', 'TodoWrite']);
+    // Only the browsing tools; every other ordinary tool is left as the CLI provides it, in every condition.
+    assert.deepEqual(disallowedTools, ['WebFetch', 'WebSearch']);
   });
 
   test('a condition without Drift tools gets an explicitly empty server list, not the machine’s', () => {
@@ -107,8 +108,8 @@ describe('agent-context diagnostics from the session stream', () => {
     const parsed = parseClaudeStream(stream());
     assert.equal(parsed.ledger.length, 4);
     assert.deepEqual(parsed.toolUses.map((u) => [u.id, u.ledgerIndex]), [['t1', 0], ['t2', 1], ['t3', 1], ['t4', 2], ['t5', 3]]);
-    assert.deepEqual(parsed.toolResults.get('t1'), { chars: 4200, isError: false });
-    assert.deepEqual(parsed.toolResults.get('t2'), { chars: 39, isError: true });
+    assert.deepEqual(parsed.toolResults.get('t1'), { chars: 4200, isError: false, at: null });
+    assert.deepEqual(parsed.toolResults.get('t2'), { chars: 39, isError: true, at: null });
   });
 
   test('Drift tool calls, what they returned, errors, and the findings pulled on demand', () => {
@@ -217,8 +218,169 @@ describe('comparing Drift conditions against the baseline', () => {
     const b = section.cases.find((c) => c.caseId === 'b')!;
     assert.deepEqual({ valid: b.cells['drift-agent-brief']!.valid, excluded: b.cells['drift-agent-brief']!.excluded }, { valid: 1, excluded: 1 });
     assert.deepEqual(b.cells['baseline']!.failureReasons, { existing_test_failure: 1 });
-    const markdown = renderComparison({ name: 't', generatedAt: 'now', current: section, reference: null, notes: ['Development cases only.'] });
+    const markdown = renderComparison({ name: 't', generatedAt: 'now', current: section, history: [], notes: ['Development cases only.'] });
     assert.match(markdown, /\| b \| drift-agent-brief \| 1\/1 \(\+1 excl\.\) \|/);
     assert.match(markdown, /\| drift-agent-brief \| 2 \| -36\.4% \|/);
+  });
+});
+
+describe('session environment audit', () => {
+  const init = (overrides: Record<string, unknown> = {}) => ({
+    type: 'system',
+    subtype: 'init',
+    tools: ['Bash', 'Edit', 'Read', 'TodoWrite', 'ToolSearch', 'Write'],
+    mcp_servers: [],
+    skills: ['debug', 'verify'],
+    slash_commands: ['compact', 'debug'],
+    agents: ['Explore', 'Plan'],
+    plugins: [],
+    output_style: 'default',
+    apiKeySource: 'none',
+    ...overrides,
+  });
+
+  test('conditions without Drift and the MCP condition share one fingerprint when they differ only by the Drift server', () => {
+    const plain = sessionEnvironmentFrom(init());
+    const mcp = sessionEnvironmentFrom(init({ tools: [...init().tools, 'mcp__drift__plan_upgrade', 'mcp__drift__get_finding'], mcp_servers: [{ name: 'drift', status: 'connected' }] }));
+    assert.equal(plain.fingerprint, mcp.fingerprint);
+    assert.deepEqual(environmentProblems(plain, []), []);
+    assert.deepEqual(environmentProblems(mcp, ['drift']), []);
+  });
+
+  test('any other difference changes the fingerprint', () => {
+    const base = sessionEnvironmentFrom(init()).fingerprint;
+    for (const change of [{ skills: ['debug', 'verify', 'canary-skill'] }, { agents: ['Explore', 'Plan', 'canary-agent'] }, { tools: ['Bash', 'Read'] }, { output_style: 'explanatory' }]) {
+      assert.notEqual(sessionEnvironmentFrom(init(change)).fingerprint, base, JSON.stringify(change));
+    }
+  });
+
+  test('a session that loaded the wrong servers, plugins or memory is reported, not scored', () => {
+    assert.match(environmentProblems(sessionEnvironmentFrom(init({ mcp_servers: [{ name: 'claude.ai Gmail', status: 'connected' }] })), []).join(), /MCP servers \["claude.ai Gmail"\], expected \[\]/);
+    assert.match(environmentProblems(sessionEnvironmentFrom(init()), ['drift']).join(), /expected \["drift"\]/);
+    assert.match(environmentProblems(sessionEnvironmentFrom(init({ mcp_servers: [{ name: 'drift', status: 'failed' }] })), ['drift']).join(), /drift is failed/);
+    assert.match(environmentProblems(sessionEnvironmentFrom(init({ plugins: [{ name: 'x' }] })), []).join(), /plugins loaded: x/);
+    assert.match(environmentProblems(sessionEnvironmentFrom(init({ memory_paths: { auto: '/m' } })), []).join(), /memory loaded/);
+    assert.deepEqual(environmentProblems(null, []), ['the session reported no init record']);
+  });
+});
+
+describe('Drift tool timing and the wall-clock decomposition', () => {
+  const at = (s: number) => new Date(Date.UTC(2026, 8, 16, 0, 0, s)).toISOString();
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5', tools: [], mcp_servers: [{ name: 'drift', status: 'connected' }] }),
+    JSON.stringify({ type: 'assistant', timestamp: at(10), message: { id: 'm1', model: 'claude-sonnet-5', usage: {}, content: [{ type: 'tool_use', id: 't1', name: 'mcp__drift__plan_upgrade', input: {} }] } }),
+    JSON.stringify({ type: 'user', timestamp: at(70), message: { content: [{ type: 'tool_result', tool_use_id: 't1', content: 'plan' }] } }),
+    JSON.stringify({ type: 'assistant', timestamp: at(71), message: { id: 'm2', model: 'claude-sonnet-5', usage: {}, content: [{ type: 'tool_use', id: 't2', name: 'mcp__drift__get_finding', input: { id: 'bc_1' } }] } }),
+    JSON.stringify({ type: 'user', timestamp: at(72), message: { content: [{ type: 'tool_result', tool_use_id: 't2', content: 'finding' }] } }),
+    JSON.stringify({ type: 'assistant', timestamp: at(73), message: { id: 'm3', model: 'claude-sonnet-5', usage: {}, content: [{ type: 'tool_use', id: 't3', name: 'Bash', input: { command: 'npm test' } }] } }),
+    JSON.stringify({ type: 'user', timestamp: at(173), message: { content: [{ type: 'tool_result', tool_use_id: 't3', content: 'ok' }] } }),
+  ];
+
+  test('MCP: Drift runs inside the session, so end-to-end is the session and Drift tool time is a part of it', () => {
+    const d = agentContextDiagnostics({ condition: 'drift-mcp', parsed: parseClaudeStream(lines), preamble: DRIFT_MCP_PREAMBLE, brief: null, findingsInPlan: null, dependency: 'x', preSessionDriftMs: 0, sessionMs: 300_000 });
+    assert.deepEqual(d.timing, { preSessionDriftMs: 0, sessionMs: 300_000, driftToolMs: 61_000, endToEndMs: 300_000 });
+  });
+
+  test('brief and full report: Drift ran before the session and is added once', () => {
+    const d = agentContextDiagnostics({ condition: 'drift-agent-brief', parsed: parseClaudeStream([]), preamble: 'brief', brief: null, findingsInPlan: 3, dependency: 'x', preSessionDriftMs: 45_000, sessionMs: 200_000 });
+    assert.deepEqual(d.timing, { preSessionDriftMs: 45_000, sessionMs: 200_000, driftToolMs: 0, endToEndMs: 245_000 });
+  });
+
+  test('baseline: end-to-end is the session alone', () => {
+    const d = agentContextDiagnostics({ condition: 'baseline', parsed: parseClaudeStream([]), preamble: '', brief: null, findingsInPlan: null, dependency: 'x', preSessionDriftMs: 0, sessionMs: 180_000 });
+    assert.equal(d.timing!.endToEndMs, 180_000);
+  });
+});
+
+describe('pooling runs into one comparison', () => {
+  const manifest = (runId: string, caseIds: string[], overrides: Partial<RunManifest> = {}): RunManifest => ({
+    version: 'drift-agent-run-v1',
+    runId,
+    suite: 'agent-upgrade-v1',
+    suiteStatus: 'draft',
+    createdAt: '2026-09-16T00:00:00.000Z',
+    command: 'test',
+    driftCommit: 'd'.repeat(40),
+    driftTreeDirty: false,
+    provider: 'claude-code',
+    requestedModel: 'claude-sonnet-5',
+    requestedEffort: 'high',
+    agentCliVersion: '2.1.267 (Claude Code)',
+    runsPerCondition: 1,
+    conditions: ['baseline', 'drift-agent-brief'],
+    caseIds,
+    node: 'v24',
+    platform: 'darwin',
+    arch: 'x64',
+    notes: '',
+    scheduleDesign: 'williams-v1',
+    cleanEnvironment: 'isolated',
+    webTools: 'disabled',
+    maxBudgetUsd: null,
+    maxTurns: null,
+    driftVerify: true,
+    ...overrides,
+  });
+  const env = (fingerprint = 'env-1') => ({ tools: [], mcpServers: [], skills: [], slashCommands: [], agents: [], plugins: [], memoryPaths: [], outputStyle: 'default', apiKeySource: 'none', fingerprint });
+  const trial = (runId: string, caseId: string, condition: 'baseline' | 'drift-agent-brief', edit: (t: ReturnType<typeof makeTrial>) => void = () => undefined) => {
+    const t = makeTrial({ runId, caseId, condition, repetition: 1, gross: 1000, success: true });
+    t.metadata.agentConfiguration.cleanEnvironment = 'isolated';
+    t.metadata.agentConfiguration.environment = env();
+    edit(t);
+    return t;
+  };
+  const perCase = (runId: string, caseId: string, edit?: (t: ReturnType<typeof makeTrial>) => void) => ({
+    manifest: manifest(runId, [caseId]),
+    trials: [trial(runId, caseId, 'baseline', edit), trial(runId, caseId, 'drift-agent-brief', edit)],
+    aborted: false,
+  });
+
+  test('one case per run is pooled when the experiment is the same', () => {
+    assert.deepEqual(compatibilityProblems([perCase('v3-dev-winston', 'a'), perCase('v3-dev-ethereum', 'b'), perCase('v3-dev-eslint', 'c')]), []);
+  });
+
+  test('every setting that defines the experiment must agree, and each difference is named', () => {
+    const variants: [string, Partial<RunManifest>, RegExp][] = [
+      ['model', { requestedModel: 'claude-opus-5' }, /requested model differs/],
+      ['effort', { requestedEffort: 'medium' }, /requested effort differs/],
+      ['cli', { agentCliVersion: '2.1.300' }, /agent CLI version differs/],
+      ['commit', { driftCommit: 'e'.repeat(40) }, /Drift commit differs/],
+      ['dirty', { driftTreeDirty: true }, /uncommitted changes/],
+      ['isolation', { cleanEnvironment: 'safe-mode' }, /clean environment differs/],
+      ['web', { webTools: 'allowed' }, /web tools differs/],
+      ['budget', { maxBudgetUsd: 5 }, /budget \(USD\) differs/],
+      ['turns', { maxTurns: 40 }, /turn cap differs/],
+      ['schedule', { scheduleDesign: 'alternating' }, /schedule design differs/],
+      ['conditions', { conditions: ['baseline', 'drift-mcp'] }, /conditions differs/],
+    ];
+    for (const [label, overrides, pattern] of variants) {
+      const other = { ...perCase('b-run', 'b'), manifest: manifest('b-run', ['b'], overrides) };
+      assert.match(compatibilityProblems([perCase('a-run', 'a'), other]).join('\n'), pattern, label);
+    }
+  });
+
+  test('a case must have the same content, start tree and task wherever it appears', () => {
+    const a = perCase('run-1', 'shared');
+    for (const [field, pattern] of [
+      [(t: TrialArtifact) => (t.caseHash = 'other'), /case shared content hash differs/],
+      [(t: TrialArtifact) => (t.metadata.startTreeHash = 'other'), /case shared start tree differs/],
+      [(t: TrialArtifact) => (t.metadata.taskHash = 'other'), /case shared task differs/],
+    ] as const) {
+      const b = { manifest: manifest('run-2', ['shared']), trials: [trial('run-2', 'shared', 'baseline', field)], aborted: false };
+      b.trials[0]!.repetition = 2;
+      assert.match(compatibilityProblems([a, b]).join('\n'), pattern);
+    }
+  });
+
+  test('sessions that loaded different environments are not pooled, and a slot recorded twice is refused', () => {
+    const differentEnvironment = perCase('run-2', 'b', (t) => (t.metadata.agentConfiguration.environment = env('env-2')));
+    assert.match(compatibilityProblems([perCase('run-1', 'a'), differentEnvironment]).join('\n'), /session environment \(excluding Drift MCP\) differs/);
+    assert.match(compatibilityProblems([perCase('run-1', 'a'), perCase('run-2', 'a')]).join('\n'), /case a baseline#1 is recorded by both run-1 and run-2/);
+    const unrecorded = perCase('run-2', 'b', (t) => delete t.metadata.agentConfiguration.environment);
+    assert.match(compatibilityProblems([perCase('run-1', 'a'), unrecorded]).join('\n'), /did not record the session environment/);
+  });
+
+  test('an aborted run is never pooled', () => {
+    assert.match(compatibilityProblems([{ ...perCase('v2-dev-1', 'a'), aborted: true }]).join('\n'), /v2-dev-1 is marked aborted/);
   });
 });
