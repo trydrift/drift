@@ -35,6 +35,7 @@
     "benchmark:agent": "npm run build && node --experimental-strip-types eval/src/agent/cli.ts run",
     "benchmark:agent:aggregate": "node --experimental-strip-types eval/src/agent/cli.ts aggregate",
     "benchmark:agent:report": "node --experimental-strip-types eval/src/agent/cli.ts report",
+    "benchmark:agent:rescore": "node --experimental-strip-types eval/src/agent/cli.ts rescore",
     "benchmark:agent:smoke": "npm run build && node --experimental-strip-types eval/src/agent/cli.ts run --suite smoke --runs 1",
     "benchmark:agent:validate": "npm run build && node --experimental-strip-types eval/src/agent/cli.ts validate-cases",
     "benchmark:agent:verify": "node --experimental-strip-types eval/src/agent/cli.ts verify",

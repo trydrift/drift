@@ -43,8 +43,8 @@ forbidden:
     description: Tests may be updated to the new API; they may not be disabled.
   - kind: pattern-not-added
     glob: src/ledger-keyring.ts
-    pattern: "@ts-ignore|@ts-expect-error|\\bas any\\b|:\\s*any\\b"
-    description: Silencing the type errors in the keyring is not a migration of it (the file's pre-existing ts-expect-error lines on the ethereumjs-tx v1 branch stay).
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Suppressing the type errors in the keyring with a directive is not a migration of it (the file's pre-existing ts-expect-error lines on the ethereumjs-tx v1 branch stay). Narrowed on 2026-09-16 from also forbidding `any`, for the reason recorded on the winston case.
   - kind: file-present
     paths:
       - src/ledger-keyring.ts

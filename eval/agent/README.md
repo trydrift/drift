@@ -251,6 +251,7 @@ npm run benchmark:agent -- --suite agent-upgrade-v1 --case <id> --runs 5
 npm run benchmark:agent -- --suite agent-upgrade-v1 --runs 5        # full (live, costs money)
 npm run benchmark:agent:aggregate -- --runs <run-id>[,<run-id>]     # canonical summary, free, offline
 npm run benchmark:agent:report                                      # report, README block, public copy
+npm run benchmark:agent:rescore -- --runs <run-id>                  # offline re-evaluation after a case's rules changed
 npm run benchmark:agent:verify                                      # stale public claims fail here
 ```
 
@@ -291,6 +292,23 @@ result.
 
 Secondary, labelled as such: input tokens per successful fix and median input
 tokens among successful runs. Conditioning on success is selection.
+
+### Correcting a validation mistake after a run
+
+A rule that turns out to be wrong — a live trial produced a legitimate
+migration and a case-specific rule fired on it — is narrowed in the case,
+logged in the suite manifest's `changes` with the date and the reason, and
+recorded trials are re-scored **offline**:
+
+```sh
+npm run benchmark:agent:rescore -- --runs <run-id>[,<run-id>]
+```
+
+Only rules the recorded diff can decide (`pattern-not-added`,
+`no-test-deletions`, `path-unchanged`) are re-evaluated; checks, hidden tests,
+integrity and tree-dependent rules keep what was observed. The artifact keeps
+its original verdict under `rescore`. Nothing is rerun, so no new sample is
+drawn because of its result.
 
 ### What is excluded, and what is not
 

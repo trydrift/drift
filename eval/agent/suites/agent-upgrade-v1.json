@@ -24,5 +24,16 @@
       "driftCommit": "b4aed4756b1b0236c10fe75d8dda1e9ec9da1bce"
     }
   ],
-  "removed": []
+  "removed": [],
+  "changes": [
+    {
+      "date": "2026-09-16",
+      "cases": [
+        "aws-least-privilege-winston-3",
+        "eth-ledger-bridge-keyring-ethereumjs-tx-5"
+      ],
+      "change": "pattern-not-added rules narrowed from `@ts-ignore|@ts-expect-error|: any|as any` to `@ts-ignore|@ts-expect-error`.",
+      "reason": "A live Drift-condition trial (v1-dev-1, winston, repetition 1) produced a migration that passed compile, the project's tests and the hidden behavioural test, and was marked prohibited_workaround only because it typed winston's splat-symbol lookup as `any`. Forbidding `any` outright was a validation error, not a product result. Recorded trials are re-scored against the narrowed rules with `benchmark:agent rescore`, which re-evaluates only the diff-derivable rules and marks the artifact."
+    }
+  ]
 }

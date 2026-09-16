@@ -217,7 +217,7 @@ export async function recordAdmissions(suite: string, results: readonly Admissio
   try {
     manifest = await loadSuite(suite, root);
   } catch {
-    manifest = { suite, status: 'draft', description: '', frozenAt: null, runsPerCondition: 5, cases: [], removed: [] };
+    manifest = { suite, status: 'draft', description: '', frozenAt: null, runsPerCondition: 5, cases: [], removed: [], changes: [] };
   }
   if (manifest.status === 'frozen') throw new Error(`Suite ${suite} is frozen. Create a new suite version instead of changing it.`);
   for (const result of results) {

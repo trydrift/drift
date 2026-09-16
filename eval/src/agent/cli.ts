@@ -4,6 +4,7 @@ import { admitCase, recordAdmissions } from './admission.ts';
 import { listCaseIds, loadSuite } from './cases.ts';
 import { ClaudeCodeProvider } from './providers/claude-code.ts';
 import { README_BLOCK_BEGIN, README_BLOCK_END, renderPublicCopy, renderReadmeBlock, renderReport } from './report.ts';
+import { rescoreRuns } from './rescore.ts';
 import { runBenchmark } from './runner.ts';
 import type { Condition } from './schema.ts';
 import { listRuns, reportsRoot } from './store.ts';
@@ -28,6 +29,7 @@ function usage(): string {
     '                      [--run-id ID] [--web-tools allow|disabled] [--no-drift-verify] [--max-budget-usd X] [--max-turns N] [--notes TEXT]',
     '  benchmark:agent validate-cases [--suite <suite>] [--case <id>] [--repeats N] [--write]',
     '  benchmark:agent aggregate --runs a,b [--out latest]',
+    '  benchmark:agent rescore --runs a,b        # re-evaluate diff-derivable rules after a case changed; marks the artifacts',
     '  benchmark:agent report',
     '  benchmark:agent verify',
     '  benchmark:agent runs | cases | suites',
@@ -125,6 +127,20 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       onProgress: log,
     });
     log(`run ${outcome.runId}: ${outcome.written} trial(s) written, ${outcome.skipped} skipped, in eval/results/agent/raw/${outcome.runId}/`);
+    return 0;
+  }
+
+  if (command === 'rescore') {
+    const runs = flag(argv, 'runs')?.split(',').filter(Boolean);
+    if (!runs?.length) {
+      console.error(usage());
+      return 2;
+    }
+    const outcomes = await rescoreRuns(runs, root);
+    for (const outcome of outcomes) {
+      log(`${outcome.changed ? 'CHANGED ' : 'same    '} ${outcome.trialId}: ${outcome.before.success ? 'success' : `failed [${outcome.before.failureReasons.join(', ')}]`} → ${outcome.after.success ? 'success' : `failed [${outcome.after.failureReasons.join(', ')}]`}`);
+    }
+    log(`${outcomes.length} trial(s) re-scored, ${outcomes.filter((o) => o.changed).length} changed`);
     return 0;
   }
 

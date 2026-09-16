@@ -267,6 +267,10 @@ export const suiteSchema = z
     removed: z
       .array(z.object({ id: z.string(), reason: z.string().min(1), date: z.string() }))
       .default([]),
+    /** Every change to a case's validation after trials were recorded against it, with why. */
+    changes: z
+      .array(z.object({ date: z.string(), cases: z.array(z.string()), change: z.string().min(1), reason: z.string().min(1) }))
+      .default([]),
   })
   .strict();
 export type SuiteManifest = z.infer<typeof suiteSchema>;
@@ -512,6 +516,19 @@ export const trialSchema = z
       validationMs: z.number().int().nonnegative(),
       totalMs: z.number().int().nonnegative(),
     }),
+    /**
+     * Present when the artifact's diff-derivable rules were re-evaluated
+     * against a later revision of the case. The original outcome is kept.
+     */
+    rescore: z
+      .object({
+        rescoredAt: z.string(),
+        previousCaseHash: z.string(),
+        previousSuccess: z.boolean(),
+        previousFailureReasons: z.array(failureReasonSchema),
+        rulesReevaluated: z.array(z.string()),
+      })
+      .optional(),
   })
   .strict();
 
