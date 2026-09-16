@@ -6506,13 +6506,10 @@ export function headline(
   /** Dependencies whose version lookup never returned, so they never became candidates. */
   unlooked = 0,
 ): string {
-  // A failed verification has no located call site, but it is measured
-  // evidence of breakage — folded in with `affected` here so it is never
-  // counted toward `safe` below. The bug this guards against: `zod` and
-  // `typescript` were once called safe from the exact same kind of gap,
-  // just upstream of this function instead of in it.
-  const affected =
-    candidates.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length;
+  const affected = candidates.filter((candidate) => severityOf(candidate) === 'affected').length;
+  // A failed project check can establish breakage without locating a call site.
+  const verificationFailed = candidates.filter((candidate) => severityOf(candidate) === 'verification-failed').length;
+  const errors = candidates.filter((candidate) => severityOf(candidate) === 'error').length;
   const review = candidates.filter((candidate) =>
     ['review-required', 'runtime-unresolved', 'localization-incomplete', 'evidence-missing'].includes(severityOf(candidate)),
   ).length;
@@ -6532,22 +6529,24 @@ export function headline(
     );
   }
 
-  const safe = candidates.filter((candidate) =>
+  const codeClear = candidates.filter((candidate) =>
     severityOf(candidate) === 'clean' || severityOf(candidate) === 'upstream-only',
   ).length;
   const scope = checked > 0 ? ` among ${checked} dependencies scanned` : '';
 
   if (candidates.length === 0) {
     return unlooked > 0
-      ? `No newer versions available for the dependencies Drift could check. ${unlooked} could not be checked at all.`
+      ? `No newer versions available for the dependencies Drift could check. ${unlooked} dependency declaration${unlooked === 1 ? '' : 's'} could not be checked.`
       : 'No newer versions available.';
   }
 
   const facts = [`**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}.`];
   if (affected > 0) facts.push(`${affected} affect${affected === 1 ? 's' : ''} code in this repository.`);
-  if (safe > 0) facts.push(`${safe} ${safe === 1 ? 'is' : 'are'} safe to upgrade.`);
+  if (verificationFailed > 0) facts.push(`${verificationFailed} fail${verificationFailed === 1 ? 's' : ''} this repository's checks with the upgrade installed.`);
+  if (codeClear > 0) facts.push(`${codeClear} ${codeClear === 1 ? 'has' : 'have'} no code impact found.`);
   if (review > 0) facts.push(`${review} ${review === 1 ? 'requires' : 'require'} review before upgrading.`);
-  if (unlooked > 0) facts.push(`${unlooked} ${unlooked === 1 ? 'dependency could' : 'dependencies could'} not be checked for upgrades.`);
+  if (errors > 0) facts.push(`${errors} could not be analyzed.`);
+  if (unlooked > 0) facts.push(`${unlooked} dependency declaration${unlooked === 1 ? '' : 's'} could not be checked for upgrades.`);
   return facts.join(' ');
 }
 

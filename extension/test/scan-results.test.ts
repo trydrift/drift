@@ -24,11 +24,37 @@ test('scan headline does not describe a safe upgrade as affecting code or unchec
   const candidates = [candidate('zod', 8), candidate('fast-check', 0)];
   const summary = headline(candidates, 12, 10);
   assert.match(summary, /2 upgrades available.*among 12 dependencies scanned/);
-  assert.match(summary, /1 is safe to upgrade/);
+  assert.match(summary, /1 has no code impact found/);
   assert.match(summary, /1 requires review before upgrading/);
-  assert.match(summary, /10 dependencies could not be checked for upgrades/);
+  assert.match(summary, /10 dependency declarations could not be checked for upgrades/);
   assert.doesNotMatch(summary, /affects? code/);
   assert.doesNotMatch(summary, /11 require review/);
+});
+
+test('a zero-impact upgrade with a blocking recommendation is not called safe to take', () => {
+  const blocked = { ...candidate('blocked', 0), recommendation: 'do-not-upgrade-yet' };
+  const summary = headline([blocked], 1);
+  assert.match(summary, /1 has no code impact found/);
+  assert.doesNotMatch(summary, /safe to upgrade|safe to take/);
+});
+
+test('analysis errors remain visible beside other candidate verdicts', () => {
+  const affected = { ...candidate('affected', 1), impactCount: 1, actionableImpactCount: 1, impactFiles: 1 };
+  const error = { ...candidate('error', 0), status: 'error' as const };
+  const summary = headline([affected, candidate('clean', 0), error], 3);
+  assert.match(summary, /3 upgrades available/);
+  assert.match(summary, /1 affects code in this repository/);
+  assert.match(summary, /1 has no code impact found/);
+  assert.match(summary, /1 could not be analyzed/);
+});
+
+test('failed project checks are distinct from located code impacts', () => {
+  const failed = { ...candidate('failed', 0), verification: {
+    status: 'failed' as const, checks: [], failedFiles: [],
+  } };
+  const summary = headline([failed], 1);
+  assert.match(summary, /1 fails this repository's checks with the upgrade installed/);
+  assert.doesNotMatch(summary, /affects code|no code impact found/);
 });
 
 test('scan headline still calls out a located impact', () => {
