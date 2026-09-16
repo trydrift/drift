@@ -70,6 +70,31 @@ export type { DispatchOptions, CopilotDispatchResult, CopilotTask } from './disp
 
 export { renderPullRequestBody, renderApprovalIssue, renderSummaryLine } from './report/markdown.js';
 
+// The coding agent's view of a plan: bounded, local-first, pull-based detail.
+// Human review surfaces render the same plan through `report/markdown.ts`.
+export {
+  buildAgentBrief,
+  renderAgentBrief,
+  findingDetail,
+  evidenceDetail,
+  UnknownAgentIdError,
+  AGENT_BRIEF_BUDGET,
+  AGENT_BRIEF_INSTRUCTIONS,
+  AGENT_BRIEF_SCHEMA_VERSION,
+  estimateTokens,
+} from './agent-context/index.js';
+export type {
+  AgentBrief,
+  AgentBriefOptions,
+  AgentFinding,
+  AgentExecutionUnit,
+  AgentCheck,
+  AgentGap,
+  RenderedAgentBrief,
+  DetailRetrieval,
+  ContextBudget,
+} from './agent-context/index.js';
+
 export { GitHubClient } from './github/client.js';
 export type { GitHubClientOptions } from './github/client.js';
 
