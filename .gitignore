@@ -74,3 +74,10 @@ site/capture-hang-*.json
 # source, and a 650KB binary committed by a stray `git add -A` is not obvious
 # in a diff until it is in the history.
 *.vsix
+
+# Agent benchmark: cached git mirrors of case repositories, and the raw agent
+# event streams (gzipped, one per trial). The mirrors are reproducible from the
+# case's pinned commits; the streams are large and their usage records are
+# already extracted into the committed trial JSON. Both stay as CI artifacts.
+eval/agent/.cache/
+eval/results/agent/raw/*/trials/*.stream.jsonl.gz
