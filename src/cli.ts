@@ -34,7 +34,7 @@ import { execCommand } from './util/exec.js';
 import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { runFix } from './remediation/cli-runner.js';
 import { availableChecks } from './verification/checks.js';
-import { agentBriefView, buildAgentBrief, evidenceDetail, findingDetail, renderAgentBrief, UnknownAgentIdError } from './agent-context/index.js';
+import { AgentBudgetExceededError, agentBriefView, buildAgentBrief, evidenceDetail, findingDetail, renderAgentBrief, UnknownAgentIdError } from './agent-context/index.js';
 import { runAgentCommitsInWorktree } from './remediation/worktree-runner.js';
 import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from './agents/compat.js';
 import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from './agents/registry.js';
@@ -1342,21 +1342,22 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     try {
       if (typeof flags.finding === 'string') {
         const detail = findingDetail(result.plan, flags.finding, { config });
-        console.log(flags.json ? JSON.stringify(detail.data, null, 2) : detail.text);
+        console.log(flags.json ? JSON.stringify(detail.data) : detail.text);
       } else if (typeof flags.evidence === 'string') {
         const offset = typeof flags.offset === 'string' ? Number(flags.offset) : undefined;
         const detail = evidenceDetail(result.plan, {
           ...(flags.evidence.startsWith('ev_') || flags.evidence.startsWith('check:') ? { evidenceId: flags.evidence } : { findingId: flags.evidence }),
           ...(offset !== undefined && Number.isFinite(offset) ? { offset } : {}),
         });
-        console.log(flags.json ? JSON.stringify(detail.data, null, 2) : detail.text);
+        console.log(flags.json ? JSON.stringify(detail.data) : detail.text);
       } else {
         const checks = (await availableChecks(workspace)).map((check) => ({ label: check.label, kind: check.kind }));
         const brief = buildAgentBrief(result.plan, { config, availableChecks: checks });
-        console.log(flags.json ? JSON.stringify(agentBriefView(brief).view, null, 2) : renderAgentBrief(brief, { retrieval: 'cli' }).text);
+        // Compact JSON: the ceiling is measured on exactly this serialization.
+        console.log(flags.json ? JSON.stringify(agentBriefView(brief).view) : renderAgentBrief(brief, { retrieval: 'cli' }).text);
       }
     } catch (err) {
-      if (err instanceof UnknownAgentIdError) {
+      if (err instanceof UnknownAgentIdError || err instanceof AgentBudgetExceededError) {
         logger.error(err.message);
         return 1;
       }

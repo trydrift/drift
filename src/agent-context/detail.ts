@@ -7,9 +7,9 @@ import {
   clipLines,
   estimateTokens,
   maxBytes,
-  targetBytes,
   type ContextBudget,
 } from './budget.js';
+import { AgentBudgetExceededError, fillWhole, fitPrefix, jsonBytes, requireCoreFits, setIfFits } from './fit.js';
 import { buildAgentBrief, type AgentBriefOptions } from './brief.js';
 import type { AgentFinding } from './types.js';
 
@@ -34,28 +34,63 @@ export class UnknownAgentIdError extends Error {
 }
 
 export interface DetailResult<T> {
+  /** Rendered from `data`, so both carry the same selection. */
   text: string;
   bytes: number;
   estimatedTokens: number;
+  /** The bounded structured view. Its serialization is within the same ceiling as `text`. */
   data: T;
+  /** Bytes of `JSON.stringify(data)`. Never more than the surface's ceiling. */
+  jsonBytes: number;
 }
 
-/** A finding in detail: the brief's shape plus what was left out of the brief. */
-export interface AgentFindingDetail extends AgentFinding {
-  /** The disposition state, including for findings the brief omitted. */
+/**
+ * One finding, as a bounded object.
+ *
+ * The core (identity, disposition, the summary and the required change) is
+ * irreducible. After it, in this order and each as a prefix of whole items:
+ * protected files, sites, execution units, evidence records, related
+ * findings, gaps, symbols, replacement symbols, and before/after signatures.
+ * Every list has an exact "not shown" count beside it.
+ */
+export interface AgentFindingView {
+  id: string;
+  source: string;
+  state: string;
   disposition: string;
+  reason?: string;
+  dependency: string;
+  kind: string;
+  confidence: string;
+  summary: string;
+  change: string;
+  protectedFiles: string[];
+  protectedFilesNotShown: number;
+  siteCount: number;
+  sites: { file: string; line: number; symbol?: string; note?: string }[];
+  sitesNotShown: number;
+  units: { id: string; layer: number; goal: string; files: string[]; after: string[]; deterministic?: string }[];
+  unitsNotShown: number;
+  evidence: { id: string; source: string; title: string }[];
+  evidenceNotShown: number;
+  related: { id: string; summary: string }[];
+  relatedNotShown: number;
+  gaps: string[];
+  gapsNotShown: number;
+  symbols: string[];
+  symbolsNotShown: number;
+  replacementSymbols: string[];
+  replacementSymbolsNotShown: number;
   before?: string;
   after?: string;
-  replacementSymbols?: string[];
-  /** Site excerpts, keyed `file:line`, for as many sites as the budget allowed. */
-  excerpts: Record<string, string>;
-  /** Upstream changes a measured finding's diagnostics name, or measured failures that name this change's symbols. */
-  related: { id: string; summary: string }[];
-  /** Gaps about this finding's dependency and symbols. */
-  gaps: string[];
-  /** Sites not printed for size. Always exact. */
-  sitesNotShown: number;
+  /** True when the plan has before/after signatures that did not fit. */
+  signaturesNotShown: boolean;
 }
+
+/** Characters of a site excerpt or compiler message kept per site. */
+const SITE_NOTE_CHARS = 160;
+/** Characters kept of each before/after signature. */
+const SIGNATURE_CHARS = 600;
 
 const MEASURED_PREFIX = 'measured:';
 
@@ -64,8 +99,8 @@ export function findingDetail(
   plan: RemediationPlan,
   id: string,
   options: AgentBriefOptions & { budget?: ContextBudget } = {},
-): DetailResult<AgentFindingDetail> {
-  const budget = options.budget ?? FINDING_DETAIL_BUDGET;
+): DetailResult<AgentFindingView> {
+  const limit = maxBytes(options.budget ?? FINDING_DETAIL_BUDGET);
   const brief = buildAgentBrief(plan, options);
   const inBrief = brief.findings.find((finding) => finding.id === id);
   const change = plan.breakingChanges.find((c) => c.id === id);
@@ -84,104 +119,183 @@ export function findingDetail(
   }
 
   const disposition = plan.dispositions?.find((d) => d.changeId === id);
-  const detail: AgentFindingDetail = {
-    ...base,
+  const excerpts = siteExcerpts(plan, base.id);
+
+  // Every list is built first, so each "not shown" counter starts at its full
+  // total and only shrinks as items are placed.
+  const protectedFiles = base.protectedFiles;
+  const sites = base.sites.map((site) => {
+    const note = site.message ?? excerpts.get(`${site.file}:${site.line}`);
+    return {
+      file: site.file,
+      line: site.line,
+      ...(site.symbol && !site.message ? { symbol: site.symbol } : {}),
+      ...(note ? { note: capLine(note, SITE_NOTE_CHARS) } : {}),
+    };
+  });
+  const units = plan.commits
+    .filter((commit) => base.unitIds.includes(commit.id))
+    .map((unit) => ({
+      id: unit.id,
+      layer: unit.executionLayer,
+      goal: unit.message,
+      files: unit.allowedFiles.length > 0 ? unit.allowedFiles : unit.files,
+      after: [...new Set(unit.dependsOn)].sort(),
+      ...(unit.fixPlan
+        ? { deterministic: `fix plan ${unit.fixPlan.plan.id} covers ${unit.fixPlan.covered}; ${unit.fixPlan.residual} left for an agent` }
+        : unit.codemod?.length
+          ? { deterministic: 'codemod covers every anchored site' }
+          : {}),
+    }));
+  const evidence = plan.evidence
+    .filter((record) => base.evidenceIds.includes(record.id))
+    .map((record) => ({ id: record.id, source: record.source, title: capLine(record.title, 120) }));
+  const related = relatedFindings(plan, base, change).map((r) => ({ id: r.id, summary: capLine(r.summary, 160) }));
+  const gaps = plan.gaps
+    .filter((gap) => gap.dependency === base.dependency && (change?.symbols ?? []).some((s) => gap.surface.includes(s)))
+    .map((gap) => `${gap.surface}: ${gap.reason}`);
+  const symbols = change?.symbols ?? [];
+  const replacements = change?.replacementSymbols ?? [];
+  const hasSignatures = Boolean(change?.before || change?.after);
+
+  const view: AgentFindingView = {
+    id: base.id,
+    source: base.source,
+    state: base.state,
     disposition: base.source === 'verification' ? 'measured' : (disposition?.state ?? 'unknown'),
-    ...(change?.before ? { before: change.before } : {}),
-    ...(change?.after ? { after: change.after } : {}),
-    ...(change?.replacementSymbols?.length ? { replacementSymbols: change.replacementSymbols } : {}),
-    excerpts: {},
-    related: relatedFindings(plan, base, change),
-    gaps: plan.gaps
-      .filter((gap) => gap.dependency === base.dependency && (change?.symbols ?? []).some((s) => gap.surface.includes(s)))
-      .map((gap) => `${gap.surface}: ${gap.reason}`),
-    sitesNotShown: 0,
+    ...(base.reason ? { reason: base.reason } : {}),
+    dependency: base.dependency,
+    kind: base.kind,
+    confidence: base.confidence,
+    summary: base.summary,
+    change: base.change,
+    protectedFiles: [],
+    protectedFilesNotShown: protectedFiles.length,
+    siteCount: sites.length,
+    sites: [],
+    sitesNotShown: sites.length,
+    units: [],
+    unitsNotShown: units.length,
+    evidence: [],
+    evidenceNotShown: evidence.length,
+    related: [],
+    relatedNotShown: related.length,
+    gaps: [],
+    gapsNotShown: gaps.length,
+    symbols: [],
+    symbolsNotShown: symbols.length,
+    replacementSymbols: [],
+    replacementSymbolsNotShown: replacements.length,
+    signaturesNotShown: hasSignatures,
   };
+  requireCoreFits('finding detail', view, limit);
 
-  const units = plan.commits.filter((commit) => base.unitIds.includes(commit.id));
+  fillWhole(view, view.protectedFiles, protectedFiles, limit, (n) => (view.protectedFilesNotShown = protectedFiles.length - n));
+  fillWhole(view, view.sites, sites, limit, (n) => (view.sitesNotShown = sites.length - n));
+  fillWhole(view, view.units, units, limit, (n) => (view.unitsNotShown = units.length - n));
+  fillWhole(view, view.evidence, evidence, limit, (n) => (view.evidenceNotShown = evidence.length - n));
+  fillWhole(view, view.related, related, limit, (n) => (view.relatedNotShown = related.length - n));
+  fillWhole(view, view.gaps, gaps, limit, (n) => (view.gapsNotShown = gaps.length - n));
+  fillWhole(view, view.symbols, symbols, limit, (n) => (view.symbolsNotShown = symbols.length - n));
+  fillWhole(view, view.replacementSymbols, replacements, limit, (n) => (view.replacementSymbolsNotShown = replacements.length - n));
 
-  const head: string[] = [
-    `# ${base.id}`,
-    `${base.dependency} · ${base.kind} · ${detail.disposition}${base.reason ? ` (${base.reason})` : ''} · confidence ${base.confidence}`,
-    base.summary,
+  if (hasSignatures) {
+    // Both or neither: half a before/after pair misleads more than none.
+    const before = change?.before ? capLine(change.before, SIGNATURE_CHARS) : undefined;
+    const after = change?.after ? capLine(change.after, SIGNATURE_CHARS) : undefined;
+    if (before !== undefined) view.before = before;
+    if (after !== undefined) view.after = after;
+    view.signaturesNotShown = false;
+    if (jsonBytes(view) > limit) {
+      delete view.before;
+      delete view.after;
+      view.signaturesNotShown = true;
+    }
+  }
+
+  return finish(view, renderFindingView(view), limit);
+}
+
+function renderFindingView(view: AgentFindingView): string {
+  const lines: string[] = [
+    `# ${view.id}`,
+    `${view.dependency} · ${view.kind} · ${view.disposition}${view.reason ? ` (${view.reason})` : ''} · confidence ${view.confidence}`,
+    view.summary,
     '',
-    `Change: ${base.change}`,
+    `Change: ${view.change}`,
   ];
-  if (detail.before) head.push('', 'Before:', clipLines(detail.before, 600).text);
-  if (detail.after) head.push('', 'After:', clipLines(detail.after, 600).text);
-  if (change && change.symbols.length > 0) {
-    head.push('', `Symbols: ${change.symbols.slice(0, 20).join(', ')}${change.symbols.length > 20 ? ` (+${change.symbols.length - 20})` : ''}`);
+  if (view.before) lines.push('', `Before: ${view.before}`);
+  if (view.after) lines.push(`After: ${view.after}`);
+  if (view.signaturesNotShown) lines.push('(before/after signatures not shown for size)');
+  if (view.symbols.length > 0 || view.symbolsNotShown > 0) {
+    lines.push('', `Symbols: ${view.symbols.join(', ')}${view.symbolsNotShown ? ` (+${view.symbolsNotShown} not shown)` : ''}`);
   }
-  if (detail.replacementSymbols) head.push(`Replacements: ${detail.replacementSymbols.join(', ')}`);
-
-  const tail: string[] = [];
-  for (const unit of units) {
-    const deterministic = unit.fixPlan
-      ? ` Deterministic fix plan ${unit.fixPlan.plan.id} covers ${unit.fixPlan.covered}, ${unit.fixPlan.residual} left for an agent.`
-      : unit.codemod?.length
-        ? ` Deterministic codemod covers every anchored site.`
-        : '';
-    tail.push(
-      `Unit ${unit.id} (layer ${unit.executionLayer}): ${unit.message}. Files: ${unit.allowedFiles.join(', ') || unit.files.join(', ')}.${unit.dependsOn.length ? ` After ${[...new Set(unit.dependsOn)].join(', ')}.` : ''}${deterministic}`,
-    );
+  if (view.replacementSymbols.length > 0) {
+    lines.push(`Replacements: ${view.replacementSymbols.join(', ')}${view.replacementSymbolsNotShown ? ` (+${view.replacementSymbolsNotShown})` : ''}`);
   }
-  if (base.protectedFiles.length > 0) tail.push(`Protected (do not edit): ${base.protectedFiles.join(', ')}`);
-  if (detail.related.length > 0) {
-    tail.push(`Related: ${detail.related.map((r) => `${r.id} ${capLine(r.summary, 80)}`).join('; ')}`);
+  if (view.protectedFiles.length > 0 || view.protectedFilesNotShown > 0) {
+    lines.push('', `Protected (do not edit): ${view.protectedFiles.join(', ')}${view.protectedFilesNotShown ? ` (+${view.protectedFilesNotShown} not shown)` : ''}`);
   }
-  for (const gap of detail.gaps.slice(0, 3)) tail.push(`Gap: ${gap}`);
-  const evidence = plan.evidence.filter((record) => base.evidenceIds.includes(record.id));
-  if (evidence.length > 0) {
-    tail.push(`Evidence: ${evidence.map((record) => `${record.id} (${record.source}) ${capLine(record.title, 70)}`).join('; ')}`);
+  lines.push('', `Sites (${view.siteCount}):`);
+  for (const site of view.sites) {
+    lines.push(`- ${site.file}:${site.line}${site.symbol ? ` ${site.symbol}` : ''}${site.note ? ` — ${site.note}` : ''}`);
   }
-
-  // Sites fill whatever the budget leaves once the fixed parts are placed.
-  const fixed = byteLength([...head, '', 'Sites:', '', ...tail].join('\n')) + 80;
-  const excerptsBySite = siteExcerpts(plan, base.id);
-  const siteLines: string[] = [];
-  let used = fixed;
-  let shown = 0;
-  for (const site of base.sites) {
-    const key = `${site.file}:${site.line}`;
-    const excerpt = site.message ?? excerptsBySite.get(key) ?? '';
-    const line = `- ${key}${site.symbol && !site.message ? ` ${site.symbol}` : ''}${excerpt ? ` — ${capLine(excerpt, 120)}` : ''}`;
-    if (used + byteLength(line) + 1 > targetBytes(budget)) break;
-    siteLines.push(line);
-    if (excerpt) detail.excerpts[key] = excerpt;
-    used += byteLength(line) + 1;
-    shown += 1;
+  if (view.sitesNotShown > 0) lines.push(`- …${view.sitesNotShown} more site${view.sitesNotShown === 1 ? '' : 's'} not shown for size.`);
+  if (view.units.length > 0 || view.unitsNotShown > 0) lines.push('');
+  for (const unit of view.units) {
+    lines.push(`Unit ${unit.id} (layer ${unit.layer}): ${unit.goal}. Files: ${unit.files.join(', ') || '—'}.${unit.after.length ? ` After ${unit.after.join(', ')}.` : ''}${unit.deterministic ? ` Deterministic: ${unit.deterministic}.` : ''}`);
   }
-  detail.sitesNotShown = base.sites.length - shown;
-  if (detail.sitesNotShown > 0) siteLines.push(`- …${detail.sitesNotShown} more site${detail.sitesNotShown === 1 ? '' : 's'} not shown for size.`);
-
-  const sections = [head.join('\n')];
-  if (siteLines.length > 0) sections.push(`Sites (${base.sites.length}):\n${siteLines.join('\n')}`);
-  if (tail.length > 0) sections.push(tail.join('\n'));
-  const text = hardStop(sections.join('\n\n'), maxBytes(budget));
-  return { text, bytes: byteLength(text), estimatedTokens: estimateTokens(text), data: detail };
+  if (view.unitsNotShown > 0) lines.push(`(${view.unitsNotShown} more unit(s) not shown)`);
+  if (view.related.length > 0 || view.relatedNotShown > 0) {
+    lines.push(`Related: ${view.related.map((r) => `${r.id} ${r.summary}`).join('; ')}${view.relatedNotShown ? ` (+${view.relatedNotShown} not shown)` : ''}`);
+  }
+  for (const gap of view.gaps) lines.push(`Gap: ${gap}`);
+  if (view.gapsNotShown > 0) lines.push(`(${view.gapsNotShown} more gap(s) not shown)`);
+  if (view.evidence.length > 0 || view.evidenceNotShown > 0) {
+    lines.push(`Evidence: ${view.evidence.map((e) => `${e.id} (${e.source}) ${e.title}`).join('; ')}${view.evidenceNotShown ? ` (+${view.evidenceNotShown} not shown)` : ''}`);
+  }
+  return lines.join('\n');
 }
 
 export interface EvidenceRequest {
   findingId?: string;
   evidenceId?: string;
-  /** Byte offset into one record's content, for paging through a long one. */
+  /** Character offset into one record's content, for paging through a long one. */
   offset?: number;
 }
 
-export interface AgentEvidenceExcerpt {
+/**
+ * One evidence record as a bounded object.
+ *
+ * `narrowed` — the lines of the record that name the requested finding's
+ * symbols, whole lines, with an exact count of those not shown.
+ * `page` — the record's content from `offset` (characters), ending at a line
+ * break where possible, with `nextOffset` to continue.
+ * `check-output` — a failing check's output, its last lines.
+ */
+export interface AgentEvidenceRecordView {
   id: string;
   source: string;
   dependency: string;
   title: string;
   url?: string;
-  /** Structured findings in the record that concern the requested finding (or all, when none was named). */
+  mode: 'narrowed' | 'page' | 'check-output';
+  /** Characters in the record's full content. */
+  contentChars: number;
   findings: { symbol: string; detail: string; before?: string; after?: string }[];
+  findingsNotShown: number;
   excerpt: string;
-  /** Where the excerpt starts in the record's content. */
   offset: number;
-  /** The next offset to request, when the record continues past this page. */
   nextOffset: number | null;
-  contentBytes: number;
+  /** Whole lines selected but not shown (narrowed and check-output modes). */
+  linesNotShown: number;
+}
+
+export interface AgentEvidenceView {
+  records: AgentEvidenceRecordView[];
+  /** Cited records that did not fit at all; resolvable one at a time by id. */
+  recordIdsNotShown: string[];
+  recordsNotShown: number;
 }
 
 /**
@@ -190,14 +304,15 @@ export interface AgentEvidenceExcerpt {
  * For a finding, each cited record is narrowed to the lines that name one of
  * its symbols — a type-surface diff covering 278 changes contributes the one
  * line about this change, not the other 277. A measured finding's evidence is
- * the failing checks' own output.
+ * the failing checks' own output. Every record's identity goes in before any
+ * record's content, and the remaining space is shared evenly between records.
  */
 export function evidenceDetail(
   plan: RemediationPlan,
   request: EvidenceRequest,
   options: { budget?: ContextBudget } = {},
-): DetailResult<{ records: AgentEvidenceExcerpt[] }> {
-  const budget = options.budget ?? EVIDENCE_PAGE_BUDGET;
+): DetailResult<AgentEvidenceView> {
+  const limit = maxBytes(options.budget ?? EVIDENCE_PAGE_BUDGET);
   if (!request.findingId && !request.evidenceId) {
     throw new UnknownAgentIdError('evidence', '', 'Pass a finding id, an evidence id, or both.');
   }
@@ -206,7 +321,7 @@ export function evidenceDetail(
   if (request.findingId) {
     change = plan.breakingChanges.find((c) => c.id === request.findingId);
     if (!change && request.findingId.startsWith(MEASURED_PREFIX) && !request.evidenceId) {
-      return measuredEvidence(plan, request.findingId, budget);
+      return measuredEvidence(plan, request.findingId, limit);
     }
     if (!change && !request.findingId.startsWith(MEASURED_PREFIX)) {
       throw new UnknownAgentIdError('finding', request.findingId, 'Use an id from the Drift brief.');
@@ -225,63 +340,107 @@ export function evidenceDetail(
   }
 
   const symbols = change ? change.symbols.filter((s) => s.length > 1) : [];
-  const perRecord = Math.max(600, Math.floor(targetBytes(budget) / Math.max(1, records.length)) - 200);
-  const out: AgentEvidenceExcerpt[] = [];
-  const blocks: string[] = [];
+  // Narrow to the finding when one was named and no page was asked for. A
+  // record that names none of the finding's symbols contributes its
+  // structured findings (if any) and a pointer, never its whole content.
+  const narrowing = symbols.length > 0 && request.offset === undefined && !request.evidenceId;
 
-  for (const record of records) {
-    const structured = (record.findings ?? [])
+  const view: AgentEvidenceView = { records: [], recordIdsNotShown: [], recordsNotShown: 0 };
+  requireCoreFits('evidence detail', view, limit);
+
+  // Each record's selectable material is computed up front, so every counter
+  // starts at its full total and only shrinks as items are placed.
+  const material = records.map((record) => ({
+    structured: (record.findings ?? [])
       .filter((finding) => symbols.length === 0 || symbols.includes(finding.symbol))
-      .slice(0, 10)
       .map((finding) => ({
         symbol: finding.symbol,
-        detail: finding.detail,
-        ...(finding.before ? { before: finding.before } : {}),
-        ...(finding.after ? { after: finding.after } : {}),
-      }));
-
-    const offset = Math.max(0, Math.min(request.offset ?? 0, record.content.length));
-    // Narrow to the finding when one was named and no page was asked for. A
-    // record that names none of the finding's symbols contributes its
-    // structured findings (if any) and a pointer, never its whole content:
-    // the type-surface diff for 278 changes is exactly the thing not to dump.
-    const narrowing = symbols.length > 0 && request.offset === undefined && !request.evidenceId;
-    const narrowed = narrowing ? (linesNaming(record.content, symbols) ?? '') : null;
-    const source = narrowed ?? record.content.slice(offset);
-    const clipped = clipLines(source, perRecord);
-    const consumed = narrowed !== null ? record.content.length : offset + clipped.text.length;
-    const excerpt: AgentEvidenceExcerpt = {
+        detail: capLine(finding.detail, 300),
+        ...(finding.before ? { before: capLine(finding.before, 300) } : {}),
+        ...(finding.after ? { after: capLine(finding.after, 300) } : {}),
+      })),
+    lines: narrowing ? (linesNaming(record.content, symbols) ?? []) : [],
+  }));
+  const cores: AgentEvidenceRecordView[] = records.map((record, index) => {
+    const offset = narrowing ? 0 : Math.max(0, Math.min(request.offset ?? 0, record.content.length));
+    return {
       id: record.id,
       source: record.source,
       dependency: record.dependency,
-      title: record.title,
+      title: capLine(record.title, 160),
       ...(record.url ? { url: record.url } : {}),
-      findings: structured,
-      excerpt: clipped.text,
-      offset: narrowed !== null ? 0 : offset,
-      nextOffset: narrowed === null && consumed < record.content.length ? consumed : null,
-      contentBytes: byteLength(record.content),
+      mode: narrowing ? 'narrowed' : 'page',
+      contentChars: record.content.length,
+      findings: [],
+      findingsNotShown: material[index]!.structured.length,
+      excerpt: '',
+      offset,
+      // Until content is placed, the continuation is the page's own start.
+      nextOffset: narrowing || offset >= record.content.length ? null : offset,
+      linesNotShown: material[index]!.lines.length,
     };
-    out.push(excerpt);
+  });
+  view.recordsNotShown = cores.length;
+  view.recordIdsNotShown = [];
+  requireCoreFits('evidence detail', view, limit);
+  fillWhole(view, view.records, cores, limit, (n) => (view.recordsNotShown = cores.length - n));
+  fillWhole(view, view.recordIdsNotShown, cores.slice(view.records.length).map((c) => c.id), limit);
 
+  view.records.forEach((entry, index) => {
+    const record = records[index]!;
+    const { structured, lines } = material[index]!;
+    // An even share of what is left, so the first record cannot starve the rest.
+    const share = jsonBytes(view) + Math.floor((limit - jsonBytes(view)) / (view.records.length - index));
+    fillWhole(view, entry.findings, structured, share, (n) => (entry.findingsNotShown = structured.length - n));
+
+    if (entry.mode === 'narrowed') {
+      const shown: string[] = [];
+      fillWhole(view, shown, lines, share, (n) => {
+        entry.excerpt = shown.slice(0, n).join('\n');
+        entry.linesNotShown = lines.length - n;
+      });
+    } else if (entry.nextOffset !== null) {
+      // Measure the page with its continuation offset at its largest possible
+      // value, so setting the real one can only make the object smaller.
+      const rest = record.content.slice(entry.offset);
+      // `null` is four characters; never measure with something shorter than what may replace it.
+      entry.nextOffset = Math.max(record.content.length, 1000);
+      const page = fitPrefix(view, rest, share, (text) => (entry.excerpt = text));
+      entry.nextOffset = entry.offset + page.length < record.content.length ? entry.offset + page.length : null;
+    }
+  });
+
+  return finish(view, renderEvidenceView(view), limit);
+}
+
+function renderEvidenceView(view: AgentEvidenceView): string {
+  if (view.records.length === 0 && view.recordsNotShown === 0) return 'The finding cites no evidence records.';
+  const blocks = view.records.map((record) => {
     const lines = [`## ${record.id} · ${record.source} · ${record.title}`];
     if (record.url) lines.push(record.url);
-    for (const finding of structured) {
-      lines.push(`- ${finding.detail}${finding.before ? `\n  before: ${capLine(finding.before, 200)}` : ''}${finding.after ? `\n  after:  ${capLine(finding.after, 200)}` : ''}`);
+    for (const finding of record.findings) {
+      lines.push(`- ${finding.detail}${finding.before ? `\n  before: ${finding.before}` : ''}${finding.after ? `\n  after:  ${finding.after}` : ''}`);
     }
-    if (clipped.text.trim() && !(structured.length > 0 && narrowed !== null)) {
-      lines.push(narrowed !== null ? 'Lines naming this finding:' : `Content from byte ${excerpt.offset}:`, clipped.text);
+    if (record.findingsNotShown > 0) lines.push(`(${record.findingsNotShown} more structured finding(s) not shown)`);
+    if (record.mode === 'narrowed') {
+      if (record.excerpt && record.findings.length === 0) lines.push('Lines naming this finding:', record.excerpt);
+      if (!record.excerpt && record.findings.length === 0 && record.linesNotShown === 0) {
+        lines.push(`No line names this finding's symbols. Read the record itself with evidence id ${record.id} (${record.contentChars} characters, paged).`);
+      }
+      if (record.linesNotShown > 0) lines.push(`(${record.linesNotShown} more matching line(s) not shown for size)`);
+    } else if (record.mode === 'check-output') {
+      lines.push(record.excerpt);
+      if (record.linesNotShown > 0) lines.push(`(${record.linesNotShown} earlier line(s) not shown)`);
+    } else {
+      lines.push(`Content from character ${record.offset}:`, record.excerpt);
+      if (record.nextOffset !== null) lines.push(`(continues: request offset ${record.nextOffset} of ${record.contentChars})`);
     }
-    if (narrowed !== null && !clipped.text.trim() && structured.length === 0) {
-      lines.push(`No line names this finding's symbols. Read the record itself with evidence id ${record.id} (${record.content.length} characters, paged).`);
-    }
-    if (excerpt.nextOffset !== null) lines.push(`(continues: request offset ${excerpt.nextOffset} of ${record.content.length})`);
-    if (narrowed !== null && clipped.clipped) lines.push('(more matching lines not shown for size)');
-    blocks.push(lines.join('\n'));
+    return lines.join('\n');
+  });
+  if (view.recordsNotShown > 0) {
+    blocks.push(`(${view.recordsNotShown} more cited record(s) not shown: ${view.recordIdsNotShown.join(', ') || 'ids not shown for size'}; request each by evidence id)`);
   }
-
-  const text = hardStop(blocks.join('\n\n') || 'The finding cites no evidence records.', maxBytes(budget));
-  return { text, bytes: byteLength(text), estimatedTokens: estimateTokens(text), data: { records: out } };
+  return blocks.join('\n\n');
 }
 
 /** An omitted upstream change, shaped as a finding so it resolves the same way. */
@@ -331,7 +490,6 @@ function relatedFindings(
       .filter((c) => c.dependency === finding.dependency)
       .filter((c) => c.symbols.some((symbol) => mentions(text, symbol)))
       .sort((a, b) => (a.id < b.id ? -1 : 1))
-      .slice(0, 12)
       .map((c) => ({ id: c.id, summary: c.summary }));
   }
   if (!change) return [];
@@ -362,33 +520,55 @@ function mentions(text: string, symbol: string): boolean {
   return parts[0]!.length > 2 && quoted(parts[0]!);
 }
 
-function measuredEvidence(plan: RemediationPlan, id: string, budget: ContextBudget): DetailResult<{ records: AgentEvidenceExcerpt[] }> {
+function measuredEvidence(plan: RemediationPlan, id: string, limit: number): DetailResult<AgentEvidenceView> {
   const sites = plan.impactSites.filter((site) => site.breakingChangeId === id);
   if (sites.length === 0) {
     throw new UnknownAgentIdError('finding', id, 'Measured finding ids come from a verified Drift brief.');
   }
   const failed = (plan.verification?.checks ?? []).filter((check) => check.status === 'failed');
-  const per = Math.max(600, Math.floor(targetBytes(budget) / Math.max(1, failed.length)) - 120);
-  const records: AgentEvidenceExcerpt[] = failed.map((check) => {
-    const tail = check.output.split('\n').filter((line) => line.trim()).slice(-40).join('\n');
-    const clipped = clipLinesFromEnd(tail, per);
-    return {
-      id: `check:${check.label}`,
-      source: 'verification',
-      dependency: id.slice(MEASURED_PREFIX.length),
-      title: `${check.label} (${check.kind}) failed after the upgrade`,
-      findings: [],
-      excerpt: clipped,
-      offset: 0,
-      nextOffset: null,
-      contentBytes: byteLength(check.output),
-    };
+  // The end of a failing check's output is where the failure is; lines are
+  // placed from the last one backwards.
+  const tails = failed.map((check) => check.output.split('\n').filter((line) => line.trim()).map((line) => capLine(line, 300)).reverse());
+  const view: AgentEvidenceView = { records: [], recordIdsNotShown: [], recordsNotShown: failed.length };
+  requireCoreFits('evidence detail', view, limit);
+  const cores: AgentEvidenceRecordView[] = failed.map((check, index) => ({
+    id: `check:${check.label}`,
+    source: 'verification',
+    dependency: id.slice(MEASURED_PREFIX.length),
+    title: capLine(`${check.label} (${check.kind}) failed after the upgrade`, 160),
+    mode: 'check-output',
+    contentChars: check.output.length,
+    findings: [],
+    findingsNotShown: 0,
+    excerpt: '',
+    offset: 0,
+    nextOffset: null,
+    linesNotShown: tails[index]!.length,
+  }));
+  fillWhole(view, view.records, cores, limit, (n) => (view.recordsNotShown = cores.length - n));
+  fillWhole(view, view.recordIdsNotShown, cores.slice(view.records.length).map((c) => c.id), limit);
+  view.records.forEach((entry, index) => {
+    const share = jsonBytes(view) + Math.floor((limit - jsonBytes(view)) / (view.records.length - index));
+    const lines = tails[index]!;
+    const shown: string[] = [];
+    fillWhole(view, shown, lines, share, (n) => {
+      entry.excerpt = shown.slice(0, n).reverse().join('\n');
+      entry.linesNotShown = lines.length - n;
+    });
   });
-  const text = hardStop(
-    records.map((r) => `## ${r.title}\n${r.excerpt}`).join('\n\n') || 'The failing checks recorded no output.',
-    maxBytes(budget),
-  );
-  return { text, bytes: byteLength(text), estimatedTokens: estimateTokens(text), data: { records } };
+  return finish(view, renderEvidenceView(view), limit);
+}
+
+/**
+ * Serialize and render one bounded view. The JSON is within `limit` by
+ * construction; the text, rendered from the same view, is checked against the
+ * same limit and cut at a line only as a last resort.
+ */
+function finish<T>(view: T, rendered: string, limit: number): DetailResult<T> {
+  const bytes = jsonBytes(view);
+  if (bytes > limit) throw new AgentBudgetExceededError('structured detail', bytes, limit);
+  const text = hardStop(rendered, limit);
+  return { text, bytes: byteLength(text), estimatedTokens: estimateTokens(text), data: view, jsonBytes: bytes };
 }
 
 function siteExcerpts(plan: RemediationPlan, id: string): Map<string, string> {
@@ -402,7 +582,7 @@ function siteExcerpts(plan: RemediationPlan, id: string): Map<string, string> {
 }
 
 /** Lines naming any symbol, each with the line after it (where a diff prints `before:`/`after:`). */
-function linesNaming(content: string, symbols: readonly string[]): string | null {
+function linesNaming(content: string, symbols: readonly string[]): string[] | null {
   const lines = content.split('\n');
   const keep = new Set<number>();
   lines.forEach((line, index) => {
@@ -414,21 +594,7 @@ function linesNaming(content: string, symbols: readonly string[]): string | null
     }
   });
   if (keep.size === 0) return null;
-  return [...keep].sort((a, b) => a - b).map((index) => lines[index]).join('\n');
-}
-
-function clipLinesFromEnd(text: string, limit: number): string {
-  const lines = text.split('\n');
-  const out: string[] = [];
-  let used = 0;
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = capLine(lines[i]!, 300);
-    const size = byteLength(line) + 1;
-    if (used + size > limit) break;
-    out.unshift(line);
-    used += size;
-  }
-  return out.join('\n');
+  return [...keep].sort((a, b) => a - b).map((index) => capLine(lines[index]!, 400));
 }
 
 /** Last-resort byte cap at a line boundary, with a statement that it happened. */

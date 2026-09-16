@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import {
+  agentBriefView,
   AGENT_BRIEF_BUDGET,
   BYTES_PER_TOKEN,
   UnknownAgentIdError,
@@ -427,7 +428,8 @@ describe('agent detail — provenance and progressive disclosure', () => {
         const original = p.breakingChanges.find((c) => c.id === finding.id)!;
         assert.equal(data.summary, original.summary);
         assert.equal(data.change, original.remediation);
-        assert.deepEqual(data.evidenceIds, original.citations);
+        assert.deepEqual(data.evidence.map((e) => e.id).sort(), [...original.citations].sort());
+        assert.equal(data.siteCount, p.impactSites.filter((s) => s.breakingChangeId === finding.id).length);
         const planSites = p.impactSites.filter((s) => s.breakingChangeId === finding.id).map((s) => `${s.file}:${s.line}`).sort();
         assert.deepEqual(data.sites.map((s) => `${s.file}:${s.line}`).sort(), planSites);
       }
@@ -490,7 +492,7 @@ describe('agent brief — real plans from the first agent benchmark', () => {
   // benchmark (`drift analyze --verify` on each case's start commit), gzipped,
   // with local temp paths scrubbed. They are the regression fixture for the
   // budget: if the brief for any of them grows past the ceiling, this fails.
-  const fixtures = ['eslint-8-to-10', 'winston-2-to-3', 'ethereumjs-tx-4-to-5'] as const;
+  const fixtures = ['eslint-8-to-10', 'winston-2-to-3', 'ethereumjs-tx-4-to-5', 'glob-8-to-13-smoke'] as const;
   const load = (name: (typeof fixtures)[number]): RemediationPlan =>
     JSON.parse(gunzipSync(readFileSync(new URL(`./fixtures/agent-context/${name}.plan.json.gz`, import.meta.url))).toString('utf8'));
 
@@ -510,6 +512,51 @@ describe('agent brief — real plans from the first agent benchmark', () => {
       assert.equal(renderAgentBrief(buildAgentBrief(load(name))).text, rendered.text, 'deterministic');
     });
   }
+
+  for (const name of fixtures) {
+    test(`${name}: no measured site names text that is not a repository path`, () => {
+      const p = load(name);
+      for (const site of p.impactSites.filter((s) => s.breakingChangeId.startsWith('measured:'))) {
+        assert.doesNotMatch(site.file, /^(test at |at )|\s|^\//, site.file);
+      }
+      const { text } = renderAgentBrief(buildAgentBrief(p));
+      assert.doesNotMatch(text, /test at |at Object\.<anonymous>/);
+    });
+
+    test(`${name}: verification messaging agrees with what ran`, () => {
+      const p = load(name);
+      const { text } = renderAgentBrief(buildAgentBrief(p));
+      if (p.verification && p.verification.checks.some((c) => c.status === 'passed' || c.status === 'failed')) {
+        assert.doesNotMatch(text, /No checks were run/);
+      }
+    });
+
+    test(`${name}: every text and JSON surface for every finding stays within its ceiling`, () => {
+      const p = load(name);
+      const brief = buildAgentBrief(p);
+      assert.ok(agentBriefView(brief).bytes <= AGENT_BRIEF_BUDGET.maxTokens * BYTES_PER_TOKEN);
+      assert.ok(renderAgentBrief(brief).bytes <= AGENT_BRIEF_BUDGET.maxTokens * BYTES_PER_TOKEN);
+      const ids = [...brief.findings.map((f) => f.id), ...p.breakingChanges.slice(0, 40).map((c) => c.id)];
+      for (const id of new Set(ids)) {
+        const finding = findingDetail(p, id);
+        assert.ok(finding.jsonBytes <= 2_000 * BYTES_PER_TOKEN && finding.bytes <= 2_000 * BYTES_PER_TOKEN, id);
+        assert.equal(Buffer.byteLength(JSON.stringify(finding.data)), finding.jsonBytes);
+        const evidence = evidenceDetail(p, { findingId: id });
+        assert.ok(evidence.jsonBytes <= 2_500 * BYTES_PER_TOKEN && evidence.bytes <= 2_500 * BYTES_PER_TOKEN, id);
+      }
+      for (const record of p.evidence) {
+        const page = evidenceDetail(p, { evidenceId: record.id });
+        assert.ok(page.jsonBytes <= 2_500 * BYTES_PER_TOKEN && page.bytes <= 2_500 * BYTES_PER_TOKEN, record.id);
+      }
+    });
+  }
+
+  test('glob 8 → 13 (smoke): the Node test-runner line is not a measured site', () => {
+    const p = load('glob-8-to-13-smoke');
+    const measured = p.impactSites.filter((s) => s.breakingChangeId === 'measured:npm glob').map((s) => s.file);
+    assert.equal(measured.includes('test at test/files.test.js'), false);
+    assert.deepEqual(measured, ['package.json'], 'the failure falls back to the dependency declaration');
+  });
 
   test('eslint 8 → 10: five findings in the brief, where the human report carried 293', () => {
     const p = load('eslint-8-to-10');

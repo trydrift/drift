@@ -13,6 +13,7 @@ export {
 export type { ContextBudget } from './budget.js';
 export * from './types.js';
 export { findingDetail, evidenceDetail, UnknownAgentIdError } from './detail.js';
-export type { AgentFindingDetail, AgentEvidenceExcerpt, DetailResult, EvidenceRequest } from './detail.js';
+export type { AgentFindingView, AgentEvidenceView, AgentEvidenceRecordView, DetailResult, EvidenceRequest } from './detail.js';
+export { AgentBudgetExceededError } from './fit.js';
 export { agentBriefView } from './view.js';
 export type { AgentBriefView } from './view.js';

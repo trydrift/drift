@@ -45,6 +45,8 @@ export type DetailRetrieval =
 export interface RenderAgentBriefOptions {
   budget?: ContextBudget;
   retrieval?: DetailRetrieval;
+  /** One line a surface needs to add (e.g. that the plan was computed earlier). Counted inside the budget. */
+  note?: string;
 }
 
 export interface RenderedAgentBrief {
@@ -94,7 +96,7 @@ export function renderAgentBrief(brief: AgentBrief, options: RenderAgentBriefOpt
   const target = targetBytes(budget);
   const ceiling = maxBytes(budget);
 
-  const header = renderHeader(brief, retrieval);
+  const header = options.note ? `${renderHeader(brief, retrieval)}\n${options.note}` : renderHeader(brief, retrieval);
   const constraints = renderConstraints(brief);
   const checks = renderChecks(brief);
 
