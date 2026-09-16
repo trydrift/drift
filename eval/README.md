@@ -4,7 +4,7 @@ This measures whether Drift detects a real dependency breakage, localizes it to
 the right consumer code, decides honestly whether it can safely repair it, and —
 when it repairs — whether the repair actually works.
 
-## Two things live here, and they are not the same thing
+## Three things live here, and they are not the same thing
 
 **The five synthetic npm cases in `cases/` are the evaluator's regression
 suite.** They exist to prove the harness works: that a destructive repair is
@@ -21,6 +21,14 @@ would describe the fixtures.
 other people, evaluated against the same Drift the CLI ships, with results in
 `eval/results/<run-id>/` and on the website's `/benchmarks` page. See
 [External corpora](#external-corpora) below.
+
+**The agent benchmark in `agent/` asks a third question**, about the product's
+effect rather than its accuracy: does the *same* coding agent, on the *same*
+task and starting repository, fix a real dependency upgrade with fewer input
+tokens and more often when it has Drift's report? It has its own cases, suites,
+runner, gates and canonical result, documented in
+[`eval/agent/README.md`](agent/README.md). Its numbers are never pooled with
+the detection corpora above.
 
 The methodology, and where it departs from BUMP, Defects4J, SWE-bench,
 swe-bump-bench, bumpgen, DepBench and UPGRADVISOR, is in
@@ -517,6 +525,13 @@ from headline metrics.
 ## Commands
 
 ```sh
+npm run benchmark:agent:validate       # agent benchmark: case admission (see eval/agent/README.md)
+npm run benchmark:agent:smoke          # agent benchmark: one live run per condition on the smoke suite
+npm run benchmark:agent -- --suite agent-upgrade-v1 --runs 5   # agent benchmark: full live run
+npm run benchmark:agent:aggregate -- --runs <run-id>            # agent benchmark: canonical summary
+npm run benchmark:agent:report         # agent benchmark: report, README block, public copy
+npm run benchmark:agent:verify         # agent benchmark: stale public claims fail here
+
 npm run eval:typecheck                 # the harness typechecks
 npm run eval:test                      # harness unit tests, zero model calls
 npm run eval:cases:import              # legacy fixture -> public/private case layout

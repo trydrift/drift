@@ -36,6 +36,13 @@ Evaluated on three synthetic Spring Boot repositories (3.1→3.2, 3.2→3.3,
 
 Meta-RAG reduces codebase token footprint by ~79.9%.
 
+**That 79.9% is the paper's number, measured in the paper's own evaluation of
+its own system on three synthetic Spring Boot repositories.** It is not a
+Drift result and is never quoted as one. Drift's own effect on a coding agent's
+token consumption and success rate is measured by the
+[agent benchmark](../eval/agent/README.md), and only a result that passes that
+benchmark's publication gates is quoted anywhere public.
+
 ### The finding that matters most
 
 The precision number, not the token number. OpenHands removed **128 lines to get

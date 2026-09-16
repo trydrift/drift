@@ -22,6 +22,14 @@ runs.
 
 Drift does not merge changes for you.
 
+Put another way: Drift researches what changed in a dependency and traces
+those changes into your code *before* a coding agent starts remediation.
+Instead of making the agent rediscover the migration from scratch, it hands
+the agent targeted evidence and the affected code locations. Whether that
+actually helps — fewer agent input tokens, more successful fixes, on the same
+task with the same model — is measured rather than asserted; see the
+[agent benchmark](../eval/agent/README.md).
+
 ## What Drift optimizes for
 
 Drift is designed around a few principles:
