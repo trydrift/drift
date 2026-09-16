@@ -32,6 +32,12 @@
     "README.md"
   ],
   "scripts": {
+    "benchmark:agent": "npm run build && node --experimental-strip-types eval/src/agent/cli.ts run",
+    "benchmark:agent:aggregate": "node --experimental-strip-types eval/src/agent/cli.ts aggregate",
+    "benchmark:agent:report": "node --experimental-strip-types eval/src/agent/cli.ts report",
+    "benchmark:agent:smoke": "npm run build && node --experimental-strip-types eval/src/agent/cli.ts run --suite smoke --runs 1",
+    "benchmark:agent:validate": "npm run build && node --experimental-strip-types eval/src/agent/cli.ts validate-cases",
+    "benchmark:agent:verify": "node --experimental-strip-types eval/src/agent/cli.ts verify",
     "build": "tsc -p tsconfig.json",
     "build:action": "node scripts/build-action.mjs",
     "build:all": "npm run build && npm run build:action",
@@ -40,9 +46,9 @@
     "docs:support": "npm run build && node scripts/generate-support-doc.mjs",
     "eval:accuracy:audit": "npm run build && node --experimental-strip-types eval/src/audit.ts",
     "eval:bench": "npm run build && node --experimental-strip-types eval/src/cli/bench.ts",
-    "eval:compare": "node --experimental-strip-types eval/src/external/compare.ts",
     "eval:cases:import": "node --experimental-strip-types eval/src/corpus/import-fixture.ts",
     "eval:cases:reproduce": "node --experimental-strip-types eval/src/cli/reproduce.ts",
+    "eval:compare": "node --experimental-strip-types eval/src/external/compare.ts",
     "eval:corpus:mine": "node --experimental-strip-types eval/src/cli/mine.ts",
     "eval:deterministic": "npm run build && node --experimental-strip-types eval/src/run.ts --ci",
     "eval:external": "npm run build && node --experimental-strip-types eval/src/external/cli.ts",
@@ -54,14 +60,14 @@
     "prepublishOnly": "npm run build",
     "release:check": "node scripts/release-check.mjs",
     "release:version": "node scripts/check-release-version.mjs",
-    "test:release": "node --test scripts/check-release-version.test.mjs scripts/release-workflow.test.mjs scripts/set-version.test.mjs",
-    "version:set": "node scripts/set-version.mjs",
     "serve": "node dist/runners/webhook.js",
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",
     "test": "npm run build && node --test --experimental-strip-types \"test/*.test.ts\"",
+    "test:release": "node --test scripts/check-release-version.test.mjs scripts/release-workflow.test.mjs scripts/set-version.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "verify:action-bundle": "node scripts/verify-action-bundle.mjs",
-    "verify:workflow": "npm run build && node scripts/build-workflow.mjs --check"
+    "verify:workflow": "npm run build && node scripts/build-workflow.mjs --check",
+    "version:set": "node scripts/set-version.mjs"
   },
   "dependencies": {
     "@graphql-inspector/core": "^8.0.0",
