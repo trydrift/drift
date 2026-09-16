@@ -48,6 +48,32 @@ on:
         type: choice
         options:
           - claude-code
+      conditions:
+        description: 'Comma-separated conditions: baseline, drift-full-report, drift-agent-brief, drift-mcp. The default pair is what latest.json is over; any other set produces a comparison instead.'
+        required: true
+        default: 'baseline,drift-full-report'
+        type: string
+      clean_environment:
+        description: 'Session isolation. isolated (required for drift-mcp) or safe-mode (the v1 runs; disables MCP).'
+        required: true
+        default: 'isolated'
+        type: choice
+        options:
+          - isolated
+          - safe-mode
+      drift_verify:
+        description: 'Run Drift with --verify for the report and brief conditions'
+        required: true
+        default: true
+        type: boolean
+      max_budget_usd:
+        description: 'Per-session spending cap in USD, or empty for none'
+        required: false
+        type: string
+      max_turns:
+        description: 'Per-session turn cap, or empty for none'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -81,9 +107,8 @@ jobs:
       - name: Run the benchmark
         env:
           # The agent's own credential. Never read by Drift; only by the agent
-          # CLI the trial starts. `--bare` would be the cleaner session mode
-          # with an API key, but the runner uses `--safe-mode` for parity with
-          # local OAuth runs; both are recorded per trial.
+          # CLI the trial starts. The session isolation mode is an input and is
+          # recorded per trial, with everything the session reported loading.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -93,13 +118,25 @@ jobs:
             --runs "${{ inputs.runs }}" \
             --model "${{ inputs.model }}" \
             --effort "${{ inputs.effort }}" \
+            --conditions "${{ inputs.conditions }}" \
+            --clean-environment "${{ inputs.clean_environment }}" \
+            ${{ inputs.drift_verify && '' || '--no-drift-verify' }} \
+            ${{ inputs.max_budget_usd != '' && format('--max-budget-usd "{0}"', inputs.max_budget_usd) || '' }} \
+            ${{ inputs.max_turns != '' && format('--max-turns "{0}"', inputs.max_turns) || '' }} \
             --run-id "ci-${{ github.run_id }}__${{ inputs.suite }}" \
-            --notes "GitHub Actions run ${{ github.run_id }} on ${{ github.sha }}"
+            --notes "GitHub Actions run ${{ github.run_id }} on ${{ github.sha }}; inputs ${{ toJSON(inputs) }}"
 
       - name: Aggregate and report
         run: |
-          node --experimental-strip-types eval/src/agent/cli.ts aggregate --runs "ci-${{ github.run_id }}__${{ inputs.suite }}"
-          node --experimental-strip-types eval/src/agent/cli.ts report
+          run="ci-${{ github.run_id }}__${{ inputs.suite }}"
+          # Every condition against the baseline, always.
+          node --experimental-strip-types eval/src/agent/cli.ts compare --runs "$run" --name "$run"
+          # The canonical summary is baseline against the full report; refresh
+          # it only from a run of exactly that pair.
+          if [ "${{ inputs.conditions }}" = "baseline,drift-full-report" ] || [ "${{ inputs.conditions }}" = "baseline,drift" ]; then
+            node --experimental-strip-types eval/src/agent/cli.ts aggregate --runs "$run"
+            node --experimental-strip-types eval/src/agent/cli.ts report
+          fi
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -109,9 +146,10 @@ jobs:
             !eval/results/agent/raw/ci-${{ github.run_id }}__${{ inputs.suite }}/trials/*.stream.jsonl.gz
             eval/results/agent/latest.json
             eval/results/agent/history/
+            eval/results/agent/comparisons/
             eval/reports/agent/
             README.md
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 90
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
