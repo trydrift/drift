@@ -9,6 +9,7 @@ import { planLocalChange, type LocalPlanRequest, type LocalPlanResult } from '..
 import { renderAgentBrief } from '../agent-context/render.js';
 import { runWorkingTreeChecks, type WorkingTreeCheckRequest, type WorkingTreeCheckReport } from '../agent-context/verify.js';
 import { agentBriefView } from '../agent-context/view.js';
+import { AgentBudgetExceededError } from '../agent-context/fit.js';
 
 /**
  * The agent-facing half of the MCP server: a small plan first, detail on request.
@@ -24,10 +25,8 @@ import { agentBriefView } from '../agent-context/view.js';
  *   get_evidence    the evidence behind one finding (narrowed), or one record (paged)
  *   verify_upgrade  the project's checks on the working tree, summarised; logs to a file
  *
- * The plan is computed once per checkout and held for the life of the server
- * process. That is not only a speed-up: once the agent edits `package.json`,
- * re-detecting "the change in this checkout" would find the agent's own edit
- * rather than the upgrade it was asked to fix.
+ * Plans are held for the life of the server process; see `AgentPlanSession`
+ * for how the checkout's own plan and explicit-range plans are kept apart.
  */
 
 export type Planner = (request: LocalPlanRequest) => Promise<LocalPlanResult>;
@@ -36,34 +35,80 @@ export type Checker = (request: WorkingTreeCheckRequest) => Promise<WorkingTreeC
 interface HeldPlan {
   result: LocalPlanResult & { plan: NonNullable<LocalPlanResult['plan']> };
   directory: string;
+  /** `null` for the checkout's auto-detected change; the explicit range otherwise. */
+  range: { before?: string; after?: string } | null;
   verified: boolean;
 }
 
+export type PlanOutcome =
+  | { held: HeldPlan; reused: boolean; summary: string }
+  | { held: null; reused: false; summary: string };
+
+/**
+ * Plans held for the life of the server process, in two separate places.
+ *
+ * The **canonical** plan is the one for the dependency change auto-detected in
+ * a checkout. It is computed once and reused, because after the agent edits a
+ * manifest, re-detection would find the agent's edit instead of the upgrade.
+ * A refresh replaces it atomically — including with nothing, when the fresh
+ * analysis finds no change, so an old plan can never outlive a newer answer.
+ *
+ * An **explicit range** (`before`/`after`) is a different question about the
+ * same checkout. It is held under its own key and never replaces, or is
+ * returned as, the canonical plan.
+ *
+ * Detail lookups use the canonical plan unless a plan id is named, in which
+ * case they use exactly that plan or fail.
+ */
 export class AgentPlanSession {
-  private readonly held = new Map<string, HeldPlan>();
+  private readonly canonical = new Map<string, HeldPlan>();
+  private readonly ranges = new Map<string, HeldPlan>();
 
   constructor(
     private readonly planner: Planner = planLocalChange,
     readonly checker: Checker = runWorkingTreeChecks,
   ) {}
 
-  async plan(request: LocalPlanRequest & { refresh?: boolean }): Promise<{ held: HeldPlan | null; reused: boolean; summary: string }> {
+  async plan(request: LocalPlanRequest & { refresh?: boolean }): Promise<PlanOutcome> {
     const directory = resolve(request.directory);
-    const explicitRange = Boolean(request.before || request.after);
-    const existing = this.held.get(directory);
-    if (existing && !request.refresh && !explicitRange && (existing.verified || !request.verify)) {
+    const range = request.before || request.after ? { ...(request.before ? { before: request.before } : {}), ...(request.after ? { after: request.after } : {}) } : null;
+    const store = range ? this.ranges : this.canonical;
+    const key = range ? rangeKey(directory, range) : directory;
+
+    const existing = store.get(key);
+    if (existing && !request.refresh && (existing.verified || !request.verify)) {
       return { held: existing, reused: true, summary: existing.result.summary };
     }
     const result = await this.planner({ ...request, directory });
-    if (!result.plan) return { held: null, reused: false, summary: result.summary };
-    const held: HeldPlan = { result: result as HeldPlan['result'], directory, verified: request.verify };
-    this.held.set(directory, held);
+    if (!result.plan) {
+      store.delete(key);
+      return { held: null, reused: false, summary: result.summary };
+    }
+    const held: HeldPlan = { result: result as HeldPlan['result'], directory, range, verified: request.verify };
+    store.set(key, held);
     return { held, reused: false, summary: result.summary };
   }
 
-  get(directory: string): HeldPlan | null {
-    return this.held.get(resolve(directory)) ?? null;
+  /**
+   * The plan detail calls should use: the canonical plan for the directory, or
+   * — when `planId` is given — the held plan (canonical or range) with that id.
+   */
+  get(directory: string, planId?: string): HeldPlan | null {
+    const dir = resolve(directory);
+    if (!planId) return this.canonical.get(dir) ?? null;
+    const candidates = [this.canonical.get(dir), ...[...this.ranges.values()].filter((h) => h.directory === dir)];
+    return candidates.find((h) => h?.result.plan.id === planId) ?? null;
   }
+
+  /** Ids of the range plans held for a directory, for error messages. */
+  rangePlanIds(directory: string): string[] {
+    const dir = resolve(directory);
+    return [...this.ranges.values()].filter((h) => h.directory === dir).map((h) => h.result.plan.id).sort();
+  }
+}
+
+function rangeKey(directory: string, range: { before?: string; after?: string }): string {
+  return `${directory}\u0000${range.before ?? ''}\u0000${range.after ?? ''}`;
 }
 
 const directoryArg = z.string().optional().describe('Repository root. Defaults to the current working directory.');
@@ -72,7 +117,18 @@ const formatArg = z
   .optional()
   .describe('text (default): compact prose. json: the same selection as flat structured fields.');
 
-const NO_PLAN = 'No Drift plan is held for this directory yet. Call plan_upgrade first.';
+const planArg = z
+  .string()
+  .optional()
+  .describe('Plan id, only for a plan computed with an explicit before/after range. Default: the plan for the change in this checkout.');
+
+function noPlan(session: AgentPlanSession, directory: string, planId?: string): ToolResult {
+  if (planId) {
+    const held = session.rangePlanIds(directory);
+    return text(`No Drift plan with id "${planId}" is held for this directory.${held.length ? ` Range plans held: ${held.join(', ')}.` : ''} Call plan_upgrade first.`, true);
+  }
+  return text('No Drift plan is held for the change in this checkout. Call plan_upgrade first (range plans need their plan id).', true);
+}
 
 type ToolResult = { content: { type: 'text'; text: string }[]; structuredContent?: Record<string, unknown>; isError?: boolean };
 
@@ -86,7 +142,7 @@ function json(value: object): ToolResult {
 }
 
 function failure(err: unknown): ToolResult {
-  if (err instanceof UnknownAgentIdError) return text(err.message, true);
+  if (err instanceof UnknownAgentIdError || err instanceof AgentBudgetExceededError) return text(err.message, true);
   return text(`Drift failed: ${(err as Error).message}`, true);
 }
 
@@ -127,8 +183,12 @@ export function registerAgentTools(server: McpServer, session: AgentPlanSession 
         const { plan, config, checks } = outcome.held.result;
         const brief = buildAgentBrief(plan, { config, availableChecks: checks });
         if (format === 'json') return json(agentBriefView(brief).view);
-        const rendered = renderAgentBrief(brief, { retrieval: 'mcp' });
-        return text(outcome.reused ? `${rendered.text}\n\n(Plan computed earlier in this session; pass refresh: true to re-analyse.)` : rendered.text);
+        const notes = [
+          outcome.held.range ? `(Plan ${plan.id} is for the explicit range; pass plan: "${plan.id}" to get_finding and get_evidence.)` : '',
+          outcome.reused ? '(Plan computed earlier in this session; pass refresh: true to re-analyse.)' : '',
+        ].filter(Boolean);
+        const rendered = renderAgentBrief(brief, { retrieval: 'mcp', ...(notes.length ? { note: notes.join(' ') } : {}) });
+        return text(rendered.text);
       } catch (err) {
         return failure(err);
       }
@@ -146,12 +206,14 @@ export function registerAgentTools(server: McpServer, session: AgentPlanSession 
       inputSchema: {
         id: z.string().describe('Finding id from plan_upgrade.'),
         directory: directoryArg,
+        plan: planArg,
         format: formatArg,
       },
     },
-    async ({ id, directory, format }) => {
-      const held = session.get(directory ?? process.cwd());
-      if (!held) return text(NO_PLAN, true);
+    async ({ id, directory, plan, format }) => {
+      const dir = directory ?? process.cwd();
+      const held = session.get(dir, plan);
+      if (!held) return noPlan(session, dir, plan);
       try {
         const detail = findingDetail(held.result.plan, id, { config: held.result.config });
         return format === 'json' ? json(detail.data) : text(detail.text);
@@ -174,12 +236,14 @@ export function registerAgentTools(server: McpServer, session: AgentPlanSession 
         evidence: z.string().optional().describe('Evidence id (`ev_…`); returns that record.'),
         offset: z.number().int().min(0).optional().describe('Character offset for the next page of a long record.'),
         directory: directoryArg,
+        plan: planArg,
         format: formatArg,
       },
     },
-    async ({ finding, evidence, offset, directory, format }) => {
-      const held = session.get(directory ?? process.cwd());
-      if (!held) return text(NO_PLAN, true);
+    async ({ finding, evidence, offset, directory, plan, format }) => {
+      const dir = directory ?? process.cwd();
+      const held = session.get(dir, plan);
+      if (!held) return noPlan(session, dir, plan);
       try {
         const detail = evidenceDetail(held.result.plan, {
           ...(finding ? { findingId: finding } : {}),

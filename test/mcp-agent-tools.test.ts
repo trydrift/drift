@@ -141,7 +141,8 @@ describe('MCP agent tools — planning', () => {
     assert.equal(view.omitted.noLocatedUsage, 286);
     const unknown = new Set(eslint().dispositions!.filter((d) => d.state === 'unknown').map((d) => d.changeId));
     // JSON is less dense than the prose brief: whatever does not fit is named, never dropped.
-    const accounted = [...view.findings.map((f) => f.id), ...(structured as { omittedForBudget: string[] }).omittedForBudget].sort();
+    const accounted = [...view.findings.map((f) => f.id), ...(structured as { findingIdsNotShown: string[] }).findingIdsNotShown].sort();
+    assert.equal(view.findings.length + (structured as { findingsNotShown: number }).findingsNotShown, 5);
     assert.deepEqual(accounted, ['bc_2ba7ffc9b7', 'bc_3ab894d22c', 'bc_6843abffd2', 'bc_a770541f05', 'bc_c5df06643e']);
     for (const finding of view.findings) assert.equal(unknown.has(finding.id), false, finding.id);
   });
@@ -197,15 +198,19 @@ describe('MCP agent tools — detail on request', () => {
     assert.ok(Buffer.byteLength(text) < 1_000, `${Buffer.byteLength(text)} bytes`);
   });
 
-  test('get_evidence pages a long record', async () => {
+  test('get_evidence returns a record that fits whole with no continuation, text and JSON alike', async () => {
     const h = await harness();
     await h.call('plan_upgrade');
-    const first = await h.call('get_evidence', { evidence: 'ev_100f063a09' });
-    assert.match(first.text, /eslint v9\.0\.0 release notes/);
-    const offset = Number(/request offset (\d+)/.exec(first.text)?.[1]);
-    assert.ok(offset > 0, first.text.slice(-200));
-    const second = await h.call('get_evidence', { evidence: 'ev_100f063a09', offset });
-    assert.match(second.text, new RegExp(`Content from byte ${offset}`));
+    const record = eslint().evidence.find((e) => e.id === 'ev_100f063a09')!;
+    const text = await h.call('get_evidence', { evidence: 'ev_100f063a09' });
+    assert.match(text.text, /eslint v9\.0\.0 release notes/);
+    assert.doesNotMatch(text.text, /continues: request offset/);
+    const json = await h.call('get_evidence', { evidence: 'ev_100f063a09', format: 'json' });
+    const view = json.structured as { records: { excerpt: string; nextOffset: number | null; contentChars: number }[] };
+    assert.equal(view.records[0]!.contentChars, record.content.length);
+    assert.equal(view.records[0]!.excerpt, record.content);
+    assert.equal(view.records[0]!.nextOffset, null);
+    assert.ok(Buffer.byteLength(json.text) <= 2_500 * BYTES_PER_TOKEN);
   });
 
   test('verify_upgrade passes the upgraded manifest dependencies and returns the checker’s concise report', async () => {
@@ -250,5 +255,102 @@ describe('working-tree checks', () => {
     assert.match(report.text, /eslint: declared \^10\.0\.0 in package\.json \(upgrade target 10\.0\.0\)/);
     assert.equal(report.passed, false);
     assert.ok(report.estimatedTokens < 400);
+  });
+});
+
+describe('MCP agent tools — held plans cannot go stale or cross ranges', () => {
+  const keyring = (): RemediationPlan =>
+    JSON.parse(gunzipSync(readFileSync(new URL('./fixtures/agent-context/ethereumjs-tx-4-to-5.plan.json.gz', import.meta.url))).toString('utf8'));
+
+  /** Plan A (ESLint) for the checkout's own change; plan B (@ethereumjs/tx) for any explicit range; `none` switches the checkout to no change. */
+  async function sequenceHarness() {
+    const state = { none: false, calls: 0 };
+    const a = eslint();
+    const b = keyring();
+    assert.notEqual(a.id, b.id);
+    const session = new AgentPlanSession(async (request) => {
+      state.calls += 1;
+      const plan = request.before || request.after ? b : state.none ? null : a;
+      return { plan, config: DEFAULT_CONFIG, range: null, summary: plan ? 'planned' : 'No dependency change found in this checkout.', checks: [] };
+    });
+    const server = createDriftMcpServer(session);
+    const [serverSide, clientSide] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverSide);
+    const client = new Client({ name: 'test', version: '1' });
+    await client.connect(clientSide);
+    const call = async (name: string, args: Record<string, unknown> = {}) => {
+      const result = (await client.callTool({ name, arguments: { directory: '/repo', ...args } })) as { content: { text: string }[]; isError?: boolean };
+      return { text: result.content.map((c) => c.text).join(''), isError: Boolean(result.isError) };
+    };
+    return { state, a, b, call };
+  }
+
+  test('an explicit range never replaces the checkout plan, and detail for it needs its plan id', async () => {
+    const { state, a, b, call } = await sequenceHarness();
+    assert.match((await call('plan_upgrade')).text, /Drift agent brief: eslint 8\.57\.1/);
+    const ranged = await call('plan_upgrade', { before: 'x', after: 'y' });
+    assert.match(ranged.text, /Drift agent brief: @ethereumjs\/tx 4\.2\.0/);
+    assert.match(ranged.text, new RegExp(`pass plan: "${b.id}"`));
+    // The checkout plan is still A, reused, not B.
+    const again = await call('plan_upgrade');
+    assert.match(again.text, /Drift agent brief: eslint 8\.57\.1/);
+    assert.doesNotMatch(again.text, /@ethereumjs/);
+    assert.equal(state.calls, 2);
+    // Detail without a plan id reads A; B's finding is not in A.
+    assert.equal((await call('get_finding', { id: 'bc_6843abffd2' })).isError, false);
+    const bFinding = 'measured:npm @ethereumjs/tx';
+    assert.equal((await call('get_finding', { id: bFinding })).isError, true);
+    // Naming B's plan id reads B, and only B.
+    const fromB = await call('get_finding', { id: bFinding, plan: b.id });
+    assert.equal(fromB.isError, false);
+    assert.match(fromB.text, /src\/ledger-keyring\.ts:329/);
+    assert.equal((await call('get_finding', { id: 'bc_6843abffd2', plan: b.id })).isError, true);
+    assert.equal((await call('get_evidence', { finding: 'bc_6843abffd2', plan: a.id })).isError, false);
+    // An unknown plan id is an error naming the range plans held.
+    const unknown = await call('get_finding', { id: 'bc_6843abffd2', plan: 'plan_nope' });
+    assert.equal(unknown.isError, true);
+    assert.match(unknown.text, new RegExp(`Range plans held: ${b.id}`));
+  });
+
+  test('a refresh that finds no change clears the checkout plan instead of leaving the old one reachable', async () => {
+    const { state, call } = await sequenceHarness();
+    await call('plan_upgrade');
+    assert.equal((await call('get_finding', { id: 'bc_6843abffd2' })).isError, false);
+    state.none = true;
+    const refreshed = await call('plan_upgrade', { refresh: true });
+    assert.match(refreshed.text, /No dependency change found/);
+    const stale = await call('get_finding', { id: 'bc_6843abffd2' });
+    assert.equal(stale.isError, true);
+    assert.match(stale.text, /Call plan_upgrade first/);
+    assert.equal((await call('get_evidence', { finding: 'bc_6843abffd2' })).isError, true);
+    // And a later plain call re-analyses rather than resurrecting it.
+    state.none = false;
+    const replanned = await call('plan_upgrade');
+    assert.doesNotMatch(replanned.text, /Plan computed earlier/);
+    assert.equal(state.calls, 3);
+  });
+
+  test('a refreshed explicit range replaces only that range', async () => {
+    const { state, call } = await sequenceHarness();
+    await call('plan_upgrade');
+    await call('plan_upgrade', { before: 'x', after: 'y' });
+    await call('plan_upgrade', { before: 'x', after: 'y' });
+    assert.equal(state.calls, 2, 'the same range is reused');
+    await call('plan_upgrade', { before: 'x', after: 'z' });
+    assert.equal(state.calls, 3, 'a different range is a different plan');
+    await call('plan_upgrade', { before: 'x', after: 'y', refresh: true });
+    assert.equal(state.calls, 4);
+    assert.match((await call('plan_upgrade')).text, /eslint 8\.57\.1/);
+    assert.equal(state.calls, 4, 'the checkout plan was untouched throughout');
+  });
+
+  test('every JSON form over MCP stays within its ceiling', async () => {
+    const { call } = await sequenceHarness();
+    const brief = await call('plan_upgrade', { format: 'json' });
+    assert.ok(Buffer.byteLength(brief.text) <= 2_000 * BYTES_PER_TOKEN);
+    const finding = await call('get_finding', { id: 'bc_a770541f05', format: 'json' });
+    assert.ok(Buffer.byteLength(finding.text) <= 2_000 * BYTES_PER_TOKEN);
+    const evidence = await call('get_evidence', { finding: 'bc_6843abffd2', format: 'json' });
+    assert.ok(Buffer.byteLength(evidence.text) <= 2_500 * BYTES_PER_TOKEN);
   });
 });
