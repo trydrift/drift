@@ -33,6 +33,8 @@ export interface AgentSessionInfo {
   permissionMode: string;
   tools: string[];
   mcpServers: string[];
+  /** The session's full loaded environment, from its init record. `null` when no init record arrived. */
+  environment: import('./claude-code.ts').SessionEnvironment | null;
   argv: string[];
   disallowedTools: string[];
   cleanEnvironment: string;
