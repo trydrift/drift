@@ -1,6 +1,8 @@
 import { arch, platform, release } from 'node:os';
 import { hashCase, loadCase, loadHidden, loadSuite, suiteHashMismatches } from './cases.ts';
+import { agentContextDiagnostics } from './agent-context.ts';
 import { buildDriftContext, type DriftContext } from './drift-context.ts';
+import { parseClaudeStream } from './providers/claude-code.ts';
 import type { AgentProvider, AgentRunResult } from './providers/types.ts';
 import {
   AGENT_TRIAL_SCHEMA_VERSION,
@@ -422,6 +424,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       maxBudgetUsd: options.maxBudgetUsd,
       maxTurns: options.maxTurns,
       env: projectEnv(agentCase, { DRIFT: '1' }),
+      mcpServers: driftContext?.mcpServers ?? {},
       onEventLine: (line) => streamLines.push(line),
       onProgress: (message) => options.onProgress?.(`    ${message}`),
     });
@@ -477,6 +480,16 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       referencePatchFiles: referenceFiles.length,
     };
 
+    // What Drift put into the context and what the agent pulled from it.
+    const agentContext = agentContextDiagnostics({
+      condition,
+      parsed: parseClaudeStream(streamLines),
+      preamble: context.preamble,
+      brief: driftContext?.brief ?? null,
+      findingsInPlan: driftContext?.plan?.breakingChanges ?? null,
+      dependency: agentCase.dependency.name,
+    });
+
     const endedAt = new Date();
     timing.totalMs = endedAt.getTime() - startedAt.getTime();
     const valid = infrastructureFailure === null;
@@ -504,6 +517,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
         validation: valid ? validation : { ...validation, success: false },
         validity: { valid, infrastructureFailure, detail: infrastructureDetail },
         diagnostics,
+        agentContext,
         timing,
       },
       diff: captured.diff,

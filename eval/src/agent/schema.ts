@@ -29,13 +29,57 @@ export const AGENT_CASE_SCHEMA_VERSION = 'drift-agent-case-v1';
 export const AGENT_TRIAL_SCHEMA_VERSION = 'drift-agent-trial-v1';
 export const AGENT_SUMMARY_SCHEMA_VERSION = 1;
 
-/** The two experimental conditions, plus the ablations the runner is built to add later. */
-export const CONDITIONS = ['baseline', 'drift', 'drift-evidence-only', 'drift-localization-only'] as const;
+/**
+ * Experimental conditions.
+ *
+ * `drift` is the condition #320 ran: the task followed by Drift's full human
+ * report (`drift analyze --markdown --verify`). Its stored id stays `drift` so
+ * every artifact recorded under it keeps its meaning; it is *labelled*
+ * `drift-full-report` wherever conditions are compared, and the CLI accepts
+ * that name. It is kept as the ablation that shows why the agent interface
+ * changed, not as the product's agent path.
+ *
+ * `drift-agent-brief` — the task followed by the production agent brief
+ * (`drift analyze --agent --verify`), with a one-sentence header.
+ * `drift-mcp` — the task, a one-sentence note that Drift's MCP tools are
+ * available, and the production MCP server (`drift mcp`) connected. Nothing is
+ * analysed before the session; the agent calls Drift or does not.
+ */
+export const CONDITIONS = [
+  'baseline',
+  'drift',
+  'drift-evidence-only',
+  'drift-localization-only',
+  'drift-agent-brief',
+  'drift-mcp',
+] as const;
 export type Condition = (typeof CONDITIONS)[number];
 export const conditionSchema = z.enum(CONDITIONS);
 
-/** The two conditions every published result is over. Ablations are diagnostics and never enter a headline. */
+/** How each condition is named in comparisons and on the command line. */
+export const CONDITION_LABELS: Record<Condition, string> = {
+  baseline: 'baseline',
+  drift: 'drift-full-report',
+  'drift-evidence-only': 'drift-evidence-only',
+  'drift-localization-only': 'drift-localization-only',
+  'drift-agent-brief': 'drift-agent-brief',
+  'drift-mcp': 'drift-mcp',
+};
+
+/** Accepts a stored id or its label (`drift-full-report` → `drift`). */
+export function parseCondition(name: string): Condition {
+  const byLabel = (Object.entries(CONDITION_LABELS) as [Condition, string][]).find(([, label]) => label === name);
+  if (byLabel) return byLabel[0];
+  const parsed = conditionSchema.safeParse(name);
+  if (!parsed.success) throw new Error(`Unknown condition "${name}". Known: ${Object.values(CONDITION_LABELS).join(', ')}`);
+  return parsed.data;
+}
+
+/** The two conditions the canonical summary (`latest.json`) is over. Other Drift conditions are compared separately. */
 export const HEADLINE_CONDITIONS: readonly Condition[] = ['baseline', 'drift'];
+
+/** Every condition whose trials are compared against the baseline. */
+export const DRIFT_CONDITIONS: readonly Condition[] = ['drift', 'drift-agent-brief', 'drift-mcp', 'drift-evidence-only', 'drift-localization-only'];
 
 const checkKindSchema = z.enum(['build', 'typecheck', 'test', 'lint', 'runtime']);
 export type CheckKind = z.infer<typeof checkKindSchema>;
@@ -403,6 +447,54 @@ export const validationSchema = z.object({
 });
 export type ValidationResult = z.infer<typeof validationSchema>;
 
+const tokenSplitSchema = z.object({
+  grossInputTokens: z.number().int().nonnegative(),
+  uncachedInputTokens: z.number().int().nonnegative(),
+  modelCalls: z.number().int().nonnegative(),
+});
+
+export const agentContextSchema = z.object({
+  interface: z.enum(['none', 'full-report', 'agent-brief', 'mcp']),
+  /** What Drift placed in the initial prompt, after the task. */
+  initialDriftContextChars: z.number().int().nonnegative(),
+  /** `ceil(bytes / 3)`, the production brief's own estimator. Not a provider count. */
+  initialDriftContextEstimatedTokens: z.number().int().nonnegative(),
+  /** Calls to a Drift MCP tool, and what they returned. */
+  driftToolCalls: z.number().int().nonnegative(),
+  driftToolCallsByName: z.record(z.string(), z.number().int().nonnegative()),
+  driftToolReturnedChars: z.number().int().nonnegative(),
+  driftToolReturnedEstimatedTokens: z.number().int().nonnegative(),
+  /** Error results among those calls. */
+  driftToolErrors: z.number().int().nonnegative(),
+  /** Breaking changes in the plan the brief was built from. `null` when no plan was computed before the session. */
+  findingsInPlan: z.number().int().nonnegative().nullable(),
+  findingsInInitialBrief: z.number().int().nonnegative().nullable(),
+  /** Distinct finding ids the agent requested with get_finding / get_evidence. */
+  findingsRetrievedOnDemand: z.number().int().nonnegative(),
+  /** Upstream breaking changes the brief counted instead of listing. */
+  nonLocalFindingsOmitted: z.number().int().nonnegative().nullable(),
+  deterministicSitesCovered: z.number().int().nonnegative().nullable(),
+  residualSitesSentToAgent: z.number().int().nonnegative().nullable(),
+  /**
+   * Provider usage of the main-conversation model calls up to and including
+   * the one that issued the first file edit, and after it. From the
+   * per-message ledger, so the CLI's auxiliary model is not in either half.
+   * `null` when the session made no edit.
+   */
+  tokensBeforeFirstEdit: tokenSplitSchema.nullable(),
+  tokensAfterFirstEdit: tokenSplitSchema.nullable(),
+  /** How the agent researched the dependency itself, whatever Drift gave it. */
+  research: z.object({
+    /** Read/Grep/Glob calls, and shell commands, that touch the upgraded package inside node_modules. */
+    dependencySourceAccesses: z.number().int().nonnegative(),
+    /** Shell commands that query a registry or package metadata (`npm view`, `npm info`, `yarn info`, `npm ls`). */
+    registryQueries: z.number().int().nonnegative(),
+    /** Accesses to a CHANGELOG, release notes or migration guide file. */
+    changelogAccesses: z.number().int().nonnegative(),
+  }),
+});
+export type AgentContextDiagnostics = z.infer<typeof agentContextSchema>;
+
 export const trialSchema = z
   .object({
     schemaVersion: z.literal(AGENT_TRIAL_SCHEMA_VERSION),
@@ -516,6 +608,12 @@ export const trialSchema = z
       validationMs: z.number().int().nonnegative(),
       totalMs: z.number().int().nonnegative(),
     }),
+    /**
+     * What Drift put into the agent's context and what the agent pulled from
+     * it. Absent on artifacts recorded before this block existed (#320's
+     * runs); computed from the stream and the plan for every later trial.
+     */
+    agentContext: agentContextSchema.optional(),
     /**
      * Present when the artifact's diff-derivable rules were re-evaluated
      * against a later revision of the case. The original outcome is kept.
