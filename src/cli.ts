@@ -33,6 +33,8 @@ import { createBaselineCache } from './verification/baseline-cache.js';
 import { execCommand } from './util/exec.js';
 import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { runFix } from './remediation/cli-runner.js';
+import { availableChecks } from './verification/checks.js';
+import { agentBriefView, buildAgentBrief, evidenceDetail, findingDetail, renderAgentBrief, UnknownAgentIdError } from './agent-context/index.js';
 import { runAgentCommitsInWorktree } from './remediation/worktree-runner.js';
 import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from './agents/compat.js';
 import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from './agents/registry.js';
@@ -332,6 +334,18 @@ Options:
                               request body, for pasting into an issue or a
                               review. The default is a terminal summary
   --json                      Emit the plan as JSON instead of markdown
+  --agent                     Print the brief for a coding agent instead of
+                              the report: only findings that reach this
+                              repository, with file:line locations, the
+                              checks to run and what is uncertain, under
+                              2,000 tokens. Other upstream changes are
+                              counted, not listed. With --json, the same
+                              selection as fields
+  --finding <id>              One finding from the plan in full (any id the
+                              brief or the plan names), bounded
+  --evidence <id>             The evidence for a finding id, or one evidence
+                              record (ev_…), narrowed and paged
+  --offset <n>                With --evidence <ev_…>: the page to start at
   --verify                    Deep Verification: after the static (Quick
                               Scan) report, install this change in a
                               throwaway worktree and run this project's own
@@ -1321,6 +1335,36 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     return 0;
   }
 
+  // The coding agent's view. A different renderer over the same plan, not a
+  // shorter report: only what reaches this repository, inside a fixed budget,
+  // with every omitted finding and evidence record resolvable by id.
+  if (flags.agent || typeof flags.finding === 'string' || typeof flags.evidence === 'string') {
+    try {
+      if (typeof flags.finding === 'string') {
+        const detail = findingDetail(result.plan, flags.finding, { config });
+        console.log(flags.json ? JSON.stringify(detail.data, null, 2) : detail.text);
+      } else if (typeof flags.evidence === 'string') {
+        const offset = typeof flags.offset === 'string' ? Number(flags.offset) : undefined;
+        const detail = evidenceDetail(result.plan, {
+          ...(flags.evidence.startsWith('ev_') || flags.evidence.startsWith('check:') ? { evidenceId: flags.evidence } : { findingId: flags.evidence }),
+          ...(offset !== undefined && Number.isFinite(offset) ? { offset } : {}),
+        });
+        console.log(flags.json ? JSON.stringify(detail.data, null, 2) : detail.text);
+      } else {
+        const checks = (await availableChecks(workspace)).map((check) => ({ label: check.label, kind: check.kind }));
+        const brief = buildAgentBrief(result.plan, { config, availableChecks: checks });
+        console.log(flags.json ? JSON.stringify(agentBriefView(brief).view, null, 2) : renderAgentBrief(brief, { retrieval: 'cli' }).text);
+      }
+    } catch (err) {
+      if (err instanceof UnknownAgentIdError) {
+        logger.error(err.message);
+        return 1;
+      }
+      throw err;
+    }
+    return 0;
+  }
+
   if (flags.json) {
     console.log(JSON.stringify(result.plan, null, 2));
     return 0;
@@ -2105,6 +2149,15 @@ async function resolveManagerForWrite(
  * itself. Like \`pr\`, this never merges and never force-pushes.
  */
 async function fixCommand(flags: Flags): Promise<number> {
+  // `fix` accepts every `analyze` option, but these three only change what
+  // `analyze` prints. Accepting them here would read well and do nothing.
+  const printOnly = ['agent', 'finding', 'evidence', 'offset'].filter((key) => flags[key] !== undefined);
+  if (printOnly.length > 0) {
+    return refuse(
+      [`\`fix\` does not take ${printOnly.map((key) => `\`--${key}\``).join(', ')}: ${printOnly.length === 1 ? 'it only changes' : 'they only change'} what \`analyze\` prints.`],
+      ['Nothing ran, so nothing here changed.', 'For the agent brief:  drift analyze --agent'],
+    );
+  }
   const logLevel = (typeof flags['log-level'] === 'string' ? flags['log-level'] : 'info') as LogLevel;
   const logger = createLogger(logLevel);
 

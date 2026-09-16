@@ -268,3 +268,22 @@ test('every prompt says what declining means instead of inheriting it', async ()
     );
   }
 });
+
+test('analyze documents the agent brief and its detail flags', async () => {
+  const { code, out } = await run(['help', 'analyze']);
+  assert.equal(code, 0);
+  for (const flag of ['--agent', '--finding <id>', '--evidence <id>', '--offset <n>']) {
+    assert.match(out, new RegExp(flag.replace(/[<>]/g, '.')), `analyze documents ${flag}`);
+  }
+  assert.match(out, /under\s+2,000 tokens/);
+});
+
+test('fix refuses the agent print flags instead of ignoring them', async () => {
+  // `fix` inherits every `analyze` option. These only change what `analyze`
+  // prints, and a `drift fix --agent` that silently ran a fix would be worse
+  // than an error.
+  const { code, err } = await run(['fix', '--agent', '--finding', 'bc_x']);
+  assert.notEqual(code, 0);
+  assert.match(err, /`fix` does not take `--agent`, `--finding`/);
+  assert.match(err, /Nothing ran/);
+});
