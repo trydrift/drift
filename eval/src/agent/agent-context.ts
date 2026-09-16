@@ -45,6 +45,10 @@ export function agentContextDiagnostics(args: {
   /** The plan's breaking-change count for conditions that computed one before the session. */
   findingsInPlan: number | null;
   dependency: string;
+  /** Drift's analysis before the session, in ms; 0 when there was none. */
+  preSessionDriftMs?: number;
+  /** The session's own wall-clock duration, in ms. */
+  sessionMs?: number;
 }): AgentContextDiagnostics {
   const { parsed } = args;
 
@@ -53,11 +57,13 @@ export function agentContextDiagnostics(args: {
   let returnedChars = 0;
   let errors = 0;
   const retrieved = new Set<string>();
+  let driftToolMs = 0;
   for (const call of driftCalls) {
     const name = call.name.slice(DRIFT_TOOL_PREFIX.length);
     byName[name] = (byName[name] ?? 0) + 1;
     const result = parsed.toolResults.get(call.id);
     returnedChars += result?.chars ?? 0;
+    if (call.at !== null && result?.at != null && result.at >= call.at) driftToolMs += result.at - call.at;
     if (result?.isError) errors += 1;
     if (DETAIL_TOOLS.has(name)) {
       for (const key of ['id', 'finding']) {
@@ -104,6 +110,12 @@ export function agentContextDiagnostics(args: {
     residualSitesSentToAgent: args.brief?.residualSitesSentToAgent ?? null,
     tokensBeforeFirstEdit: firstEdit ? split(0, firstEdit.ledgerIndex + 1) : null,
     tokensAfterFirstEdit: firstEdit ? split(firstEdit.ledgerIndex + 1, parsed.ledger.length) : null,
+    timing: {
+      preSessionDriftMs: Math.max(0, Math.round(args.preSessionDriftMs ?? 0)),
+      sessionMs: Math.max(0, Math.round(args.sessionMs ?? 0)),
+      driftToolMs: Math.round(driftToolMs),
+      endToEndMs: Math.max(0, Math.round((args.preSessionDriftMs ?? 0) + (args.sessionMs ?? 0))),
+    },
     research: researchSignals(parsed, args.dependency),
   };
 }

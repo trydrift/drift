@@ -32,11 +32,13 @@ function usage(): string {
     '  benchmark:agent validate-cases [--suite <suite>] [--case <id>] [--repeats N] [--write]',
     '  benchmark:agent aggregate --runs a,b [--out latest]',
     '  benchmark:agent rescore --runs a,b        # re-evaluate diff-derivable rules after a case changed; marks the artifacts',
+    '  benchmark:agent isolation-probe [--model M]   # live, cheap: prove sessions load only what each condition declares',
     '  benchmark:agent report',
     '  benchmark:agent verify',
     '  benchmark:agent runs | cases | suites',
     '',
-    '  benchmark:agent compare --runs a,b [--reference-runs c,d] --name NAME   # every Drift condition against the baseline',
+    '  benchmark:agent compare --runs a,b [--reference-runs c,d] [--exploratory-runs e,f] --name NAME',
+    '                                        # every Drift condition against the baseline; refuses incompatible runs',
     '',
     'Defaults: --runs 5, --model claude-sonnet-5, --effort high, provider claude-code, isolated sessions, web tools disabled, Drift --verify on,',
     'conditions baseline + drift-full-report (the canonical summary pair).',
@@ -137,6 +139,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       githubToken: process.env['GITHUB_TOKEN'],
       ...(flag(argv, 'run-id') ? { runId: flag(argv, 'run-id')! } : {}),
       retryInfrastructure: has(argv, 'retry-infrastructure'),
+      cleanEnvironment,
       notes: flag(argv, 'notes') ?? '',
       root,
       onProgress: log,
@@ -176,6 +179,17 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     return 0;
   }
 
+  if (command === 'isolation-probe') {
+    const { runIsolationProbe } = await import('./isolation-probe.ts');
+    const { report, path } = await runIsolationProbe({ ...(flag(argv, 'model') ? { model: flag(argv, 'model')! } : {}), root });
+    for (const line of report.conclusions) log(line);
+    log(`isolation probe written to ${path}`);
+    const isolated = report.sessions.filter((s) => s.cleanEnvironment === 'isolated');
+    const leaked = isolated.some((s) => s.canaryWordsSeen.length || s.settingsEnvSeen.length || s.hooksRan.length || s.environmentProblems.length);
+    const equal = new Set(isolated.map((s) => s.environment?.fingerprint)).size === 1;
+    return leaked || !equal ? 1 : 0;
+  }
+
   if (command === 'compare') {
     const runs = flag(argv, 'runs')?.split(',').filter(Boolean);
     const name = flag(argv, 'name');
@@ -183,7 +197,16 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       console.error(usage());
       return 2;
     }
-    const comparison = await buildComparison({ name, runIds: runs, referenceRunIds: flag(argv, 'reference-runs')?.split(',').filter(Boolean) ?? [], root });
+    const list = (key: string) => flag(argv, key)?.split(',').filter(Boolean) ?? [];
+    const comparison = await buildComparison({
+      name,
+      runIds: runs,
+      history: [
+        { label: 'the first result (#320: baseline vs full report, safe-mode sessions)', runIds: list('reference-runs') },
+        { label: 'exploratory runs aborted during review', runIds: list('exploratory-runs') },
+      ],
+      root,
+    });
     const paths = await writeComparison(comparison, root);
     log(`comparison written to ${paths.json} and ${paths.markdown}`);
     return 0;
