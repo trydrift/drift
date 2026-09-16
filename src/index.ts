@@ -84,6 +84,9 @@ export {
   AGENT_BRIEF_SCHEMA_VERSION,
   estimateTokens,
 } from './agent-context/index.js';
+// The checks a brief names when verification measured none; the benchmark and
+// any other caller that builds a brief outside the CLI detect them the same way.
+export { availableChecks } from './verification/checks.js';
 export type {
   AgentBrief,
   AgentBriefOptions,
