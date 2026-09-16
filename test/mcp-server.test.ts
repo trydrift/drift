@@ -77,7 +77,7 @@ describe('serving Drift over MCP', () => {
     assert.equal(info, 'drift');
     assert.deepEqual(
       tools.map((tool) => tool.name).sort(),
-      ['check_installed', 'check_upgrades', 'explain_upgrade'],
+      ['check_installed', 'check_upgrades', 'explain_upgrade', 'get_evidence', 'get_finding', 'plan_upgrade', 'verify_upgrade'],
     );
   });
 

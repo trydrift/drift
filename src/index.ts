@@ -75,6 +75,7 @@ export { renderPullRequestBody, renderApprovalIssue, renderSummaryLine } from '.
 export {
   buildAgentBrief,
   renderAgentBrief,
+  agentBriefView,
   findingDetail,
   evidenceDetail,
   UnknownAgentIdError,
@@ -91,6 +92,7 @@ export type {
   AgentCheck,
   AgentGap,
   RenderedAgentBrief,
+  AgentBriefView,
   DetailRetrieval,
   ContextBudget,
 } from './agent-context/index.js';

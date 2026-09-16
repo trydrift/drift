@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { runScan, renderScan, renderExplanation } from '../upgrade/explain.js';
 import { runInstalledCheck, renderInstalledCheck } from '../upgrade/run-installed-check.js';
+import { AgentPlanSession, registerAgentTools } from './agent-tools.js';
 
 /**
  * Drift as a tool a coding agent can call.
@@ -46,8 +47,13 @@ function serverVersion(): string {
   }
 }
 
-/** Build the server, wired to `scanUpgrades`. Exported for tests. */
-export function createDriftMcpServer(): McpServer {
+/**
+ * Build the server, wired to `scanUpgrades`. Exported for tests.
+ *
+ * `session` holds the agent tools' plans; tests pass one with a fixture
+ * planner so the protocol can be exercised without running an analysis.
+ */
+export function createDriftMcpServer(session?: AgentPlanSession): McpServer {
   const server = new McpServer({ name: 'drift', version: serverVersion() });
 
   server.registerTool(
@@ -152,6 +158,8 @@ export function createDriftMcpServer(): McpServer {
       return { content: [{ type: 'text', text: renderInstalledCheck(run) }] };
     },
   );
+
+  registerAgentTools(server, session);
 
   return server;
 }
