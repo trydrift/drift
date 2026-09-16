@@ -49,7 +49,7 @@ export const DEFAULT_GATES = {
   maximumAgeDays: 180,
   /** A public result must be over a frozen suite. */
   requireFrozenSuite: true,
-  /** A public result must be over cases whose provenance is historical. */
+  /** A public result must be over real repositories: `historical` or `mined` cases, never `synthetic`. */
   requireHistoricalCases: true,
   /** Trials excluded as infrastructure failures may not exceed this fraction. */
   maximumInfrastructureExclusionRate: 0.2,
@@ -177,7 +177,7 @@ export function evaluateGates(summary: Omit<AgentBenchmarkSummary, 'publication'
   push('minimum-valid-trials', minValid >= thresholds.minimumValidTrialsPerCondition, `${minValid} valid trial(s) in the smaller condition, minimum ${thresholds.minimumValidTrialsPerCondition}`);
   push('frozen-suite', !thresholds.requireFrozenSuite || summary.suiteStatus === 'frozen', `suite status ${summary.suiteStatus}`);
   const synthetic = summary.caseProvenance['synthetic'] ?? 0;
-  push('historical-cases-only', !thresholds.requireHistoricalCases || synthetic === 0, synthetic === 0 ? 'no synthetic cases' : `${synthetic} synthetic case(s) in the result`);
+  push('no-synthetic-cases', !thresholds.requireHistoricalCases || synthetic === 0, synthetic === 0 ? 'no synthetic cases (real repositories only)' : `${synthetic} synthetic case(s) in the result`);
   const ageDays = (now.getTime() - new Date(summary.generatedAt).getTime()) / 86_400_000;
   push('freshness', ageDays <= thresholds.maximumAgeDays, `${ageDays.toFixed(0)} day(s) old, maximum ${thresholds.maximumAgeDays}`);
   const total = summary.conditions.reduce((sum, c) => sum + c.trials, 0);

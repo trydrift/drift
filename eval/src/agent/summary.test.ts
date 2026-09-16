@@ -147,7 +147,7 @@ describe('canonical summary', () => {
   test('synthetic cases cannot pass the gates', async () => {
     const { root, runIds } = await scaffold({ cases: 12, runs: 3, frozen: true, provenance: 'synthetic' });
     const summary = await buildSummary({ runIds, root, now: new Date('2026-09-17T00:00:00.000Z') });
-    assert.deepEqual(summary.publication.gates.filter((g) => !g.passed).map((g) => g.name), ['historical-cases-only']);
+    assert.deepEqual(summary.publication.gates.filter((g) => !g.passed).map((g) => g.name), ['no-synthetic-cases']);
   });
 
   test('writes latest.json and a history copy', async () => {

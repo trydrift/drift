@@ -91,11 +91,13 @@ export const caseSchema = z
     title: z.string().min(1),
     /**
      * `historical` — a real repository, a real bump, and a real fix that a
-     * maintainer later wrote. `synthetic` — a consumer this project authored
-     * against a real package. Synthetic cases exist to develop the harness
-     * and never enter a public suite.
+     * maintainer later wrote. `mined` — a real repository at a real commit,
+     * a real published upgrade applied by the benchmark (the construction
+     * swe-bump-bench and BUMP use), and a benchmark-authored reference fix.
+     * `synthetic` — a consumer this project authored against a real package,
+     * to develop the harness; never enters a public suite.
      */
-    provenance: z.enum(['historical', 'synthetic']),
+    provenance: z.enum(['historical', 'mined', 'synthetic']),
     /**
      * Cases used while building and tuning Drift are `development`. A public
      * generalisation claim needs `held-out` cases that were not. A suite that

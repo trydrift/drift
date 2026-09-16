@@ -99,8 +99,8 @@ export function validateCaseShape(agentCase: AgentCase): string[] {
       problems.push('a historical case should name its fixCommit or a reference URL.');
     }
   }
-  if (agentCase.source.kind === 'fixture' && agentCase.provenance === 'historical') {
-    problems.push('a fixture-sourced case cannot be historical.');
+  if (agentCase.source.kind === 'fixture' && agentCase.provenance !== 'synthetic') {
+    problems.push('a fixture-sourced case must be synthetic.');
   }
   if (agentCase.provenance === 'synthetic' && agentCase.role === 'held-out') {
     problems.push('a synthetic case cannot be held-out.');
