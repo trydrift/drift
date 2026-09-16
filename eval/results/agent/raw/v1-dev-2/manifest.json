@@ -1,0 +1,26 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "v1-dev-2",
+  "suite": "agent-upgrade-v1",
+  "suiteStatus": "draft",
+  "createdAt": "2026-09-16T14:13:29.537Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/agent/cli.ts run --suite agent-upgrade-v1 --case gh-aw-firewall-eslint-10 --runs 3 --run-id v1-dev-2 --retry-infrastructure --notes third admitted case, run concurrently with v1-dev-1; retried the slots a provider rate limit excluded",
+  "driftCommit": "627bfda24d1e71febfd8838624f3f8ef3dfdb2cf",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 3,
+  "conditions": [
+    "baseline",
+    "drift"
+  ],
+  "caseIds": [
+    "gh-aw-firewall-eslint-10"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "third admitted case, run concurrently with v1-dev-1; retried the slots a provider rate limit excluded"
+}

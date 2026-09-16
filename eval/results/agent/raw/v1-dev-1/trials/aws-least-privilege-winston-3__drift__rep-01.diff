@@ -1,0 +1,144 @@
+diff --git a/package-lock.json b/package-lock.json
+index 557ff22..0db29ec 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -25,7 +25,6 @@
+         "@types/mocha": "^5.2.5",
+         "@types/nock": "^9.3.0",
+         "@types/node": "^6.0.117",
+-        "@types/winston": "^2.4.4",
+         "chai": "^4.1.2",
+         "coveralls": "^3.0.2",
+         "mocha": "^5.2.0",
+@@ -39,7 +38,7 @@
+         "typescript": "^3.0.3"
+       },
+       "engines": {
+-        "node": ">=6.10.0"
++        "node": ">=12.0.0"
+       }
+     },
+     "node_modules/@babel/code-frame": {
+@@ -241,16 +240,6 @@
+       "integrity": "sha512-6WaYesThRMCl19iryMYP7/x2OVgCtbIVflDGFpWnb9irXI3UjYE4AzmYuiUKY1AJstGijoY+MgUszMgRxIYTYw==",
+       "license": "MIT"
+     },
+-    "node_modules/@types/winston": {
+-      "version": "2.4.4",
+-      "resolved": "https://registry.npmjs.org/@types/winston/-/winston-2.4.4.tgz",
+-      "integrity": "sha512-BVGCztsypW8EYwJ+Hq+QNYiT/MUyCif0ouBH+flrY66O5W+KIXAMML6E/0fJpm7VjIzgangahl5S03bJJQGrZw==",
+-      "deprecated": "This is a stub types definition. winston provides its own type definitions, so you do not need this installed.",
+-      "dev": true,
+-      "dependencies": {
+-        "winston": "*"
+-      }
+-    },
+     "node_modules/ajv": {
+       "version": "5.5.2",
+       "resolved": "https://registry.npmjs.org/ajv/-/ajv-5.5.2.tgz",
+diff --git a/package.json b/package.json
+index 4ad5830..92efedc 100644
+--- a/package.json
++++ b/package.json
+@@ -3,7 +3,7 @@
+   "private": false,
+   "version": "0.1.12",
+   "engines": {
+-    "node": ">=6.10.0"
++    "node": ">=12.0.0"
+   },
+   "description": "Scan xray traces to extract the proper minimal permissions needed for an application role.",
+   "main": "dist/index.js",
+@@ -43,7 +43,6 @@
+     "@types/mocha": "^5.2.5",
+     "@types/nock": "^9.3.0",
+     "@types/node": "^6.0.117",
+-    "@types/winston": "^2.4.4",
+     "chai": "^4.1.2",
+     "coveralls": "^3.0.2",
+     "mocha": "^5.2.0",
+diff --git a/src/lib/logger.ts b/src/lib/logger.ts
+index ea7b293..9f3339e 100644
+--- a/src/lib/logger.ts
++++ b/src/lib/logger.ts
+@@ -1,37 +1,55 @@
++import * as util from 'util';
+ import * as winston from 'winston';
+ 
+-const transports: winston.TransportInstance[] = [];
+-const consoleTransport = new (winston.transports.Console)({
+-  name: 'console-log',
++const SPLAT = Symbol.for('splat');
++
++/**
++ * winston 3 no longer auto-interpolates extra log arguments into the message
++ * (see UPGRADE-3.0.md). This restores the old `logger.info('msg %s', x)` /
++ * `logger.info('msg', x)` behaviour used throughout this codebase.
++ */
++const interpolateSplat = winston.format((info) => {
++  const splat: any[] = (info as any)[SPLAT];
++  if (splat && splat.length) {
++    info.message = util.format(info.message, ...splat);
++  }
++  return info;
++});
++
++const transports: winston.transport[] = [];
++const consoleTransport = new winston.transports.Console({
+   level: 'error',
+-  timestamp: true,
+-  colorize: true,
+-  prettyPrint: true,
++  stderrLevels: ['error'],
++  format: winston.format.combine(
++    interpolateSplat(),
++    winston.format.timestamp(),
++    winston.format.colorize(),
++    winston.format.simple(),
++  ),
+ });
+ transports.push(consoleTransport);
+ 
+ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+   transports.push(
+     new winston.transports.File({
+-      name: 'file-log',
+       filename: 'xray-scan.log',
+       level: 'debug',
+-      timestamp: true,
+-      json: false,
+-      prettyPrint: true,
++      format: winston.format.combine(
++        interpolateSplat(),
++        winston.format.timestamp(),
++        winston.format.prettyPrint(),
++      ),
+       maxsize: 1024 * 1024 * 100,
+       maxFiles: 10,
+       tailable: true,
+     }));
+ }
+ 
+-winston.configure({
++export const logger = winston.createLogger({
+   level: 'error',
+   transports,
+ });
+ 
+-export const logger = winston;
+-
+ export function changeConsoleLevel(level: string) {
+   consoleTransport.level = level;
+ }
+diff --git a/tsconfig.json b/tsconfig.json
+index 68d1eac..5a6c4ce 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -3,6 +3,7 @@
+   "compilerOptions": {    
+     "strict": true,
+     "noUnusedLocals": true,
++    "skipLibCheck": true,
+     "outDir": "./dist",
+     "declaration": true,
+     "rootDir": "src",    

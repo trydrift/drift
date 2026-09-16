@@ -1,0 +1,27 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "v1-dev-1",
+  "suite": "agent-upgrade-v1",
+  "suiteStatus": "draft",
+  "createdAt": "2026-09-16T14:13:29.537Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/agent/cli.ts run --suite agent-upgrade-v1 --case aws-least-privilege-winston-3,eth-ledger-bridge-keyring-ethereumjs-tx-5 --runs 3 --run-id v1-dev-1 --retry-infrastructure --notes first live run over the two first-admitted real-repository cases; suite still draft; resumed after a YAML fix, then retried the slots a provider rate limit excluded",
+  "driftCommit": "627bfda24d1e71febfd8838624f3f8ef3dfdb2cf",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 3,
+  "conditions": [
+    "baseline",
+    "drift"
+  ],
+  "caseIds": [
+    "aws-least-privilege-winston-3",
+    "eth-ledger-bridge-keyring-ethereumjs-tx-5"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "first live run over the two first-admitted real-repository cases; suite still draft; resumed after a YAML fix, then retried the slots a provider rate limit excluded"
+}
