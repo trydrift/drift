@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { ToolMetrics, Usage } from '../schema.ts';
@@ -68,13 +69,18 @@ export interface ParsedStream {
     permissionMode: string | null;
     tools: string[];
     mcpServers: string[];
+    /** Everything the session reports having loaded, for the environment audit. */
+    environment: SessionEnvironment;
   } | null;
   /** One entry per distinct assistant message id, with the last usage seen for it. */
   ledger: { messageId: string; model: string; usage: UsageRecord; parentToolUseId: string | null }[];
-  /** `ledgerIndex` is the position in `ledger` of the model call that issued the tool use. */
-  toolUses: { id: string; name: string; input: Record<string, unknown>; ledgerIndex: number }[];
-  /** Tool results as the session recorded them, by tool_use id: characters of content handed back to the model. */
-  toolResults: Map<string, { chars: number; isError: boolean }>;
+  /**
+   * `ledgerIndex` is the position in `ledger` of the model call that issued the
+   * tool use; `at` is the CLI's timestamp on the event that carried it.
+   */
+  toolUses: { id: string; name: string; input: Record<string, unknown>; ledgerIndex: number; at: number | null }[];
+  /** Tool results as the session recorded them, by tool_use id: characters handed back to the model, and when. */
+  toolResults: Map<string, { chars: number; isError: boolean; at: number | null }>;
   result: {
     subtype: string | null;
     isError: boolean;
@@ -119,6 +125,7 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
         mcpServers: Array.isArray(event['mcp_servers'])
           ? (event['mcp_servers'] as { name?: unknown }[]).map((s) => (typeof s.name === 'string' ? s.name : 'unknown'))
           : [],
+        environment: sessionEnvironmentFrom(event),
       };
       continue;
     }
@@ -153,6 +160,7 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
           name: typeof block['name'] === 'string' ? block['name'] : 'unknown',
           input: (block['input'] as Record<string, unknown> | undefined) ?? {},
           ledgerIndex: ledgerIndex.get(messageId)!,
+          at: timestampOf(event),
         });
       }
       continue;
@@ -163,7 +171,7 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
       const content = Array.isArray(message?.['content']) ? (message!['content'] as Record<string, unknown>[]) : [];
       for (const block of content) {
         if (block['type'] !== 'tool_result' || typeof block['tool_use_id'] !== 'string') continue;
-        parsed.toolResults.set(block['tool_use_id'], { chars: toolResultChars(block['content']), isError: block['is_error'] === true });
+        parsed.toolResults.set(block['tool_use_id'], { chars: toolResultChars(block['content']), isError: block['is_error'] === true, at: timestampOf(event) });
       }
       continue;
     }
@@ -190,6 +198,93 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
   }
 
   return parsed;
+}
+
+function timestampOf(event: Record<string, unknown>): number | null {
+  const value = event['timestamp'];
+  if (typeof value !== 'string') return null;
+  const at = Date.parse(value);
+  return Number.isFinite(at) ? at : null;
+}
+
+/**
+ * What a session reports having loaded, from its `system/init` record.
+ *
+ * Recorded on every trial so equivalence across conditions is checked from
+ * evidence, not assumed: `fingerprint` hashes everything except Drift's own
+ * MCP server and tools, so two conditions that differ only by the Drift server
+ * share it.
+ */
+export interface SessionEnvironment {
+  tools: string[];
+  mcpServers: { name: string; status: string }[];
+  skills: string[];
+  slashCommands: string[];
+  agents: string[];
+  plugins: string[];
+  memoryPaths: string[];
+  outputStyle: string | null;
+  apiKeySource: string | null;
+  fingerprint: string;
+}
+
+const DRIFT_SERVER = 'drift';
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((v) => (typeof v === 'string' ? v : typeof v === 'object' && v && 'name' in v ? String((v as { name: unknown }).name) : JSON.stringify(v))).sort() : [];
+}
+
+export function sessionEnvironmentFrom(event: Record<string, unknown>): SessionEnvironment {
+  const mcpServers = Array.isArray(event['mcp_servers'])
+    ? (event['mcp_servers'] as { name?: unknown; status?: unknown }[])
+        .map((s) => ({ name: String(s.name ?? 'unknown'), status: String(s.status ?? 'unknown') }))
+        .sort((a, b) => (a.name < b.name ? -1 : 1))
+    : [];
+  const memory = event['memory_paths'];
+  const memoryPaths = memory && typeof memory === 'object' ? Object.values(memory as Record<string, unknown>).map(String).sort() : [];
+  const environment = {
+    tools: strings(event['tools']),
+    mcpServers,
+    skills: strings(event['skills']),
+    slashCommands: strings(event['slash_commands']),
+    agents: strings(event['agents']),
+    plugins: strings(event['plugins']),
+    memoryPaths,
+    outputStyle: typeof event['output_style'] === 'string' ? event['output_style'] : null,
+    apiKeySource: typeof event['apiKeySource'] === 'string' ? event['apiKeySource'] : null,
+  };
+  const withoutDrift = {
+    ...environment,
+    tools: environment.tools.filter((tool) => !tool.startsWith(`mcp__${DRIFT_SERVER}__`)),
+    mcpServers: environment.mcpServers.filter((server) => server.name !== DRIFT_SERVER),
+  };
+  return { ...environment, fingerprint: createHash('sha256').update(JSON.stringify(withoutDrift)).digest('hex').slice(0, 16) };
+}
+
+/**
+ * Why a session's loaded environment is not the one the condition declared.
+ *
+ * Empty means it matched. Anything else makes the trial an infrastructure
+ * exclusion (`environment_mismatch`): a session that loaded an unexpected MCP
+ * server, a plugin, memory, or failed to connect Drift did not run the
+ * condition it is labelled as.
+ */
+export function environmentProblems(environment: SessionEnvironment | null, expectedServers: readonly string[]): string[] {
+  if (!environment) return ['the session reported no init record'];
+  const problems: string[] = [];
+  const names = environment.mcpServers.map((s) => s.name);
+  const expected = [...expectedServers].sort();
+  if (JSON.stringify(names) !== JSON.stringify(expected)) {
+    problems.push(`MCP servers ${JSON.stringify(names)}, expected ${JSON.stringify(expected)}`);
+  }
+  for (const server of environment.mcpServers) {
+    if (expected.includes(server.name) && server.status !== 'connected') problems.push(`MCP server ${server.name} is ${server.status}`);
+  }
+  const foreignTools = environment.tools.filter((tool) => tool.startsWith('mcp__') && !expected.some((name) => tool.startsWith(`mcp__${name}__`)));
+  if (foreignTools.length > 0) problems.push(`unexpected MCP tools: ${foreignTools.join(', ')}`);
+  if (environment.plugins.length > 0) problems.push(`plugins loaded: ${environment.plugins.join(', ')}`);
+  if (environment.memoryPaths.length > 0) problems.push(`memory loaded: ${environment.memoryPaths.join(', ')}`);
+  return problems;
 }
 
 /** Characters of text a tool result carried back to the model: a string, or text blocks. */
@@ -354,17 +449,24 @@ export function toolMetricsFromStream(parsed: ParsedStream): ToolMetrics {
  * repository CLAUDE.md, skills, plugins, hooks — and every MCP server,
  * including one passed with `--mcp-config`. It cannot run the MCP condition.
  *
- * `isolated` reproduces that session without disabling MCP:
+ * `isolated` loads nothing from the machine or the repository except what a
+ * condition declares, and keeps MCP available:
  * `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` and `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
  * (no CLAUDE.md from the user or the repository, no memory),
- * `--setting-sources local` (none of the user's or project's settings,
- * permissions or hooks; a workspace has no local settings file), and
- * `--strict-mcp-config` with an explicit `--mcp-config` (only the servers the
- * condition declares, an empty set for every non-MCP condition). Checked
- * against a #320 session's init record on 2.1.267: identical skills, slash
- * commands, plugins (none) and memory (none); the tool list differs only by
- * `TodoWrite`, which is therefore disallowed; the agent list adds the
- * built-in `statusline-setup`, which no condition can remove and all share.
+ * `--setting-sources ""` (no user, project or local settings: no env, hooks,
+ * permissions or plugins from any of them), and `--strict-mcp-config` with an
+ * explicit `--mcp-config` (only the servers the condition declares; an empty
+ * set for every non-MCP condition, which also excludes claude.ai connectors).
+ *
+ * Measured on 2.1.267 against a canary repository carrying a CLAUDE.md,
+ * .claude/CLAUDE.md, CLAUDE.local.md, AGENTS.md, project and local settings
+ * with env and SessionStart hooks, a project skill, agent and command, and a
+ * project .mcp.json (see `eval/results/agent/isolation/`): none of them reached
+ * an isolated session. `--safe-mode` itself still applied both settings files'
+ * env, and `--setting-sources local` still applied the local one, which is why
+ * neither is used for the v3 runs. Every trial records its session's loaded
+ * environment and is excluded when it differs from the condition's
+ * (`environmentProblems`).
  *
  * `bare` needs ANTHROPIC_API_KEY. `none` is for debugging only.
  */
@@ -375,8 +477,6 @@ export const ISOLATED_ENVIRONMENT: Readonly<Record<string, string>> = {
   CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1',
 };
 
-/** Present in an `isolated` session and absent under `--safe-mode`; disallowed so both expose the same tools. */
-export const ISOLATED_EXTRA_TOOLS = ['TodoWrite'];
 
 export interface ClaudeCodeProviderOptions {
   command?: string;
@@ -401,7 +501,6 @@ export function buildClaudeArgs(
   }
   const disallowedTools = [
     ...(request.webTools === 'disabled' ? DEFAULT_DISALLOWED_WEB_TOOLS : []),
-    ...(clean === 'isolated' ? ISOLATED_EXTRA_TOOLS : []),
   ];
   const argv = [
     '-p',
@@ -412,7 +511,7 @@ export function buildClaudeArgs(
     '--no-session-persistence',
     '--strict-mcp-config',
     ...(clean === 'safe-mode' ? ['--safe-mode'] : clean === 'bare' ? ['--bare'] : []),
-    ...(clean === 'isolated' ? ['--setting-sources', 'local', '--mcp-config', JSON.stringify({ mcpServers: servers })] : []),
+    ...(clean === 'isolated' ? ['--setting-sources', '', '--mcp-config', JSON.stringify({ mcpServers: servers })] : []),
     '--model',
     request.model,
     '--effort',
@@ -521,6 +620,7 @@ export class ClaudeCodeProvider implements AgentProvider {
       permissionMode: parsed.init?.permissionMode ?? 'unavailable',
       tools: parsed.init?.tools ?? [],
       mcpServers: parsed.init?.mcpServers ?? [],
+      environment: parsed.init?.environment ?? null,
       argv: [this.command, ...argv],
       disallowedTools,
       cleanEnvironment,
