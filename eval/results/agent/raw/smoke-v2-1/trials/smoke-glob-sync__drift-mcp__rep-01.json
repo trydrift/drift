@@ -1,0 +1,308 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "smoke-v2-1/smoke-glob-sync/drift-mcp/1",
+  "runId": "smoke-v2-1",
+  "suite": "smoke",
+  "caseId": "smoke-glob-sync",
+  "caseHash": "da128b5375a4159917163d644ad2dea5f0750ab4c6360a832379cd28aee6d710",
+  "condition": "drift-mcp",
+  "repetition": 1,
+  "scheduleIndex": 4,
+  "metadata": {
+    "repository": "fixture:fixture",
+    "baseCommit": "37dafa4f592c35cbf6cd58ce6e5427c4873006da",
+    "startCommit": "6af6f2ca963837a6f84174e3aecc2bedd89ff89c",
+    "startTreeHash": "92e9ef725d153ac4d15a1483451fddfdf92764ac",
+    "driftCommit": "98a0be7e381692e05310a52c5e838f42b04f29d6",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "glob",
+      "fromVersion": "8.1.0",
+      "toVersion": "13.0.6"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch",
+        "TodoWrite"
+      ],
+      "cleanEnvironment": "isolated",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write",
+        "mcp__drift__check_installed",
+        "mcp__drift__check_upgrades",
+        "mcp__drift__explain_upgrade",
+        "mcp__drift__get_evidence",
+        "mcp__drift__get_finding",
+        "mcp__drift__plan_upgrade",
+        "mcp__drift__verify_upgrade"
+      ],
+      "mcpServers": [
+        "drift"
+      ],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--setting-sources",
+        "local",
+        "--mcp-config",
+        "{\"mcpServers\":{\"drift\":{\"command\":\"/Users/rudy/.nvm/versions/node/v24.20.0/bin/node\",\"args\":[\"/Users/rudy/Desktop/Developer/Drift/dist/cli.js\",\"mcp\"]}}}",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "TodoWrite"
+      ]
+    },
+    "startedAt": "2026-09-16T16:41:59.571Z",
+    "endedAt": "2026-09-16T16:43:09.754Z",
+    "timeoutSeconds": 900,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "8d602a7fe74a6f01820b6e67c58cedfa1af20293bffbfdc55950e980771bd5e9",
+    "promptHash": "17768e1cdfc954cf2036fda970aabd9c4a8dd808b519c411db7572c038a31ddb",
+    "promptChars": 365
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "---\n\nDrift's MCP tools are available in this session.",
+    "preambleHash": "d73f55abf4c2604d99c25fb3c1cc3a1e34adc262181e81a47ff5a0f38a9d0080",
+    "driftAnalysisMs": 0,
+    "driftCommand": "drift mcp",
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 14,
+    "durationMs": 66338,
+    "apiDurationMs": 43346,
+    "finalMessage": "Verified. Fixed the `glob` 8.1.0 → 13.0.6 upgrade in `src/files.js:3,10,15` — replaced the removed default export's `glob.sync` with the named `globSync` export (no other replacement existed, so no stub was needed). `npm test` and Drift's verification both pass; no other repo code, CI config, or engines field referenced the removed API or needed a Node version bump.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 614791,
+    "uncachedInputTokens": 15247,
+    "inputTokens": 1009,
+    "cacheReadTokens": 599544,
+    "cacheCreationTokens": 14238,
+    "outputTokens": 2179,
+    "modelCalls": 13,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 983,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 26
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 26,
+        "cacheReadTokens": 599544,
+        "cacheCreationTokens": 14238,
+        "outputTokens": 2153
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 613808,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.1995558
+  },
+  "tools": {
+    "toolCalls": 13,
+    "byTool": {
+      "ToolSearch": 3,
+      "mcp__drift__plan_upgrade": 1,
+      "Read": 2,
+      "mcp__drift__get_finding": 1,
+      "mcp__drift__get_evidence": 1,
+      "Bash": 3,
+      "Edit": 1,
+      "mcp__drift__verify_upgrade": 1
+    },
+    "fileReads": 2,
+    "uniqueFilesRead": 2,
+    "searches": 0,
+    "shellCommands": 3,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 3,
+    "linesDeleted": 3,
+    "changedFiles": [
+      "src/files.js"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/files.js b/src/files.js\nindex 0aff875..58f5a3b 100644\n--- a/src/files.js\n+++ b/src/files.js\n@@ -1,17 +1,17 @@\n import { statSync } from 'node:fs';\n import { join } from 'node:path';\n-import glob from 'glob';\n+import { globSync } from 'glob';\n \n /**\n  * Every file under `root` matching `pattern`, as root-relative paths in\n  * sorted order. Directories are never returned.\n  */\n export function findAll(pattern, root) {\n-  return glob.sync(pattern, { cwd: root, nodir: true }).sort();\n+  return globSync(pattern, { cwd: root, nodir: true }).sort();\n }\n \n /** The same listing, restricted to files modified after `since` (a Date). */\n export function findModifiedSince(pattern, root, since) {\n-  const matches = glob.sync(pattern, { cwd: root, nodir: true, dot: true });\n+  const matches = globSync(pattern, { cwd: root, nodir: true, dot: true });\n   return matches.filter((path) => statSync(join(root, path)).mtime > since).sort();\n }\n",
+    "diffTruncated": false,
+    "diffHash": "2211a7ca18d4c1f60b103c72d2d4ae81f8d07fcee2ad2eef9fd40ff6023f194c"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "13.0.6",
+      "installedVersion": "13.0.6",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "npm test",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 626,
+        "outputExcerpt": "> smoke-glob-consumer@1.0.0 test\n> node --test test/*.test.js\n\n✔ findAll lists matching files, sorted, without directories (12.405613ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 172.355947",
+        "kind": "test"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "listing-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 300,
+        "outputExcerpt": "✔ findAll returns sorted, root-relative file paths for a recursive pattern and never a directory (15.170227ms)\n✔ findAll matches nothing for a pattern with no hits (3.028248ms)\n✔ findModifiedSince keeps only files newer than the cut-off and includes dotfiles (3.371262ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 183.626175",
+        "id": "listing-behaviour",
+        "description": "findAll and findModifiedSince still return sorted root-relative file paths, exclude directories, and honour the modification cut-off, including for the function the project's own test never calls."
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The test script the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "no-test-deletions",
+        "description": "The project's own tests must not be deleted.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The module the upgrade broke must still exist; deleting it is not a migration.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 499,
+    "installMs": 853,
+    "contextMs": 0,
+    "agentMs": 66339,
+    "validationMs": 2248,
+    "totalMs": 70183
+  },
+  "agentContext": {
+    "interface": "mcp",
+    "initialDriftContextChars": 53,
+    "initialDriftContextEstimatedTokens": 18,
+    "driftToolCalls": 4,
+    "driftToolCallsByName": {
+      "plan_upgrade": 1,
+      "get_finding": 1,
+      "get_evidence": 1,
+      "verify_upgrade": 1
+    },
+    "driftToolReturnedChars": 4760,
+    "driftToolReturnedEstimatedTokens": 1587,
+    "driftToolErrors": 0,
+    "findingsInPlan": null,
+    "findingsInInitialBrief": null,
+    "findingsRetrievedOnDemand": 1,
+    "nonLocalFindingsOmitted": null,
+    "deterministicSitesCovered": null,
+    "residualSitesSentToAgent": null,
+    "tokensBeforeFirstEdit": {
+      "grossInputTokens": 361902,
+      "uncachedInputTokens": 12088,
+      "modelCalls": 8
+    },
+    "tokensAfterFirstEdit": {
+      "grossInputTokens": 251906,
+      "uncachedInputTokens": 2176,
+      "modelCalls": 5
+    },
+    "research": {
+      "dependencySourceAccesses": 1,
+      "registryQueries": 0,
+      "changelogAccesses": 0
+    }
+  }
+}
