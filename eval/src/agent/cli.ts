@@ -1,12 +1,13 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { admitCase, recordAdmissions } from './admission.ts';
+import { buildComparison, writeComparison } from './compare.ts';
 import { listCaseIds, loadSuite } from './cases.ts';
-import { ClaudeCodeProvider } from './providers/claude-code.ts';
+import { ClaudeCodeProvider, type CleanEnvironment } from './providers/claude-code.ts';
 import { README_BLOCK_BEGIN, README_BLOCK_END, renderPublicCopy, renderReadmeBlock, renderReport } from './report.ts';
 import { rescoreRuns } from './rescore.ts';
 import { runBenchmark } from './runner.ts';
-import type { Condition } from './schema.ts';
+import { parseCondition } from './schema.ts';
 import { listRuns, reportsRoot } from './store.ts';
 import { buildSummary, readLatestSummary, writeSummary } from './summary.ts';
 import { verifyPublicClaims } from './verify.ts';
@@ -25,7 +26,8 @@ import { verifyPublicClaims } from './verify.ts';
 function usage(): string {
   return [
     'Usage:',
-    '  benchmark:agent run --suite <suite> [--case <id>] [--runs N] [--model M] [--effort E] [--conditions baseline,drift]',
+    '  benchmark:agent run --suite <suite> [--case <id>] [--runs N] [--model M] [--effort E]',
+    '                      [--conditions baseline,drift-full-report,drift-agent-brief,drift-mcp] [--clean-environment isolated|safe-mode]',
     '                      [--run-id ID] [--retry-infrastructure] [--web-tools allow|disabled] [--no-drift-verify] [--max-budget-usd X] [--max-turns N] [--notes TEXT]',
     '  benchmark:agent validate-cases [--suite <suite>] [--case <id>] [--repeats N] [--write]',
     '  benchmark:agent aggregate --runs a,b [--out latest]',
@@ -34,7 +36,10 @@ function usage(): string {
     '  benchmark:agent verify',
     '  benchmark:agent runs | cases | suites',
     '',
-    'Defaults: --runs 5, --model claude-sonnet-5, --effort high, provider claude-code, web tools disabled, Drift --verify on.',
+    '  benchmark:agent compare --runs a,b [--reference-runs c,d] --name NAME   # every Drift condition against the baseline',
+    '',
+    'Defaults: --runs 5, --model claude-sonnet-5, --effort high, provider claude-code, isolated sessions, web tools disabled, Drift --verify on,',
+    'conditions baseline + drift-full-report (the canonical summary pair).',
   ].join('\n');
 }
 
@@ -106,14 +111,23 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     const model = flag(argv, 'model') ?? 'claude-sonnet-5';
     const effort = flag(argv, 'effort') ?? 'high';
     const runs = Number(flag(argv, 'runs') ?? 5);
-    const conditions = flag(argv, 'conditions')?.split(',').filter(Boolean) as Condition[] | undefined;
-    log(`Live run: suite ${suite}, ${runs} run(s) per condition, ${model} at effort ${effort}. This makes real model calls.`);
+    const conditions = flag(argv, 'conditions')?.split(',').filter(Boolean).map(parseCondition);
+    const cleanEnvironment = (flag(argv, 'clean-environment') ?? 'isolated') as CleanEnvironment;
+    if (!['isolated', 'safe-mode', 'bare', 'none'].includes(cleanEnvironment)) {
+      console.error(`--clean-environment must be isolated, safe-mode, bare or none (got ${cleanEnvironment})`);
+      return 2;
+    }
+    if (cleanEnvironment === 'safe-mode' && conditions?.includes('drift-mcp')) {
+      console.error('drift-mcp cannot run under --clean-environment safe-mode: --safe-mode disables every MCP server. Use isolated for every condition in the run.');
+      return 2;
+    }
+    log(`Live run: suite ${suite}, ${runs} run(s) per condition, ${model} at effort ${effort}, ${cleanEnvironment} sessions. This makes real model calls.`);
     const outcome = await runBenchmark({
       suite,
       ...(flag(argv, 'case') ? { caseIds: flag(argv, 'case')!.split(',').filter(Boolean) } : {}),
       runs,
       ...(conditions ? { conditions } : {}),
-      provider: new ClaudeCodeProvider(),
+      provider: new ClaudeCodeProvider({ cleanEnvironment }),
       model,
       effort,
       webTools: flag(argv, 'web-tools') === 'allow' ? 'allowed' : 'disabled',
@@ -159,6 +173,19 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     const paths = await writeSummary(summary, root);
     log(`summary written to ${paths.latest} and ${paths.history}`);
     log(`publication gates: ${summary.publication.eligible ? 'PASS' : 'NOT MET'}${summary.publication.eligible ? '' : ` (${summary.publication.gates.filter((g) => !g.passed).map((g) => g.name).join(', ')})`}`);
+    return 0;
+  }
+
+  if (command === 'compare') {
+    const runs = flag(argv, 'runs')?.split(',').filter(Boolean);
+    const name = flag(argv, 'name');
+    if (!runs?.length || !name) {
+      console.error(usage());
+      return 2;
+    }
+    const comparison = await buildComparison({ name, runIds: runs, referenceRunIds: flag(argv, 'reference-runs')?.split(',').filter(Boolean) ?? [], root });
+    const paths = await writeComparison(comparison, root);
+    log(`comparison written to ${paths.json} and ${paths.markdown}`);
     return 0;
   }
 
