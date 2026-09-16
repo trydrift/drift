@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { gunzipSync } from 'node:zlib';
 import { agentContextDiagnostics } from './agent-context.ts';
 import { parseClaudeStream } from './providers/claude-code.ts';
@@ -102,6 +102,13 @@ export interface ComparisonSection {
   conditions: ConditionRow[];
   cases: { caseId: string; cells: Record<string, CaseCell> }[];
   exclusions: { trialId: string; condition: string; reason: string; detail: string }[];
+  /**
+   * Attempts moved aside before their slot was run again (`*.attempt-N.json`):
+   * provider limits, other infrastructure failures, and sessions excluded for
+   * a mismatched environment. Never counted in any rate; listed so nothing is
+   * hidden. Filled by `buildComparisonSection`, empty when built from trials alone.
+   */
+  setAsideAttempts: { runId: string; file: string; condition: string; reason: string; recordedOutcome: string }[];
   /** How many times each condition ran in each schedule position (1-based index). */
   positions: Record<string, number[]>;
 }
@@ -232,7 +239,26 @@ export async function buildComparisonSection(
   }
   const models = new Set(manifests.map((m) => m.requestedModel));
   if (models.size > 1) throw new Error(`Runs span several requested models (${[...models].join(', ')}); never compare across models.`);
-  return { ...comparisonFromTrials(trials, manifests), derivedDiagnostics };
+  const section = comparisonFromTrials(trials, manifests);
+  for (const runId of runIds) {
+    const dir = join(resultsRoot(root), 'raw', runId, 'trials');
+    const files = (await readdir(dir).catch(() => [] as string[])).filter((f) => /\.attempt-\d+\.json$/.test(f)).sort();
+    for (const file of files) {
+      const attempt = JSON.parse(await readFile(join(dir, file), 'utf8')) as TrialArtifact;
+      const env = attempt.metadata.agentConfiguration.environment?.fingerprint;
+      const reason = attempt.validity.valid
+        ? `environment fingerprint ${env ?? 'unrecorded'} differed from the experiment's (see ENVIRONMENT-EXCLUSIONS.md)`
+        : `${attempt.validity.infrastructureFailure ?? 'invalid'}: ${(attempt.validity.detail ?? '').split('\n')[0]!.slice(0, 120)}`;
+      section.setAsideAttempts.push({
+        runId,
+        file,
+        condition: CONDITION_LABELS[attempt.condition],
+        reason,
+        recordedOutcome: attempt.validity.valid ? (attempt.validation.success ? 'success' : `failure (${attempt.validation.failureReasons.join(', ')})`) : 'not scored',
+      });
+    }
+  }
+  return { ...section, derivedDiagnostics };
 }
 
 async function deriveAgentContext(trial: TrialArtifact, root: string): Promise<TrialArtifact['agentContext'] | null> {
@@ -372,6 +398,7 @@ export function comparisonFromTrials(trials: readonly TrialArtifact[], manifests
     cleanEnvironments: [...new Set(trials.map((t) => t.metadata.agentConfiguration.cleanEnvironment))].sort(),
     conditions: rows,
     cases,
+    setAsideAttempts: [],
     exclusions: trials
       .filter((t) => !t.validity.valid)
       .map((t) => ({ trialId: t.trialId, condition: CONDITION_LABELS[t.condition], reason: t.validity.infrastructureFailure ?? 'unknown', detail: (t.validity.detail ?? '').split('\n')[0]!.slice(0, 200) })),
@@ -537,7 +564,19 @@ function renderSection(title: string, section: ComparisonSection): string[] {
   out.push('');
   out.push('### Exclusions', '');
   const excluded = section.exclusions;
-  out.push(excluded.length === 0 ? 'No trial was excluded.' : excluded.map((e) => `- ${e.trialId}: ${e.reason} — ${e.detail}`).join('\n'));
+  out.push(excluded.length === 0 ? 'Every slot in this section holds a valid trial.' : excluded.map((e) => `- ${e.trialId}: ${e.reason} — ${e.detail}`).join('\n'));
+  if (section.setAsideAttempts.length > 0) {
+    out.push('', `Attempts set aside before their slot was run again (${section.setAsideAttempts.length}; never counted):`, '');
+    const grouped = new Map<string, number>();
+    for (const a of section.setAsideAttempts) {
+      const key = a.reason.startsWith('environment') ? 'environment mismatch' : a.reason.replace(/ · resets.*$/, '').slice(0, 80);
+      grouped.set(key, (grouped.get(key) ?? 0) + 1);
+    }
+    for (const [reason, count] of grouped) out.push(`- ${count} × ${reason}`);
+    for (const a of section.setAsideAttempts.filter((x) => x.reason.startsWith('environment'))) {
+      out.push(`- ${a.runId}/${a.file} (${a.condition}): ${a.reason}; it had recorded ${a.recordedOutcome}.`);
+    }
+  }
   return out;
 }
 
