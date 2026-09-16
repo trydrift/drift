@@ -1,0 +1,9 @@
+{
+  "suite": "agent-upgrade-v1",
+  "status": "draft",
+  "description": "The first public suite: real historical dependency upgrades with a known maintainer or benchmark-authored fix and hidden regression tests. Frozen once its cases are admitted; a material change to any case or its validation starts agent-upgrade-v2.",
+  "frozenAt": null,
+  "runsPerCondition": 5,
+  "cases": [],
+  "removed": []
+}

@@ -1,0 +1,13 @@
+{
+  "name": "smoke-glob-consumer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A small file-listing utility used to develop the agent benchmark harness.",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "glob": "8.1.0"
+  }
+}

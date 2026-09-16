@@ -1,0 +1,16 @@
+{
+  "suite": "smoke",
+  "status": "draft",
+  "description": "Development suite: synthetic fixtures that exercise the harness end to end. Never publishable.",
+  "frozenAt": null,
+  "runsPerCondition": 1,
+  "cases": [
+    {
+      "id": "smoke-glob-sync",
+      "caseHash": "da128b5375a4159917163d644ad2dea5f0750ab4c6360a832379cd28aee6d710",
+      "admittedAt": "2026-09-16T10:04:33.307Z",
+      "driftCommit": "d1101f875d9abc2f69e2956eb73f62dfdab8d08b"
+    }
+  ],
+  "removed": []
+}

@@ -1,0 +1,48 @@
+schemaVersion: drift-agent-case-v1
+id: smoke-glob-sync
+title: glob 8.1.0 → 13.0.6 removes the default export and `glob.sync`
+provenance: synthetic
+role: development
+ecosystem: npm
+source:
+  kind: fixture
+  path: fixture
+  licence: MIT
+workspaceDir: ""
+dependency:
+  name: glob
+  fromVersion: 8.1.0
+  toVersion: 13.0.6
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node >=22
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm ci --ignore-scripts
+  installTimeoutSeconds: 300
+  checks:
+    - name: npm test
+      kind: test
+      command: npm test
+      timeoutSeconds: 300
+  installedVersion: node -p "require('./node_modules/glob/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 900
+metadata:
+  repositoryFiles: 7
+  repositorySourceLines: 25
+  failureMode: runtime
+  knownAffectedLocations: 2
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Development-only synthetic consumer of a real package, built to exercise
+    the harness end to end. Never part of a public suite.

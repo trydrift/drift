@@ -1,0 +1,31 @@
+schemaVersion: drift-agent-case-v1
+caseId: smoke-glob-sync
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - sync
+  - default
+tests:
+  - id: listing-behaviour
+    description: findAll and findModifiedSince still return sorted root-relative file paths, exclude directories, and honour the modification cut-off, including for the function the project's own test never calls.
+    files:
+      - behaviour.test.mjs
+    command: node --test .drift-hidden/behaviour.test.mjs
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The test script the checks invoke must not be rewritten.
+  - kind: no-test-deletions
+    globs:
+      - "test/**"
+    description: The project's own tests must not be deleted.
+  - kind: file-present
+    paths:
+      - src/files.js
+    description: The module the upgrade broke must still exist; deleting it is not a migration.
+notes: >
+  glob 13 has no default export and no `sync` member; the replacement is the
+  named `globSync` export. A correct fix migrates both call sites in
+  src/files.js. The hidden test exercises findModifiedSince, which the
+  project's own test does not cover, so deleting that function would pass
+  `npm test` and fail here.
