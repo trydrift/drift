@@ -63,6 +63,31 @@ export async function trialExists(runId: string, caseId: string, condition: stri
   }
 }
 
+/**
+ * Sets aside a recorded trial that was excluded for an infrastructure
+ * failure, so the slot can be attempted again. The artifact is renamed to
+ * `<name>.attempt-N.*`, never deleted: every attempt stays on disk. Refuses
+ * to touch a valid trial — retrying an observed agent outcome is best-of-k.
+ */
+export async function setAsideInfrastructureFailure(runId: string, caseId: string, condition: string, repetition: number, root?: string): Promise<{ setAside: boolean; reason: string }> {
+  const dir = join(runDir(runId, root), 'trials');
+  const base = trialBaseName(caseId, condition, repetition);
+  let artifact: TrialArtifact;
+  try {
+    artifact = trialSchema.parse(JSON.parse(await readFile(join(dir, `${base}.json`), 'utf8')));
+  } catch {
+    return { setAside: false, reason: 'no artifact' };
+  }
+  if (artifact.validity.valid) return { setAside: false, reason: 'a valid trial is never retried' };
+  let attempt = 1;
+  while (await exists(join(dir, `${base}.attempt-${attempt}.json`))) attempt += 1;
+  const { rename } = await import('node:fs/promises');
+  for (const suffix of ['.json', '.diff', '.stream.jsonl.gz']) {
+    await rename(join(dir, `${base}${suffix}`), join(dir, `${base}.attempt-${attempt}${suffix}`)).catch(() => undefined);
+  }
+  return { setAside: true, reason: `${artifact.validity.infrastructureFailure ?? 'invalid'} set aside as attempt ${attempt}` };
+}
+
 export class DuplicateTrialError extends Error {}
 
 export async function writeTrial(artifact: TrialArtifact, extras: { diff: string; streamLines: readonly string[] }, root?: string): Promise<string> {
@@ -101,7 +126,10 @@ export async function readTrials(runId: string, root?: string): Promise<TrialArt
     return [];
   }
   const trials: TrialArtifact[] = [];
-  for (const name of entries.filter((entry) => entry.endsWith('.json')).sort()) {
+  // Set-aside attempts (`*.attempt-N.json`) are kept on disk for the audit
+  // trail but are not trials: each was excluded for an infrastructure failure
+  // and its slot was attempted again.
+  for (const name of entries.filter((entry) => entry.endsWith('.json') && !/\.attempt-\d+\.json$/.test(entry)).sort()) {
     trials.push(trialSchema.parse(JSON.parse(await readFile(join(dir, name), 'utf8'))));
   }
   return trials;

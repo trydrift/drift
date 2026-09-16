@@ -216,3 +216,22 @@ describe('stale public metric detection', () => {
     assert.ok(siteStale.some((f) => f.file.endsWith('agent.json')));
   });
 });
+
+describe('infrastructure retries', () => {
+  test('an excluded trial is set aside for a retry and a valid one is refused', async () => {
+    const { setAsideInfrastructureFailure, readTrials } = await import('./store.ts');
+    const { root, runIds } = await scaffold({ cases: 1, runs: 1 });
+    const valid = await setAsideInfrastructureFailure(runIds[0]!, 'case-00', 'baseline', 1, root);
+    assert.equal(valid.setAside, false);
+    const excluded = makeTrial({ caseId: 'case-00', condition: 'drift', repetition: 2, gross: 1, success: false, valid: false, infrastructureFailure: 'provider_error', runId: runIds[0] });
+    await (await import('./store.ts')).writeTrial(excluded, { diff: '', streamLines: [] }, root);
+    assert.equal((await readTrials(runIds[0]!, root)).length, 3);
+    const retry = await setAsideInfrastructureFailure(runIds[0]!, 'case-00', 'drift', 2, root);
+    assert.equal(retry.setAside, true);
+    assert.match(retry.reason, /provider_error set aside as attempt 1/);
+    // The set-aside attempt is no longer a trial, and the slot is free.
+    assert.equal((await readTrials(runIds[0]!, root)).length, 2);
+    await (await import('./store.ts')).writeTrial(excluded, { diff: '', streamLines: [] }, root);
+    assert.equal((await readTrials(runIds[0]!, root)).length, 3);
+  });
+});

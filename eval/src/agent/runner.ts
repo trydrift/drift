@@ -12,7 +12,7 @@ import {
   type ToolMetrics,
   type Usage,
 } from './schema.ts';
-import { driftRevision, driftVersion, newRunId, trialExists, writeRunManifest, writeTrial } from './store.ts';
+import { driftRevision, driftVersion, newRunId, setAsideInfrastructureFailure, trialExists, writeRunManifest, writeTrial } from './store.ts';
 import { composePrompt, contextKindFor, renderTask, sha256 } from './task.ts';
 import { patchStatsFrom, validateWorkspace } from './validation.ts';
 import { captureDiff, materializeWorkspace, projectEnv, runCommand, type Workspace } from './workspace.ts';
@@ -48,6 +48,12 @@ export interface RunOptions {
   runId?: string;
   notes?: string;
   root?: string;
+  /**
+   * Attempt again the slots whose recorded trial was excluded for an
+   * infrastructure failure (a provider outage, a rate limit, a check that
+   * could not start). Valid trials are never retried, whatever their outcome.
+   */
+  retryInfrastructure?: boolean;
   onProgress?: (message: string) => void;
 }
 
@@ -119,9 +125,13 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
       for (const condition of order) {
         scheduleIndex += 1;
         if (await trialExists(runId, caseId, condition, repetition, root)) {
-          skipped += 1;
-          options.onProgress?.(`skip ${caseId} ${condition} rep ${repetition}: artifact exists`);
-          continue;
+          const retry = options.retryInfrastructure ? await setAsideInfrastructureFailure(runId, caseId, condition, repetition, root) : { setAside: false, reason: 'artifact exists' };
+          if (!retry.setAside) {
+            skipped += 1;
+            options.onProgress?.(`skip ${caseId} ${condition} rep ${repetition}: ${retry.reason}`);
+            continue;
+          }
+          options.onProgress?.(`retry ${caseId} ${condition} rep ${repetition}: ${retry.reason}`);
         }
         options.onProgress?.(`trial ${caseId} ${condition} rep ${repetition} (${scheduleIndex})`);
         const { artifact, diff, streamLines } = await runTrial({
@@ -152,8 +162,10 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
         trials.push(artifact);
         written += 1;
         options.onProgress?.(
-          `  → ${artifact.validation.success ? 'SUCCESS' : 'failed'} [${artifact.validation.failureReasons.join(', ') || (artifact.validity.valid ? 'no reasons' : artifact.validity.infrastructureFailure)}] ` +
-            `gross input ${artifact.usage.grossInputTokens.toLocaleString('en-US')} tokens, ${Math.round(artifact.agent.durationMs / 1000)}s`,
+          artifact.validity.valid
+            ? `  → ${artifact.validation.success ? 'SUCCESS' : 'failed'} [${artifact.validation.failureReasons.join(', ') || 'no reasons'}] ` +
+                `gross input ${artifact.usage.grossInputTokens.toLocaleString('en-US')} tokens, ${Math.round(artifact.agent.durationMs / 1000)}s`
+            : `  → EXCLUDED (${artifact.validity.infrastructureFailure}: ${(artifact.validity.detail ?? '').split('\n')[0]?.slice(0, 120)})`,
         );
       }
     }

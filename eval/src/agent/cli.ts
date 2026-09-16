@@ -26,7 +26,7 @@ function usage(): string {
   return [
     'Usage:',
     '  benchmark:agent run --suite <suite> [--case <id>] [--runs N] [--model M] [--effort E] [--conditions baseline,drift]',
-    '                      [--run-id ID] [--web-tools allow|disabled] [--no-drift-verify] [--max-budget-usd X] [--max-turns N] [--notes TEXT]',
+    '                      [--run-id ID] [--retry-infrastructure] [--web-tools allow|disabled] [--no-drift-verify] [--max-budget-usd X] [--max-turns N] [--notes TEXT]',
     '  benchmark:agent validate-cases [--suite <suite>] [--case <id>] [--repeats N] [--write]',
     '  benchmark:agent aggregate --runs a,b [--out latest]',
     '  benchmark:agent rescore --runs a,b        # re-evaluate diff-derivable rules after a case changed; marks the artifacts',
@@ -122,6 +122,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       driftVerify: !has(argv, 'no-drift-verify'),
       githubToken: process.env['GITHUB_TOKEN'],
       ...(flag(argv, 'run-id') ? { runId: flag(argv, 'run-id')! } : {}),
+      retryInfrastructure: has(argv, 'retry-infrastructure'),
       notes: flag(argv, 'notes') ?? '',
       root,
       onProgress: log,

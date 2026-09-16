@@ -259,7 +259,10 @@ Defaults: `--model claude-sonnet-5 --effort high`, provider `claude-code`,
 5 runs per condition, browsing tools disabled, Drift's `--verify` on. Options:
 `--conditions`, `--web-tools allow`, `--no-drift-verify`, `--max-budget-usd`,
 `--max-turns`, `--run-id` (rerunning under the same id resumes; existing
-trials are never overwritten), `--notes`.
+trials are never overwritten), `--retry-infrastructure` (attempt again the
+slots whose trial was excluded for an infrastructure failure such as a
+provider rate limit; the excluded artifact is kept as `*.attempt-N.*` and a
+valid trial is never retried, whatever its outcome), `--notes`.
 
 Conditions alternate order on every repetition (baseline first on odd
 repetitions, Drift first on even), so neither is systematically first.
