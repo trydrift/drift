@@ -1,0 +1,159 @@
+name: Agent benchmark
+
+# The paired coding-agent benchmark: the same agent, model, task and starting
+# repositories, with and without Drift's analysis. See eval/agent/README.md.
+#
+# Manual only. Every trial is a live agent session that costs provider money
+# and minutes of wall clock, so nothing here runs on push or on a schedule —
+# a benchmark that reruns itself on every commit is a benchmark whose numbers
+# nobody looked at. CI's own job (ci.yml) runs the harness's unit tests, the
+# aggregation and gate tests, and the stale-metric check for free.
+#
+# The result is uploaded as an artifact and opened as a pull request with the
+# raw trial artifacts, so a published number always traces to a reviewed
+# commit. Raw agent event streams (gzipped) are uploaded separately and never
+# committed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Suite to run (e.g. agent-upgrade-v1, or smoke)'
+        required: true
+        default: 'agent-upgrade-v1'
+        type: string
+      cases:
+        description: 'Comma-separated case ids, or empty for every case in the suite'
+        required: false
+        type: string
+      runs:
+        description: 'Runs per condition per case'
+        required: true
+        default: '5'
+        type: string
+      model:
+        description: 'Model id passed to the agent CLI'
+        required: true
+        default: 'claude-sonnet-5'
+        type: string
+      effort:
+        description: 'Effort level (low, medium, high, xhigh)'
+        required: true
+        default: 'high'
+        type: string
+      provider:
+        description: 'Agent provider (only claude-code is implemented)'
+        required: true
+        default: 'claude-code'
+        type: choice
+        options:
+          - claude-code
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-benchmark
+  cancel-in-progress: false
+
+jobs:
+  run:
+    timeout-minutes: 720
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci && npm run build
+
+      # The agent under test. Pinned so a rerun months later measures the same
+      # CLI; bump deliberately and record it in the result.
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@2.1.267 && claude --version
+
+      - name: Validate the suite's cases before spending anything
+        run: node --experimental-strip-types eval/src/agent/cli.ts validate-cases --suite "${{ inputs.suite }}"
+
+      - name: Run the benchmark
+        env:
+          # The agent's own credential. Never read by Drift; only by the agent
+          # CLI the trial starts. `--bare` would be the cleaner session mode
+          # with an API key, but the runner uses `--safe-mode` for parity with
+          # local OAuth runs; both are recorded per trial.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node --experimental-strip-types eval/src/agent/cli.ts run \
+            --suite "${{ inputs.suite }}" \
+            ${{ inputs.cases != '' && format('--case "{0}"', inputs.cases) || '' }} \
+            --runs "${{ inputs.runs }}" \
+            --model "${{ inputs.model }}" \
+            --effort "${{ inputs.effort }}" \
+            --run-id "ci-${{ github.run_id }}__${{ inputs.suite }}" \
+            --notes "GitHub Actions run ${{ github.run_id }} on ${{ github.sha }}"
+
+      - name: Aggregate and report
+        run: |
+          node --experimental-strip-types eval/src/agent/cli.ts aggregate --runs "ci-${{ github.run_id }}__${{ inputs.suite }}"
+          node --experimental-strip-types eval/src/agent/cli.ts report
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: agent-benchmark-ci-${{ github.run_id }}
+          path: |
+            eval/results/agent/raw/ci-${{ github.run_id }}__${{ inputs.suite }}/
+            !eval/results/agent/raw/ci-${{ github.run_id }}__${{ inputs.suite }}/trials/*.stream.jsonl.gz
+            eval/results/agent/latest.json
+            eval/results/agent/history/
+            eval/reports/agent/
+            README.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: agent-benchmark-streams-ci-${{ github.run_id }}
+          path: eval/results/agent/raw/ci-${{ github.run_id }}__${{ inputs.suite }}/trials/*.stream.jsonl.gz
+          if-no-files-found: ignore
+          retention-days: 30
+
+  open-pr:
+    needs: run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: agent-benchmark-ci-${{ github.run_id }}
+          path: /tmp/agent-benchmark
+
+      - name: Apply the result
+        run: |
+          cp -r /tmp/agent-benchmark/eval/. eval/
+          cp /tmp/agent-benchmark/README.md README.md
+
+      - name: Open a PR with the benchmark result
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          commit-message: "chore(eval): agent benchmark result (${{ inputs.suite }}, ${{ inputs.model }})"
+          title: "chore(eval): agent benchmark result — ${{ inputs.suite }} on ${{ inputs.model }}"
+          body: |
+            Live run of the paired agent benchmark (`${{ inputs.suite }}`, ${{ inputs.runs }} run(s) per condition, `${{ inputs.model }}` at effort `${{ inputs.effort }}`), triggered by ${{ github.actor }} on ${{ github.sha }}.
+
+            Review `eval/reports/agent/latest.md` — the publication-gates section says whether anything from this run may be quoted — before merging. Merging updates the canonical `eval/results/agent/latest.json` the website reads.
+          branch: agent-benchmark-result
+          delete-branch: true
+          add-paths: |
+            eval/results/agent/**
+            eval/reports/agent/**
+            README.md

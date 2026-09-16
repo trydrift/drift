@@ -170,6 +170,14 @@ jobs:
       - name: Verify the READMEs and docs against the code
         run: npm run check:docs
 
+      # The agent benchmark's public numbers: the README block must be exactly
+      # what eval/results/agent/latest.json generates, the site's copy must
+      # match it, and no ungated percentage may appear in the guarded docs.
+      # The benchmark itself never runs here (agent-benchmark.yml, manual);
+      # its parser, aggregation, gate and report tests ran in `eval:test`.
+      - name: Verify the agent benchmark's public claims
+        run: npm run benchmark:agent:verify
+
       - name: Verify the example config parses
         run: |
           node -e "
