@@ -1,11 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { BriefStats } from './agent-context.ts';
 import type { Condition, TrialArtifact } from './schema.ts';
-import { DRIFT_PREAMBLE_HEADER } from './task.ts';
+import { DRIFT_BRIEF_HEADER, DRIFT_MCP_PREAMBLE, DRIFT_PREAMBLE_HEADER } from './task.ts';
 import type { Workspace } from './workspace.ts';
 import {
   GitHubClient,
   LocalGitProvider,
+  availableChecks,
+  buildAgentBrief,
+  renderAgentBrief,
   createLogger,
   loadConfig,
   renderPullRequestBody,
@@ -46,6 +51,10 @@ export interface DriftContext {
   plan: TrialArtifact['context']['driftPlan'];
   /** The full plan, kept in memory for diagnostics; never written into the prompt beyond what the renderer prints. */
   rawPlan: RemediationPlan | null;
+  /** For `drift-agent-brief`: what the production brief selected. */
+  brief: BriefStats | null;
+  /** For `drift-mcp`: the server the session connects to. Nothing is analysed before the session. */
+  mcpServers: Record<string, { command: string; args: string[] }> | null;
 }
 
 export interface DriftContextOptions {
@@ -53,9 +62,30 @@ export interface DriftContextOptions {
   githubToken?: string;
 }
 
+/** The production CLI this checkout builds, which is what `drift mcp` runs for a user. */
+export const DRIFT_CLI = fileURLToPath(new URL('../../../dist/cli.js', import.meta.url));
+
 export async function buildDriftContext(condition: Condition, workspace: Workspace, options: DriftContextOptions): Promise<DriftContext> {
   const started = Date.now();
-  const command = `drift analyze --before ${workspace.baseCommit.slice(0, 12)} --after ${workspace.startCommit.slice(0, 12)} --markdown${options.verify ? ' --verify' : ''}`;
+
+  if (condition === 'drift-mcp') {
+    // Same server a user adds with `claude mcp add drift -- drift mcp`,
+    // built from this checkout. Its working directory is the session's.
+    return {
+      preamble: DRIFT_MCP_PREAMBLE,
+      status: 'not-applicable',
+      failure: null,
+      analysisMs: 0,
+      command: 'drift mcp',
+      plan: null,
+      rawPlan: null,
+      brief: null,
+      mcpServers: { drift: { command: process.execPath, args: [DRIFT_CLI, 'mcp'] } },
+    };
+  }
+
+  const render = condition === 'drift-agent-brief' ? '--agent' : '--markdown';
+  const command = `drift analyze --before ${workspace.baseCommit.slice(0, 12)} --after ${workspace.startCommit.slice(0, 12)} ${render}${options.verify ? ' --verify' : ''}`;
   const logger = createLogger('error');
 
   try {
@@ -98,14 +128,35 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
         command,
         plan: null,
         rawPlan: null,
+        brief: null,
+        mcpServers: null,
       };
     }
 
     const plan = ablate(condition, result.plan);
-    const report = renderPullRequestBody(plan, config);
     const verdict = String(resolvePlanVerdict(result.plan));
+    let preamble: string;
+    let brief: BriefStats | null = null;
+    if (condition === 'drift-agent-brief') {
+      // Exactly what `drift analyze --agent` prints, with no retrieval named:
+      // this session has no Drift tools to fetch omitted detail with.
+      const checks = (await availableChecks(workspace.project)).map((check) => ({ label: check.label, kind: check.kind }));
+      const built = buildAgentBrief(plan, { config, availableChecks: checks });
+      const rendered = renderAgentBrief(built, { retrieval: 'none' });
+      preamble = `${DRIFT_BRIEF_HEADER}\n${rendered.text.trim()}\n`;
+      brief = {
+        findingsInPlan: plan.breakingChanges.length,
+        findingsInInitialBrief: rendered.findings.full.length + rendered.findings.compacted.length,
+        nonLocalFindingsOmitted: built.omitted.noLocatedUsage + built.omitted.notSearched + built.omitted.unaffected,
+        deterministicSitesCovered: built.units.reduce((sum, unit) => sum + (unit.deterministic?.covered ?? 0), 0),
+        residualSitesSentToAgent: built.findings.reduce((sum, finding) => sum + finding.sites.length, 0) -
+          built.units.reduce((sum, unit) => sum + (unit.deterministic?.covered ?? 0), 0),
+      };
+    } else {
+      preamble = `${DRIFT_PREAMBLE_HEADER}\n${renderPullRequestBody(plan, config).trim()}\n`;
+    }
     return {
-      preamble: `${DRIFT_PREAMBLE_HEADER}\n${report.trim()}\n`,
+      preamble,
       status: 'completed',
       failure: null,
       analysisMs: Date.now() - started,
@@ -120,6 +171,8 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
         evidenceSources: result.plan.evidence.length,
       },
       rawPlan: result.plan,
+      brief,
+      mcpServers: null,
     };
   } catch (err) {
     return {
@@ -130,6 +183,8 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
       command,
       plan: null,
       rawPlan: null,
+      brief: null,
+      mcpServers: null,
     };
   }
 }
