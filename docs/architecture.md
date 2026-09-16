@@ -621,6 +621,18 @@ Two rules: every claim carries a link to its evidence, and uncertainty is stated
 in the same place as the confident findings. Burying caveats at the bottom is how
 you teach people to stop reading your output.
 
+### 8a · Agent context
+
+The report is for people. A coding agent gets a different renderer over the
+same plan (`src/agent-context/`): `buildAgentBrief` keeps only findings that
+reach this repository (actionable, review-only, planned, or measured by
+verification) and counts the rest; `renderAgentBrief` places them whole inside
+a 2,000-token ceiling with protected paths, blockers and gaps reserved; and
+`findingDetail` / `evidenceDetail` resolve any id on request. MCP
+(`plan_upgrade`, `get_finding`, `get_evidence`, `verify_upgrade`) and
+`drift analyze --agent` serve it. The agent is never handed the pull request
+body. See [the agent interface](agent-interface.md).
+
 ---
 
 ## Confidence in three dimensions

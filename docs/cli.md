@@ -101,6 +101,8 @@ drift fix
 
 Use `--verify` with `analyze` or `outdated` to run your project's checks against the candidate dependency in a disposable worktree.
 
+For a coding agent fixing a change already in git, `drift analyze --agent` prints a short plan with only the findings that reach this repository, and `--finding <id>` / `--evidence <id>` print one item in full. Over MCP the same plan is `plan_upgrade`. See [the agent interface](agent-interface.md).
+
 ## How `check` reports what is already wrong
 
 `drift check` is the one command that asks nothing about upgrades. The version on disk exports a set of names, this repository imports a set of names, and an import naming something that version does not export is an error that already exists — no upgrade required for it to be true, and no test run to find it.
