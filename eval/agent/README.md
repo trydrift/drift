@@ -198,20 +198,41 @@ Each trial:
 ### Session isolation
 
 `v1-dev-1` and `v1-dev-2` ran every session with `--safe-mode
---strict-mcp-config`. `--safe-mode` disables every MCP server, including one
-passed with `--mcp-config`, so it cannot run `drift-mcp`, and all conditions in
-a comparison must share one session setup. Runs from `v2` on use
-`--clean-environment isolated` (the default) for every condition:
-`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`, `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`,
-`--setting-sources local`, `--strict-mcp-config` and an explicit
-`--mcp-config` (the Drift server for `drift-mcp`, an empty set otherwise).
-Compared with a `v1-dev-2` session's init record on Claude Code 2.1.267 it
-exposes the same skills, slash commands, plugins (none) and memory (none), and
-does not load the repository's CLAUDE.md (the ESLint case ships one); the tool
-list gains `TodoWrite`, which is therefore disallowed, and the agent list
-gains the built-in `statusline-setup`, present in every condition. Runs under
-different isolation modes are never pooled; `compare` shows the first result
-beside the new runs as history.
+--strict-mcp-config`. `--safe-mode` disables every MCP server, so it cannot run
+`drift-mcp`, and all conditions of one experiment must share one session
+setup. A canary probe (below) also showed that `--safe-mode` on 2.1.267 still
+applies the `env` of the repository's `.claude/settings.json` and
+`.claude/settings.local.json`.
+
+Runs from `v3` on use `--clean-environment isolated` (the default) for every
+condition:
+
+- `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`, `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` — no
+  CLAUDE.md from the user or the repository, no memory;
+- `--setting-sources ""` — no user, project or local settings: no env, hooks,
+  permissions or plugins from any of them (`local` alone still let
+  `settings.local.json` env through);
+- `--strict-mcp-config` with an explicit `--mcp-config` — the Drift server for
+  `drift-mcp`, an empty set otherwise, which also excludes claude.ai connectors;
+- browsing tools disallowed; every other ordinary tool as the CLI provides it.
+
+**Proof.** `benchmark:agent isolation-probe` plants CLAUDE.md in three places,
+CLAUDE.local.md, AGENTS.md, project and local settings with env and
+SessionStart hooks, a project skill, agent and command, and a project
+`.mcp.json`, then runs the harness's own sessions one at a time and records
+what reached them. The 2.1.267 result is in
+[`eval/results/agent/isolation/`](../results/agent/isolation): no canary word,
+settings env or hook reached an isolated session, and the no-MCP and
+Drift-MCP sessions have the same environment fingerprint, differing only by
+the seven `mcp__drift__*` tools.
+
+**Per trial.** Every session's init record is stored in
+`metadata.agentConfiguration.environment` (tools, MCP servers and status,
+skills, slash commands, agents, plugins, memory, output style) with a
+fingerprint that excludes only Drift's own server and tools. A session that
+loaded anything its condition did not declare is excluded as
+`environment_mismatch`, and `compare` refuses to pool trials whose
+fingerprints differ.
 
 This is a **workspace audit, not an OS sandbox**: the case's private half is
 readable elsewhere on the host by a process the agent starts. Every trial
@@ -328,22 +349,53 @@ slots whose trial was excluded for an infrastructure failure such as a
 provider rate limit; the excluded artifact is kept as `*.attempt-N.*` and a
 valid trial is never retried, whatever its outcome), `--notes`.
 
-Conditions alternate order on every repetition (the listed order on odd
-repetitions, reversed on even), so no condition is systematically first.
+**Order.** Each (case, repetition) block runs its conditions in a row of a
+Williams design (`eval/src/agent/schedule.ts`): a Latin square in which every
+condition takes every position and, for an even number of conditions, follows
+every other condition exactly once. Rows are assigned by the case's index in
+the suite, so runs split one case per process share one design, and a retried
+slot keeps its position. For 4 conditions × 3 cases × 3 repetitions every
+condition runs 2 or 3 times in each position; each trial records its slot.
+The v1 runs used forward/reverse alternation, which is only balanced for two
+conditions.
+
+**Wall clock.** Each trial records `agentContext.timing`: Drift's analysis
+before the session (report and brief conditions), the session, Drift MCP tool
+time inside the session (from the CLI's event timestamps), and end-to-end =
+analysis before the session + session. For `drift-mcp` the analysis happens
+inside the session and is counted there once.
 
 To compare every Drift condition with the baseline from the same runs:
 
 ```sh
-npm run benchmark:agent -- --suite agent-upgrade-v1 --runs 3 \
-  --conditions baseline,drift-full-report,drift-agent-brief,drift-mcp --run-id v2-dev-1
-node --experimental-strip-types eval/src/agent/cli.ts compare --runs v2-dev-1 \
-  --reference-runs v1-dev-1,v1-dev-2 --name agent-context-v2
+for c in aws-least-privilege-winston-3 eth-ledger-bridge-keyring-ethereumjs-tx-5 gh-aw-firewall-eslint-10; do
+  npm run benchmark:agent -- --suite agent-upgrade-v1 --case $c --runs 3 \
+    --conditions baseline,drift-full-report,drift-agent-brief,drift-mcp --run-id v3-dev-$c &
+done; wait
+node --experimental-strip-types eval/src/agent/cli.ts compare --name agent-context-v3 \
+  --runs v3-dev-aws-least-privilege-winston-3,v3-dev-eth-ledger-bridge-keyring-ethereumjs-tx-5,v3-dev-gh-aw-firewall-eslint-10 \
+  --reference-runs v1-dev-1,v1-dev-2 --exploratory-runs v2-dev-1,v2-dev-2,v2-dev-3
 ```
 
 `compare` writes `eval/results/agent/comparisons/<name>.json` and
 `eval/reports/agent/<name>.md`. It uses the canonical summary's statistics and
 never changes `latest.json`, which stays baseline against the full report
 until a frozen suite says otherwise.
+
+Runs pooled by `--runs` must be one experiment: `compare` refuses runs that
+differ in model, effort, CLI version, Drift commit (or a dirty tree),
+isolation mode, loaded session environment, web tools, budget, turn cap,
+`--verify`, schedule design, conditions, or any case's content hash, start
+tree or task hash; a (case, condition, repetition) slot recorded twice; and
+any run marked `ABORTED.md`. It names every difference. Runs that cover
+different cases pool when everything else agrees, which is how a parallel
+one-case-per-process experiment is aggregated. `--reference-runs` and
+`--exploratory-runs` are shown as labelled history, never pooled.
+
+The manual workflow (`.github/workflows/agent-benchmark.yml`) takes the same
+`conditions` and `clean_environment`, plus `drift_verify`, `max_budget_usd`
+and `max_turns`; it always writes a comparison and refreshes `latest.json`
+only from a run of exactly baseline and the full report.
 
 **Requirements.** Node 22.6+, git, the `claude` CLI on `PATH` and signed in
 (or `ANTHROPIC_API_KEY` set), network access for the package registry and the
