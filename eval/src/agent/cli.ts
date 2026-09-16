@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { admitCase, recordAdmissions } from './admission.ts';
-import { buildComparison, writeComparison } from './compare.ts';
+import { buildComparison, IncompatibleRunsError, writeComparison } from './compare.ts';
 import { listCaseIds, loadSuite } from './cases.ts';
 import { ClaudeCodeProvider, type CleanEnvironment } from './providers/claude-code.ts';
 import { README_BLOCK_BEGIN, README_BLOCK_END, renderPublicCopy, renderReadmeBlock, renderReport } from './report.ts';
@@ -198,7 +198,9 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       return 2;
     }
     const list = (key: string) => flag(argv, key)?.split(',').filter(Boolean) ?? [];
-    const comparison = await buildComparison({
+    let comparison;
+    try {
+      comparison = await buildComparison({
       name,
       runIds: runs,
       history: [
@@ -207,6 +209,13 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       ],
       root,
     });
+    } catch (err) {
+      if (err instanceof IncompatibleRunsError) {
+        console.error(err.message);
+        return 1;
+      }
+      throw err;
+    }
     const paths = await writeComparison(comparison, root);
     log(`comparison written to ${paths.json} and ${paths.markdown}`);
     return 0;
