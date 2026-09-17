@@ -1,0 +1,32 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "controller-pilot-eslint",
+  "suite": "agent-upgrade-v1",
+  "suiteStatus": "draft",
+  "createdAt": "2026-09-17T03:32:55.531Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/agent/cli.ts run --suite agent-upgrade-v1 --case gh-aw-firewall-eslint-10 --runs 1 --conditions generic-orchestrated,drift-orchestrated --run-id controller-pilot-eslint --notes EXPLORATORY pilot to find product defects before the development run; never pooled",
+  "driftCommit": "90f5ff106e98f79fa40099bb6f084acf78c58fb8",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 1,
+  "conditions": [
+    "generic-orchestrated",
+    "drift-orchestrated"
+  ],
+  "scheduleDesign": "williams-v1",
+  "cleanEnvironment": "isolated",
+  "webTools": "disabled",
+  "maxBudgetUsd": null,
+  "maxTurns": null,
+  "driftVerify": true,
+  "caseIds": [
+    "gh-aw-firewall-eslint-10"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "EXPLORATORY pilot to find product defects before the development run; never pooled"
+}

@@ -1,0 +1,13 @@
+diff --git a/eslint-rules/no-unsafe-execa.test.js b/eslint-rules/no-unsafe-execa.test.js
+index d046b26..205de96 100644
+--- a/eslint-rules/no-unsafe-execa.test.js
++++ b/eslint-rules/no-unsafe-execa.test.js
+@@ -9,7 +9,7 @@ const { RuleTester } = require('eslint');
+ const rule = require('./no-unsafe-execa');
+ 
+ const ruleTester = new RuleTester({
+-  parserOptions: {
++  languageOptions: {
+     ecmaVersion: 2020,
+     sourceType: 'module',
+   },
