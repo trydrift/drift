@@ -255,7 +255,10 @@ export type {
 } from './remediation/controller.js';
 export { createProjectVerifier, detectRemediationChecks, extractFailures, measureBaseline } from './remediation/verifier.js';
 export { runVerifiedAgentRemediation } from './remediation/verified-runner.js';
-export type { CheckResult, RemediationVerifier, VerificationFailure, VerificationRun } from './remediation/verifier.js';
+export { COVERAGE_CHECK_LABEL, coverageTargets, coverageWeakening, measureCoverage } from './remediation/coverage.js';
+export type { CoverageInventory } from './remediation/coverage.js';
+export { discoverToolFiles } from './remediation/controller.js';
+export type { CheckResult, CoverageBaseline, RemediationVerifier, VerificationFailure, VerificationRun } from './remediation/verifier.js';
 export { runChecks } from './verification/checks.js';
 export type { CheckOutcome } from './verification/checks.js';
 export { composeAgentPrompt, parseScopeRequests, SCOPE_REQUEST_MARKER } from './agents/types.js';

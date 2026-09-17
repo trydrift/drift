@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan } from '../types.js';
@@ -10,6 +10,7 @@ import { execCommand, type Exec } from '../util/exec.js';
 import { planForCommits } from './partition.js';
 import { commitFiles } from './worktree-runner.js';
 import type { RemediationVerifier, VerificationFailure, VerificationRun } from './verifier.js';
+import { COVERAGE_CHECK_LABEL } from './coverage.js';
 
 /**
  * Drift owns the fixing loop; a coding agent performs one bounded edit at a time.
@@ -70,6 +71,8 @@ export interface ControllerSessionRecord {
 
 export interface ControllerVerificationRecord {
   round: number;
+  /** A clean install from the lockfile preceded the checks. */
+  fresh: boolean;
   passed: boolean;
   fingerprint: string;
   durationMs: number;
@@ -193,11 +196,12 @@ export async function runRemediationController(options: RemediationControllerOpt
     return record;
   };
 
-  const verify = async (round: number): Promise<VerificationRun> => {
-    const run = await options.verifier!.run(options.signal ? { signal: options.signal } : {});
+  const verify = async (round: number, fresh = false): Promise<VerificationRun> => {
+    const run = await options.verifier!.run({ ...(options.signal ? { signal: options.signal } : {}), ...(fresh ? { fresh: true } : {}) });
     await commitInstallChanges(options.root, exec);
     const verification: ControllerVerificationRecord = {
       round,
+      fresh,
       passed: run.passed,
       fingerprint: run.fingerprint,
       durationMs: run.durationMs,
@@ -335,8 +339,19 @@ export async function runRemediationController(options: RemediationControllerOpt
 
   // Measured first: it scopes the initial sessions' diagnostics, and a
   // repository that already passes with nothing for an agent to do is done.
+  /**
+   * A pass is only reported after the same checks pass on a clean install from
+   * the lockfile, the way CI and any reviewer's checkout will run them: an
+   * agent can leave installed dependencies patched or a lockfile out of step
+   * with the manifest, and both pass on the tree it worked in.
+   */
+  const confirmed = async (round: number, run: VerificationRun): Promise<VerificationRun> => (run.passed ? verify(round, true) : run);
+
   let current = options.verifier ? await verify(0) : null;
-  if (current?.passed && units.length === 0) return finish('verified', 'the checks pass and no unit needed an agent');
+  if (current?.passed && units.length === 0) {
+    current = await confirmed(0, current);
+    if (current.passed) return finish('verified', 'the checks pass and no unit needed an agent');
+  }
 
   for (const unit of units) {
     if (options.signal?.aborted) return finish('aborted', 'cancelled');
@@ -350,6 +365,8 @@ export async function runRemediationController(options: RemediationControllerOpt
 
   const maxRounds = options.maxRepairRounds ?? DEFAULT_MAX_REPAIR_ROUNDS;
   let previousFingerprint: string | null = null;
+  let previousRun: VerificationRun | null = null;
+  const toolFiles = discoverToolFiles(options.root, options.plan);
   let stalledRounds = 0;
   let round = 0;
 
@@ -359,7 +376,7 @@ export async function runRemediationController(options: RemediationControllerOpt
 
   for (;;) {
     if (options.signal?.aborted) return finish('aborted', 'cancelled');
-    if (!(current && sessionsAtLastVerification === record.sessions.length)) current = await verify(round + 1);
+    if (!(current && sessionsAtLastVerification === record.sessions.length)) current = await confirmed(round + 1, await verify(round + 1));
     sessionsAtLastVerification = record.sessions.length;
     if (current.passed) return finish('verified', round === 0 ? 'the checks pass after the planned units' : `the checks pass after ${round} repair round(s)`);
 
@@ -380,7 +397,11 @@ export async function runRemediationController(options: RemediationControllerOpt
 
     if (round >= maxRounds) return finish('repair-limit', `${current.failures.length} failure(s) remain after ${round} repair rounds`);
 
-    const repairs = planRepairs(current, units, grants, changedSoFar, options.plan, (path) => existsSync(join(options.root, path)));
+    const repairs = planRepairs(current, units, grants, changedSoFar, options.plan, (path) => existsSync(join(options.root, path)), {
+      toolFiles,
+      persisted: new Set((previousRun?.failures ?? []).map((failure) => failure.signature)),
+    });
+    previousRun = current;
     if (repairs.length === 0) return finish('unrepairable', 'the remaining failures name nothing an agent is allowed to edit');
 
     previousFingerprint = current.fingerprint;
@@ -463,7 +484,17 @@ export function planRepairs(
    * already changed and files it requested may not exist yet and are exempt.
    */
   exists: (path: string) => boolean = () => true,
+  /**
+   * Adaptive scope. A failure that names no file, that says a check now covers
+   * less, or that survived the previous round is one the narrow scope did not
+   * resolve: its repair also gets the project's manifest and the configuration
+   * files of its tools. In the development run, a session limited to the file a
+   * lint failure named migrated ESLint by dropping rule sets it had no scope to
+   * install, rather than asking for `package.json`.
+   */
+  adaptive: { toolFiles: readonly string[]; persisted: ReadonlySet<string> } = { toolFiles: [], persisted: new Set() },
 ): AgentUnit[] {
+  const widens = (failure: VerificationFailure) => !failure.file || failure.check === COVERAGE_CHECK_LABEL || adaptive.persisted.has(failure.signature);
   const repairs: AgentUnit[] = [];
   const unowned: VerificationFailure[] = [];
   const byUnit = new Map<string, VerificationFailure[]>();
@@ -482,7 +513,8 @@ export function planRepairs(
     const failures = byUnit.get(unit.commit.id);
     const granted = [...(grants.get(unit.commit.id) ?? [])];
     if (!failures?.length && granted.length === 0) continue;
-    const allowed = withLockfiles([...new Set([...unit.commit.allowedFiles, ...granted])]);
+    const widened = (failures ?? []).some(widens) ? adaptive.toolFiles : [];
+    const allowed = withLockfiles([...new Set([...unit.commit.allowedFiles, ...granted, ...widened])]);
     repairs.push({
       commit: {
         ...unit.commit,
@@ -503,9 +535,10 @@ export function planRepairs(
     const named = unowned.map((failure) => failure.file).filter((file): file is string => Boolean(file));
     const mentioned = run.checks.filter((check) => failingChecks.has(check.label)).flatMap((check) => check.mentionedFiles);
     const measured = [...named, ...mentioned].map(normalizePlanPath).filter((file) => file && !/\s/.test(file) && exists(file));
-    const candidates = [...measured, ...[...changedSoFar, ...residualGrants].map(normalizePlanPath)]
+    const widened = unowned.some(widens) ? adaptive.toolFiles : [];
+    const candidates = [...measured, ...[...changedSoFar, ...residualGrants, ...widened].map(normalizePlanPath)]
       .filter((file) => file && !isProtectedPath(file) && !isLockfile(file));
-    const allowed = withLockfiles([...new Set(candidates)].sort().slice(0, 25));
+    const allowed = withLockfiles([...new Set(candidates)].sort().slice(0, 40));
     // No editable file named is not the same as nothing to do: a type error
     // inside an installed dependency's declarations is fixed in this
     // repository's tsconfig, and no check output names that file. The session
@@ -543,6 +576,32 @@ export function planRepairs(
   }
 
   return repairs;
+}
+
+const TOOL_CONFIG = /^(?:package\.json|\.npmrc|tsconfig(?:\.[\w-]+)?\.json|jsconfig\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.[a-z]+)?|\.eslintignore|jest\.config\.[cm]?[jt]s(?:on)?|vitest\.config\.[cm]?[jt]s|babel\.config\.[cm]?js(?:on)?|\.babelrc(?:\.[a-z]+)?|\.mocharc(?:\.[a-z]+)?|\.nycrc(?:\.[a-z]+)?|webpack\.config\.[cm]?[jt]s|rollup\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|pyproject\.toml|setup\.cfg|tox\.ini)$/;
+
+/**
+ * The manifest and tool configuration files of the upgraded package's member,
+ * plus the configuration file names a tool that is present may need to create
+ * (a flat `eslint.config.js` replacing `.eslintrc`).
+ */
+export function discoverToolFiles(root: string, plan: RemediationPlan): string[] {
+  const dirs = [...new Set(plan.changes.map((change) => change.workspace ?? ''))];
+  const out = new Set<string>();
+  for (const dir of dirs.length ? dirs : ['']) {
+    let entries: string[] = [];
+    try {
+      entries = readdirSync(join(root, dir));
+    } catch {
+      continue;
+    }
+    const prefix = dir ? `${dir}/` : '';
+    for (const entry of entries) if (TOOL_CONFIG.test(entry)) out.add(`${prefix}${entry}`);
+    if (entries.some((entry) => /^\.eslintrc|^eslint\.config\./.test(entry))) {
+      for (const name of ['eslint.config.js', 'eslint.config.mjs', 'eslint.config.cjs']) out.add(`${prefix}${name}`);
+    }
+  }
+  return [...out].sort();
 }
 
 /**

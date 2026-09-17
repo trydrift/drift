@@ -34,7 +34,7 @@ export async function runVerifiedAgentRemediation(options: {
     options.logger.info(`Measuring ${checks.length} check(s) before the upgrade, so failures it did not cause are not handed to an agent.`);
     const baseline = await measureBaseline({ root: options.worktree, ref: options.repo.beforeSha, dir, checks, exec });
     if (baseline.installFailure) options.logger.warn(`The pre-upgrade baseline could not install cleanly: ${baseline.installFailure}`);
-    verifier = createProjectVerifier({ root: options.worktree, dir, checks, baseline: baseline.outcomes, exec, installFirst: true });
+    verifier = createProjectVerifier({ root: options.worktree, dir, checks, baseline: baseline.outcomes, coverageBaseline: baseline.coverage, exec, installFirst: true });
   } else {
     options.logger.warn('No checks were found to verify the fix; each unit runs once, unverified.');
   }

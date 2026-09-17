@@ -630,6 +630,22 @@ never runs the project's broad checks; Drift does:
 - Each remaining failure goes to a new session scoped to the unit whose files it
   names, or to one residual session for the rest, with only that failure, the
   edits already made to its files, and the findings its text mentions.
+- A check that passes by checking less is a failure. What the lint, test and
+  compiler configuration enforce is measured at the pre-upgrade commit and
+  again when the checks pass (`src/remediation/coverage.ts`), with the project's
+  own tools: ESLint's resolved rules and ignored files, `jest --listTests`,
+  TypeScript's parsed options and file list. Dropped or downgraded rules,
+  newly ignored files, lost tests, relaxed strictness and dropped source files
+  become verification failures on the configuration file. Rules the new version
+  removed or deprecated, a rule that moved plugin namespace, and rules a loaded
+  plugin's own presets switch off are not.
+- A pass is confirmed on a clean install from the lockfile (`npm ci`,
+  `yarn install --immutable`) before it is reported; a lockfile out of step with
+  the manifest is synced and committed by Drift.
+- A failure that names no file, reports weakened coverage, or survived the
+  previous round widens its repair's scope to the member's manifest and tool
+  configuration files, so a migration that needs a companion package or a new
+  configuration file is not squeezed into the one file a diagnostic named.
 - The loop stops when the checks pass, when the same failures survive a round
   that changed nothing (or two that did), or at a high ceiling on rounds. The
   reason is recorded.

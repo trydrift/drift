@@ -7,6 +7,7 @@ import { detectPackageManagers } from '../detect/package-manager.js';
 import { nodeWorkspaceFs } from '../detect/workspace.js';
 import { availableChecks, runChecks, type CheckOutcome } from '../verification/checks.js';
 import { parseVerificationDiagnostics } from '../verification/diagnostics.js';
+import { COVERAGE_CHECK_LABEL, coverageTargets, coverageWeakening, measureCoverage, type CoverageInventory } from './coverage.js';
 import { execCommand, type Exec } from '../util/exec.js';
 
 /**
@@ -78,7 +79,14 @@ export interface VerificationRun {
 
 export interface RemediationVerifier {
   readonly checks: readonly LocalCheck[];
-  run(options?: { signal?: AbortSignal }): Promise<VerificationRun>;
+  /**
+   * Run the checks. `fresh` deletes the installed dependencies and installs
+   * from the lockfile as a clean CI checkout would (`npm ci`,
+   * `yarn install --immutable`) first — the last verification before the
+   * controller reports success, so a pass cannot rest on a patched or stale
+   * dependency tree or on a lockfile out of step with the manifest.
+   */
+  run(options?: { signal?: AbortSignal; fresh?: boolean }): Promise<VerificationRun>;
   /**
    * Record the current manifests and lockfiles as installed. A caller that lets
    * something else edit the tree before the first run (and knows the tree was
@@ -119,6 +127,20 @@ export interface ProjectVerifierOptions {
   timeoutMs?: number;
   /** Seam for tests. */
   runChecks?: typeof runChecks;
+  /**
+   * What the checks covered at the pre-upgrade commit (see `coverage.ts`). When
+   * present, a run whose checks all pass is also compared against it, and
+   * anything the checks no longer cover is a failure.
+   */
+  coverageBaseline?: CoverageBaseline | null;
+  /** Seam for tests. */
+  measureCoverage?: typeof measureCoverage;
+}
+
+export interface CoverageBaseline {
+  inventory: CoverageInventory;
+  lintTargets: string[];
+  tsconfigs: string[];
 }
 
 const TAIL_LINES = 40;
@@ -191,7 +213,10 @@ export async function measureBaseline(options: {
   timeoutMs?: number;
   installTimeoutMs?: number;
   runChecks?: typeof runChecks;
-}): Promise<{ outcomes: CheckOutcome[]; durationMs: number; installFailure?: string }> {
+  /** Also measure what the checks cover there. On by default. */
+  coverage?: boolean;
+  measureCoverage?: typeof measureCoverage;
+}): Promise<{ outcomes: CheckOutcome[]; durationMs: number; installFailure?: string; coverage: CoverageBaseline | null }> {
   const exec = options.exec ?? execCommand;
   const started = Date.now();
   // Outside the repository, never under `.git/`: Jest ignores every path with
@@ -200,7 +225,7 @@ export async function measureBaseline(options: {
   const worktree = join(await mkdtemp(join(tmpdir(), 'drift-baseline-')), 'repo');
   const add = await exec('git', ['worktree', 'add', '--detach', worktree, options.ref], { cwd: options.root });
   if (add.code !== 0) {
-    return { outcomes: [], durationMs: Date.now() - started, installFailure: `Could not create a baseline worktree: ${add.stderr.trim()}` };
+    return { outcomes: [], durationMs: Date.now() - started, installFailure: `Could not create a baseline worktree: ${add.stderr.trim()}`, coverage: null };
   }
   try {
     const cwd = options.dir ? join(worktree, options.dir) : worktree;
@@ -213,7 +238,13 @@ export async function measureBaseline(options: {
       env: options.env,
       timeoutMs: options.timeoutMs,
     });
-    return { outcomes, durationMs: Date.now() - started, ...(installFailure ? { installFailure } : {}) };
+    let coverage: CoverageBaseline | null = null;
+    if ((options.coverage ?? true) && !installFailure) {
+      const targets = await coverageTargets(worktree, options.dir);
+      const inventory = await (options.measureCoverage ?? measureCoverage)({ root: worktree, dir: options.dir, exec, env: options.env, ...targets });
+      coverage = { inventory, ...targets };
+    }
+    return { outcomes, durationMs: Date.now() - started, ...(installFailure ? { installFailure } : {}), coverage };
   } finally {
     await exec('git', ['worktree', 'remove', '--force', worktree], { cwd: options.root });
     await rm(dirname(worktree), { recursive: true, force: true }).catch(() => undefined);
@@ -262,7 +293,22 @@ export function createProjectVerifier(options: ProjectVerifierOptions): Remediat
       let installed = false;
       let installFailure: string | undefined;
 
-      if ((options.install ?? 'when-manifests-change') === 'when-manifests-change') {
+      if (runOptions.fresh) {
+        await rm(join(cwd, 'node_modules'), { recursive: true, force: true });
+        const frozen = await install(cwd, exec, options.env, undefined, 'frozen');
+        if (frozen) {
+          // Out of step with the manifest: a CI checkout would fail here. Bring
+          // the lockfile into line (the controller commits it) and install from it.
+          const synced = await install(cwd, exec, options.env);
+          installFailure = synced ? `${frozen}\n${synced}` : undefined;
+          if (!synced) {
+            const again = await install(cwd, exec, options.env, undefined, 'frozen');
+            if (again) installFailure = again;
+          }
+        }
+        installed = true;
+        installedFor = await dependencyStateKey(cwd);
+      } else if ((options.install ?? 'when-manifests-change') === 'when-manifests-change') {
         const key = await dependencyStateKey(cwd);
         if (installedFor === null && options.installFirst) {
           // Nothing declared has changed yet, so any lockfile rewrite this
@@ -296,6 +342,33 @@ export function createProjectVerifier(options: ProjectVerifierOptions): Remediat
       const sideEffectsReverted = await revertSideEffects(options.root, before, exec);
 
       const checks = outcomes.map((outcome) => resultFor(outcome, options.baseline?.find((b) => b.label === outcome.label), options.root));
+      if (runOptions.fresh && installFailure) {
+        checks.unshift({
+          label: 'clean install from the lockfile',
+          kind: 'build',
+          status: 'failed',
+          durationMs: 0,
+          failures: [{ check: 'clean install from the lockfile', signature: 'install|fresh', message: `A clean install from the lockfile fails: ${installFailure.slice(0, 600)}`, file: 'package.json' }],
+          preexisting: 0,
+          tail: installFailure.split('\n').slice(-TAIL_LINES).join('\n'),
+          mentionedFiles: [],
+        });
+      }
+      if (options.coverageBaseline && checks.every((check) => check.failures.length === 0)) {
+        const after = await (options.measureCoverage ?? measureCoverage)({
+          root: options.root,
+          dir: options.dir,
+          exec,
+          env: options.env,
+          reference: options.coverageBaseline.inventory,
+          lintTargets: options.coverageBaseline.lintTargets,
+          tsconfigs: options.coverageBaseline.tsconfigs,
+        });
+        const weakened = coverageWeakening(options.coverageBaseline.inventory, after, cwd);
+        if (weakened.length > 0) {
+          checks.push({ label: COVERAGE_CHECK_LABEL, kind: 'lint', status: 'failed', durationMs: 0, failures: weakened, preexisting: 0, tail: '', mentionedFiles: [] });
+        }
+      }
       const failures = checks.flatMap((check) => check.failures);
       const passed = checks.every((check) => check.status === 'passed' || check.failures.length === 0);
 
@@ -508,10 +581,21 @@ async function dependencyStateKey(cwd: string): Promise<string> {
   return hash.digest('hex');
 }
 
-async function install(cwd: string, exec: Exec, env?: NodeJS.ProcessEnv, timeoutMs = 15 * 60_000): Promise<string | undefined> {
+/** The lockfile-exact install a clean CI checkout runs, per manager. */
+const FROZEN_INSTALL: Record<string, readonly string[]> = {
+  npm: ['ci'],
+  yarn: ['install', '--frozen-lockfile'],
+  'yarn-berry': ['install', '--immutable'],
+  pnpm: ['install', '--frozen-lockfile'],
+  bun: ['install', '--frozen-lockfile'],
+};
+
+async function install(cwd: string, exec: Exec, env?: NodeJS.ProcessEnv, timeoutMs = 15 * 60_000, mode: 'sync' | 'frozen' = 'sync'): Promise<string | undefined> {
   const entries = await nodeWorkspaceFs().readDirectory(cwd);
   const detected = detectPackageManagers({ entries })[0];
-  const command = detected?.manager.install;
+  const base = detected?.manager.install;
+  const frozenArgs = detected ? FROZEN_INSTALL[detected.manager.id] : undefined;
+  const command = mode === 'frozen' && base && frozenArgs ? { command: base.command, args: [...frozenArgs] } : base;
   if (!command) return 'No install command is known for this project.';
   const result = await exec(command.command, command.args, { cwd, env, timeoutMs });
   if (result.code === 0) return undefined;

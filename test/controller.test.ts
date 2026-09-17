@@ -122,7 +122,9 @@ function scriptedVerifier(
 ) {
   let calls = 0;
   let reinstalls = 0;
+  const fresh: boolean[] = [];
   return {
+    fresh,
     get calls() {
       return calls;
     },
@@ -137,7 +139,8 @@ function scriptedVerifier(
         reinstalls += 1;
         return undefined;
       },
-      run: async () => {
+      run: async (options?: { fresh?: boolean }) => {
+        fresh.push(Boolean(options?.fresh));
         const scripted = runs[Math.min(calls, runs.length - 1)]!;
         calls += 1;
         const failures = (scripted.failures ?? []).map((failure) => ({ check: 'npm test', signature: failure.signature ?? `npm test|${failure.message}`, ...failure }));
@@ -414,6 +417,140 @@ describe('workaround detection', () => {
   });
 });
 
+describe('second accuracy round: fresh installs, coverage, adaptive scope', () => {
+  test('a pass that fails on a clean install from the lockfile is not reported as verified', async () => {
+    const { root, cleanup } = await repoWith({ 'src/app.ts': 'a\n' });
+    try {
+      const fake = scriptedAgent(root, [async () => fake.write('src/app.ts', 'b\n'), async () => fake.write('src/app.ts', 'c\n')]);
+      const verify = scriptedVerifier([
+        { passed: false, failures: [{ file: 'src/app.ts', message: 'boom' }] },
+        { passed: true },
+        { passed: false, failures: [{ file: 'src/app.ts', message: 'only on a clean install' }] },
+        { passed: true },
+        { passed: true },
+      ]);
+      const record = await runRemediationController({ root, plan: plan([]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
+      assert.equal(record.termination, 'verified');
+      assert.equal(record.repairRounds, 2, 'the clean-install failure became a repair round');
+      assert.equal(verify.fresh.at(-1), true);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('coverage: dropped rule sets, downgrades, unlinted files, lost tests and relaxed compiler options are weakening', async () => {
+    const { coverageWeakening } = await import('../dist/remediation/coverage.js');
+    const before = {
+      eslint: { sampleFile: 'src/a.ts', rules: { 'no-undef': 2, 'no-with': 2, 'rulesdir/no-unsafe-execa': 1, 'security/detect-child-process': 2, a1: 2, a2: 2, a3: 2, a4: 2, a5: 2, gone: 2 }, lintedFiles: ['src/a.ts', 'src/b.ts'], known: {}, configFile: '.eslintrc.js' },
+      jest: { tests: ['src/a.test.ts', 'src/b.test.ts'], configFile: 'jest.config.js' },
+      tsc: { configs: { 'tsconfig.json': { strict: { strict: true, noUnusedLocals: true }, files: ['src/a.ts'] } } },
+    };
+    const weakened = {
+      eslint: { sampleFile: 'src/a.ts', rules: { 'no-undef': 2, 'no-with': 0, 'security/detect-child-process': 1 }, lintedFiles: ['src/a.ts'], known: { gone: { exists: false, deprecated: false } }, supersededOff: [], configFile: 'eslint.config.js' },
+      jest: { tests: ['src/a.test.ts'], configFile: 'jest.config.js' },
+      tsc: { configs: { 'tsconfig.json': { strict: { strict: false, noUnusedLocals: true }, files: [] } } },
+    };
+    const cwd = await mkdtemp(join(tmpdir(), 'drift-coverage-'));
+    try {
+      for (const file of ['src/a.ts', 'src/b.ts', 'src/a.test.ts', 'src/b.test.ts']) {
+        await mkdir(dirname(join(cwd, file)), { recursive: true });
+        await writeFile(join(cwd, file), '');
+      }
+      const messages = coverageWeakening(before as never, weakened as never, cwd).map((failure: { message: string }) => failure.message).join('\n');
+      assert.match(messages, /no-with \(error → off\)/);
+      assert.match(messages, /security\/detect-child-process \(error → warn\)/);
+      assert.match(messages, /no longer enables 5 rule/, 'a1..a5 missing; gone no longer exists and is tolerated');
+      assert.doesNotMatch(messages, /gone/);
+      assert.match(messages, /no longer checks 1 file\(s\).*src\/b\.ts/);
+      assert.match(messages, /no longer runs 1 test file\(s\).*src\/b\.test\.ts/);
+      assert.match(messages, /no longer enables strict/);
+      assert.match(messages, /no longer includes 1 file/);
+
+      const migrated = {
+        eslint: { sampleFile: 'src/a.ts', rules: { 'no-undef': 2, 'no-with': 0, 'local/no-unsafe-execa': 1, 'security/detect-child-process': 2, a1: 2, a2: 2, a3: 2, a4: 2, a5: 2, 'no-useless-assignment': 0 }, lintedFiles: ['src/a.ts', 'src/b.ts'], known: {}, supersededOff: ['no-with'], configFile: 'eslint.config.mjs' },
+        jest: before.jest,
+        tsc: { configs: { 'tsconfig.json': { strict: { strict: true, noUnusedLocals: true }, files: ['src/a.ts'] } } },
+      };
+      assert.deepEqual(coverageWeakening(before as never, migrated as never, cwd), [], 'a namespace rename, a rule a plugin preset supersedes, and a new rule left off are not weakening');
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test('coverage probes ignore whatever else the project prints', async () => {
+    const { measureCoverage } = await import('../dist/remediation/coverage.js');
+    const { root, cleanup } = await repoWith({ 'package.json': '{}', 'tsconfig.json': '{"compilerOptions":{"strict":true}}', 'src/a.ts': 'export const a = 1;\n' });
+    try {
+      await mkdir(join(root, 'node_modules', 'typescript'), { recursive: true });
+      const exec = (async () => ({ code: 0, stdout: 'All tests passed!\n__DRIFT_COVERAGE__{"configs":{"tsconfig.json":{"strict":{"strict":true},"files":["src/a.ts"]}}}\nmore noise\n', stderr: '' })) as never;
+      const inventory = await measureCoverage({ root, exec, tsconfigs: ['tsconfig.json'] });
+      assert.deepEqual(inventory.tsc, { configs: { 'tsconfig.json': { strict: { strict: true }, files: ['src/a.ts'] } } });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('lint targets and tsconfigs come from the scripts', async () => {
+    const { coverageTargets } = await import('../dist/remediation/coverage.js');
+    const { root, cleanup } = await repoWith({ 'package.json': JSON.stringify({ scripts: { lint: 'eslint src --ext .ts', 'type-check': 'tsc --noEmit -p tsconfig.check.json', build: 'tsc' } }) });
+    try {
+      assert.deepEqual(await coverageTargets(root), { lintTargets: ['src'], tsconfigs: ['tsconfig.check.json', 'tsconfig.json'] });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('a failure the narrow scope did not resolve widens the next repair to manifests and tool configuration', async () => {
+    const { discoverToolFiles } = await import('../dist/remediation/controller.js');
+    const { COVERAGE_CHECK_LABEL } = await import('../dist/remediation/coverage.js');
+    const { root, cleanup } = await repoWith({ 'package.json': '{}', '.eslintrc.js': 'module.exports = {};', 'tsconfig.json': '{}', 'src/cli.ts': '' });
+    try {
+      const toolFiles = discoverToolFiles(root, plan([]));
+      assert.deepEqual(toolFiles, ['.eslintrc.js', 'eslint.config.cjs', 'eslint.config.js', 'eslint.config.mjs', 'package.json', 'tsconfig.json']);
+      const run = (failures: unknown[]) => ({ passed: false, failures, checks: [], fingerprint: 'f', durationMs: 0, installed: false, sideEffectsReverted: [] });
+      const lintError = { check: 'npm run lint', signature: 'lint|src/cli.ts:3', file: 'src/cli.ts', message: 'src/cli.ts:3 no-unused-vars' };
+      const narrow = planRepairs(run([lintError]) as never, [] as never, new Map(), new Set(), plan([]), () => true, { toolFiles, persisted: new Set() });
+      assert.deepEqual(narrow[0]!.commit.allowedFiles, ['src/cli.ts'], 'a first, located failure stays narrow');
+      const persisted = planRepairs(run([lintError]) as never, [] as never, new Map(), new Set(), plan([]), () => true, { toolFiles, persisted: new Set([lintError.signature]) });
+      assert.ok(persisted[0]!.commit.allowedFiles.includes('package.json') && persisted[0]!.commit.allowedFiles.includes('eslint.config.js'));
+      const coverage = { check: COVERAGE_CHECK_LABEL, signature: 'c', file: '.eslintrc.js', message: 'Weakened eslint coverage' };
+      const widened = planRepairs(run([coverage]) as never, [] as never, new Map(), new Set(), plan([]), () => true, { toolFiles, persisted: new Set() });
+      assert.ok(widened[0]!.commit.allowedFiles.includes('package.json'));
+      assert.ok(widened[0]!.commit.allowedFiles.includes('package-lock.json'), 'a granted manifest brings its lockfile');
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('the prompt says a check must not pass by checking less, and that a partial migration is not a fix', () => {
+    const prompt = composeAgentPrompt({ plan: plan([unit()]), commit: unit(), workspaceRoot: '/x', files: [] } as never);
+    assert.match(prompt, /Do not make a check\s+pass by checking less/);
+    assert.match(prompt, /A partial\s+migration left for later is not a fix/);
+  });
+
+  test('a fresh verifier run installs from the lockfile first, and syncs a stale lockfile', async () => {
+    const { root, cleanup } = await repoWith({ 'package.json': '{"dependencies":{"a":"1"}}', 'package-lock.json': '{}' });
+    try {
+      const commands: string[] = [];
+      const verifier = createProjectVerifier({
+        root,
+        checks: [],
+        exec: (async (command: string, args: readonly string[]) => {
+          commands.push([command, ...args].join(' '));
+          if (args[0] === 'ci' && commands.filter((c) => c === 'npm ci').length === 1) return { code: 1, stdout: '', stderr: '`npm ci` can only install packages when your package.json and package-lock.json are in sync' };
+          return { code: 0, stdout: '', stderr: '' };
+        }) as never,
+        runChecks: (async () => []) as never,
+      });
+      const run = await verifier.run({ fresh: true });
+      assert.deepEqual(commands.filter((c) => c.startsWith('npm')), ['npm ci', 'npm install', 'npm ci']);
+      assert.equal(run.passed, true);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
 describe('accuracy fixes from the development run', () => {
   test('eslint stylish output with warnings before errors still yields the errors', () => {
     const output = [
@@ -527,7 +664,8 @@ describe('verification and repair', () => {
       ]);
       const record = await runRemediationController({ root, plan: plan([unit()]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
       assert.equal(record.termination, 'verified');
-      assert.equal(verify.calls, 3, 'Drift, not the agent, ran verification each time');
+      assert.equal(verify.calls, 4, 'Drift, not the agent, ran verification each time, and confirmed the pass on a clean install');
+      assert.deepEqual(verify.fresh, [false, false, false, true]);
       assert.equal(fake.tasks.length, 2);
       const repair = fake.tasks[1];
       assert.equal(repair.repair.round, 1);
@@ -611,7 +749,7 @@ describe('verification and repair', () => {
       const verify = scriptedVerifier([{ passed: false, failures: [{ file: 'src/app.ts', message: 'boom' }] }, { passed: true }]);
       const record = await runRemediationController({ root, plan: plan([]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
       assert.equal(record.termination, 'verified');
-      assert.equal(verify.calls, 2, 'one measurement before the repair, one after');
+      assert.equal(verify.calls, 3, 'one measurement before the repair, one after, one on a clean install');
     } finally {
       await cleanup();
     }
