@@ -36,6 +36,7 @@ import { runFix } from './remediation/cli-runner.js';
 import { availableChecks } from './verification/checks.js';
 import { AgentBudgetExceededError, agentBriefView, buildAgentBrief, evidenceDetail, findingDetail, renderAgentBrief, UnknownAgentIdError } from './agent-context/index.js';
 import { runAgentCommitsInWorktree } from './remediation/worktree-runner.js';
+import { runVerifiedAgentRemediation } from './remediation/verified-runner.js';
 import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from './agents/compat.js';
 import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from './agents/registry.js';
 import { resolveAgentSelection, type AgentSelection } from './agents/selection.js';
@@ -2363,7 +2364,8 @@ async function fixPlanAndOpenPR(args: {
           logger.warn(`${selection.provider} was selected, but that provider is not available in this CLI runtime.`);
           unresolvedAgentWork = true;
         } else if (agent.capabilities.execution === 'workspace') {
-          const agentRun = await runAgentCommitsInWorktree({
+          const runAgents = config.remediation.loop === 'verified' ? runVerifiedAgentRemediation : runAgentCommitsInWorktree;
+          const agentRun = await runAgents({
             repo,
             plan,
             config: agentConfig,

@@ -229,6 +229,7 @@ export type {
 } from './agents/types.js';
 export {
   applyBuiltinCommit,
+  applyDeterministicCommits,
   applyFixPlanCommit,
   assessmentOf,
   createRemediationWorktree,
@@ -242,6 +243,23 @@ export type {
   WorktreeRemediationOptions,
   WorktreeRemediationResult,
 } from './remediation/worktree-runner.js';
+export type { DeterministicResult } from './remediation/worktree-runner.js';
+export { planRepairs, prepareAgentUnits, renderFailures, runRemediationController, RESIDUAL_ID } from './remediation/controller.js';
+export type {
+  ControllerRecord,
+  ControllerSessionRecord,
+  ControllerTermination,
+  ControllerUnitRecord,
+  ControllerVerificationRecord,
+  RemediationControllerOptions,
+} from './remediation/controller.js';
+export { createProjectVerifier, detectRemediationChecks, extractFailures, measureBaseline } from './remediation/verifier.js';
+export { runVerifiedAgentRemediation } from './remediation/verified-runner.js';
+export type { CheckResult, RemediationVerifier, VerificationFailure, VerificationRun } from './remediation/verifier.js';
+export { runChecks } from './verification/checks.js';
+export type { CheckOutcome } from './verification/checks.js';
+export { composeAgentPrompt, parseScopeRequests, SCOPE_REQUEST_MARKER } from './agents/types.js';
+export { digestDiagnostics, renderDigest } from './verification/digest.js';
 export { awaitTerminalCloudTask, reconcileCloudTask } from './remediation/cloud-lifecycle.js';
 export type { CloudTaskReconciliation } from './remediation/cloud-lifecycle.js';
 export type { CloudFixAgent, CloudTaskStatus } from './agents/types.js';

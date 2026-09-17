@@ -274,6 +274,17 @@ export const DriftConfigSchema = z.object({
           timeoutSeconds: z.number().int().min(30).max(24 * 60 * 60).default(600),
         })
         .prefault({}),
+      /**
+       * Who owns the fixing loop once deterministic tiers are exhausted.
+       *
+       * `single-pass` hands each unit to an agent once and commits what passes
+       * validation. `verified` has Drift run the project's own checks after the
+       * units land, subtract failures that already happened before the upgrade,
+       * and hand what the upgrade broke to fresh, bounded repair sessions until
+       * the checks pass or a repair stops making progress. The agent never runs
+       * the broad checks itself in either mode.
+       */
+      loop: z.enum(['single-pass', 'verified']).default('single-pass'),
       /** Extra repo-specific guidance appended to every agent task. */
       customInstructions: z.string().default(''),
       /**
