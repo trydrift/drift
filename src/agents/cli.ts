@@ -4,7 +4,8 @@ import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
-  buildFixPrompt,
+  composeAgentPrompt,
+  parseScopeRequests,
   type AgentAvailability,
   type AgentContext,
   type AgentModel,
@@ -318,14 +319,7 @@ export class CliFixAgent implements FixAgent {
     // Effort changes how hard this agent thinks about the task — never which
     // parts of it to attempt. Every impact site above is still in scope.
     const thinking = await this.thinking(task, command);
-    const prompt = [
-      buildFixPrompt(task),
-      '',
-      '## Your task',
-      '',
-      task.commit.instructions,
-      ...(thinking ? ['', thinking] : []),
-    ].join('\n');
+    const prompt = composeAgentPrompt(task, thinking);
 
     const args = [...this.spec.buildArgs(prompt), ...(await this.selection(task, command))];
     ctx.report(`$ ${displayCommand(command, args)}\n# cwd: ${task.workspaceRoot}`);
@@ -357,6 +351,7 @@ export class CliFixAgent implements FixAgent {
         status: 'applied',
         message: agentConclusion(stdout, spoken) ?? `${this.spec.label} finished.`,
         warnings: extractAgentWarnings(stdout),
+        scopeRequests: parseScopeRequests(stdout),
       };
     } catch (err) {
       return { status: 'failed', message: `${this.spec.label} failed: ${(err as Error).message}` };
