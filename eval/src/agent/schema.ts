@@ -29,13 +29,89 @@ export const AGENT_CASE_SCHEMA_VERSION = 'drift-agent-case-v1';
 export const AGENT_TRIAL_SCHEMA_VERSION = 'drift-agent-trial-v1';
 export const AGENT_SUMMARY_SCHEMA_VERSION = 1;
 
-/** The two experimental conditions, plus the ablations the runner is built to add later. */
-export const CONDITIONS = ['baseline', 'drift', 'drift-evidence-only', 'drift-localization-only'] as const;
+/**
+ * Experimental conditions.
+ *
+ * `drift` is the condition #320 ran: the task followed by Drift's full human
+ * report (`drift analyze --markdown --verify`). Its stored id stays `drift` so
+ * every artifact recorded under it keeps its meaning; it is *labelled*
+ * `drift-full-report` wherever conditions are compared, and the CLI accepts
+ * that name. It is kept as the ablation that shows why the agent interface
+ * changed, not as the product's agent path.
+ *
+ * `drift-agent-brief` — the task followed by the production agent brief
+ * (`drift analyze --agent --verify`), with a one-sentence header.
+ * `drift-mcp` — the task, a one-sentence note that Drift's MCP tools are
+ * available, and the production MCP server (`drift mcp`) connected. Nothing is
+ * analysed before the session; the agent calls Drift or does not.
+ */
+export const CONDITIONS = [
+  'baseline',
+  'drift',
+  'drift-evidence-only',
+  'drift-localization-only',
+  'drift-agent-brief',
+  'drift-mcp',
+  'generic-orchestrated',
+  'drift-orchestrated',
+  'drift-lean',
+  'drift-lean-brief',
+] as const;
 export type Condition = (typeof CONDITIONS)[number];
 export const conditionSchema = z.enum(CONDITIONS);
 
-/** The two conditions every published result is over. Ablations are diagnostics and never enter a headline. */
+/** How each condition is named in comparisons and on the command line. */
+export const CONDITION_LABELS: Record<Condition, string> = {
+  baseline: 'baseline',
+  drift: 'drift-full-report',
+  'drift-evidence-only': 'drift-evidence-only',
+  'drift-localization-only': 'drift-localization-only',
+  'drift-agent-brief': 'drift-agent-brief',
+  'drift-mcp': 'drift-mcp',
+  'generic-orchestrated': 'generic-orchestrated',
+  'drift-orchestrated': 'drift-orchestrated',
+  'drift-lean': 'drift-lean',
+  'drift-lean-brief': 'drift-lean-brief',
+};
+
+/** Accepts a stored id or its label (`drift-full-report` → `drift`). */
+export function parseCondition(name: string): Condition {
+  const byLabel = (Object.entries(CONDITION_LABELS) as [Condition, string][]).find(([, label]) => label === name);
+  if (byLabel) return byLabel[0];
+  const parsed = conditionSchema.safeParse(name);
+  if (!parsed.success) throw new Error(`Unknown condition "${name}". Known: ${Object.values(CONDITION_LABELS).join(', ')}`);
+  return parsed.data;
+}
+
+/** The two conditions the canonical summary (`latest.json`) is over. Other Drift conditions are compared separately. */
 export const HEADLINE_CONDITIONS: readonly Condition[] = ['baseline', 'drift'];
+
+/** Every condition whose trials are compared against the baseline. */
+export const DRIFT_CONDITIONS: readonly Condition[] = ['drift', 'drift-agent-brief', 'drift-mcp', 'drift-evidence-only', 'drift-localization-only', 'generic-orchestrated', 'drift-orchestrated', 'drift-lean', 'drift-lean-brief'];
+
+/**
+ * Conditions whose agent session Drift starts with the product's lean launch
+ * profile (`CLAUDE_CODE_LEAN_SESSION_ARGS`): only the tools a code fix uses, no
+ * skills or slash commands. Same task, same single autonomous session as the
+ * baseline; `drift-lean` changes nothing else, `drift-lean-brief` also appends
+ * the production agent brief exactly as `drift-agent-brief` does.
+ */
+export const LEAN_CONDITIONS: readonly Condition[] = ['drift-lean', 'drift-lean-brief'];
+export const isLean = (condition: Condition): boolean => LEAN_CONDITIONS.includes(condition);
+
+/**
+ * Conditions in which a controller, not the agent, owns the remediation loop:
+ * several fresh agent sessions, verification run outside them.
+ *
+ * `generic-orchestrated` — one open session given the task and told an
+ * orchestrator verifies, then the product's generic repair loop with an empty
+ * plan: no findings, no units, no codemods, no replacement knowledge. What any
+ * orchestrator could do without Drift's analysis.
+ * `drift-orchestrated` — the product's controller over Drift's own plan:
+ * deterministic tiers, bounded units, verification, scoped repairs.
+ */
+export const ORCHESTRATED_CONDITIONS: readonly Condition[] = ['generic-orchestrated', 'drift-orchestrated'];
+export const isOrchestrated = (condition: Condition): boolean => ORCHESTRATED_CONDITIONS.includes(condition);
 
 const checkKindSchema = z.enum(['build', 'typecheck', 'test', 'lint', 'runtime']);
 export type CheckKind = z.infer<typeof checkKindSchema>;
@@ -308,6 +384,12 @@ export const INFRASTRUCTURE_FAILURES = [
   'validation_unavailable',
   /** The harness itself threw. */
   'runner_error',
+  /**
+   * The session loaded a different environment from the one its condition
+   * declares: an unexpected or missing MCP server, a plugin, memory. It did not
+   * run the condition it is labelled as.
+   */
+  'environment_mismatch',
 ] as const;
 export type InfrastructureFailure = (typeof INFRASTRUCTURE_FAILURES)[number];
 
@@ -403,6 +485,184 @@ export const validationSchema = z.object({
 });
 export type ValidationResult = z.infer<typeof validationSchema>;
 
+const tokenSplitSchema = z.object({
+  grossInputTokens: z.number().int().nonnegative(),
+  uncachedInputTokens: z.number().int().nonnegative(),
+  modelCalls: z.number().int().nonnegative(),
+});
+
+export const agentContextSchema = z.object({
+  interface: z.enum(['none', 'full-report', 'agent-brief', 'mcp', 'generic-orchestrated', 'drift-orchestrated', 'lean', 'lean-brief']),
+  /** What Drift placed in the initial prompt, after the task. */
+  initialDriftContextChars: z.number().int().nonnegative(),
+  /** `ceil(bytes / 3)`, the production brief's own estimator. Not a provider count. */
+  initialDriftContextEstimatedTokens: z.number().int().nonnegative(),
+  /** Calls to a Drift MCP tool, and what they returned. */
+  driftToolCalls: z.number().int().nonnegative(),
+  driftToolCallsByName: z.record(z.string(), z.number().int().nonnegative()),
+  driftToolReturnedChars: z.number().int().nonnegative(),
+  driftToolReturnedEstimatedTokens: z.number().int().nonnegative(),
+  /** Error results among those calls. */
+  driftToolErrors: z.number().int().nonnegative(),
+  /** Breaking changes in the plan the brief was built from. `null` when no plan was computed before the session. */
+  findingsInPlan: z.number().int().nonnegative().nullable(),
+  findingsInInitialBrief: z.number().int().nonnegative().nullable(),
+  /** Distinct finding ids the agent requested with get_finding / get_evidence. */
+  findingsRetrievedOnDemand: z.number().int().nonnegative(),
+  /** Upstream breaking changes the brief counted instead of listing. */
+  nonLocalFindingsOmitted: z.number().int().nonnegative().nullable(),
+  deterministicSitesCovered: z.number().int().nonnegative().nullable(),
+  residualSitesSentToAgent: z.number().int().nonnegative().nullable(),
+  /**
+   * Provider usage of the main-conversation model calls up to and including
+   * the one that issued the first file edit, and after it. From the
+   * per-message ledger, so the CLI's auxiliary model is not in either half.
+   * `null` when the session made no edit.
+   */
+  tokensBeforeFirstEdit: tokenSplitSchema.nullable(),
+  tokensAfterFirstEdit: tokenSplitSchema.nullable(),
+  /**
+   * Wall-clock decomposition, in milliseconds.
+   *
+   * `preSessionDriftMs` — Drift's analysis before the session (full report and
+   * brief conditions); 0 for baseline and MCP.
+   * `sessionMs` — the coding-agent session, start to exit. For MCP it already
+   * contains Drift's analysis, because `plan_upgrade` runs inside it.
+   * `driftToolMs` — time between each Drift tool call and its result, from the
+   * CLI's event timestamps; a part of `sessionMs`, not in addition to it.
+   * `endToEndMs` — `preSessionDriftMs + sessionMs`: from the start of Drift's
+   * work (or the session, where there is none) to the agent's exit. Workspace
+   * setup, install and validation are the same for every condition and not in it.
+   */
+  timing: z
+    .object({
+      preSessionDriftMs: z.number().int().nonnegative(),
+      sessionMs: z.number().int().nonnegative(),
+      driftToolMs: z.number().int().nonnegative(),
+      endToEndMs: z.number().int().nonnegative(),
+    })
+    .optional(),
+  /**
+   * Verification commands the agent ran itself (shell commands only). Broad:
+   * a whole-project build, typecheck, lint or test run. Narrow: the same tools
+   * pointed at specific files or tests. Absent on artifacts recorded before it
+   * was measured.
+   */
+  agentVerification: z
+    .object({
+      broad: z.number().int().nonnegative(),
+      narrow: z.number().int().nonnegative(),
+      /** Broad commands the controller's verification guard refused. Absent before the guard existed. */
+      blocked: z.number().int().nonnegative().optional(),
+      broadCommands: z.array(z.string()),
+    })
+    .optional(),
+  /** How the agent researched the dependency itself, whatever Drift gave it. */
+  research: z.object({
+    /** Read/Grep/Glob calls, and shell commands, that touch the upgraded package inside node_modules. */
+    dependencySourceAccesses: z.number().int().nonnegative(),
+    /** Shell commands that query a registry or package metadata (`npm view`, `npm info`, `yarn info`, `npm ls`). */
+    registryQueries: z.number().int().nonnegative(),
+    /** Accesses to a CHANGELOG, release notes or migration guide file. */
+    changelogAccesses: z.number().int().nonnegative(),
+  }),
+});
+export type AgentContextDiagnostics = z.infer<typeof agentContextSchema>;
+
+const orchestrationSessionSchema = z.object({
+  index: z.number().int().positive(),
+  /** `open` — the generic condition's first, unscoped session; `unit` — a planned unit; `repair` — a repair round. */
+  kind: z.enum(['open', 'unit', 'repair']),
+  unitId: z.string().nullable(),
+  round: z.number().int().nonnegative(),
+  allowedFiles: z.array(z.string()).nullable(),
+  changedFiles: z.array(z.string()),
+  /** What the controller did with the session's edits. */
+  outcome: z.string(),
+  reasons: z.array(z.string()),
+  scopeRequests: z.array(z.string()),
+  agentStatus: z.string(),
+  promptChars: z.number().int().nonnegative(),
+  promptHash: z.string(),
+  durationMs: z.number().int().nonnegative(),
+  usage: usageSchema,
+  toolCalls: z.number().int().nonnegative(),
+  tokensBeforeFirstEdit: tokenSplitSchema.nullable(),
+  tokensAfterFirstEdit: tokenSplitSchema.nullable(),
+  agentVerification: z.object({ broad: z.number().int().nonnegative(), narrow: z.number().int().nonnegative(), blocked: z.number().int().nonnegative().optional(), broadCommands: z.array(z.string()) }),
+  /** Whether the controller's verification guard was installed for this session. */
+  verificationGuard: z.boolean().optional(),
+  research: z.object({
+    dependencySourceAccesses: z.number().int().nonnegative(),
+    registryQueries: z.number().int().nonnegative(),
+    changelogAccesses: z.number().int().nonnegative(),
+  }),
+  environmentFingerprint: z.string().nullable(),
+});
+
+export const orchestrationSchema = z.object({
+  kind: z.enum(['generic', 'drift']),
+  sessions: z.array(orchestrationSessionSchema),
+  controller: z.object({
+    termination: z.string(),
+    terminationDetail: z.string(),
+    repairRounds: z.number().int().nonnegative(),
+    outOfScopeRejections: z.number().int().nonnegative(),
+    workaroundRejections: z.number().int().nonnegative(),
+    grantedFiles: z.array(z.string()),
+    deniedScopeRequests: z.array(z.string()),
+    needsHuman: z.array(z.object({ unitId: z.string(), files: z.array(z.string()), reason: z.string() })),
+    verifications: z.array(
+      z.object({
+        round: z.number().int().nonnegative(),
+        /** A clean install from the lockfile preceded the checks. Absent before it existed. */
+        fresh: z.boolean().optional(),
+        passed: z.boolean(),
+        fingerprint: z.string(),
+        durationMs: z.number().int().nonnegative(),
+        installed: z.boolean(),
+        failures: z.number().int().nonnegative(),
+        preexisting: z.number().int().nonnegative(),
+        checks: z.array(z.object({ label: z.string(), kind: z.string(), status: z.string(), durationMs: z.number().int().nonnegative(), failures: z.number().int().nonnegative() })),
+        sideEffectsReverted: z.array(z.string()),
+      }),
+    ),
+  }),
+  checks: z.array(z.string()),
+  units: z.object({
+    /** Commit units in Drift's plan (0 for the generic condition). */
+    total: z.number().int().nonnegative(),
+    resolvedByCodemod: z.number().int().nonnegative(),
+    resolvedByFixPlan: z.number().int().nonnegative(),
+    sentToAgent: z.number().int().nonnegative(),
+    skippedProtected: z.number().int().nonnegative(),
+    merged: z.number().int().nonnegative(),
+    /** Plan units that needed at least one repair session. */
+    requiringRepair: z.number().int().nonnegative(),
+  }),
+  /** Drift's analysis summary for the Drift condition; `null` for generic. */
+  analysis: z
+    .object({
+      breakingChanges: z.number().int().nonnegative(),
+      impactSites: z.number().int().nonnegative(),
+      commits: z.number().int().nonnegative(),
+      verificationStatus: z.string().nullable(),
+    })
+    .nullable(),
+  timing: z.object({
+    analysisMs: z.number().int().nonnegative(),
+    deterministicMs: z.number().int().nonnegative(),
+    baselineMeasurementMs: z.number().int().nonnegative(),
+    agentMs: z.number().int().nonnegative(),
+    controllerVerificationMs: z.number().int().nonnegative(),
+    endToEndMs: z.number().int().nonnegative(),
+  }),
+  /** The agent-time budget: the case's session timeout, shared by every session. */
+  agentBudgetMs: z.number().int().nonnegative(),
+  budgetExhausted: z.boolean(),
+});
+export type OrchestrationRecord = z.infer<typeof orchestrationSchema>;
+
 export const trialSchema = z
   .object({
     schemaVersion: z.literal(AGENT_TRIAL_SCHEMA_VERSION),
@@ -415,6 +675,10 @@ export const trialSchema = z
     repetition: z.number().int().positive(),
     /** Position of this trial in the run's schedule, so temporal ordering is auditable. */
     scheduleIndex: z.number().int().nonnegative(),
+    /** The trial's preassigned slot in the counterbalanced design. Absent on artifacts recorded before it existed. */
+    schedule: z
+      .object({ design: z.string(), block: z.number().int().nonnegative(), row: z.number().int().nonnegative(), position: z.number().int().positive() })
+      .optional(),
     metadata: z.object({
       repository: z.string(),
       baseCommit: z.string(),
@@ -441,6 +705,32 @@ export const trialSchema = z
         /** Tools the session actually had, from the provider's init record. */
         tools: z.array(z.string()),
         mcpServers: z.array(z.string()),
+        /** Everything the session reported loading. Absent on artifacts recorded before it was captured. */
+        environment: z
+          .object({
+            tools: z.array(z.string()),
+            mcpServers: z.array(z.object({ name: z.string(), status: z.string() })),
+            skills: z.array(z.string()),
+            slashCommands: z.array(z.string()),
+            agents: z.array(z.string()),
+            plugins: z.array(z.string()),
+            memoryPaths: z.array(z.string()),
+            outputStyle: z.string().nullable(),
+            apiKeySource: z.string().nullable(),
+            /** Hash of the environment without Drift's MCP server and tools. Equal across conditions of one experiment. */
+            fingerprint: z.string(),
+            /**
+             * Hash of the environment's tools, skills and slash commands alone.
+             * A condition that declares its tools (the lean profile) differs from
+             * the baseline here by design; within one condition it must not.
+             * Absent on artifacts recorded before it existed.
+             */
+            toolsFingerprint: z.string().optional(),
+            /** `fingerprint` computed without tools, skills and slash commands. Absent before it existed. */
+            baseFingerprint: z.string().optional(),
+          })
+          .nullable()
+          .optional(),
         argv: z.array(z.string()),
       }),
       startedAt: z.string(),
@@ -517,6 +807,14 @@ export const trialSchema = z
       totalMs: z.number().int().nonnegative(),
     }),
     /**
+     * What Drift put into the agent's context and what the agent pulled from
+     * it. Absent on artifacts recorded before this block existed (#320's
+     * runs); computed from the stream and the plan for every later trial.
+     */
+    agentContext: agentContextSchema.optional(),
+    /** Present for orchestrated conditions: every session, the controller's record, and where the time went. */
+    orchestration: orchestrationSchema.optional(),
+    /**
      * Present when the artifact's diff-derivable rules were re-evaluated
      * against a later revision of the case. The original outcome is kept.
      */
@@ -550,6 +848,13 @@ export const runManifestSchema = z
     agentCliVersion: z.string(),
     runsPerCondition: z.number().int().positive(),
     conditions: z.array(conditionSchema),
+    /** Absent on manifests recorded before these settings were written down. */
+    scheduleDesign: z.string().optional(),
+    cleanEnvironment: z.string().optional(),
+    webTools: z.string().optional(),
+    maxBudgetUsd: z.number().nullable().optional(),
+    maxTurns: z.number().int().nullable().optional(),
+    driftVerify: z.boolean().optional(),
     caseIds: z.array(z.string()),
     node: z.string(),
     platform: z.string(),

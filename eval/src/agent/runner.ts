@@ -1,10 +1,17 @@
 import { arch, platform, release } from 'node:os';
 import { hashCase, loadCase, loadHidden, loadSuite, suiteHashMismatches } from './cases.ts';
+import { agentContextDiagnostics } from './agent-context.ts';
+import { blockOrder, SCHEDULE_DESIGN, type ScheduleSlot } from './schedule.ts';
 import { buildDriftContext, type DriftContext } from './drift-context.ts';
+import { environmentProblems, parseClaudeStream } from './providers/claude-code.ts';
+import { CLAUDE_CODE_LEAN_SESSION_ARGS, CLAUDE_CODE_LEAN_TOOLS } from '../../../dist/index.js';
+import { runOrchestrated, type OrchestratedCondition, type OrchestratedOptions, type OrchestratedResult } from './orchestrated.ts';
 import type { AgentProvider, AgentRunResult } from './providers/types.ts';
 import {
   AGENT_TRIAL_SCHEMA_VERSION,
   HEADLINE_CONDITIONS,
+  isLean,
+  isOrchestrated,
   type AgentCase,
   type Condition,
   type HiddenMaterial,
@@ -23,10 +30,9 @@ import { captureDiff, materializeWorkspace, projectEnv, runCommand, type Workspa
  *   materialize → install → (Drift analysis, Drift condition only) → agent
  *   session → capture diff → validate → write artifact
  *
- * and the schedule that runs them. Conditions alternate order on every
- * repetition — repetition 1 runs baseline then Drift for each case,
- * repetition 2 runs Drift then baseline — so neither condition is
- * systematically first when the provider is slow or the registry is warm.
+ * and the schedule that runs them. Condition order follows a Williams design
+ * (`schedule.ts`), fixed before the first trial, so no condition is
+ * systematically early or late when the provider is slow or the registry warm.
  */
 
 export const MAX_DIFF_CHARS = 2_000_000;
@@ -36,6 +42,12 @@ export interface RunOptions {
   /** Restrict to these case ids. Empty means every case in the suite. */
   caseIds?: string[];
   runs: number;
+  /**
+   * Run only these repetitions (1-based). Each block's schedule slot depends
+   * on its case and repetition, never on which process runs it, so splitting a
+   * run into one process per (case, repetition) keeps every slot.
+   */
+  repetitions?: number[];
   conditions?: Condition[];
   provider: AgentProvider;
   model: string;
@@ -54,6 +66,8 @@ export interface RunOptions {
    * could not start). Valid trials are never retried, whatever their outcome.
    */
   retryInfrastructure?: boolean;
+  /** Recorded in the run manifest; the provider applies it. */
+  cleanEnvironment?: string;
   onProgress?: (message: string) => void;
 }
 
@@ -102,6 +116,12 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
       agentCliVersion: detected.version,
       runsPerCondition: options.runs,
       conditions,
+      scheduleDesign: SCHEDULE_DESIGN,
+      cleanEnvironment: options.cleanEnvironment ?? 'unrecorded',
+      webTools: options.webTools ?? 'disabled',
+      maxBudgetUsd: options.maxBudgetUsd ?? null,
+      maxTurns: options.maxTurns ?? null,
+      driftVerify: options.driftVerify ?? true,
       caseIds: wanted,
       node: process.version,
       platform: platform(),
@@ -116,9 +136,14 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
   let skipped = 0;
   let scheduleIndex = 0;
 
+  // The whole experiment's order is fixed here, before any trial runs: each
+  // (case, repetition) block takes a row of a Williams design, indexed by the
+  // case's position in the suite so parallel per-case runs share one design.
+  const suiteOrder = manifest.cases.map((entry) => entry.id);
   for (let repetition = 1; repetition <= options.runs; repetition += 1) {
-    const order = repetition % 2 === 1 ? conditions : [...conditions].reverse();
+    if (options.repetitions?.length && !options.repetitions.includes(repetition)) continue;
     for (const caseId of wanted) {
+      const { order, slots } = blockOrder(conditions, suiteOrder.indexOf(caseId), repetition, options.runs);
       const agentCase = await loadCase(caseId, root);
       const caseHash = await hashCase(caseId, root);
       const hidden = await loadHidden(caseId, root);
@@ -141,6 +166,7 @@ export async function runBenchmark(options: RunOptions): Promise<RunOutcome> {
           condition,
           repetition,
           scheduleIndex,
+          schedule: slots.get(condition)!,
           runId,
           suite: manifest.suite,
           provider: options.provider,
@@ -181,6 +207,8 @@ export interface TrialOptions {
   condition: Condition;
   repetition: number;
   scheduleIndex: number;
+  /** This trial's preassigned slot in the counterbalanced design. */
+  schedule?: ScheduleSlot;
   runId: string;
   suite: string;
   provider: AgentProvider;
@@ -199,6 +227,8 @@ export interface TrialOptions {
   onProgress?: (message: string) => void;
   /** Seam for tests: replaces the production Drift analysis. */
   driftContext?: (condition: Condition, workspace: Workspace) => Promise<DriftContext>;
+  /** Seam for tests: replaces the orchestrated remediation. */
+  orchestrate?: (options: OrchestratedOptions) => Promise<OrchestratedResult>;
 }
 
 const EMPTY_USAGE: Usage = {
@@ -249,6 +279,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
     condition,
     repetition: options.repetition,
     scheduleIndex: options.scheduleIndex,
+    ...(options.schedule ? { schedule: options.schedule } : {}),
   });
 
   const metadata = (agent: AgentRunResult | null, promptText: string, endedAt: Date, ws: Workspace | null): TrialArtifact['metadata'] => ({
@@ -274,6 +305,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       cleanEnvironment: agent?.session.cleanEnvironment ?? 'unavailable',
       tools: agent?.session.tools ?? [],
       mcpServers: agent?.session.mcpServers ?? [],
+      environment: agent?.session.environment ?? null,
       argv: agent?.session.argv ?? [],
     },
     startedAt: startedAt.toISOString(),
@@ -390,7 +422,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
     const t2 = Date.now();
     let context: TrialArtifact['context'] = emptyContext;
     let driftContext: DriftContext | null = null;
-    if (contextKindFor(condition) === 'drift') {
+    if (contextKindFor(condition) === 'drift' && !isOrchestrated(condition)) {
       options.onProgress?.('  drift analysis');
       driftContext = options.driftContext
         ? await options.driftContext(condition, workspace)
@@ -408,31 +440,90 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
     }
     timing.contextMs = Date.now() - t2;
 
-    // 4. The agent.
-    const prompt = composePrompt(task, context.preamble);
+    // 4. The agent: one session, or a controller running several.
+    let prompt = composePrompt(task, context.preamble);
     const t3 = Date.now();
-    options.onProgress?.('  agent session');
-    const agent = await options.provider.run({
-      prompt,
-      cwd: workspace.repo,
-      model: options.model,
-      effort: options.effort,
-      timeoutMs: agentCase.agent.timeoutSeconds * 1000,
-      webTools: options.webTools,
-      maxBudgetUsd: options.maxBudgetUsd,
-      maxTurns: options.maxTurns,
-      env: projectEnv(agentCase, { DRIFT: '1' }),
-      onEventLine: (line) => streamLines.push(line),
-      onProgress: (message) => options.onProgress?.(`    ${message}`),
-    });
-    timing.agentMs = Date.now() - t3;
+    let orchestrated: OrchestratedResult | null = null;
+    let agent;
+    if (isOrchestrated(condition)) {
+      options.onProgress?.('  orchestrated remediation');
+      orchestrated = await (options.orchestrate ?? runOrchestrated)({
+        condition: condition as OrchestratedCondition,
+        agentCase,
+        workspace,
+        provider: options.provider,
+        model: options.model,
+        effort: options.effort,
+        webTools: options.webTools,
+        env: projectEnv(agentCase, { DRIFT: '1' }),
+        driftVerify: options.driftVerify,
+        githubToken: options.githubToken,
+        onProgress: options.onProgress,
+      });
+      agent = orchestrated.agent;
+      streamLines.push(...orchestrated.streamLines);
+      prompt = orchestrated.prompts.join('\n\n---- next session ----\n\n');
+      if (condition === 'drift-orchestrated') {
+        context = {
+          kind: 'drift',
+          preamble: '',
+          preambleHash: sha256(''),
+          driftAnalysisMs: orchestrated.analysisMs,
+          driftCommand: 'runPipeline (dry run) → applyDeterministicCommits → runRemediationController',
+          driftStatus: orchestrated.driftStatus,
+          driftFailure: orchestrated.driftFailure,
+          driftPlan: orchestrated.driftPlan,
+        };
+      }
+      const o = orchestrated.orchestration.timing;
+      timing.contextMs = o.analysisMs + o.deterministicMs + o.baselineMeasurementMs;
+    } else {
+      options.onProgress?.('  agent session');
+      agent = await options.provider.run({
+        prompt,
+        cwd: workspace.repo,
+        ...(isLean(condition) ? { extraArgs: CLAUDE_CODE_LEAN_SESSION_ARGS } : {}),
+        model: options.model,
+        effort: options.effort,
+        timeoutMs: agentCase.agent.timeoutSeconds * 1000,
+        webTools: options.webTools,
+        maxBudgetUsd: options.maxBudgetUsd,
+        maxTurns: options.maxTurns,
+        env: projectEnv(agentCase, { DRIFT: '1' }),
+        mcpServers: driftContext?.mcpServers ?? {},
+        onEventLine: (line) => streamLines.push(line),
+        onProgress: (message) => options.onProgress?.(`    ${message}`),
+      });
+    }
+    timing.agentMs = Date.now() - t3 - (orchestrated ? timing.contextMs : 0);
 
-    if (agent.status === 'launch-failure') {
+    // Every session must have run the condition it is labelled as.
+    const expectedServers = Object.keys(driftContext?.mcpServers ?? {});
+    const environmentIssues =
+      agent.status === 'launch-failure'
+        ? []
+        : environmentProblems(agent.session.environment, expectedServers, isLean(condition) ? { tools: CLAUDE_CODE_LEAN_TOOLS, noSkills: true } : {});
+    if (orchestrated) {
+      for (const captured of orchestrated.sessions) {
+        if (captured.result.status === 'launch-failure') continue;
+        for (const issue of environmentProblems(captured.result.session.environment, [])) environmentIssues.push(`session ${captured.index}: ${issue}`);
+      }
+      const fingerprints = new Set(orchestrated.sessions.map((captured) => captured.result.session.environment?.fingerprint ?? 'none'));
+      if (fingerprints.size > 1) environmentIssues.push(`sessions loaded different environments: ${[...fingerprints].join(', ')}`);
+    }
+
+    if (orchestrated?.infrastructure) {
+      infrastructureFailure = orchestrated.infrastructure.failure;
+      infrastructureDetail = orchestrated.infrastructure.detail;
+    } else if (agent.status === 'launch-failure') {
       infrastructureFailure = 'agent_launch_failure';
       infrastructureDetail = agent.stderr.trim() || 'the agent produced no model response';
     } else if (agent.status === 'provider-error') {
       infrastructureFailure = 'provider_error';
       infrastructureDetail = `api error status ${agent.apiErrorStatus}: ${agent.finalMessage.slice(0, 500)}`;
+    } else if (environmentIssues.length > 0 && agent.session.cleanEnvironment === 'isolated') {
+      infrastructureFailure = 'environment_mismatch';
+      infrastructureDetail = environmentIssues.join('; ');
     }
 
     // 5. The diff.
@@ -477,6 +568,22 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       referencePatchFiles: referenceFiles.length,
     };
 
+    // What Drift put into the context and what the agent pulled from it.
+    const agentContext = agentContextDiagnostics({
+      condition,
+      parsed: parseClaudeStream(streamLines),
+      preamble: context.preamble,
+      brief: driftContext?.brief ?? null,
+      findingsInPlan: driftContext?.plan?.breakingChanges ?? orchestrated?.driftPlan?.breakingChanges ?? null,
+      dependency: agentCase.dependency.name,
+      preSessionDriftMs: orchestrated ? timing.contextMs : driftContext && driftContext.status !== 'not-applicable' ? driftContext.analysisMs : 0,
+      sessionMs: agent.durationMs,
+    });
+    if (orchestrated && agentContext.timing) {
+      // Controller verification is neither Drift analysis nor agent time; it is in end-to-end.
+      agentContext.timing.endToEndMs = orchestrated.orchestration.timing.endToEndMs;
+    }
+
     const endedAt = new Date();
     timing.totalMs = endedAt.getTime() - startedAt.getTime();
     const valid = infrastructureFailure === null;
@@ -504,6 +611,8 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
         validation: valid ? validation : { ...validation, success: false },
         validity: { valid, infrastructureFailure, detail: infrastructureDetail },
         diagnostics,
+        agentContext,
+        ...(orchestrated ? { orchestration: orchestrated.orchestration } : {}),
         timing,
       },
       diff: captured.diff,

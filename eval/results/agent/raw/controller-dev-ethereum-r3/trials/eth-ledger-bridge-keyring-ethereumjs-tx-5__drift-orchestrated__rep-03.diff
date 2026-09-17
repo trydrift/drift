@@ -1,0 +1,115 @@
+diff --git a/src/ledger-keyring.test.ts b/src/ledger-keyring.test.ts
+index 82c1801..f7b9459 100644
+--- a/src/ledger-keyring.test.ts
++++ b/src/ledger-keyring.test.ts
+@@ -1,6 +1,6 @@
+ import { Common, Chain, Hardfork } from '@ethereumjs/common';
+ import { RLP } from '@ethereumjs/rlp';
+-import { TransactionFactory } from '@ethereumjs/tx';
++import { TransactionFactory, TypedTxData } from '@ethereumjs/tx';
+ import * as ethUtil from '@ethereumjs/util';
+ import * as sigUtil from '@metamask/eth-sig-util';
+ import EthereumTx from 'ethereumjs-tx';
+@@ -54,6 +54,12 @@ const fakeTx = new EthereumTx({
+   chainId: 1,
+ });
+ 
++// TODO(drift): @ethereumjs/tx@5.3.0 depends on @ethereumjs/common@^4.3.0, but
++// this repo's package.json still pins @ethereumjs/common@^3.1.1, so this
++// import resolves to a different (incompatible) `Common` class than the one
++// @ethereumjs/tx's own type declarations expect. This is a package.json/lockfile
++// fix (bump @ethereumjs/common, and re-check @ethereumjs/util/@ethereumjs/rlp),
++// outside the files this change is scoped to.
+ const common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.Berlin });
+ const commonEIP1559 = new Common({
+   chain: Chain.Mainnet,
+@@ -525,7 +531,7 @@ describe('LedgerKeyring', function () {
+           {
+             ...newFakeTx.toJSON(),
+             ...expectedRSV,
+-          },
++          } as TypedTxData,
+           { freeze: false },
+         );
+ 
+@@ -543,7 +549,7 @@ describe('LedgerKeyring', function () {
+             expect(params).toStrictEqual({
+               hdPath: "m/44'/60'/0'/0",
+               tx: Buffer.from(
+-                RLP.encode(newFakeTx.getMessageToSign(false)),
++                RLP.encode(newFakeTx.getMessageToSign()),
+               ).toString('hex'),
+             });
+             return expectedRSV;
+@@ -574,7 +580,7 @@ describe('LedgerKeyring', function () {
+             ...fakeTypeTwoTx.toJSON(),
+             type: fakeTypeTwoTx.type,
+             ...expectedRSV,
+-          },
++          } as TypedTxData,
+           { common: commonEIP1559, freeze: false },
+         );
+         jest
+@@ -590,7 +596,9 @@ describe('LedgerKeyring', function () {
+           .mockImplementation(async (params) => {
+             expect(params).toStrictEqual({
+               hdPath: "m/44'/60'/0'/0",
+-              tx: fakeTypeTwoTx.getMessageToSign(false).toString('hex'),
++              tx: Buffer.from(
++                fakeTypeTwoTx.getMessageToSign() as Uint8Array,
++              ).toString('hex'),
+             });
+             return expectedRSV;
+           });
+diff --git a/src/ledger-keyring.ts b/src/ledger-keyring.ts
+index c875a85..d7662dc 100644
+--- a/src/ledger-keyring.ts
++++ b/src/ledger-keyring.ts
+@@ -1,5 +1,9 @@
+ import { RLP } from '@ethereumjs/rlp';
+-import { TransactionFactory, TxData, TypedTransaction } from '@ethereumjs/tx';
++import {
++  TransactionFactory,
++  TypedTransaction,
++  TypedTxData,
++} from '@ethereumjs/tx';
+ import * as ethUtil from '@ethereumjs/util';
+ import type { MessageTypes, TypedMessage } from '@metamask/eth-sig-util';
+ import {
+@@ -326,23 +330,25 @@ export class LedgerKeyring extends EventEmitter {
+     // Note also that `getMessageToSign` will return valid RLP for all transaction types, whereas the
+     // `serialize` method will not for any transaction type except legacy. This is because `serialize` includes
+     // empty r, s and v values in the encoded rlp. This is why we use `getMessageToSign` here instead of `serialize`.
+-    const messageToSign = tx.getMessageToSign(false);
++    const messageToSign = tx.getMessageToSign();
+ 
+-    rawTxHex = Buffer.isBuffer(messageToSign)
+-      ? messageToSign.toString('hex')
+-      : Buffer.from(RLP.encode(messageToSign)).toString('hex');
++    rawTxHex = Array.isArray(messageToSign)
++      ? Buffer.from(RLP.encode(messageToSign)).toString('hex')
++      : Buffer.from(messageToSign).toString('hex');
+ 
+     return this.#signTransaction(address, rawTxHex, (payload) => {
+       // Because tx will be immutable, first get a plain javascript object that
+       // represents the transaction. Using txData here as it aligns with the
+       // nomenclature of ethereumjs/tx.
+-      const txData: TxData = tx.toJSON();
+-      // The fromTxData utility expects a type to support transactions with a type other than 0
+-      txData.type = tx.type;
+-      // The fromTxData utility expects v,r and s to be hex prefixed
+-      txData.v = ethUtil.addHexPrefix(payload.v);
+-      txData.r = ethUtil.addHexPrefix(payload.r);
+-      txData.s = ethUtil.addHexPrefix(payload.s);
++      // The fromTxData utility expects a type to support transactions with a type other than 0,
++      // and expects v, r and s to be hex prefixed.
++      const txData = {
++        ...tx.toJSON(),
++        type: tx.type,
++        v: ethUtil.addHexPrefix(payload.v),
++        r: ethUtil.addHexPrefix(payload.r),
++        s: ethUtil.addHexPrefix(payload.s),
++      } as TypedTxData;
+       // Adopt the 'common' option from the original transaction and set the
+       // returned object to be frozen if the original is frozen.
+       return TransactionFactory.fromTxData(txData, {

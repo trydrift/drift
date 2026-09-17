@@ -1,0 +1,61 @@
+diff --git a/src/lib/logger.ts b/src/lib/logger.ts
+index ea7b293..742b96e 100644
+--- a/src/lib/logger.ts
++++ b/src/lib/logger.ts
+@@ -1,30 +1,35 @@
+ import * as winston from 'winston';
+ 
+-const transports: winston.TransportInstance[] = [];
++const transports: winston.transport[] = [];
+ const consoleTransport = new (winston.transports.Console)({
+-  name: 'console-log',
+   level: 'error',
+-  timestamp: true,
+-  colorize: true,
+-  prettyPrint: true,
++  // winston@3 sends all console levels to stdout by default; keep errors on stderr as before.
++  stderrLevels: ['error'],
++  format: winston.format.combine(
++    winston.format.timestamp(),
++    winston.format.colorize(),
++    winston.format.prettyPrint(),
++  ),
+ });
+ transports.push(consoleTransport);
+ 
+ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+   transports.push(
+     new winston.transports.File({
+-      name: 'file-log',
+       filename: 'xray-scan.log',
+       level: 'debug',
+-      timestamp: true,
+-      json: false,
+-      prettyPrint: true,
++      format: winston.format.combine(
++        winston.format.timestamp(),
++        winston.format.prettyPrint(),
++      ),
+       maxsize: 1024 * 1024 * 100,
+       maxFiles: 10,
+       tailable: true,
+     }));
+ }
+ 
++// winston@3 no longer applies the default logger's level to its transports,
++// so each transport above sets its own explicit `level`.
+ winston.configure({
+   level: 'error',
+   transports,
+diff --git a/tsconfig.json b/tsconfig.json
+index 68d1eac..5a6c4ce 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -3,6 +3,7 @@
+   "compilerOptions": {    
+     "strict": true,
+     "noUnusedLocals": true,
++    "skipLibCheck": true,
+     "outDir": "./dist",
+     "declaration": true,
+     "rootDir": "src",    

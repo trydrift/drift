@@ -20,6 +20,12 @@ export interface AgentRunRequest {
   maxBudgetUsd: number | null;
   maxTurns: number | null;
   env: NodeJS.ProcessEnv;
+  /** MCP servers for this session only, as `--mcp-config` declares them. Empty for every non-MCP condition. */
+  mcpServers?: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
+  /** An inline settings document (`--settings`), e.g. the controller's verification guard. Absent for the baseline. */
+  settings?: Record<string, unknown>;
+  /** Launch arguments a condition adds, e.g. the product's lean session profile. Recorded in argv. */
+  extraArgs?: readonly string[];
   /** Receives the raw event stream, line by line, for the audit log. */
   onEventLine?: (line: string) => void;
   onProgress?: (message: string) => void;
@@ -31,6 +37,8 @@ export interface AgentSessionInfo {
   permissionMode: string;
   tools: string[];
   mcpServers: string[];
+  /** The session's full loaded environment, from its init record. `null` when no init record arrived. */
+  environment: import('./claude-code.ts').SessionEnvironment | null;
   argv: string[];
   disallowedTools: string[];
   cleanEnvironment: string;

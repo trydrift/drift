@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { ToolMetrics, Usage } from '../schema.ts';
@@ -17,9 +18,10 @@ const run = promisify(execFile);
  *                                           model response and a final
  *                                           `result` event with the CLI's own
  *                                           cumulative per-model accounting
- *   --safe-mode --strict-mcp-config         no user CLAUDE.md, skills, plugins,
- *                                           hooks or MCP servers from this
- *                                           machine leak into the session
+ *   isolation (see `cleanEnvironment`)      no user or repository CLAUDE.md,
+ *                                           memory, settings, plugins, hooks
+ *                                           or MCP servers from this machine
+ *                                           leak into the session
  *   --no-session-persistence                nothing is written to the user's
  *                                           session history
  *   --disallowedTools WebFetch WebSearch    (default) the agent cannot browse
@@ -37,6 +39,15 @@ const run = promisify(execFile);
 export const CLAUDE_STREAM_FORMAT_VERSION = 'claude-code-2.1.x-stream-json';
 
 export const DEFAULT_DISALLOWED_WEB_TOOLS = ['WebFetch', 'WebSearch'];
+
+/**
+ * Built-in tools the provider exposes to some sessions and not others, with
+ * nothing on this machine changing. In v3 two sessions loaded them and had to
+ * be excluded as environment mismatches; an orchestrated trial starts several
+ * sessions, so the flicker would exclude far more. They have nothing to do with
+ * editing a repository, and every condition disallows them identically.
+ */
+export const UNSTABLE_BUILT_IN_TOOLS = ['ArtifactComments', 'ArtifactData'];
 
 /** How tool activity is counted. Printed verbatim in every report. */
 export const TOOL_COUNTING_NOTE =
@@ -67,10 +78,18 @@ export interface ParsedStream {
     permissionMode: string | null;
     tools: string[];
     mcpServers: string[];
+    /** Everything the session reports having loaded, for the environment audit. */
+    environment: SessionEnvironment;
   } | null;
   /** One entry per distinct assistant message id, with the last usage seen for it. */
   ledger: { messageId: string; model: string; usage: UsageRecord; parentToolUseId: string | null }[];
-  toolUses: { id: string; name: string; input: Record<string, unknown> }[];
+  /**
+   * `ledgerIndex` is the position in `ledger` of the model call that issued the
+   * tool use; `at` is the CLI's timestamp on the event that carried it.
+   */
+  toolUses: { id: string; name: string; input: Record<string, unknown>; ledgerIndex: number; at: number | null }[];
+  /** Tool results as the session recorded them, by tool_use id: characters handed back to the model, and when. */
+  toolResults: Map<string, { chars: number; isError: boolean; at: number | null; guardRefused?: boolean }>;
   result: {
     subtype: string | null;
     isError: boolean;
@@ -90,7 +109,7 @@ export interface ParsedStream {
 }
 
 export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
-  const parsed: ParsedStream = { init: null, ledger: [], toolUses: [], result: null, unparsedLines: 0 };
+  const parsed: ParsedStream = { init: null, ledger: [], toolUses: [], toolResults: new Map(), result: null, unparsedLines: 0 };
   const ledgerIndex = new Map<string, number>();
   const seenToolUses = new Set<string>();
 
@@ -115,6 +134,7 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
         mcpServers: Array.isArray(event['mcp_servers'])
           ? (event['mcp_servers'] as { name?: unknown }[]).map((s) => (typeof s.name === 'string' ? s.name : 'unknown'))
           : [],
+        environment: sessionEnvironmentFrom(event),
       };
       continue;
     }
@@ -148,6 +168,24 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
           id,
           name: typeof block['name'] === 'string' ? block['name'] : 'unknown',
           input: (block['input'] as Record<string, unknown> | undefined) ?? {},
+          ledgerIndex: ledgerIndex.get(messageId)!,
+          at: timestampOf(event),
+        });
+      }
+      continue;
+    }
+
+    if (type === 'user') {
+      const message = event['message'] as Record<string, unknown> | undefined;
+      const content = Array.isArray(message?.['content']) ? (message!['content'] as Record<string, unknown>[]) : [];
+      for (const block of content) {
+        if (block['type'] !== 'tool_result' || typeof block['tool_use_id'] !== 'string') continue;
+        const text = toolResultText(block['content']);
+        parsed.toolResults.set(block['tool_use_id'], {
+          chars: text.length,
+          isError: block['is_error'] === true,
+          at: timestampOf(event),
+          ...(block['is_error'] === true && text.includes(GUARD_MESSAGE) ? { guardRefused: true } : {}),
         });
       }
       continue;
@@ -176,6 +214,124 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
 
   return parsed;
 }
+
+function timestampOf(event: Record<string, unknown>): number | null {
+  const value = event['timestamp'];
+  if (typeof value !== 'string') return null;
+  const at = Date.parse(value);
+  return Number.isFinite(at) ? at : null;
+}
+
+/**
+ * What a session reports having loaded, from its `system/init` record.
+ *
+ * Recorded on every trial so equivalence across conditions is checked from
+ * evidence, not assumed: `fingerprint` hashes everything except Drift's own
+ * MCP server and tools, so two conditions that differ only by the Drift server
+ * share it.
+ */
+export interface SessionEnvironment {
+  tools: string[];
+  mcpServers: { name: string; status: string }[];
+  skills: string[];
+  slashCommands: string[];
+  agents: string[];
+  plugins: string[];
+  memoryPaths: string[];
+  outputStyle: string | null;
+  apiKeySource: string | null;
+  fingerprint: string;
+  toolsFingerprint: string;
+  baseFingerprint: string;
+}
+
+const DRIFT_SERVER = 'drift';
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((v) => (typeof v === 'string' ? v : typeof v === 'object' && v && 'name' in v ? String((v as { name: unknown }).name) : JSON.stringify(v))).sort() : [];
+}
+
+export function sessionEnvironmentFrom(event: Record<string, unknown>): SessionEnvironment {
+  const mcpServers = Array.isArray(event['mcp_servers'])
+    ? (event['mcp_servers'] as { name?: unknown; status?: unknown }[])
+        .map((s) => ({ name: String(s.name ?? 'unknown'), status: String(s.status ?? 'unknown') }))
+        .sort((a, b) => (a.name < b.name ? -1 : 1))
+    : [];
+  const memory = event['memory_paths'];
+  const memoryPaths = memory && typeof memory === 'object' ? Object.values(memory as Record<string, unknown>).map(String).sort() : [];
+  const environment = {
+    tools: strings(event['tools']),
+    mcpServers,
+    skills: strings(event['skills']),
+    slashCommands: strings(event['slash_commands']),
+    agents: strings(event['agents']),
+    plugins: strings(event['plugins']),
+    memoryPaths,
+    outputStyle: typeof event['output_style'] === 'string' ? event['output_style'] : null,
+    apiKeySource: typeof event['apiKeySource'] === 'string' ? event['apiKeySource'] : null,
+  };
+  const withoutDrift = {
+    ...environment,
+    tools: environment.tools.filter((tool) => !tool.startsWith(`mcp__${DRIFT_SERVER}__`)),
+    mcpServers: environment.mcpServers.filter((server) => server.name !== DRIFT_SERVER),
+  };
+  const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 16);
+  const { tools, skills, slashCommands, ...base } = withoutDrift;
+  return {
+    ...environment,
+    fingerprint: hash(withoutDrift),
+    toolsFingerprint: hash({ tools, skills, slashCommands }),
+    baseFingerprint: hash(base),
+  };
+}
+
+/**
+ * Why a session's loaded environment is not the one the condition declared.
+ *
+ * Empty means it matched. Anything else makes the trial an infrastructure
+ * exclusion (`environment_mismatch`): a session that loaded an unexpected MCP
+ * server, a plugin, memory, or failed to connect Drift did not run the
+ * condition it is labelled as.
+ */
+export function environmentProblems(
+  environment: SessionEnvironment | null,
+  expectedServers: readonly string[],
+  declared: { tools?: readonly string[]; noSkills?: boolean } = {},
+): string[] {
+  if (!environment) return ['the session reported no init record'];
+  const problems: string[] = [];
+  const names = environment.mcpServers.map((s) => s.name);
+  const expected = [...expectedServers].sort();
+  if (JSON.stringify(names) !== JSON.stringify(expected)) {
+    problems.push(`MCP servers ${JSON.stringify(names)}, expected ${JSON.stringify(expected)}`);
+  }
+  for (const server of environment.mcpServers) {
+    if (expected.includes(server.name) && server.status !== 'connected') problems.push(`MCP server ${server.name} is ${server.status}`);
+  }
+  const foreignTools = environment.tools.filter((tool) => tool.startsWith('mcp__') && !expected.some((name) => tool.startsWith(`mcp__${name}__`)));
+  if (foreignTools.length > 0) problems.push(`unexpected MCP tools: ${foreignTools.join(', ')}`);
+  if (environment.plugins.length > 0) problems.push(`plugins loaded: ${environment.plugins.join(', ')}`);
+  if (environment.memoryPaths.length > 0) problems.push(`memory loaded: ${environment.memoryPaths.join(', ')}`);
+  if (declared.tools) {
+    const loaded = environment.tools.filter((tool) => !tool.startsWith('mcp__')).sort();
+    const declaredTools = [...declared.tools].sort();
+    if (JSON.stringify(loaded) !== JSON.stringify(declaredTools)) problems.push(`tools ${JSON.stringify(loaded)}, expected ${JSON.stringify(declaredTools)}`);
+  }
+  if (declared.noSkills && (environment.skills.length > 0 || environment.slashCommands.length > 0)) {
+    problems.push(`skills or slash commands loaded (${environment.skills.length} skills, ${environment.slashCommands.length} commands) in a session started without them`);
+  }
+  return problems;
+}
+
+/** Text a tool result carried back to the model: a string, or text blocks. */
+function toolResultText(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return (content as Record<string, unknown>[]).map((part) => (typeof part['text'] === 'string' ? part['text'] : '')).join('');
+}
+
+/** The product verification guard's refusal text (`VERIFICATION_GUARD_MARKER`), kept literal so the parser has no product import. */
+export const GUARD_MESSAGE = 'Drift runs this repository';
 
 const n = (value: number | undefined): number => (typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0);
 
@@ -321,21 +477,67 @@ export function toolMetricsFromStream(parsed: ParsedStream): ToolMetrics {
   };
 }
 
+/**
+ * How a session is kept clean of this machine's configuration.
+ *
+ * `safe-mode` is what #320's runs used: `--safe-mode`, which drops user and
+ * repository CLAUDE.md, skills, plugins, hooks — and every MCP server,
+ * including one passed with `--mcp-config`. It cannot run the MCP condition.
+ *
+ * `isolated` loads nothing from the machine or the repository except what a
+ * condition declares, and keeps MCP available:
+ * `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` and `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
+ * (no CLAUDE.md from the user or the repository, no memory),
+ * `--setting-sources ""` (no user, project or local settings: no env, hooks,
+ * permissions or plugins from any of them), and `--strict-mcp-config` with an
+ * explicit `--mcp-config` (only the servers the condition declares; an empty
+ * set for every non-MCP condition, which also excludes claude.ai connectors).
+ *
+ * Measured on 2.1.267 against a canary repository carrying a CLAUDE.md,
+ * .claude/CLAUDE.md, CLAUDE.local.md, AGENTS.md, project and local settings
+ * with env and SessionStart hooks, a project skill, agent and command, and a
+ * project .mcp.json (see `eval/results/agent/isolation/`): none of them reached
+ * an isolated session. `--safe-mode` itself still applied both settings files'
+ * env, and `--setting-sources local` still applied the local one, which is why
+ * neither is used for the v3 runs. Every trial records its session's loaded
+ * environment and is excluded when it differs from the condition's
+ * (`environmentProblems`).
+ *
+ * `bare` needs ANTHROPIC_API_KEY. `none` is for debugging only.
+ */
+export type CleanEnvironment = 'safe-mode' | 'isolated' | 'bare' | 'none';
+
+export const ISOLATED_ENVIRONMENT: Readonly<Record<string, string>> = {
+  CLAUDE_CODE_DISABLE_CLAUDE_MDS: '1',
+  CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1',
+};
+
+
 export interface ClaudeCodeProviderOptions {
   command?: string;
-  /** `safe-mode` (default, works with OAuth) or `bare` (needs ANTHROPIC_API_KEY) or `none`. */
-  cleanEnvironment?: 'safe-mode' | 'bare' | 'none';
+  cleanEnvironment?: CleanEnvironment;
   /** Seam for tests: replaces the spawn with a scripted stream. */
   spawnImpl?: typeof spawn;
 }
 
-export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns'>, options: ClaudeCodeProviderOptions): {
+export function buildClaudeArgs(
+  request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns' | 'mcpServers' | 'settings' | 'extraArgs'>,
+  options: ClaudeCodeProviderOptions,
+): {
   argv: string[];
+  env: Record<string, string>;
   disallowedTools: string[];
   cleanEnvironment: string;
 } {
   const clean = options.cleanEnvironment ?? 'safe-mode';
-  const disallowedTools = request.webTools === 'disabled' ? [...DEFAULT_DISALLOWED_WEB_TOOLS] : [];
+  const servers = request.mcpServers ?? {};
+  if (clean === 'safe-mode' && Object.keys(servers).length > 0) {
+    throw new Error('--safe-mode disables every MCP server; an MCP condition needs cleanEnvironment "isolated".');
+  }
+  const disallowedTools = [
+    ...(request.webTools === 'disabled' ? DEFAULT_DISALLOWED_WEB_TOOLS : []),
+    ...UNSTABLE_BUILT_IN_TOOLS,
+  ];
   const argv = [
     '-p',
     '--output-format',
@@ -345,6 +547,7 @@ export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort
     '--no-session-persistence',
     '--strict-mcp-config',
     ...(clean === 'safe-mode' ? ['--safe-mode'] : clean === 'bare' ? ['--bare'] : []),
+    ...(clean === 'isolated' ? ['--setting-sources', '', '--mcp-config', JSON.stringify({ mcpServers: servers })] : []),
     '--model',
     request.model,
     '--effort',
@@ -352,8 +555,10 @@ export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort
     ...(disallowedTools.length > 0 ? ['--disallowedTools', ...disallowedTools] : []),
     ...(request.maxBudgetUsd !== null ? ['--max-budget-usd', String(request.maxBudgetUsd)] : []),
     ...(request.maxTurns !== null ? ['--max-turns', String(request.maxTurns)] : []),
+    ...(request.settings ? ['--settings', JSON.stringify(request.settings)] : []),
+    ...(request.extraArgs ?? []),
   ];
-  return { argv, disallowedTools, cleanEnvironment: clean };
+  return { argv, env: clean === 'isolated' ? { ...ISOLATED_ENVIRONMENT } : {}, disallowedTools, cleanEnvironment: clean };
 }
 
 export class ClaudeCodeProvider implements AgentProvider {
@@ -378,7 +583,7 @@ export class ClaudeCodeProvider implements AgentProvider {
   }
 
   async run(request: AgentRunRequest): Promise<AgentRunResult> {
-    const { argv, disallowedTools, cleanEnvironment } = buildClaudeArgs(request, this.options);
+    const { argv, env, disallowedTools, cleanEnvironment } = buildClaudeArgs(request, this.options);
     const spawnImpl = this.options.spawnImpl ?? spawn;
     const started = Date.now();
     const lines: string[] = [];
@@ -387,7 +592,7 @@ export class ClaudeCodeProvider implements AgentProvider {
     const outcome = await new Promise<{ code: number | null; timedOut: boolean; launchError: string | null }>((resolve) => {
       let child: ReturnType<typeof spawn>;
       try {
-        child = spawnImpl(this.command, argv, { cwd: request.cwd, env: request.env, windowsHide: true });
+        child = spawnImpl(this.command, argv, { cwd: request.cwd, env: { ...request.env, ...env }, windowsHide: true });
       } catch (err) {
         resolve({ code: null, timedOut: false, launchError: (err as Error).message });
         return;
@@ -453,6 +658,7 @@ export class ClaudeCodeProvider implements AgentProvider {
       permissionMode: parsed.init?.permissionMode ?? 'unavailable',
       tools: parsed.init?.tools ?? [],
       mcpServers: parsed.init?.mcpServers ?? [],
+      environment: parsed.init?.environment ?? null,
       argv: [this.command, ...argv],
       disallowedTools,
       cleanEnvironment,

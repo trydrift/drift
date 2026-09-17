@@ -1,0 +1,1455 @@
+{
+  "name": "agent-context-v3",
+  "generatedAt": "2026-09-16T23:44:14.231Z",
+  "current": {
+    "runIds": [
+      "v3-dev-winston",
+      "v3-dev-ethereum",
+      "v3-dev-eslint"
+    ],
+    "manifests": [
+      {
+        "runId": "v3-dev-winston",
+        "driftCommit": "474b12890cc5d97fe9aa66bcc1a85278168d2ea0",
+        "requestedModel": "claude-sonnet-5",
+        "requestedEffort": "high",
+        "agentCliVersion": "2.1.267 (Claude Code)",
+        "runsPerCondition": 3,
+        "conditions": [
+          "baseline",
+          "drift",
+          "drift-agent-brief",
+          "drift-mcp"
+        ]
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "driftCommit": "474b12890cc5d97fe9aa66bcc1a85278168d2ea0",
+        "requestedModel": "claude-sonnet-5",
+        "requestedEffort": "high",
+        "agentCliVersion": "2.1.267 (Claude Code)",
+        "runsPerCondition": 3,
+        "conditions": [
+          "baseline",
+          "drift",
+          "drift-agent-brief",
+          "drift-mcp"
+        ]
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "driftCommit": "474b12890cc5d97fe9aa66bcc1a85278168d2ea0",
+        "requestedModel": "claude-sonnet-5",
+        "requestedEffort": "high",
+        "agentCliVersion": "2.1.267 (Claude Code)",
+        "runsPerCondition": 3,
+        "conditions": [
+          "baseline",
+          "drift",
+          "drift-agent-brief",
+          "drift-mcp"
+        ]
+      }
+    ],
+    "cleanEnvironments": [
+      "isolated"
+    ],
+    "conditions": [
+      {
+        "condition": "baseline",
+        "label": "baseline",
+        "aggregate": {
+          "condition": "baseline",
+          "trials": 9,
+          "validTrials": 9,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 7,
+          "successRate": 0.7777777777777778,
+          "medianInputTokens": 6243038,
+          "medianUncachedInputTokens": 78233,
+          "medianOutputTokens": 29565,
+          "medianWallClockMs": 929136,
+          "medianFilesRead": 4,
+          "medianToolCalls": 74,
+          "medianShellCommands": 53,
+          "medianFilesChanged": 4,
+          "failureReasons": {
+            "prohibited_workaround": 2,
+            "existing_test_failure": 1
+          },
+          "agentStatuses": {
+            "completed": 9
+          },
+          "inputTokensPerSuccessfulFix": 7989154.571428572,
+          "medianInputTokensAmongSuccesses": 4523667,
+          "totalCostUsd": 16.702978
+        },
+        "medianCostUsd": 1.817871,
+        "medianModelCalls": 70,
+        "medianUniqueFilesRead": 4,
+        "medianInitialDriftContextTokens": 0,
+        "medianDriftToolCalls": 0,
+        "medianDriftToolReturnedTokens": 0,
+        "medianFindingsRetrievedOnDemand": 0,
+        "medianFindingsInInitialBrief": null,
+        "driftToolCallsByName": {},
+        "medianTokensBeforeFirstEdit": 923830,
+        "medianTokensAfterFirstEdit": 5065112,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 7,
+        "medianRegistryQueries": 2,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": null,
+        "medianEndToEndMs": 929136,
+        "medianSessionMs": 929136,
+        "medianPreSessionDriftMs": 0,
+        "medianDriftToolMs": 0,
+        "medianCaseEndToEndChangePct": null,
+        "vsBaseline": null
+      },
+      {
+        "condition": "drift",
+        "label": "drift-full-report",
+        "aggregate": {
+          "condition": "drift",
+          "trials": 9,
+          "validTrials": 9,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 8,
+          "successRate": 0.8888888888888888,
+          "medianInputTokens": 9417198,
+          "medianUncachedInputTokens": 142590,
+          "medianOutputTokens": 31821,
+          "medianWallClockMs": 874499,
+          "medianFilesRead": 6,
+          "medianToolCalls": 75,
+          "medianShellCommands": 45,
+          "medianFilesChanged": 5,
+          "failureReasons": {
+            "prohibited_workaround": 1
+          },
+          "agentStatuses": {
+            "completed": 9
+          },
+          "inputTokensPerSuccessfulFix": 14614232,
+          "medianInputTokensAmongSuccesses": 8438277,
+          "totalCostUsd": 32.1707954
+        },
+        "medianCostUsd": 2.7016666000000007,
+        "medianModelCalls": 75,
+        "medianUniqueFilesRead": 6,
+        "medianInitialDriftContextTokens": 48582,
+        "medianDriftToolCalls": 0,
+        "medianDriftToolReturnedTokens": 0,
+        "medianFindingsRetrievedOnDemand": 0,
+        "medianFindingsInInitialBrief": null,
+        "driftToolCallsByName": {},
+        "medianTokensBeforeFirstEdit": 1371121,
+        "medianTokensAfterFirstEdit": 7582521,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 8,
+        "medianRegistryQueries": 2,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": 83735,
+        "medianEndToEndMs": 884400,
+        "medianSessionMs": 874499,
+        "medianPreSessionDriftMs": 83735,
+        "medianDriftToolMs": 0,
+        "medianCaseEndToEndChangePct": -4.999246850785378,
+        "vsBaseline": {
+          "pairedCases": 3,
+          "medianCaseGrossChangePct": 50.84319525205516,
+          "medianCaseUncachedChangePct": 100.19740807715492,
+          "caseGrossChangesPct": [
+            {
+              "caseId": "aws-least-privilege-winston-3",
+              "changePct": -10.867423958915069
+            },
+            {
+              "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+              "changePct": 50.84319525205516
+            },
+            {
+              "caseId": "gh-aw-firewall-eslint-10",
+              "changePct": 219.92676511686878
+            }
+          ],
+          "successDifferencePp": 11.111111111111105,
+          "caseLevel": {
+            "improved": 1,
+            "tied": 2,
+            "baselineBetter": 0,
+            "medianDifferencePp": 0,
+            "meanDifferencePp": 11.111111111111112
+          },
+          "ci95": {
+            "medianGrossReduction": {
+              "low": -2.265286316088831,
+              "high": 0.1444248659328814,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            },
+            "successDifferencePp": {
+              "low": -33.33333333333333,
+              "high": 55.55555555555556,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            }
+          }
+        }
+      },
+      {
+        "condition": "drift-agent-brief",
+        "label": "drift-agent-brief",
+        "aggregate": {
+          "condition": "drift-agent-brief",
+          "trials": 9,
+          "validTrials": 9,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 7,
+          "successRate": 0.7777777777777778,
+          "medianInputTokens": 6242052,
+          "medianUncachedInputTokens": 74091,
+          "medianOutputTokens": 29402,
+          "medianWallClockMs": 965815,
+          "medianFilesRead": 3,
+          "medianToolCalls": 78,
+          "medianShellCommands": 56,
+          "medianFilesChanged": 5,
+          "failureReasons": {
+            "prohibited_workaround": 2
+          },
+          "agentStatuses": {
+            "completed": 9
+          },
+          "inputTokensPerSuccessfulFix": 7028947,
+          "medianInputTokensAmongSuccesses": 6242052,
+          "totalCostUsd": 14.736827600000002
+        },
+        "medianCostUsd": 1.8037922000000002,
+        "medianModelCalls": 79,
+        "medianUniqueFilesRead": 3,
+        "medianInitialDriftContextTokens": 1420,
+        "medianDriftToolCalls": 0,
+        "medianDriftToolReturnedTokens": 0,
+        "medianFindingsRetrievedOnDemand": 0,
+        "medianFindingsInInitialBrief": 4,
+        "driftToolCallsByName": {},
+        "medianTokensBeforeFirstEdit": 547435,
+        "medianTokensAfterFirstEdit": 5218043,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 6,
+        "medianRegistryQueries": 1,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": 68825,
+        "medianEndToEndMs": 976547,
+        "medianSessionMs": 965815,
+        "medianPreSessionDriftMs": 68825,
+        "medianDriftToolMs": 0,
+        "medianCaseEndToEndChangePct": -14.060770384071064,
+        "vsBaseline": {
+          "pairedCases": 3,
+          "medianCaseGrossChangePct": -16.361594563087888,
+          "medianCaseUncachedChangePct": -6.037960755547401,
+          "caseGrossChangesPct": [
+            {
+              "caseId": "aws-least-privilege-winston-3",
+              "changePct": -23.779283662177797
+            },
+            {
+              "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+              "changePct": -0.015793592798885037
+            },
+            {
+              "caseId": "gh-aw-firewall-eslint-10",
+              "changePct": -16.361594563087888
+            }
+          ],
+          "successDifferencePp": 0,
+          "caseLevel": {
+            "improved": 1,
+            "tied": 1,
+            "baselineBetter": 1,
+            "medianDifferencePp": 0,
+            "meanDifferencePp": 2.3684757858670005e-15
+          },
+          "ci95": {
+            "medianGrossReduction": {
+              "low": -0.08901996111508526,
+              "high": 0.353311236188142,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            },
+            "successDifferencePp": {
+              "low": -55.55555555555556,
+              "high": 44.44444444444444,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            }
+          }
+        }
+      },
+      {
+        "condition": "drift-mcp",
+        "label": "drift-mcp",
+        "aggregate": {
+          "condition": "drift-mcp",
+          "trials": 9,
+          "validTrials": 9,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 7,
+          "successRate": 0.7777777777777778,
+          "medianInputTokens": 7304882,
+          "medianUncachedInputTokens": 91653,
+          "medianOutputTokens": 32237,
+          "medianWallClockMs": 921589,
+          "medianFilesRead": 5,
+          "medianToolCalls": 83,
+          "medianShellCommands": 49,
+          "medianFilesChanged": 4,
+          "failureReasons": {
+            "prohibited_workaround": 1,
+            "hidden_regression_failure": 1
+          },
+          "agentStatuses": {
+            "completed": 9
+          },
+          "inputTokensPerSuccessfulFix": 8139152.714285715,
+          "medianInputTokensAmongSuccesses": 5993952,
+          "totalCostUsd": 16.9581642
+        },
+        "medianCostUsd": 2.156987199999999,
+        "medianModelCalls": 82,
+        "medianUniqueFilesRead": 5,
+        "medianInitialDriftContextTokens": 18,
+        "medianDriftToolCalls": 4,
+        "medianDriftToolReturnedTokens": 3327,
+        "medianFindingsRetrievedOnDemand": 2,
+        "medianFindingsInInitialBrief": null,
+        "driftToolCallsByName": {
+          "plan_upgrade": 10,
+          "get_finding": 19,
+          "get_evidence": 7,
+          "verify_upgrade": 4
+        },
+        "medianTokensBeforeFirstEdit": 791103,
+        "medianTokensAfterFirstEdit": 6188200,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 6,
+        "medianRegistryQueries": 2,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": null,
+        "medianEndToEndMs": 921589,
+        "medianSessionMs": 921589,
+        "medianPreSessionDriftMs": 0,
+        "medianDriftToolMs": 66505,
+        "medianCaseEndToEndChangePct": -19.291391679627836,
+        "vsBaseline": {
+          "pairedCases": 3,
+          "medianCaseGrossChangePct": -9.875580275990748,
+          "medianCaseUncachedChangePct": 10.456400146708233,
+          "caseGrossChangesPct": [
+            {
+              "caseId": "aws-least-privilege-winston-3",
+              "changePct": -27.01532048661689
+            },
+            {
+              "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+              "changePct": 27.58283707387332
+            },
+            {
+              "caseId": "gh-aw-firewall-eslint-10",
+              "changePct": -9.875580275990748
+            }
+          ],
+          "successDifferencePp": 0,
+          "caseLevel": {
+            "improved": 1,
+            "tied": 1,
+            "baselineBetter": 1,
+            "medianDifferencePp": 0,
+            "meanDifferencePp": 2.3684757858670005e-15
+          },
+          "ci95": {
+            "medianGrossReduction": {
+              "low": -0.46956259935685885,
+              "high": 0.44101953255404025,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            },
+            "successDifferencePp": {
+              "low": -55.55555555555556,
+              "high": 44.44444444444444,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            }
+          }
+        }
+      }
+    ],
+    "cases": [
+      {
+        "caseId": "aws-least-privilege-winston-3",
+        "cells": {
+          "baseline": {
+            "valid": 3,
+            "successes": 3,
+            "medianGrossInputTokens": 4342225,
+            "medianUncachedInputTokens": 66360,
+            "medianCostUsd": 1.3449730000000006,
+            "medianWallClockMs": 802211,
+            "medianEndToEndMs": 802211,
+            "medianToolCalls": 58,
+            "medianUniqueFilesRead": 2,
+            "medianInitialDriftContextTokens": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": null,
+            "uncachedChangeVsBaselinePct": null,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-full-report": {
+            "valid": 3,
+            "successes": 3,
+            "medianGrossInputTokens": 3870337,
+            "medianUncachedInputTokens": 132851,
+            "medianCostUsd": 1.325032,
+            "medianWallClockMs": 443935,
+            "medianEndToEndMs": 518761,
+            "medianToolCalls": 34,
+            "medianUniqueFilesRead": 2,
+            "medianInitialDriftContextTokens": 48582,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": -10.867423958915069,
+            "uncachedChangeVsBaselinePct": 100.19740807715492,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-agent-brief": {
+            "valid": 3,
+            "successes": 3,
+            "medianGrossInputTokens": 3309675,
+            "medianUncachedInputTokens": 58684,
+            "medianCostUsd": 1.0910182,
+            "medianWallClockMs": 465408,
+            "medianEndToEndMs": 537955,
+            "medianToolCalls": 47,
+            "medianUniqueFilesRead": 3,
+            "medianInitialDriftContextTokens": 1420,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": -23.779283662177797,
+            "uncachedChangeVsBaselinePct": -11.567209162145875,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-mcp": {
+            "valid": 3,
+            "successes": 3,
+            "medianGrossInputTokens": 3169159,
+            "medianUncachedInputTokens": 50181,
+            "medianCostUsd": 1.0291475999999997,
+            "medianWallClockMs": 625769,
+            "medianEndToEndMs": 625769,
+            "medianToolCalls": 48,
+            "medianUniqueFilesRead": 4,
+            "medianInitialDriftContextTokens": 18,
+            "medianDriftToolReturnedTokens": 4522,
+            "grossChangeVsBaselinePct": -27.01532048661689,
+            "uncachedChangeVsBaselinePct": -24.38065099457505,
+            "failureReasons": {},
+            "excluded": 0
+          }
+        }
+      },
+      {
+        "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+        "cells": {
+          "baseline": {
+            "valid": 3,
+            "successes": 2,
+            "medianGrossInputTokens": 6243038,
+            "medianUncachedInputTokens": 78233,
+            "medianCostUsd": 1.817871,
+            "medianWallClockMs": 929136,
+            "medianEndToEndMs": 929136,
+            "medianToolCalls": 74,
+            "medianUniqueFilesRead": 4,
+            "medianInitialDriftContextTokens": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": null,
+            "uncachedChangeVsBaselinePct": null,
+            "failureReasons": {
+              "prohibited_workaround": 1
+            },
+            "excluded": 0
+          },
+          "drift-full-report": {
+            "valid": 3,
+            "successes": 2,
+            "medianGrossInputTokens": 9417198,
+            "medianUncachedInputTokens": 142590,
+            "medianCostUsd": 2.7016666000000007,
+            "medianWallClockMs": 1019228,
+            "medianEndToEndMs": 1129513,
+            "medianToolCalls": 75,
+            "medianUniqueFilesRead": 6,
+            "medianInitialDriftContextTokens": 24398,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": 50.84319525205516,
+            "uncachedChangeVsBaselinePct": 82.26323929799446,
+            "failureReasons": {
+              "prohibited_workaround": 1
+            },
+            "excluded": 0
+          },
+          "drift-agent-brief": {
+            "valid": 3,
+            "successes": 1,
+            "medianGrossInputTokens": 6242052,
+            "medianUncachedInputTokens": 74091,
+            "medianCostUsd": 1.8037922000000002,
+            "medianWallClockMs": 1030155,
+            "medianEndToEndMs": 1142669,
+            "medianToolCalls": 78,
+            "medianUniqueFilesRead": 3,
+            "medianInitialDriftContextTokens": 1331,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": -0.015793592798885037,
+            "uncachedChangeVsBaselinePct": -5.294440964810243,
+            "failureReasons": {
+              "prohibited_workaround": 2
+            },
+            "excluded": 0
+          },
+          "drift-mcp": {
+            "valid": 3,
+            "successes": 1,
+            "medianGrossInputTokens": 7965045,
+            "medianUncachedInputTokens": 102937,
+            "medianCostUsd": 2.303172600000001,
+            "medianWallClockMs": 1271539,
+            "medianEndToEndMs": 1271539,
+            "medianToolCalls": 83,
+            "medianUniqueFilesRead": 5,
+            "medianInitialDriftContextTokens": 18,
+            "medianDriftToolReturnedTokens": 2500,
+            "grossChangeVsBaselinePct": 27.58283707387332,
+            "uncachedChangeVsBaselinePct": 31.577467309191775,
+            "failureReasons": {
+              "prohibited_workaround": 1,
+              "hidden_regression_failure": 1
+            },
+            "excluded": 0
+          }
+        }
+      },
+      {
+        "caseId": "gh-aw-firewall-eslint-10",
+        "cells": {
+          "baseline": {
+            "valid": 3,
+            "successes": 2,
+            "medianGrossInputTokens": 8419485,
+            "medianUncachedInputTokens": 87248,
+            "medianCostUsd": 2.3769804,
+            "medianWallClockMs": 1141872,
+            "medianEndToEndMs": 1141872,
+            "medianToolCalls": 99,
+            "medianUniqueFilesRead": 9,
+            "medianInitialDriftContextTokens": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": null,
+            "uncachedChangeVsBaselinePct": null,
+            "failureReasons": {
+              "existing_test_failure": 1,
+              "prohibited_workaround": 1
+            },
+            "excluded": 0
+          },
+          "drift-full-report": {
+            "valid": 3,
+            "successes": 3,
+            "medianGrossInputTokens": 26936186,
+            "medianUncachedInputTokens": 441581,
+            "medianCostUsd": 7.005282,
+            "medianWallClockMs": 1066855,
+            "medianEndToEndMs": 1084787,
+            "medianToolCalls": 99,
+            "medianUniqueFilesRead": 11,
+            "medianInitialDriftContextTokens": 168968,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": 219.92676511686878,
+            "uncachedChangeVsBaselinePct": 406.1216302952503,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-agent-brief": {
+            "valid": 3,
+            "successes": 3,
+            "medianGrossInputTokens": 7041923,
+            "medianUncachedInputTokens": 81980,
+            "medianCostUsd": 2.0027952,
+            "medianWallClockMs": 971193,
+            "medianEndToEndMs": 981316,
+            "medianToolCalls": 86,
+            "medianUniqueFilesRead": 10,
+            "medianInitialDriftContextTokens": 1482,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": -16.361594563087888,
+            "uncachedChangeVsBaselinePct": -6.037960755547401,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-mcp": {
+            "valid": 3,
+            "successes": 3,
+            "medianGrossInputTokens": 7588012,
+            "medianUncachedInputTokens": 96371,
+            "medianCostUsd": 2.2219168,
+            "medianWallClockMs": 921589,
+            "medianEndToEndMs": 921589,
+            "medianToolCalls": 85,
+            "medianUniqueFilesRead": 9,
+            "medianInitialDriftContextTokens": 18,
+            "medianDriftToolReturnedTokens": 3327,
+            "grossChangeVsBaselinePct": -9.875580275990748,
+            "uncachedChangeVsBaselinePct": 10.456400146708233,
+            "failureReasons": {},
+            "excluded": 0
+          }
+        }
+      }
+    ],
+    "setAsideAttempts": [
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__baseline__rep-02.attempt-1.json",
+        "condition": "baseline",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__baseline__rep-03.attempt-1.json",
+        "condition": "baseline",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__drift-agent-brief__rep-01.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__drift-agent-brief__rep-02.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__drift-agent-brief__rep-03.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__drift-mcp__rep-02.attempt-1.json",
+        "condition": "drift-mcp",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__drift-mcp__rep-03.attempt-1.json",
+        "condition": "drift-mcp",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__drift__rep-02.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-winston",
+        "file": "aws-least-privilege-winston-3__drift__rep-03.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__baseline__rep-02.attempt-1.json",
+        "condition": "baseline",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__baseline__rep-03.attempt-1.json",
+        "condition": "baseline",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift-agent-brief__rep-01.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift-agent-brief__rep-02.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift-agent-brief__rep-03.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift-agent-brief__rep-03.attempt-2.json",
+        "condition": "drift-agent-brief",
+        "reason": "environment fingerprint b24568bfb9cc0f74 differed from the experiment's (see ENVIRONMENT-EXCLUSIONS.md)",
+        "recordedOutcome": "success"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift-mcp__rep-02.attempt-1.json",
+        "condition": "drift-mcp",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift-mcp__rep-03.attempt-1.json",
+        "condition": "drift-mcp",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift__rep-01.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift__rep-02.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-ethereum",
+        "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift__rep-03.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__baseline__rep-01.attempt-1.json",
+        "condition": "baseline",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__baseline__rep-02.attempt-1.json",
+        "condition": "baseline",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__baseline__rep-03.attempt-1.json",
+        "condition": "baseline",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift-agent-brief__rep-02.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift-agent-brief__rep-03.attempt-1.json",
+        "condition": "drift-agent-brief",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift-mcp__rep-02.attempt-1.json",
+        "condition": "drift-mcp",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift-mcp__rep-03.attempt-1.json",
+        "condition": "drift-mcp",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift__rep-01.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift__rep-02.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift__rep-02.attempt-2.json",
+        "condition": "drift-full-report",
+        "reason": "environment fingerprint b24568bfb9cc0f74 differed from the experiment's (see ENVIRONMENT-EXCLUSIONS.md)",
+        "recordedOutcome": "success"
+      },
+      {
+        "runId": "v3-dev-eslint",
+        "file": "gh-aw-firewall-eslint-10__drift__rep-03.attempt-1.json",
+        "condition": "drift-full-report",
+        "reason": "provider_error: api error status 429: You've hit your session limit · resets 7:10pm (UTC)",
+        "recordedOutcome": "not scored"
+      }
+    ],
+    "exclusions": [],
+    "positions": {
+      "baseline": [
+        3,
+        2,
+        2,
+        2
+      ],
+      "drift-full-report": [
+        2,
+        3,
+        2,
+        2
+      ],
+      "drift-agent-brief": [
+        2,
+        2,
+        2,
+        3
+      ],
+      "drift-mcp": [
+        2,
+        2,
+        3,
+        2
+      ]
+    }
+  },
+  "history": [
+    {
+      "label": "the first result (#320: baseline vs full report, safe-mode sessions)",
+      "section": {
+        "runIds": [
+          "v1-dev-1",
+          "v1-dev-2"
+        ],
+        "manifests": [
+          {
+            "runId": "v1-dev-1",
+            "driftCommit": "627bfda24d1e71febfd8838624f3f8ef3dfdb2cf",
+            "requestedModel": "claude-sonnet-5",
+            "requestedEffort": "high",
+            "agentCliVersion": "2.1.267 (Claude Code)",
+            "runsPerCondition": 3,
+            "conditions": [
+              "baseline",
+              "drift"
+            ]
+          },
+          {
+            "runId": "v1-dev-2",
+            "driftCommit": "627bfda24d1e71febfd8838624f3f8ef3dfdb2cf",
+            "requestedModel": "claude-sonnet-5",
+            "requestedEffort": "high",
+            "agentCliVersion": "2.1.267 (Claude Code)",
+            "runsPerCondition": 3,
+            "conditions": [
+              "baseline",
+              "drift"
+            ]
+          }
+        ],
+        "cleanEnvironments": [
+          "safe-mode"
+        ],
+        "conditions": [
+          {
+            "condition": "baseline",
+            "label": "baseline",
+            "aggregate": {
+              "condition": "baseline",
+              "trials": 9,
+              "validTrials": 9,
+              "invalidTrials": 0,
+              "infrastructureFailures": {},
+              "successfulTrials": 8,
+              "successRate": 0.8888888888888888,
+              "medianInputTokens": 6015134,
+              "medianUncachedInputTokens": 83520,
+              "medianOutputTokens": 28765,
+              "medianWallClockMs": 717434,
+              "medianFilesRead": 5,
+              "medianToolCalls": 67,
+              "medianShellCommands": 47,
+              "medianFilesChanged": 4,
+              "failureReasons": {
+                "prohibited_workaround": 1
+              },
+              "agentStatuses": {
+                "completed": 9
+              },
+              "inputTokensPerSuccessfulFix": 5780498.375,
+              "medianInputTokensAmongSuccesses": 5573888,
+              "totalCostUsd": 14.2911428
+            },
+            "medianCostUsd": 1.8353512,
+            "medianModelCalls": 66,
+            "medianUniqueFilesRead": 5,
+            "medianInitialDriftContextTokens": null,
+            "medianDriftToolCalls": null,
+            "medianDriftToolReturnedTokens": null,
+            "medianFindingsRetrievedOnDemand": null,
+            "medianFindingsInInitialBrief": null,
+            "driftToolCallsByName": {},
+            "medianTokensBeforeFirstEdit": null,
+            "medianTokensAfterFirstEdit": null,
+            "trialsWithoutEdit": 0,
+            "medianDependencySourceAccesses": null,
+            "medianRegistryQueries": null,
+            "medianChangelogAccesses": null,
+            "medianDriftAnalysisMs": null,
+            "medianEndToEndMs": null,
+            "medianSessionMs": null,
+            "medianPreSessionDriftMs": null,
+            "medianDriftToolMs": null,
+            "medianCaseEndToEndChangePct": null,
+            "vsBaseline": null
+          },
+          {
+            "condition": "drift",
+            "label": "drift-full-report",
+            "aggregate": {
+              "condition": "drift",
+              "trials": 9,
+              "validTrials": 9,
+              "invalidTrials": 0,
+              "infrastructureFailures": {},
+              "successfulTrials": 7,
+              "successRate": 0.7777777777777778,
+              "medianInputTokens": 8742874,
+              "medianUncachedInputTokens": 148944,
+              "medianOutputTokens": 33851,
+              "medianWallClockMs": 761095,
+              "medianFilesRead": 4,
+              "medianToolCalls": 75,
+              "medianShellCommands": 52,
+              "medianFilesChanged": 6,
+              "failureReasons": {
+                "prohibited_workaround": 2
+              },
+              "agentStatuses": {
+                "completed": 9
+              },
+              "inputTokensPerSuccessfulFix": 17681901,
+              "medianInputTokensAmongSuccesses": 8485598,
+              "totalCostUsd": 34.142441399999996
+            },
+            "medianCostUsd": 2.6520832000000008,
+            "medianModelCalls": 76,
+            "medianUniqueFilesRead": 4,
+            "medianInitialDriftContextTokens": null,
+            "medianDriftToolCalls": null,
+            "medianDriftToolReturnedTokens": null,
+            "medianFindingsRetrievedOnDemand": null,
+            "medianFindingsInInitialBrief": null,
+            "driftToolCallsByName": {},
+            "medianTokensBeforeFirstEdit": null,
+            "medianTokensAfterFirstEdit": null,
+            "trialsWithoutEdit": 0,
+            "medianDependencySourceAccesses": null,
+            "medianRegistryQueries": null,
+            "medianChangelogAccesses": null,
+            "medianDriftAnalysisMs": 38095,
+            "medianEndToEndMs": null,
+            "medianSessionMs": null,
+            "medianPreSessionDriftMs": null,
+            "medianDriftToolMs": null,
+            "medianCaseEndToEndChangePct": null,
+            "vsBaseline": {
+              "pairedCases": 3,
+              "medianCaseGrossChangePct": 68.52563286883995,
+              "medianCaseUncachedChangePct": 173.09831099306967,
+              "caseGrossChangesPct": [
+                {
+                  "caseId": "aws-least-privilege-winston-3",
+                  "changePct": 68.52563286883995
+                },
+                {
+                  "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+                  "changePct": 45.34795068572039
+                },
+                {
+                  "caseId": "gh-aw-firewall-eslint-10",
+                  "changePct": 300.89508288486127
+                }
+              ],
+              "successDifferencePp": -11.111111111111105,
+              "caseLevel": {
+                "improved": 0,
+                "tied": 2,
+                "baselineBetter": 1,
+                "medianDifferencePp": 0,
+                "meanDifferencePp": -11.111111111111109
+              },
+              "ci95": {
+                "medianGrossReduction": {
+                  "low": -3.265300728042231,
+                  "high": -0.24074893526546948,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                },
+                "successDifferencePp": {
+                  "low": -55.55555555555556,
+                  "high": 33.333333333333336,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                }
+              }
+            }
+          }
+        ],
+        "cases": [
+          {
+            "caseId": "aws-least-privilege-winston-3",
+            "cells": {
+              "baseline": {
+                "valid": 3,
+                "successes": 3,
+                "medianGrossInputTokens": 2216178,
+                "medianUncachedInputTokens": 48194,
+                "medianCostUsd": 0.7933558,
+                "medianWallClockMs": 409066,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 41,
+                "medianUniqueFilesRead": 3,
+                "medianInitialDriftContextTokens": null,
+                "medianDriftToolReturnedTokens": null,
+                "grossChangeVsBaselinePct": null,
+                "uncachedChangeVsBaselinePct": null,
+                "failureReasons": {},
+                "excluded": 0
+              },
+              "drift-full-report": {
+                "valid": 3,
+                "successes": 3,
+                "medianGrossInputTokens": 3734828,
+                "medianUncachedInputTokens": 131617,
+                "medianCostUsd": 1.2928251999999993,
+                "medianWallClockMs": 324669,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 33,
+                "medianUniqueFilesRead": 2,
+                "medianInitialDriftContextTokens": null,
+                "medianDriftToolReturnedTokens": null,
+                "grossChangeVsBaselinePct": 68.52563286883995,
+                "uncachedChangeVsBaselinePct": 173.09831099306967,
+                "failureReasons": {},
+                "excluded": 0
+              }
+            }
+          },
+          {
+            "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+            "cells": {
+              "baseline": {
+                "valid": 3,
+                "successes": 2,
+                "medianGrossInputTokens": 6015134,
+                "medianUncachedInputTokens": 94990,
+                "medianCostUsd": 1.9308768,
+                "medianWallClockMs": 717434,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 67,
+                "medianUniqueFilesRead": 5,
+                "medianInitialDriftContextTokens": null,
+                "medianDriftToolReturnedTokens": null,
+                "grossChangeVsBaselinePct": null,
+                "uncachedChangeVsBaselinePct": null,
+                "failureReasons": {
+                  "prohibited_workaround": 1
+                },
+                "excluded": 0
+              },
+              "drift-full-report": {
+                "valid": 3,
+                "successes": 1,
+                "medianGrossInputTokens": 8742874,
+                "medianUncachedInputTokens": 142923,
+                "medianCostUsd": 2.6520832000000008,
+                "medianWallClockMs": 761095,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 75,
+                "medianUniqueFilesRead": 6,
+                "medianInitialDriftContextTokens": null,
+                "medianDriftToolReturnedTokens": null,
+                "grossChangeVsBaselinePct": 45.34795068572039,
+                "uncachedChangeVsBaselinePct": 50.461101168544054,
+                "failureReasons": {
+                  "prohibited_workaround": 2
+                },
+                "excluded": 0
+              }
+            }
+          },
+          {
+            "caseId": "gh-aw-firewall-eslint-10",
+            "cells": {
+              "baseline": {
+                "valid": 3,
+                "successes": 3,
+                "medianGrossInputTokens": 7199445,
+                "medianUncachedInputTokens": 84099,
+                "medianCostUsd": 2.069838,
+                "medianWallClockMs": 762135,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 89,
+                "medianUniqueFilesRead": 11,
+                "medianInitialDriftContextTokens": null,
+                "medianDriftToolReturnedTokens": null,
+                "grossChangeVsBaselinePct": null,
+                "uncachedChangeVsBaselinePct": null,
+                "failureReasons": {},
+                "excluded": 0
+              },
+              "drift-full-report": {
+                "valid": 3,
+                "successes": 3,
+                "medianGrossInputTokens": 28862221,
+                "medianUncachedInputTokens": 452276,
+                "medianCostUsd": 7.510483999999998,
+                "medianWallClockMs": 926918,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 98,
+                "medianUniqueFilesRead": 4,
+                "medianInitialDriftContextTokens": null,
+                "medianDriftToolReturnedTokens": null,
+                "grossChangeVsBaselinePct": 300.89508288486127,
+                "uncachedChangeVsBaselinePct": 437.78998561219515,
+                "failureReasons": {},
+                "excluded": 0
+              }
+            }
+          }
+        ],
+        "setAsideAttempts": [
+          {
+            "runId": "v1-dev-1",
+            "file": "aws-least-privilege-winston-3__baseline__rep-03.attempt-1.json",
+            "condition": "baseline",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          },
+          {
+            "runId": "v1-dev-1",
+            "file": "aws-least-privilege-winston-3__drift__rep-03.attempt-1.json",
+            "condition": "drift-full-report",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          },
+          {
+            "runId": "v1-dev-1",
+            "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__baseline__rep-02.attempt-1.json",
+            "condition": "baseline",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          },
+          {
+            "runId": "v1-dev-1",
+            "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__baseline__rep-03.attempt-1.json",
+            "condition": "baseline",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          },
+          {
+            "runId": "v1-dev-1",
+            "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift__rep-02.attempt-1.json",
+            "condition": "drift-full-report",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          },
+          {
+            "runId": "v1-dev-1",
+            "file": "eth-ledger-bridge-keyring-ethereumjs-tx-5__drift__rep-03.attempt-1.json",
+            "condition": "drift-full-report",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          },
+          {
+            "runId": "v1-dev-2",
+            "file": "gh-aw-firewall-eslint-10__baseline__rep-03.attempt-1.json",
+            "condition": "baseline",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          },
+          {
+            "runId": "v1-dev-2",
+            "file": "gh-aw-firewall-eslint-10__drift__rep-03.attempt-1.json",
+            "condition": "drift-full-report",
+            "reason": "provider_error: api error status 429: You've hit your session limit · resets 2:10pm (UTC)",
+            "recordedOutcome": "not scored"
+          }
+        ],
+        "exclusions": [],
+        "positions": {
+          "baseline": [
+            0,
+            0
+          ],
+          "drift-full-report": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "label": "exploratory runs aborted during review",
+      "section": {
+        "runIds": [
+          "v2-dev-1",
+          "v2-dev-2",
+          "v2-dev-3"
+        ],
+        "manifests": [
+          {
+            "runId": "v2-dev-1",
+            "driftCommit": "5115f99a5e6387f114f30aa419d041b88ee5db09",
+            "requestedModel": "claude-sonnet-5",
+            "requestedEffort": "high",
+            "agentCliVersion": "2.1.267 (Claude Code)",
+            "runsPerCondition": 3,
+            "conditions": [
+              "baseline",
+              "drift",
+              "drift-agent-brief",
+              "drift-mcp"
+            ]
+          },
+          {
+            "runId": "v2-dev-2",
+            "driftCommit": "5115f99a5e6387f114f30aa419d041b88ee5db09",
+            "requestedModel": "claude-sonnet-5",
+            "requestedEffort": "high",
+            "agentCliVersion": "2.1.267 (Claude Code)",
+            "runsPerCondition": 3,
+            "conditions": [
+              "baseline",
+              "drift",
+              "drift-agent-brief",
+              "drift-mcp"
+            ]
+          },
+          {
+            "runId": "v2-dev-3",
+            "driftCommit": "5115f99a5e6387f114f30aa419d041b88ee5db09",
+            "requestedModel": "claude-sonnet-5",
+            "requestedEffort": "high",
+            "agentCliVersion": "2.1.267 (Claude Code)",
+            "runsPerCondition": 3,
+            "conditions": [
+              "baseline",
+              "drift",
+              "drift-agent-brief",
+              "drift-mcp"
+            ]
+          }
+        ],
+        "cleanEnvironments": [
+          "isolated"
+        ],
+        "conditions": [
+          {
+            "condition": "baseline",
+            "label": "baseline",
+            "aggregate": {
+              "condition": "baseline",
+              "trials": 3,
+              "validTrials": 3,
+              "invalidTrials": 0,
+              "infrastructureFailures": {},
+              "successfulTrials": 3,
+              "successRate": 1,
+              "medianInputTokens": 6695560,
+              "medianUncachedInputTokens": 82240,
+              "medianOutputTokens": 30172,
+              "medianWallClockMs": 698802,
+              "medianFilesRead": 3,
+              "medianToolCalls": 68,
+              "medianShellCommands": 48,
+              "medianFilesChanged": 4,
+              "failureReasons": {},
+              "agentStatuses": {
+                "completed": 3
+              },
+              "inputTokensPerSuccessfulFix": 6081254,
+              "medianInputTokensAmongSuccesses": 6695560,
+              "totalCostUsd": 5.4296056
+            },
+            "medianCostUsd": 2.01602,
+            "medianModelCalls": 67,
+            "medianUniqueFilesRead": 3,
+            "medianInitialDriftContextTokens": 0,
+            "medianDriftToolCalls": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "medianFindingsRetrievedOnDemand": 0,
+            "medianFindingsInInitialBrief": null,
+            "driftToolCallsByName": {},
+            "medianTokensBeforeFirstEdit": 1612681,
+            "medianTokensAfterFirstEdit": 5081906,
+            "trialsWithoutEdit": 0,
+            "medianDependencySourceAccesses": 5,
+            "medianRegistryQueries": 4,
+            "medianChangelogAccesses": 0,
+            "medianDriftAnalysisMs": null,
+            "medianEndToEndMs": null,
+            "medianSessionMs": null,
+            "medianPreSessionDriftMs": null,
+            "medianDriftToolMs": null,
+            "medianCaseEndToEndChangePct": null,
+            "vsBaseline": null
+          }
+        ],
+        "cases": [
+          {
+            "caseId": "aws-least-privilege-winston-3",
+            "cells": {
+              "baseline": {
+                "valid": 1,
+                "successes": 1,
+                "medianGrossInputTokens": 3771693,
+                "medianUncachedInputTokens": 58544,
+                "medianCostUsd": 1.2441048000000006,
+                "medianWallClockMs": 548249,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 52,
+                "medianUniqueFilesRead": 1,
+                "medianInitialDriftContextTokens": 0,
+                "medianDriftToolReturnedTokens": 0,
+                "grossChangeVsBaselinePct": null,
+                "uncachedChangeVsBaselinePct": null,
+                "failureReasons": {},
+                "excluded": 0
+              }
+            }
+          },
+          {
+            "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+            "cells": {
+              "baseline": {
+                "valid": 1,
+                "successes": 1,
+                "medianGrossInputTokens": 6695560,
+                "medianUncachedInputTokens": 99600,
+                "medianCostUsd": 2.01602,
+                "medianWallClockMs": 698802,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 68,
+                "medianUniqueFilesRead": 3,
+                "medianInitialDriftContextTokens": 0,
+                "medianDriftToolReturnedTokens": 0,
+                "grossChangeVsBaselinePct": null,
+                "uncachedChangeVsBaselinePct": null,
+                "failureReasons": {},
+                "excluded": 0
+              }
+            }
+          },
+          {
+            "caseId": "gh-aw-firewall-eslint-10",
+            "cells": {
+              "baseline": {
+                "valid": 1,
+                "successes": 1,
+                "medianGrossInputTokens": 7776509,
+                "medianUncachedInputTokens": 82240,
+                "medianCostUsd": 2.1694808,
+                "medianWallClockMs": 842731,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 93,
+                "medianUniqueFilesRead": 9,
+                "medianInitialDriftContextTokens": 0,
+                "medianDriftToolReturnedTokens": 0,
+                "grossChangeVsBaselinePct": null,
+                "uncachedChangeVsBaselinePct": null,
+                "failureReasons": {},
+                "excluded": 0
+              }
+            }
+          }
+        ],
+        "setAsideAttempts": [],
+        "exclusions": [],
+        "positions": {
+          "baseline": [
+            0
+          ]
+        }
+      }
+    }
+  ],
+  "notes": [
+    "Development cases only. These cases were used to select the agent interface and are not held-out evidence.",
+    "Diagnostic, not publishable: the canonical publication gates (10+ cases, frozen suite, 30+ valid trials per condition) are not met.",
+    "Every Drift condition is compared with the baseline trials of the same experiment. The runs in the current section passed the compatibility check (same agent, settings, Drift build, isolation, loaded environment, case content, start trees and tasks).",
+    "Token changes are case-level medians: (condition median / baseline median - 1) per case, then the median across cases. Negative is fewer tokens.",
+    "Drift context and tool sizes are estimated at 3 bytes per token (the production brief estimator), not provider counts. Every other token figure is provider-reported.",
+    "Tokens before/after the first edit come from the per-message usage ledger of the main model and exclude the CLI auxiliary model.",
+    "End-to-end wall = Drift analysis before the session + the agent session. For drift-mcp, Drift runs inside the session and is already in the session time; Drift tool time is shown as a part of it, not added.",
+    "History section \"the first result (#320: baseline vs full report, safe-mode sessions)\" (v1-dev-1, v1-dev-2) is shown for context only and never pooled into the current estimates.",
+    "History section \"exploratory runs aborted during review\" (v2-dev-1, v2-dev-2, v2-dev-3) is shown for context only and never pooled into the current estimates."
+  ]
+}

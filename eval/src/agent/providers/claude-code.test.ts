@@ -72,14 +72,14 @@ describe('Claude Code stream parsing', () => {
 
   test('the argv is the product launch plus observability and a clean environment, identical for both conditions', () => {
     const built = buildClaudeArgs({ model: 'claude-sonnet-5', effort: 'high', webTools: 'disabled', maxBudgetUsd: null, maxTurns: null }, {});
-    assert.deepEqual(built.disallowedTools, ['WebFetch', 'WebSearch']);
+    assert.deepEqual(built.disallowedTools, ['WebFetch', 'WebSearch', 'ArtifactComments', 'ArtifactData']);
     assert.equal(built.cleanEnvironment, 'safe-mode');
     for (const expected of ['-p', '--output-format', 'stream-json', '--verbose', '--safe-mode', '--strict-mcp-config', '--no-session-persistence', '--model', 'claude-sonnet-5', '--effort', 'high', '--disallowedTools', 'WebFetch', 'WebSearch']) {
       assert.ok(built.argv.includes(expected), `argv should include ${expected}`);
     }
     assert.ok(!built.argv.includes('--max-budget-usd'));
     const open = buildClaudeArgs({ model: 'sonnet', effort: 'low', webTools: 'allowed', maxBudgetUsd: 5, maxTurns: 40 }, { cleanEnvironment: 'none' });
-    assert.deepEqual(open.disallowedTools, []);
+    assert.deepEqual(open.disallowedTools, ['ArtifactComments', 'ArtifactData']);
     assert.ok(!open.argv.includes('--safe-mode'));
     assert.ok(open.argv.includes('--max-budget-usd') && open.argv.includes('5'));
     assert.ok(open.argv.includes('--max-turns') && open.argv.includes('40'));

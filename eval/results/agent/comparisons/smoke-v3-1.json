@@ -1,0 +1,889 @@
+{
+  "name": "smoke-v3-1",
+  "generatedAt": "2026-09-16T17:54:42.049Z",
+  "current": {
+    "runIds": [
+      "smoke-v3-1"
+    ],
+    "manifests": [
+      {
+        "runId": "smoke-v3-1",
+        "driftCommit": "0a37d7280a0f338d0a639f1fa41084abc5b543bd",
+        "requestedModel": "claude-sonnet-5",
+        "requestedEffort": "high",
+        "agentCliVersion": "2.1.267 (Claude Code)",
+        "runsPerCondition": 1,
+        "conditions": [
+          "baseline",
+          "drift",
+          "drift-agent-brief",
+          "drift-mcp"
+        ]
+      }
+    ],
+    "cleanEnvironments": [
+      "isolated"
+    ],
+    "conditions": [
+      {
+        "condition": "baseline",
+        "label": "baseline",
+        "aggregate": {
+          "condition": "baseline",
+          "trials": 1,
+          "validTrials": 1,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 1,
+          "successRate": 1,
+          "medianInputTokens": 441794,
+          "medianUncachedInputTokens": 10388,
+          "medianOutputTokens": 2351,
+          "medianWallClockMs": 52542,
+          "medianFilesRead": 3,
+          "medianToolCalls": 11,
+          "medianShellCommands": 7,
+          "medianFilesChanged": 1,
+          "failureReasons": {},
+          "agentStatuses": {
+            "completed": 1
+          },
+          "inputTokensPerSuccessfulFix": 441794,
+          "medianInputTokensAmongSuccesses": 441794,
+          "totalCostUsd": 0.1483092
+        },
+        "medianCostUsd": 0.1483092,
+        "medianModelCalls": 10,
+        "medianUniqueFilesRead": 3,
+        "medianInitialDriftContextTokens": 0,
+        "medianDriftToolCalls": 0,
+        "medianDriftToolReturnedTokens": 0,
+        "medianFindingsRetrievedOnDemand": 0,
+        "medianFindingsInInitialBrief": null,
+        "driftToolCallsByName": {},
+        "medianTokensBeforeFirstEdit": 302973,
+        "medianTokensAfterFirstEdit": 137853,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 1,
+        "medianRegistryQueries": 0,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": null,
+        "medianEndToEndMs": 52542,
+        "medianSessionMs": 52542,
+        "medianPreSessionDriftMs": 0,
+        "medianDriftToolMs": 0,
+        "medianCaseEndToEndChangePct": null,
+        "vsBaseline": null
+      },
+      {
+        "condition": "drift",
+        "label": "drift-full-report",
+        "aggregate": {
+          "condition": "drift",
+          "trials": 1,
+          "validTrials": 1,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 1,
+          "successRate": 1,
+          "medianInputTokens": 655655,
+          "medianUncachedInputTokens": 35725,
+          "medianOutputTokens": 2841,
+          "medianWallClockMs": 52369,
+          "medianFilesRead": 3,
+          "medianToolCalls": 10,
+          "medianShellCommands": 6,
+          "medianFilesChanged": 1,
+          "failureReasons": {},
+          "agentStatuses": {
+            "completed": 1
+          },
+          "inputTokensPerSuccessfulFix": 655655,
+          "medianInputTokensAmongSuccesses": 655655,
+          "totalCostUsd": 0.264221
+        },
+        "medianCostUsd": 0.264221,
+        "medianModelCalls": 11,
+        "medianUniqueFilesRead": 3,
+        "medianInitialDriftContextTokens": 11091,
+        "medianDriftToolCalls": 0,
+        "medianDriftToolReturnedTokens": 0,
+        "medianFindingsRetrievedOnDemand": 0,
+        "medianFindingsInInitialBrief": null,
+        "driftToolCallsByName": {},
+        "medianTokensBeforeFirstEdit": 339464,
+        "medianTokensAfterFirstEdit": 305889,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 3,
+        "medianRegistryQueries": 0,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": 5297,
+        "medianEndToEndMs": 57666,
+        "medianSessionMs": 52369,
+        "medianPreSessionDriftMs": 5297,
+        "medianDriftToolMs": 0,
+        "medianCaseEndToEndChangePct": 9.752198241406873,
+        "vsBaseline": {
+          "pairedCases": 1,
+          "medianCaseGrossChangePct": 48.40740254507756,
+          "medianCaseUncachedChangePct": 243.90643049672698,
+          "caseGrossChangesPct": [
+            {
+              "caseId": "smoke-glob-sync",
+              "changePct": 48.40740254507756
+            }
+          ],
+          "successDifferencePp": 0,
+          "caseLevel": {
+            "improved": 0,
+            "tied": 1,
+            "baselineBetter": 0,
+            "medianDifferencePp": 0,
+            "meanDifferencePp": 0
+          },
+          "ci95": {
+            "medianGrossReduction": {
+              "low": -0.4840740254507756,
+              "high": -0.4840740254507756,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            },
+            "successDifferencePp": {
+              "low": 0,
+              "high": 0,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            }
+          }
+        }
+      },
+      {
+        "condition": "drift-agent-brief",
+        "label": "drift-agent-brief",
+        "aggregate": {
+          "condition": "drift-agent-brief",
+          "trials": 1,
+          "validTrials": 1,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 1,
+          "successRate": 1,
+          "medianInputTokens": 513708,
+          "medianUncachedInputTokens": 14559,
+          "medianOutputTokens": 2813,
+          "medianWallClockMs": 60652,
+          "medianFilesRead": 1,
+          "medianToolCalls": 10,
+          "medianShellCommands": 8,
+          "medianFilesChanged": 1,
+          "failureReasons": {},
+          "agentStatuses": {
+            "completed": 1
+          },
+          "inputTokensPerSuccessfulFix": 513708,
+          "medianInputTokensAmongSuccesses": 513708,
+          "totalCostUsd": 0.1804558
+        },
+        "medianCostUsd": 0.1804558,
+        "medianModelCalls": 11,
+        "medianUniqueFilesRead": 1,
+        "medianInitialDriftContextTokens": 1168,
+        "medianDriftToolCalls": 0,
+        "medianDriftToolReturnedTokens": 0,
+        "medianFindingsRetrievedOnDemand": 0,
+        "medianFindingsInInitialBrief": 3,
+        "driftToolCallsByName": {},
+        "medianTokensBeforeFirstEdit": 222825,
+        "medianTokensAfterFirstEdit": 289026,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 3,
+        "medianRegistryQueries": 0,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": 4295,
+        "medianEndToEndMs": 64947,
+        "medianSessionMs": 60652,
+        "medianPreSessionDriftMs": 4295,
+        "medianDriftToolMs": 0,
+        "medianCaseEndToEndChangePct": 23.609683681626127,
+        "vsBaseline": {
+          "pairedCases": 1,
+          "medianCaseGrossChangePct": 16.277722196317733,
+          "medianCaseUncachedChangePct": 40.15209857527917,
+          "caseGrossChangesPct": [
+            {
+              "caseId": "smoke-glob-sync",
+              "changePct": 16.277722196317733
+            }
+          ],
+          "successDifferencePp": 0,
+          "caseLevel": {
+            "improved": 0,
+            "tied": 1,
+            "baselineBetter": 0,
+            "medianDifferencePp": 0,
+            "meanDifferencePp": 0
+          },
+          "ci95": {
+            "medianGrossReduction": {
+              "low": -0.16277722196317734,
+              "high": -0.16277722196317734,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            },
+            "successDifferencePp": {
+              "low": 0,
+              "high": 0,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            }
+          }
+        }
+      },
+      {
+        "condition": "drift-mcp",
+        "label": "drift-mcp",
+        "aggregate": {
+          "condition": "drift-mcp",
+          "trials": 1,
+          "validTrials": 1,
+          "invalidTrials": 0,
+          "infrastructureFailures": {},
+          "successfulTrials": 1,
+          "successRate": 1,
+          "medianInputTokens": 559852,
+          "medianUncachedInputTokens": 13697,
+          "medianOutputTokens": 2479,
+          "medianWallClockMs": 50470,
+          "medianFilesRead": 1,
+          "medianToolCalls": 12,
+          "medianShellCommands": 4,
+          "medianFilesChanged": 1,
+          "failureReasons": {},
+          "agentStatuses": {
+            "completed": 1
+          },
+          "inputTokensPerSuccessfulFix": 559852,
+          "medianInputTokensAmongSuccesses": 559852,
+          "totalCostUsd": 0.18568199999999999
+        },
+        "medianCostUsd": 0.18568199999999999,
+        "medianModelCalls": 12,
+        "medianUniqueFilesRead": 1,
+        "medianInitialDriftContextTokens": 18,
+        "medianDriftToolCalls": 4,
+        "medianDriftToolReturnedTokens": 1588,
+        "medianFindingsRetrievedOnDemand": 1,
+        "medianFindingsInInitialBrief": null,
+        "driftToolCallsByName": {
+          "plan_upgrade": 1,
+          "get_finding": 1,
+          "get_evidence": 1,
+          "verify_upgrade": 1
+        },
+        "medianTokensBeforeFirstEdit": 362850,
+        "medianTokensAfterFirstEdit": 196019,
+        "trialsWithoutEdit": 0,
+        "medianDependencySourceAccesses": 1,
+        "medianRegistryQueries": 0,
+        "medianChangelogAccesses": 0,
+        "medianDriftAnalysisMs": null,
+        "medianEndToEndMs": 50470,
+        "medianSessionMs": 50470,
+        "medianPreSessionDriftMs": 0,
+        "medianDriftToolMs": 4723,
+        "medianCaseEndToEndChangePct": -3.943511857180926,
+        "vsBaseline": {
+          "pairedCases": 1,
+          "medianCaseGrossChangePct": 26.722409086587874,
+          "medianCaseUncachedChangePct": 31.854062379668857,
+          "caseGrossChangesPct": [
+            {
+              "caseId": "smoke-glob-sync",
+              "changePct": 26.722409086587874
+            }
+          ],
+          "successDifferencePp": 0,
+          "caseLevel": {
+            "improved": 0,
+            "tied": 1,
+            "baselineBetter": 0,
+            "medianDifferencePp": 0,
+            "meanDifferencePp": 0
+          },
+          "ci95": {
+            "medianGrossReduction": {
+              "low": -0.2672240908658787,
+              "high": -0.2672240908658787,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            },
+            "successDifferencePp": {
+              "low": 0,
+              "high": 0,
+              "iterations": 2000,
+              "seed": 20260916,
+              "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+            }
+          }
+        }
+      }
+    ],
+    "cases": [
+      {
+        "caseId": "smoke-glob-sync",
+        "cells": {
+          "baseline": {
+            "valid": 1,
+            "successes": 1,
+            "medianGrossInputTokens": 441794,
+            "medianUncachedInputTokens": 10388,
+            "medianCostUsd": 0.1483092,
+            "medianWallClockMs": 52542,
+            "medianEndToEndMs": 52542,
+            "medianToolCalls": 11,
+            "medianUniqueFilesRead": 3,
+            "medianInitialDriftContextTokens": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": null,
+            "uncachedChangeVsBaselinePct": null,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-full-report": {
+            "valid": 1,
+            "successes": 1,
+            "medianGrossInputTokens": 655655,
+            "medianUncachedInputTokens": 35725,
+            "medianCostUsd": 0.264221,
+            "medianWallClockMs": 52369,
+            "medianEndToEndMs": 57666,
+            "medianToolCalls": 10,
+            "medianUniqueFilesRead": 3,
+            "medianInitialDriftContextTokens": 11091,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": 48.40740254507756,
+            "uncachedChangeVsBaselinePct": 243.90643049672698,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-agent-brief": {
+            "valid": 1,
+            "successes": 1,
+            "medianGrossInputTokens": 513708,
+            "medianUncachedInputTokens": 14559,
+            "medianCostUsd": 0.1804558,
+            "medianWallClockMs": 60652,
+            "medianEndToEndMs": 64947,
+            "medianToolCalls": 10,
+            "medianUniqueFilesRead": 1,
+            "medianInitialDriftContextTokens": 1168,
+            "medianDriftToolReturnedTokens": 0,
+            "grossChangeVsBaselinePct": 16.277722196317733,
+            "uncachedChangeVsBaselinePct": 40.15209857527917,
+            "failureReasons": {},
+            "excluded": 0
+          },
+          "drift-mcp": {
+            "valid": 1,
+            "successes": 1,
+            "medianGrossInputTokens": 559852,
+            "medianUncachedInputTokens": 13697,
+            "medianCostUsd": 0.18568199999999999,
+            "medianWallClockMs": 50470,
+            "medianEndToEndMs": 50470,
+            "medianToolCalls": 12,
+            "medianUniqueFilesRead": 1,
+            "medianInitialDriftContextTokens": 18,
+            "medianDriftToolReturnedTokens": 1588,
+            "grossChangeVsBaselinePct": 26.722409086587874,
+            "uncachedChangeVsBaselinePct": 31.854062379668857,
+            "failureReasons": {},
+            "excluded": 0
+          }
+        }
+      }
+    ],
+    "exclusions": [],
+    "positions": {
+      "baseline": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "drift-full-report": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "drift-agent-brief": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "drift-mcp": [
+        0,
+        0,
+        1,
+        0
+      ]
+    }
+  },
+  "history": [
+    {
+      "label": "exploratory runs aborted during review",
+      "section": {
+        "runIds": [
+          "smoke-v2-1"
+        ],
+        "manifests": [
+          {
+            "runId": "smoke-v2-1",
+            "driftCommit": "98a0be7e381692e05310a52c5e838f42b04f29d6",
+            "requestedModel": "claude-sonnet-5",
+            "requestedEffort": "high",
+            "agentCliVersion": "2.1.267 (Claude Code)",
+            "runsPerCondition": 1,
+            "conditions": [
+              "baseline",
+              "drift",
+              "drift-agent-brief",
+              "drift-mcp"
+            ]
+          }
+        ],
+        "cleanEnvironments": [
+          "isolated"
+        ],
+        "conditions": [
+          {
+            "condition": "baseline",
+            "label": "baseline",
+            "aggregate": {
+              "condition": "baseline",
+              "trials": 1,
+              "validTrials": 1,
+              "invalidTrials": 0,
+              "infrastructureFailures": {},
+              "successfulTrials": 1,
+              "successRate": 1,
+              "medianInputTokens": 605482,
+              "medianUncachedInputTokens": 53054,
+              "medianOutputTokens": 4521,
+              "medianWallClockMs": 123833,
+              "medianFilesRead": 3,
+              "medianToolCalls": 16,
+              "medianShellCommands": 12,
+              "medianFilesChanged": 1,
+              "failureReasons": {},
+              "agentStatuses": {
+                "completed": 1
+              },
+              "inputTokensPerSuccessfulFix": 605482,
+              "medianInputTokensAmongSuccesses": 605482,
+              "totalCostUsd": 0.36486560000000007
+            },
+            "medianCostUsd": 0.36486560000000007,
+            "medianModelCalls": 13,
+            "medianUniqueFilesRead": 3,
+            "medianInitialDriftContextTokens": 0,
+            "medianDriftToolCalls": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "medianFindingsRetrievedOnDemand": 0,
+            "medianFindingsInInitialBrief": null,
+            "driftToolCallsByName": {},
+            "medianTokensBeforeFirstEdit": 403350,
+            "medianTokensAfterFirstEdit": 201164,
+            "trialsWithoutEdit": 0,
+            "medianDependencySourceAccesses": 3,
+            "medianRegistryQueries": 0,
+            "medianChangelogAccesses": 0,
+            "medianDriftAnalysisMs": null,
+            "medianEndToEndMs": null,
+            "medianSessionMs": null,
+            "medianPreSessionDriftMs": null,
+            "medianDriftToolMs": null,
+            "medianCaseEndToEndChangePct": null,
+            "vsBaseline": null
+          },
+          {
+            "condition": "drift",
+            "label": "drift-full-report",
+            "aggregate": {
+              "condition": "drift",
+              "trials": 1,
+              "validTrials": 1,
+              "invalidTrials": 0,
+              "infrastructureFailures": {},
+              "successfulTrials": 1,
+              "successRate": 1,
+              "medianInputTokens": 593854,
+              "medianUncachedInputTokens": 35498,
+              "medianOutputTokens": 2501,
+              "medianWallClockMs": 68785,
+              "medianFilesRead": 1,
+              "medianToolCalls": 9,
+              "medianShellCommands": 7,
+              "medianFilesChanged": 1,
+              "failureReasons": {},
+              "agentStatuses": {
+                "completed": 1
+              },
+              "inputTokensPerSuccessfulFix": 593854,
+              "medianInputTokensAmongSuccesses": 593854,
+              "totalCostUsd": 0.2476042
+            },
+            "medianCostUsd": 0.2476042,
+            "medianModelCalls": 10,
+            "medianUniqueFilesRead": 1,
+            "medianInitialDriftContextTokens": 11104,
+            "medianDriftToolCalls": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "medianFindingsRetrievedOnDemand": 0,
+            "medianFindingsInInitialBrief": null,
+            "driftToolCallsByName": {},
+            "medianTokensBeforeFirstEdit": 398929,
+            "medianTokensAfterFirstEdit": 184622,
+            "trialsWithoutEdit": 0,
+            "medianDependencySourceAccesses": 4,
+            "medianRegistryQueries": 0,
+            "medianChangelogAccesses": 0,
+            "medianDriftAnalysisMs": 6961,
+            "medianEndToEndMs": null,
+            "medianSessionMs": null,
+            "medianPreSessionDriftMs": null,
+            "medianDriftToolMs": null,
+            "medianCaseEndToEndChangePct": null,
+            "vsBaseline": {
+              "pairedCases": 1,
+              "medianCaseGrossChangePct": -1.9204534569153164,
+              "medianCaseUncachedChangePct": -33.09081313378821,
+              "caseGrossChangesPct": [
+                {
+                  "caseId": "smoke-glob-sync",
+                  "changePct": -1.9204534569153164
+                }
+              ],
+              "successDifferencePp": 0,
+              "caseLevel": {
+                "improved": 0,
+                "tied": 1,
+                "baselineBetter": 0,
+                "medianDifferencePp": 0,
+                "meanDifferencePp": 0
+              },
+              "ci95": {
+                "medianGrossReduction": {
+                  "low": 0.019204534569153164,
+                  "high": 0.019204534569153164,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                },
+                "successDifferencePp": {
+                  "low": 0,
+                  "high": 0,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                }
+              }
+            }
+          },
+          {
+            "condition": "drift-agent-brief",
+            "label": "drift-agent-brief",
+            "aggregate": {
+              "condition": "drift-agent-brief",
+              "trials": 1,
+              "validTrials": 1,
+              "invalidTrials": 0,
+              "infrastructureFailures": {},
+              "successfulTrials": 1,
+              "successRate": 1,
+              "medianInputTokens": 370980,
+              "medianUncachedInputTokens": 13404,
+              "medianOutputTokens": 2150,
+              "medianWallClockMs": 47890,
+              "medianFilesRead": 0,
+              "medianToolCalls": 7,
+              "medianShellCommands": 6,
+              "medianFilesChanged": 1,
+              "failureReasons": {},
+              "agentStatuses": {
+                "completed": 1
+              },
+              "inputTokensPerSuccessfulFix": 370980,
+              "medianInputTokensAmongSuccesses": 370980,
+              "totalCostUsd": 0.1409642
+            },
+            "medianCostUsd": 0.1409642,
+            "medianModelCalls": 8,
+            "medianUniqueFilesRead": 0,
+            "medianInitialDriftContextTokens": 1167,
+            "medianDriftToolCalls": 0,
+            "medianDriftToolReturnedTokens": 0,
+            "medianFindingsRetrievedOnDemand": 0,
+            "medianFindingsInInitialBrief": 3,
+            "driftToolCallsByName": {},
+            "medianTokensBeforeFirstEdit": 177982,
+            "medianTokensAfterFirstEdit": 191148,
+            "trialsWithoutEdit": 0,
+            "medianDependencySourceAccesses": 2,
+            "medianRegistryQueries": 0,
+            "medianChangelogAccesses": 0,
+            "medianDriftAnalysisMs": 4712,
+            "medianEndToEndMs": null,
+            "medianSessionMs": null,
+            "medianPreSessionDriftMs": null,
+            "medianDriftToolMs": null,
+            "medianCaseEndToEndChangePct": null,
+            "vsBaseline": {
+              "pairedCases": 1,
+              "medianCaseGrossChangePct": -38.72980534516303,
+              "medianCaseUncachedChangePct": -74.73517548158479,
+              "caseGrossChangesPct": [
+                {
+                  "caseId": "smoke-glob-sync",
+                  "changePct": -38.72980534516303
+                }
+              ],
+              "successDifferencePp": 0,
+              "caseLevel": {
+                "improved": 0,
+                "tied": 1,
+                "baselineBetter": 0,
+                "medianDifferencePp": 0,
+                "meanDifferencePp": 0
+              },
+              "ci95": {
+                "medianGrossReduction": {
+                  "low": 0.38729805345163026,
+                  "high": 0.38729805345163026,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                },
+                "successDifferencePp": {
+                  "low": 0,
+                  "high": 0,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                }
+              }
+            }
+          },
+          {
+            "condition": "drift-mcp",
+            "label": "drift-mcp",
+            "aggregate": {
+              "condition": "drift-mcp",
+              "trials": 1,
+              "validTrials": 1,
+              "invalidTrials": 0,
+              "infrastructureFailures": {},
+              "successfulTrials": 1,
+              "successRate": 1,
+              "medianInputTokens": 614791,
+              "medianUncachedInputTokens": 15247,
+              "medianOutputTokens": 2179,
+              "medianWallClockMs": 66338,
+              "medianFilesRead": 2,
+              "medianToolCalls": 13,
+              "medianShellCommands": 3,
+              "medianFilesChanged": 1,
+              "failureReasons": {},
+              "agentStatuses": {
+                "completed": 1
+              },
+              "inputTokensPerSuccessfulFix": 614791,
+              "medianInputTokensAmongSuccesses": 614791,
+              "totalCostUsd": 0.1995558
+            },
+            "medianCostUsd": 0.1995558,
+            "medianModelCalls": 13,
+            "medianUniqueFilesRead": 2,
+            "medianInitialDriftContextTokens": 18,
+            "medianDriftToolCalls": 4,
+            "medianDriftToolReturnedTokens": 1587,
+            "medianFindingsRetrievedOnDemand": 1,
+            "medianFindingsInInitialBrief": null,
+            "driftToolCallsByName": {
+              "plan_upgrade": 1,
+              "get_finding": 1,
+              "get_evidence": 1,
+              "verify_upgrade": 1
+            },
+            "medianTokensBeforeFirstEdit": 361902,
+            "medianTokensAfterFirstEdit": 251906,
+            "trialsWithoutEdit": 0,
+            "medianDependencySourceAccesses": 1,
+            "medianRegistryQueries": 0,
+            "medianChangelogAccesses": 0,
+            "medianDriftAnalysisMs": null,
+            "medianEndToEndMs": null,
+            "medianSessionMs": null,
+            "medianPreSessionDriftMs": null,
+            "medianDriftToolMs": null,
+            "medianCaseEndToEndChangePct": null,
+            "vsBaseline": {
+              "pairedCases": 1,
+              "medianCaseGrossChangePct": 1.537452806194084,
+              "medianCaseUncachedChangePct": -71.26135635390357,
+              "caseGrossChangesPct": [
+                {
+                  "caseId": "smoke-glob-sync",
+                  "changePct": 1.537452806194084
+                }
+              ],
+              "successDifferencePp": 0,
+              "caseLevel": {
+                "improved": 0,
+                "tied": 1,
+                "baselineBetter": 0,
+                "medianDifferencePp": 0,
+                "meanDifferencePp": 0
+              },
+              "ci95": {
+                "medianGrossReduction": {
+                  "low": -0.01537452806194084,
+                  "high": -0.01537452806194084,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                },
+                "successDifferencePp": {
+                  "low": 0,
+                  "high": 0,
+                  "iterations": 2000,
+                  "seed": 20260916,
+                  "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+                }
+              }
+            }
+          }
+        ],
+        "cases": [
+          {
+            "caseId": "smoke-glob-sync",
+            "cells": {
+              "baseline": {
+                "valid": 1,
+                "successes": 1,
+                "medianGrossInputTokens": 605482,
+                "medianUncachedInputTokens": 53054,
+                "medianCostUsd": 0.36486560000000007,
+                "medianWallClockMs": 123833,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 16,
+                "medianUniqueFilesRead": 3,
+                "medianInitialDriftContextTokens": 0,
+                "medianDriftToolReturnedTokens": 0,
+                "grossChangeVsBaselinePct": null,
+                "uncachedChangeVsBaselinePct": null,
+                "failureReasons": {},
+                "excluded": 0
+              },
+              "drift-full-report": {
+                "valid": 1,
+                "successes": 1,
+                "medianGrossInputTokens": 593854,
+                "medianUncachedInputTokens": 35498,
+                "medianCostUsd": 0.2476042,
+                "medianWallClockMs": 68785,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 9,
+                "medianUniqueFilesRead": 1,
+                "medianInitialDriftContextTokens": 11104,
+                "medianDriftToolReturnedTokens": 0,
+                "grossChangeVsBaselinePct": -1.9204534569153164,
+                "uncachedChangeVsBaselinePct": -33.09081313378821,
+                "failureReasons": {},
+                "excluded": 0
+              },
+              "drift-agent-brief": {
+                "valid": 1,
+                "successes": 1,
+                "medianGrossInputTokens": 370980,
+                "medianUncachedInputTokens": 13404,
+                "medianCostUsd": 0.1409642,
+                "medianWallClockMs": 47890,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 7,
+                "medianUniqueFilesRead": 0,
+                "medianInitialDriftContextTokens": 1167,
+                "medianDriftToolReturnedTokens": 0,
+                "grossChangeVsBaselinePct": -38.72980534516303,
+                "uncachedChangeVsBaselinePct": -74.73517548158479,
+                "failureReasons": {},
+                "excluded": 0
+              },
+              "drift-mcp": {
+                "valid": 1,
+                "successes": 1,
+                "medianGrossInputTokens": 614791,
+                "medianUncachedInputTokens": 15247,
+                "medianCostUsd": 0.1995558,
+                "medianWallClockMs": 66338,
+                "medianEndToEndMs": null,
+                "medianToolCalls": 13,
+                "medianUniqueFilesRead": 2,
+                "medianInitialDriftContextTokens": 18,
+                "medianDriftToolReturnedTokens": 1587,
+                "grossChangeVsBaselinePct": 1.537452806194084,
+                "uncachedChangeVsBaselinePct": -71.26135635390357,
+                "failureReasons": {},
+                "excluded": 0
+              }
+            }
+          }
+        ],
+        "exclusions": [],
+        "positions": {
+          "baseline": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "drift-full-report": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "drift-agent-brief": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "drift-mcp": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  ],
+  "notes": [
+    "Development cases only. These cases were used to select the agent interface and are not held-out evidence.",
+    "Diagnostic, not publishable: the canonical publication gates (10+ cases, frozen suite, 30+ valid trials per condition) are not met.",
+    "Every Drift condition is compared with the baseline trials of the same experiment. The runs in the current section passed the compatibility check (same agent, settings, Drift build, isolation, loaded environment, case content, start trees and tasks).",
+    "Token changes are case-level medians: (condition median / baseline median - 1) per case, then the median across cases. Negative is fewer tokens.",
+    "Drift context and tool sizes are estimated at 3 bytes per token (the production brief estimator), not provider counts. Every other token figure is provider-reported.",
+    "Tokens before/after the first edit come from the per-message usage ledger of the main model and exclude the CLI auxiliary model.",
+    "End-to-end wall = Drift analysis before the session + the agent session. For drift-mcp, Drift runs inside the session and is already in the session time; Drift tool time is shown as a part of it, not added.",
+    "History section \"exploratory runs aborted during review\" (smoke-v2-1) is shown for context only and never pooled into the current estimates."
+  ]
+}

@@ -27,6 +27,28 @@ export function renderTask(agentCase: AgentCase): string {
 }
 
 /**
+ * The generic-orchestrated condition's open session: the same task, except
+ * that verification is the orchestrator's. The last line of the task is
+ * replaced, not appended to, so the session is not told both to run the checks
+ * and not to. No Drift analysis appears in it.
+ */
+export function renderGenericOrchestratedTask(agentCase: AgentCase): string {
+  const lines = renderTask(agentCase).split('\n');
+  const verifyLine = lines.findIndex((line) => line.startsWith('Run the appropriate tests'));
+  lines.splice(
+    verifyLine,
+    1,
+    [
+      'An orchestrator runs this repository\'s build, typecheck, lint and tests after you finish, and starts a new session',
+      'with any failures that remain. Do not run the full test suite, a full build, or other broad verification yourself;',
+      'a narrow check of a file you edited is fine. Do not weaken, skip or delete tests, lower coverage thresholds, or',
+      'relax compiler strictness.',
+    ].join('\n'),
+  );
+  return lines.join('\n');
+}
+
+/**
  * The one benchmark-authored sentence in the Drift condition: it says what the
  * text that follows is. The report itself is production output, verbatim.
  */
@@ -40,6 +62,21 @@ export const DRIFT_PREAMBLE_HEADER = [
   '',
 ].join('\n');
 
+/**
+ * The header for `drift-agent-brief`: says what follows, nothing more. The
+ * brief carries its own operational instructions, and those are production
+ * text (`AGENT_BRIEF_INSTRUCTIONS`), identical to what `drift analyze --agent`
+ * and `plan_upgrade` print.
+ */
+export const DRIFT_BRIEF_HEADER = ['---', '', "Drift's agent brief for this upgrade follows, verbatim.", ''].join('\n');
+
+/**
+ * The whole of what `drift-mcp` adds to the prompt: that the tools exist.
+ * When to call which tool is the server's own MCP `instructions`, which the
+ * client places in context for any user who connects Drift.
+ */
+export const DRIFT_MCP_PREAMBLE = ['---', '', "Drift's MCP tools are available in this session."].join('\n');
+
 export function composePrompt(task: string, preamble: string): string {
   return preamble ? `${task}\n\n${preamble}` : task;
 }
@@ -49,5 +86,5 @@ export function sha256(text: string): string {
 }
 
 export function contextKindFor(condition: Condition): 'none' | 'drift' {
-  return condition === 'baseline' ? 'none' : 'drift';
+  return condition === 'baseline' || condition === 'generic-orchestrated' || condition === 'drift-lean' ? 'none' : 'drift';
 }
