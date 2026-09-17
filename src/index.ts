@@ -263,7 +263,7 @@ export { digestDiagnostics, renderDigest } from './verification/digest.js';
 export { awaitTerminalCloudTask, reconcileCloudTask } from './remediation/cloud-lifecycle.js';
 export type { CloudTaskReconciliation } from './remediation/cloud-lifecycle.js';
 export type { CloudFixAgent, CloudTaskStatus } from './agents/types.js';
-export { validateCloudChangedFiles, validateAgentWorktree } from './agents/scope.js';
+export { isProtectedPath, upgradedDependencyFindings, validateAgentWorktree, validateCloudChangedFiles, workaroundFindings } from './agents/scope.js';
 export type { CloudScopeValidationOptions, CloudScopeValidationResult, ScopeValidationResult } from './agents/scope.js';
 
 export { authorizeApproval, canApprove } from './approval/authorize.js';
