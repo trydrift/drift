@@ -155,7 +155,7 @@ function scriptedVerifier(runs: { passed: boolean; failures?: { file?: string; m
         markInstalled: async () => undefined,
         watchDependencies: async () => async () => null,
         reinstallClean: async () => undefined,
-        run: async () => {
+        run: async (_options?: { fresh?: boolean }) => {
           const scripted = runs[Math.min(calls, runs.length - 1)]!;
           calls += 1;
           const failures = (scripted.failures ?? []).map((f) => ({ check: 'npm test', signature: `npm test|${f.message}`, ...f }));
@@ -335,7 +335,8 @@ describe('Drift orchestration uses the production controller', () => {
       assert.equal(result.orchestration.units.total, 1);
       assert.equal(result.orchestration.units.sentToAgent, 1);
       assert.equal(result.orchestration.units.requiringRepair, 1);
-      assert.equal(verify.calls, 3);
+      assert.equal(verify.calls, 4, 'three measurements and a clean-install confirmation of the pass');
+      assert.equal(result.orchestration.controller.verifications.at(-1)!.fresh, true);
       assert.equal(result.driftStatus, 'completed');
 
       // Every session's tokens are in the total; controller verification contributes none.
@@ -344,7 +345,7 @@ describe('Drift orchestration uses the production controller', () => {
       assert.equal(result.agent.usage.modelCalls, 2);
       assert.ok(Math.abs((result.agent.usage.costUsd ?? 0) - 0.2) < 1e-9);
       assert.equal(result.orchestration.sessions[1]!.usage.grossInputTokens, 557);
-      assert.equal(result.orchestration.timing.controllerVerificationMs, 6000);
+      assert.equal(result.orchestration.timing.controllerVerificationMs, 8000);
       assert.equal(result.orchestration.timing.agentMs, 2000);
       assert.ok(result.orchestration.timing.endToEndMs >= 0);
 

@@ -312,6 +312,7 @@ export async function runOrchestrated(options: OrchestratedOptions): Promise<Orc
       needsHuman: record?.needsHuman ?? [],
       verifications: (record?.verifications ?? []).map((v) => ({
         round: v.round,
+        fresh: v.fresh,
         passed: v.passed,
         fingerprint: v.fingerprint,
         durationMs: v.durationMs,
@@ -431,7 +432,7 @@ const productVerifier = (env: NodeJS.ProcessEnv) => async (workspace: Workspace,
   const checks = await detectRemediationChecks(workspace.repo, agentCase.workspaceDir);
   if (checks.length === 0) return { verifier: null, checks: [], baselineMs: 0 };
   const baseline = await measureBaseline({ root: workspace.repo, ref: workspace.baseCommit, dir: agentCase.workspaceDir, checks, env });
-  const verifier = createProjectVerifier({ root: workspace.repo, dir: agentCase.workspaceDir, checks, baseline: baseline.outcomes, env });
+  const verifier = createProjectVerifier({ root: workspace.repo, dir: agentCase.workspaceDir, checks, baseline: baseline.outcomes, coverageBaseline: baseline.coverage, env });
   return { verifier, checks: checks.map((check) => check.label), baselineMs: Date.now() - started };
 };
 

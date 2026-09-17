@@ -601,6 +601,8 @@ export const orchestrationSchema = z.object({
     verifications: z.array(
       z.object({
         round: z.number().int().nonnegative(),
+        /** A clean install from the lockfile preceded the checks. Absent before it existed. */
+        fresh: z.boolean().optional(),
         passed: z.boolean(),
         fingerprint: z.string(),
         durationMs: z.number().int().nonnegative(),
