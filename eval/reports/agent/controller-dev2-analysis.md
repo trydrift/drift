@@ -39,6 +39,10 @@ The ethereumjs Drift failure (rep 3) is a semantic bug the project's mocked test
 
 No product fix was made in response to this run. The candidate fixes — detecting lint-rule weakening as a workaround, and granting manifest scope by default when the failing check is the upgraded tool — are plausible but were found on these three development cases, and making them and rerunning here would tune the product to the cases that measure it.
 
+## Product changes after the run
+
+One: CodeQL flagged the broad/narrow command classifier (used by the verification guard and by this benchmark's counts) for polynomial regular expressions. It was rewritten as a tokeniser in #323 after the run, with identical classifications on every tested command. It was not re-measured; `controller-dev2` ran `2daf6959`.
+
 ## Next experiment
 
 Before any held-out run: fix the two gaps above in the product (lint/tooling-config weakening detection; a scope policy for tooling migrations), then measure on **held-out** cases, including configuration-heavy tooling upgrades, with ≥ 10 cases. Separately, the plan's premise — Drift supplying replacement APIs and deterministic fixes — did not hold on any development case; improving that analysis (replacement symbols, localisation of compiler-measured breaks into units) is what would test Drift intelligence rather than scoping.
