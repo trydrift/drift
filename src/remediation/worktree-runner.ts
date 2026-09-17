@@ -1,5 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { FixAgent, FileSnapshot } from '../agents/types.js';
@@ -184,9 +186,13 @@ export async function applyDeterministicCommits(options: {
 
 export async function createRemediationWorktree(options: WorktreeRunOptions): Promise<string> {
   const exec = options.exec ?? execCommand;
-  const common = await exec('git', ['rev-parse', '--git-common-dir'], { cwd: options.workspace });
-  const gitDir = common.stdout.trim() || '.git';
-  const dir = join(options.workspace, gitDir, 'drift-worktrees', options.plan.branchName.replace(/[^\w.-]+/g, '-'));
+  // Outside the repository: a worktree under `.git/` is invisible to Jest (it
+  // ignores any path with a `.git` segment) and inherits the enclosing
+  // repository's cascading ESLint config, so verifying a fix there measures
+  // something other than the project. Stable per workspace and branch, so a
+  // rerun replaces the previous one.
+  const key = createHash('sha256').update(resolve(options.workspace)).digest('hex').slice(0, 12);
+  const dir = join(tmpdir(), 'drift-remediation', key, options.plan.branchName.replace(/[^\w.-]+/g, '-'));
 
   await exec('git', ['worktree', 'remove', '--force', dir], { cwd: options.workspace });
 

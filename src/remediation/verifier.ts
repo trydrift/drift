@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import type { LocalCheck } from '../detect/checks.js';
 import { detectPackageManagers } from '../detect/package-manager.js';
 import { nodeWorkspaceFs } from '../detect/workspace.js';
@@ -194,9 +194,10 @@ export async function measureBaseline(options: {
 }): Promise<{ outcomes: CheckOutcome[]; durationMs: number; installFailure?: string }> {
   const exec = options.exec ?? execCommand;
   const started = Date.now();
-  const common = await exec('git', ['rev-parse', '--git-common-dir'], { cwd: options.root });
-  const gitDir = resolve(options.root, common.stdout.trim() || '.git');
-  const worktree = join(gitDir, 'drift-baselines', createHash('sha256').update(`${options.ref}:${Date.now()}:${Math.random()}`).digest('hex').slice(0, 12));
+  // Outside the repository, never under `.git/`: Jest ignores every path with
+  // a `.git` segment (and found no tests at all), and ESLint's cascading config
+  // loaded the enclosing repository's config on top of the baseline's own.
+  const worktree = join(await mkdtemp(join(tmpdir(), 'drift-baseline-')), 'repo');
   const add = await exec('git', ['worktree', 'add', '--detach', worktree, options.ref], { cwd: options.root });
   if (add.code !== 0) {
     return { outcomes: [], durationMs: Date.now() - started, installFailure: `Could not create a baseline worktree: ${add.stderr.trim()}` };
@@ -215,7 +216,7 @@ export async function measureBaseline(options: {
     return { outcomes, durationMs: Date.now() - started, ...(installFailure ? { installFailure } : {}) };
   } finally {
     await exec('git', ['worktree', 'remove', '--force', worktree], { cwd: options.root });
-    await rm(worktree, { recursive: true, force: true }).catch(() => undefined);
+    await rm(dirname(worktree), { recursive: true, force: true }).catch(() => undefined);
   }
 }
 

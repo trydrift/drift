@@ -721,6 +721,36 @@ describe('the project verifier', () => {
     }
   });
 
+  test('the pre-upgrade baseline is measured outside the repository and removed afterwards', async () => {
+    const { measureBaseline } = await import('../dist/remediation/verifier.js');
+    const { existsSync } = await import('node:fs');
+    const { root, cleanup } = await repoWith({ 'a.txt': 'a' });
+    try {
+      let measuredIn = '';
+      const result = await measureBaseline({
+        root,
+        ref: 'HEAD',
+        checks: [],
+        exec: (async (command: string, args: readonly string[], opts?: { cwd?: string }) => {
+          if (command === 'git') return (await import('../dist/util/exec.js')).execCommand(command, args, opts);
+          return { code: 0, stdout: '', stderr: '' };
+        }) as never,
+        runChecks: (async (options: { root: string }) => {
+          measuredIn = options.root;
+          assert.ok(existsSync(join(options.root, 'a.txt')));
+          return [];
+        }) as never,
+      });
+      assert.equal(result.outcomes.length, 0);
+      assert.ok(measuredIn, 'the checks ran');
+      assert.ok(!measuredIn.includes('/.git/'), `baseline worktree ${measuredIn} must not be under .git`);
+      assert.ok(!measuredIn.startsWith(root), 'baseline worktree must be outside the repository');
+      assert.equal(existsSync(measuredIn), false);
+    } finally {
+      await cleanup();
+    }
+  });
+
   test('an npm peer-dependency conflict is retried with --legacy-peer-deps', async () => {
     const { root, cleanup } = await repoWith({ 'package.json': '{"dependencies":{"a":"1"}}', 'package-lock.json': '{}' });
     try {
