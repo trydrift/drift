@@ -606,6 +606,30 @@ describe('verification and repair', () => {
     assert.deepEqual(repairs[0]!.commit.allowedFiles, ['eslint.config.mjs', 'src/edited.ts', 'src/real.ts']);
   });
 
+  test('a failure that names only installed dependencies still gets a session that can request scope', async () => {
+    const { root, cleanup } = await repoWith({ 'src/app.ts': 'a\n', 'tsconfig.json': '{}\n' });
+    try {
+      const fake = scriptedAgent(root, [
+        async (task) => {
+          assert.deepEqual(task.commit.allowedFiles, []);
+          assert.match(task.commit.instructions, /Do not edit anything in this session/);
+          return { message: 'needs tsconfig', scopeRequests: [{ path: 'tsconfig.json', reason: 'skipLibCheck for logform declarations' }] };
+        },
+        async (task) => {
+          assert.ok(task.commit.allowedFiles.includes('tsconfig.json'));
+          await fake.write('tsconfig.json', '{"compilerOptions":{"skipLibCheck":true}}\n');
+        },
+      ]);
+      const failing = { passed: false, failures: [{ file: 'node_modules/logform/index.d.ts', message: 'node_modules/logform/index.d.ts:14 TS1023' }] };
+      const verify = scriptedVerifier([failing, failing, { passed: true }]);
+      const record = await runRemediationController({ root, plan: plan([]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
+      assert.equal(record.termination, 'verified');
+      assert.deepEqual(record.grantedFiles, ['tsconfig.json']);
+    } finally {
+      await cleanup();
+    }
+  });
+
   test('rendered failures are bounded', () => {
     const failures = Array.from({ length: 80 }, (_, index) => ({ check: 'tsc', signature: String(index), file: 'src/a.ts', message: `src/a.ts:${index} boom` }));
     const text = renderFailures(failures, { checks: [{ label: 'tsc', preexisting: 2, tail: '' }] } as never, { unitFiles: [] });

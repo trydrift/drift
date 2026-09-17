@@ -498,7 +498,12 @@ export function planRepairs(
     const candidates = [...measured, ...[...changedSoFar, ...residualGrants].map(normalizePlanPath)]
       .filter((file) => file && !isProtectedPath(file) && !isLockfile(file));
     const allowed = withLockfiles([...new Set(candidates)].sort().slice(0, 25));
-    if (allowed.length > 0) {
+    // No editable file named is not the same as nothing to do: a type error
+    // inside an installed dependency's declarations is fixed in this
+    // repository's tsconfig, and no check output names that file. The session
+    // gets no files and is asked which ones it needs; the next round grants them.
+    const scopeless = allowed.length === 0;
+    {
       const text = unowned.map((failure) => failure.message).join('\n');
       const relevant = plan.breakingChanges.filter((change) => change.symbols.some((symbol) => symbol.length > 2 && text.includes(symbol.split('.').pop()!))).slice(0, 3);
       repairs.push({
@@ -510,9 +515,12 @@ export function planRepairs(
           breakingChangeIds: relevant.map((change) => change.id),
           files: allowed,
           allowedFiles: allowed,
-          instructions:
-            'Fix the failures listed under "What still fails". They were measured after the planned edits and are not attributed to any planned unit. ' +
-            'If one needs a file outside your scope, request it rather than editing it.',
+          instructions: scopeless
+            ? 'The failures listed under "What still fails" name no file in this repository that may be edited — they point at installed dependencies, tooling, or nothing at all. ' +
+              'Do not edit anything in this session. Work out which file(s) in this repository must change to resolve them (configuration included) and request each one with a scope request line; ' +
+              'the next session will be allowed to edit what you request. Never request a path inside installed dependencies.'
+            : 'Fix the failures listed under "What still fails". They were measured after the planned edits and are not attributed to any planned unit. ' +
+              'If one needs a file outside your scope, request it rather than editing it.',
           dependsOn: [],
           dependencyReasons: [],
           executionLayer: 0,
