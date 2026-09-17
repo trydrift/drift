@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan } from '../types.js';
@@ -376,7 +377,7 @@ export async function runRemediationController(options: RemediationControllerOpt
 
     if (round >= maxRounds) return finish('repair-limit', `${current.failures.length} failure(s) remain after ${round} repair rounds`);
 
-    const repairs = planRepairs(current, units, grants, changedSoFar, options.plan);
+    const repairs = planRepairs(current, units, grants, changedSoFar, options.plan, (path) => existsSync(join(options.root, path)));
     if (repairs.length === 0) return finish('unrepairable', 'the remaining failures name nothing an agent is allowed to edit');
 
     previousFingerprint = current.fingerprint;
@@ -446,6 +447,14 @@ export function planRepairs(
   grants: ReadonlyMap<string, ReadonlySet<string>>,
   changedSoFar: ReadonlySet<string>,
   plan: RemediationPlan,
+  /**
+   * Whether a path is a real file in the repository. Paths read out of check
+   * output are only candidates: a stack frame, a package name or a sentence
+   * fragment parses as a path often enough to put `Node.js` or
+   * `at runRuleForItem (/tmp/...` into a repair's scope. Files the agent
+   * already changed and files it requested may not exist yet and are exempt.
+   */
+  exists: (path: string) => boolean = () => true,
 ): AgentUnit[] {
   const repairs: AgentUnit[] = [];
   const unowned: VerificationFailure[] = [];
@@ -485,8 +494,8 @@ export function planRepairs(
     const failingChecks = new Set(unowned.map((failure) => failure.check));
     const named = unowned.map((failure) => failure.file).filter((file): file is string => Boolean(file));
     const mentioned = run.checks.filter((check) => failingChecks.has(check.label)).flatMap((check) => check.mentionedFiles);
-    const candidates = [...named, ...mentioned, ...changedSoFar, ...residualGrants]
-      .map(normalizePlanPath)
+    const measured = [...named, ...mentioned].map(normalizePlanPath).filter((file) => file && !/\s/.test(file) && exists(file));
+    const candidates = [...measured, ...[...changedSoFar, ...residualGrants].map(normalizePlanPath)]
       .filter((file) => file && !isProtectedPath(file) && !isLockfile(file));
     const allowed = withLockfiles([...new Set(candidates)].sort().slice(0, 25));
     if (allowed.length > 0) {

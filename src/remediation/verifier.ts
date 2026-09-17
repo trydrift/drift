@@ -512,7 +512,16 @@ async function install(cwd: string, exec: Exec, env?: NodeJS.ProcessEnv, timeout
   const command = detected?.manager.install;
   if (!command) return 'No install command is known for this project.';
   const result = await exec(command.command, command.args, { cwd, env, timeoutMs });
-  return result.code === 0 ? undefined : `\`${[command.command, ...command.args].join(' ')}\` failed: ${`${result.stderr}\n${result.stdout}`.trim().split('\n').slice(-10).join('\n')}`;
+  if (result.code === 0) return undefined;
+  // npm 7+ refuses an install whose peer ranges conflict. Plenty of real
+  // repositories install that way on purpose (`--legacy-peer-deps` in CI or
+  // their .npmrc); a baseline that cannot install measures nothing, and then
+  // failures that predate the upgrade are handed to an agent as its own.
+  if (command.command === 'npm' && /ERESOLVE|peer dep/i.test(`${result.stderr}\n${result.stdout}`)) {
+    const retry = await exec(command.command, [...command.args, '--legacy-peer-deps'], { cwd, env, timeoutMs });
+    if (retry.code === 0) return undefined;
+  }
+  return `\`${[command.command, ...command.args].join(' ')}\` failed: ${`${result.stderr}\n${result.stdout}`.trim().split('\n').slice(-10).join('\n')}`;
 }
 
 interface TrackedState {

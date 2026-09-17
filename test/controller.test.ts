@@ -591,6 +591,21 @@ describe('verification and repair', () => {
     assert.deepEqual(repairs[0]!.commit.breakingChangeIds, ['bc_1']);
   });
 
+  test('paths read from check output must be real repository files', () => {
+    const run = {
+      passed: false,
+      failures: [
+        { check: 'npm test', signature: 'a', file: 'Node.js', message: 'x' },
+        { check: 'npm test', signature: 'b', file: 'at runRuleForItem (/tmp/x/rule-tester.js', message: 'y' },
+        { check: 'npm test', signature: 'c', file: 'src/real.ts', message: 'z' },
+      ],
+      checks: [{ label: 'npm test', kind: 'test', status: 'failed', durationMs: 1, failures: [], preexisting: 0, tail: '', mentionedFiles: ['ledger-keyring.ts'] }],
+      fingerprint: 'f', durationMs: 1, installed: false, sideEffectsReverted: [],
+    };
+    const repairs = planRepairs(run as never, [] as never, new Map([['residual', new Set(['eslint.config.mjs'])]]), new Set(['src/edited.ts']), plan([]), (path: string) => path === 'src/real.ts');
+    assert.deepEqual(repairs[0]!.commit.allowedFiles, ['eslint.config.mjs', 'src/edited.ts', 'src/real.ts']);
+  });
+
   test('rendered failures are bounded', () => {
     const failures = Array.from({ length: 80 }, (_, index) => ({ check: 'tsc', signature: String(index), file: 'src/a.ts', message: `src/a.ts:${index} boom` }));
     const text = renderFailures(failures, { checks: [{ label: 'tsc', preexisting: 2, tail: '' }] } as never, { unitFiles: [] });
@@ -701,6 +716,29 @@ describe('the project verifier', () => {
       const noisy = await verifier.watchDependencies();
       await writeFile(join(root, 'node_modules', 'logform', 'index.d.ts'), 'patched');
       assert.equal(await noisy(), 'node_modules/logform/index.d.ts');
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('an npm peer-dependency conflict is retried with --legacy-peer-deps', async () => {
+    const { root, cleanup } = await repoWith({ 'package.json': '{"dependencies":{"a":"1"}}', 'package-lock.json': '{}' });
+    try {
+      const commands: string[] = [];
+      const verifier = createProjectVerifier({
+        root,
+        checks: [],
+        installFirst: true,
+        exec: (async (command: string, args: readonly string[]) => {
+          commands.push([command, ...args].join(' '));
+          if (command === 'npm' && !args.includes('--legacy-peer-deps')) return { code: 1, stdout: '', stderr: 'npm error code ERESOLVE' };
+          return { code: 0, stdout: '', stderr: '' };
+        }) as never,
+        runChecks: (async () => []) as never,
+      });
+      const run = await verifier.run();
+      assert.equal(run.installFailure, undefined);
+      assert.ok(commands.includes('npm install --legacy-peer-deps'));
     } finally {
       await cleanup();
     }
