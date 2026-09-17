@@ -16,6 +16,7 @@ import {
   renderPullRequestBody,
   resolvePlanVerdict,
   runPipeline,
+  type DriftConfig,
   type RemediationPlan,
   type RepoContext,
 } from '../../../dist/index.js';
@@ -86,38 +87,9 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
 
   const render = condition === 'drift-agent-brief' ? '--agent' : '--markdown';
   const command = `drift analyze --before ${workspace.baseCommit.slice(0, 12)} --after ${workspace.startCommit.slice(0, 12)} ${render}${options.verify ? ' --verify' : ''}`;
-  const logger = createLogger('error');
 
   try {
-    const { config } = await loadConfig(async (candidate) => {
-      try {
-        return await readFile(resolve(workspace.repo, candidate), 'utf8');
-      } catch {
-        return null;
-      }
-    });
-
-    const repo: RepoContext = {
-      owner: 'local',
-      repo: 'workspace',
-      baseBranch: 'main',
-      beforeSha: workspace.baseCommit,
-      afterSha: workspace.startCommit,
-      workspace: workspace.repo,
-    };
-
-    const github = new GitHubClient({ repoToken: options.githubToken ?? '', logger });
-    const result = await runPipeline({
-      repo,
-      config,
-      logger,
-      github,
-      provider: new LocalGitProvider(workspace.repo, { before: workspace.baseCommit, after: workspace.startCommit }),
-      githubToken: options.githubToken,
-      dryRun: true,
-      workspace: workspace.repo,
-      verify: { enabled: options.verify && config.verify.enabled },
-    });
+    const { config, result } = await analyzeWorkspace(workspace, options);
 
     if (!result.plan) {
       return {
@@ -187,6 +159,48 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
       mcpServers: null,
     };
   }
+}
+
+/**
+ * Drift's production analysis of the workspace's upgrade: `runPipeline` over
+ * `LocalGitProvider`, dry run, config loaded from the repository the way the
+ * CLI loads it. Shared by every condition that uses Drift's plan.
+ */
+export async function analyzeWorkspace(
+  workspace: Pick<Workspace, 'repo' | 'baseCommit' | 'startCommit'>,
+  options: DriftContextOptions,
+): Promise<{ config: DriftConfig; result: Awaited<ReturnType<typeof runPipeline>> }> {
+  const logger = createLogger('error');
+  const { config } = await loadConfig(async (candidate) => {
+    try {
+      return await readFile(resolve(workspace.repo, candidate), 'utf8');
+    } catch {
+      return null;
+    }
+  });
+
+  const repo: RepoContext = {
+    owner: 'local',
+    repo: 'workspace',
+    baseBranch: 'main',
+    beforeSha: workspace.baseCommit,
+    afterSha: workspace.startCommit,
+    workspace: workspace.repo,
+  };
+
+  const github = new GitHubClient({ repoToken: options.githubToken ?? '', logger });
+  const result = await runPipeline({
+    repo,
+    config,
+    logger,
+    github,
+    provider: new LocalGitProvider(workspace.repo, { before: workspace.baseCommit, after: workspace.startCommit }),
+    githubToken: options.githubToken,
+    dryRun: true,
+    workspace: workspace.repo,
+    verify: { enabled: options.verify && config.verify.enabled },
+  });
+  return { config, result };
 }
 
 function ablate(condition: Condition, plan: RemediationPlan): RemediationPlan {

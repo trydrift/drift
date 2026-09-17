@@ -1,5 +1,6 @@
 import type { ParsedStream } from './providers/claude-code.ts';
 import type { AgentContextDiagnostics, Condition } from './schema.ts';
+import { agentVerificationCommands } from './verification-commands.ts';
 
 /**
  * What Drift put into an agent's context, what the agent pulled from Drift,
@@ -25,6 +26,8 @@ export function interfaceFor(condition: Condition): AgentContextDiagnostics['int
   if (condition === 'baseline') return 'none';
   if (condition === 'drift-agent-brief') return 'agent-brief';
   if (condition === 'drift-mcp') return 'mcp';
+  if (condition === 'generic-orchestrated') return 'generic-orchestrated';
+  if (condition === 'drift-orchestrated') return 'drift-orchestrated';
   return 'full-report';
 }
 
@@ -116,7 +119,37 @@ export function agentContextDiagnostics(args: {
       driftToolMs: Math.round(driftToolMs),
       endToEndMs: Math.max(0, Math.round((args.preSessionDriftMs ?? 0) + (args.sessionMs ?? 0))),
     },
+    agentVerification: agentVerificationCommands(parsed),
     research: researchSignals(parsed, args.dependency),
+  };
+}
+
+/** Main-model usage up to and including the call that issued the first edit, and after it. `null`s when no edit. */
+export function firstEditSplit(parsed: ParsedStream): {
+  before: AgentContextDiagnostics['tokensBeforeFirstEdit'];
+  after: AgentContextDiagnostics['tokensAfterFirstEdit'];
+  total: { grossInputTokens: number; uncachedInputTokens: number; modelCalls: number };
+} {
+  const firstEdit = parsed.toolUses.find((use) => EDIT_TOOLS.has(use.name));
+  const primaryModel = parsed.init?.model ?? parsed.ledger[0]?.model ?? null;
+  const split = (from: number, to: number) => {
+    let gross = 0;
+    let uncached = 0;
+    let calls = 0;
+    for (let i = from; i < to; i += 1) {
+      const entry = parsed.ledger[i]!;
+      if (primaryModel && entry.model !== primaryModel) continue;
+      const u = entry.usage;
+      gross += (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+      uncached += (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+      calls += 1;
+    }
+    return { grossInputTokens: gross, uncachedInputTokens: uncached, modelCalls: calls };
+  };
+  return {
+    before: firstEdit ? split(0, firstEdit.ledgerIndex + 1) : null,
+    after: firstEdit ? split(firstEdit.ledgerIndex + 1, parsed.ledger.length) : null,
+    total: split(0, parsed.ledger.length),
   };
 }
 

@@ -52,6 +52,8 @@ export const CONDITIONS = [
   'drift-localization-only',
   'drift-agent-brief',
   'drift-mcp',
+  'generic-orchestrated',
+  'drift-orchestrated',
 ] as const;
 export type Condition = (typeof CONDITIONS)[number];
 export const conditionSchema = z.enum(CONDITIONS);
@@ -64,6 +66,8 @@ export const CONDITION_LABELS: Record<Condition, string> = {
   'drift-localization-only': 'drift-localization-only',
   'drift-agent-brief': 'drift-agent-brief',
   'drift-mcp': 'drift-mcp',
+  'generic-orchestrated': 'generic-orchestrated',
+  'drift-orchestrated': 'drift-orchestrated',
 };
 
 /** Accepts a stored id or its label (`drift-full-report` → `drift`). */
@@ -79,7 +83,21 @@ export function parseCondition(name: string): Condition {
 export const HEADLINE_CONDITIONS: readonly Condition[] = ['baseline', 'drift'];
 
 /** Every condition whose trials are compared against the baseline. */
-export const DRIFT_CONDITIONS: readonly Condition[] = ['drift', 'drift-agent-brief', 'drift-mcp', 'drift-evidence-only', 'drift-localization-only'];
+export const DRIFT_CONDITIONS: readonly Condition[] = ['drift', 'drift-agent-brief', 'drift-mcp', 'drift-evidence-only', 'drift-localization-only', 'generic-orchestrated', 'drift-orchestrated'];
+
+/**
+ * Conditions in which a controller, not the agent, owns the remediation loop:
+ * several fresh agent sessions, verification run outside them.
+ *
+ * `generic-orchestrated` — one open session given the task and told an
+ * orchestrator verifies, then the product's generic repair loop with an empty
+ * plan: no findings, no units, no codemods, no replacement knowledge. What any
+ * orchestrator could do without Drift's analysis.
+ * `drift-orchestrated` — the product's controller over Drift's own plan:
+ * deterministic tiers, bounded units, verification, scoped repairs.
+ */
+export const ORCHESTRATED_CONDITIONS: readonly Condition[] = ['generic-orchestrated', 'drift-orchestrated'];
+export const isOrchestrated = (condition: Condition): boolean => ORCHESTRATED_CONDITIONS.includes(condition);
 
 const checkKindSchema = z.enum(['build', 'typecheck', 'test', 'lint', 'runtime']);
 export type CheckKind = z.infer<typeof checkKindSchema>;
@@ -460,7 +478,7 @@ const tokenSplitSchema = z.object({
 });
 
 export const agentContextSchema = z.object({
-  interface: z.enum(['none', 'full-report', 'agent-brief', 'mcp']),
+  interface: z.enum(['none', 'full-report', 'agent-brief', 'mcp', 'generic-orchestrated', 'drift-orchestrated']),
   /** What Drift placed in the initial prompt, after the task. */
   initialDriftContextChars: z.number().int().nonnegative(),
   /** `ceil(bytes / 3)`, the production brief's own estimator. Not a provider count. */
@@ -510,6 +528,19 @@ export const agentContextSchema = z.object({
       endToEndMs: z.number().int().nonnegative(),
     })
     .optional(),
+  /**
+   * Verification commands the agent ran itself (shell commands only). Broad:
+   * a whole-project build, typecheck, lint or test run. Narrow: the same tools
+   * pointed at specific files or tests. Absent on artifacts recorded before it
+   * was measured.
+   */
+  agentVerification: z
+    .object({
+      broad: z.number().int().nonnegative(),
+      narrow: z.number().int().nonnegative(),
+      broadCommands: z.array(z.string()),
+    })
+    .optional(),
   /** How the agent researched the dependency itself, whatever Drift gave it. */
   research: z.object({
     /** Read/Grep/Glob calls, and shell commands, that touch the upgraded package inside node_modules. */
@@ -521,6 +552,96 @@ export const agentContextSchema = z.object({
   }),
 });
 export type AgentContextDiagnostics = z.infer<typeof agentContextSchema>;
+
+const orchestrationSessionSchema = z.object({
+  index: z.number().int().positive(),
+  /** `open` — the generic condition's first, unscoped session; `unit` — a planned unit; `repair` — a repair round. */
+  kind: z.enum(['open', 'unit', 'repair']),
+  unitId: z.string().nullable(),
+  round: z.number().int().nonnegative(),
+  allowedFiles: z.array(z.string()).nullable(),
+  changedFiles: z.array(z.string()),
+  /** What the controller did with the session's edits. */
+  outcome: z.string(),
+  reasons: z.array(z.string()),
+  scopeRequests: z.array(z.string()),
+  agentStatus: z.string(),
+  promptChars: z.number().int().nonnegative(),
+  promptHash: z.string(),
+  durationMs: z.number().int().nonnegative(),
+  usage: usageSchema,
+  toolCalls: z.number().int().nonnegative(),
+  tokensBeforeFirstEdit: tokenSplitSchema.nullable(),
+  tokensAfterFirstEdit: tokenSplitSchema.nullable(),
+  agentVerification: z.object({ broad: z.number().int().nonnegative(), narrow: z.number().int().nonnegative(), broadCommands: z.array(z.string()) }),
+  research: z.object({
+    dependencySourceAccesses: z.number().int().nonnegative(),
+    registryQueries: z.number().int().nonnegative(),
+    changelogAccesses: z.number().int().nonnegative(),
+  }),
+  environmentFingerprint: z.string().nullable(),
+});
+
+export const orchestrationSchema = z.object({
+  kind: z.enum(['generic', 'drift']),
+  sessions: z.array(orchestrationSessionSchema),
+  controller: z.object({
+    termination: z.string(),
+    terminationDetail: z.string(),
+    repairRounds: z.number().int().nonnegative(),
+    outOfScopeRejections: z.number().int().nonnegative(),
+    workaroundRejections: z.number().int().nonnegative(),
+    grantedFiles: z.array(z.string()),
+    deniedScopeRequests: z.array(z.string()),
+    needsHuman: z.array(z.object({ unitId: z.string(), files: z.array(z.string()), reason: z.string() })),
+    verifications: z.array(
+      z.object({
+        round: z.number().int().nonnegative(),
+        passed: z.boolean(),
+        fingerprint: z.string(),
+        durationMs: z.number().int().nonnegative(),
+        installed: z.boolean(),
+        failures: z.number().int().nonnegative(),
+        preexisting: z.number().int().nonnegative(),
+        checks: z.array(z.object({ label: z.string(), kind: z.string(), status: z.string(), durationMs: z.number().int().nonnegative(), failures: z.number().int().nonnegative() })),
+        sideEffectsReverted: z.array(z.string()),
+      }),
+    ),
+  }),
+  checks: z.array(z.string()),
+  units: z.object({
+    /** Commit units in Drift's plan (0 for the generic condition). */
+    total: z.number().int().nonnegative(),
+    resolvedByCodemod: z.number().int().nonnegative(),
+    resolvedByFixPlan: z.number().int().nonnegative(),
+    sentToAgent: z.number().int().nonnegative(),
+    skippedProtected: z.number().int().nonnegative(),
+    merged: z.number().int().nonnegative(),
+    /** Plan units that needed at least one repair session. */
+    requiringRepair: z.number().int().nonnegative(),
+  }),
+  /** Drift's analysis summary for the Drift condition; `null` for generic. */
+  analysis: z
+    .object({
+      breakingChanges: z.number().int().nonnegative(),
+      impactSites: z.number().int().nonnegative(),
+      commits: z.number().int().nonnegative(),
+      verificationStatus: z.string().nullable(),
+    })
+    .nullable(),
+  timing: z.object({
+    analysisMs: z.number().int().nonnegative(),
+    deterministicMs: z.number().int().nonnegative(),
+    baselineMeasurementMs: z.number().int().nonnegative(),
+    agentMs: z.number().int().nonnegative(),
+    controllerVerificationMs: z.number().int().nonnegative(),
+    endToEndMs: z.number().int().nonnegative(),
+  }),
+  /** The agent-time budget: the case's session timeout, shared by every session. */
+  agentBudgetMs: z.number().int().nonnegative(),
+  budgetExhausted: z.boolean(),
+});
+export type OrchestrationRecord = z.infer<typeof orchestrationSchema>;
 
 export const trialSchema = z
   .object({
@@ -662,6 +783,8 @@ export const trialSchema = z
      * runs); computed from the stream and the plan for every later trial.
      */
     agentContext: agentContextSchema.optional(),
+    /** Present for orchestrated conditions: every session, the controller's record, and where the time went. */
+    orchestration: orchestrationSchema.optional(),
     /**
      * Present when the artifact's diff-derivable rules were re-evaluated
      * against a later revision of the case. The original outcome is kept.

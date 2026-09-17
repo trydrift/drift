@@ -27,7 +27,8 @@ function usage(): string {
   return [
     'Usage:',
     '  benchmark:agent run --suite <suite> [--case <id>] [--runs N] [--model M] [--effort E]',
-    '                      [--conditions baseline,drift-full-report,drift-agent-brief,drift-mcp] [--clean-environment isolated|safe-mode]',
+    '                      [--conditions baseline,drift-full-report,drift-agent-brief,drift-mcp,generic-orchestrated,drift-orchestrated] [--clean-environment isolated|safe-mode]',
+    '                      [--repetitions 1,2]   # run only these repetition blocks; slots are unchanged',
     '                      [--run-id ID] [--retry-infrastructure] [--web-tools allow|disabled] [--no-drift-verify] [--max-budget-usd X] [--max-turns N] [--notes TEXT]',
     '  benchmark:agent validate-cases [--suite <suite>] [--case <id>] [--repeats N] [--write]',
     '  benchmark:agent aggregate --runs a,b [--out latest]',
@@ -37,6 +38,7 @@ function usage(): string {
     '  benchmark:agent verify',
     '  benchmark:agent runs | cases | suites',
     '',
+    '  benchmark:agent compare-orchestration --runs a,b --name NAME   # raw vs generic-orchestrated vs drift-orchestrated',
     '  benchmark:agent compare --runs a,b [--reference-runs c,d] [--exploratory-runs e,f] --name NAME',
     '                                        # every Drift condition against the baseline; refuses incompatible runs',
     '',
@@ -128,6 +130,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       suite,
       ...(flag(argv, 'case') ? { caseIds: flag(argv, 'case')!.split(',').filter(Boolean) } : {}),
       runs,
+      ...(flag(argv, 'repetitions') ? { repetitions: flag(argv, 'repetitions')!.split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0) } : {}),
       ...(conditions ? { conditions } : {}),
       provider: new ClaudeCodeProvider({ cleanEnvironment }),
       model,
@@ -188,6 +191,28 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     const leaked = isolated.some((s) => s.canaryWordsSeen.length || s.settingsEnvSeen.length || s.hooksRan.length || s.environmentProblems.length);
     const equal = new Set(isolated.map((s) => s.environment?.fingerprint)).size === 1;
     return leaked || !equal ? 1 : 0;
+  }
+
+  if (command === 'compare-orchestration') {
+    const runs = flag(argv, 'runs')?.split(',').filter(Boolean);
+    const name = flag(argv, 'name');
+    if (!runs?.length || !name) {
+      console.error(usage());
+      return 2;
+    }
+    const { buildThreeWay, writeThreeWay } = await import('./orchestration-compare.ts');
+    try {
+      const comparison = await buildThreeWay({ name, runIds: runs, root });
+      const paths = await writeThreeWay(comparison, root);
+      log(`three-way comparison written to ${paths.markdown} and ${paths.json}`);
+      return 0;
+    } catch (err) {
+      if (err instanceof IncompatibleRunsError) {
+        console.error(err.message);
+        return 1;
+      }
+      throw err;
+    }
   }
 
   if (command === 'compare') {
