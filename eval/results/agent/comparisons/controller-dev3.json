@@ -1,0 +1,752 @@
+{
+  "name": "controller-dev3",
+  "generatedAt": "2026-09-17T15:04:48.519Z",
+  "runIds": [
+    "controller-dev3-eslint-r1",
+    "controller-dev3-eslint-r2",
+    "controller-dev3-eslint-r3",
+    "controller-dev3-ethereum-r1",
+    "controller-dev3-ethereum-r2",
+    "controller-dev3-ethereum-r3",
+    "controller-dev3-winston-r1",
+    "controller-dev3-winston-r2",
+    "controller-dev3-winston-r3"
+  ],
+  "manifests": [
+    {
+      "runId": "controller-dev3-eslint-r1",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-eslint-r2",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-eslint-r3",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-ethereum-r1",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-ethereum-r2",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-ethereum-r3",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-winston-r1",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-winston-r2",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    },
+    {
+      "runId": "controller-dev3-winston-r3",
+      "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+      "requestedModel": "claude-sonnet-5",
+      "requestedEffort": "high",
+      "agentCliVersion": "2.1.267 (Claude Code)",
+      "runsPerCondition": 3,
+      "conditions": [
+        "baseline",
+        "generic-orchestrated",
+        "drift-orchestrated"
+      ],
+      "cleanEnvironment": "isolated"
+    }
+  ],
+  "environmentFingerprints": [
+    "8d69d817761f3509"
+  ],
+  "caseIds": [
+    "aws-least-privilege-winston-3",
+    "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+    "gh-aw-firewall-eslint-10"
+  ],
+  "cells": {
+    "aws-least-privilege-winston-3": {
+      "baseline": {
+        "valid": 3,
+        "successes": 3,
+        "excluded": 0,
+        "medians": {
+          "gross": 2710679,
+          "uncached": 83909,
+          "output": 14986,
+          "modelCalls": 47,
+          "agentSessions": 1,
+          "toolCalls": 46,
+          "agentBroadChecks": 11,
+          "agentNarrowChecks": 0,
+          "agentBlockedChecks": 0,
+          "dependencyResearch": 5,
+          "dependencySourceAccesses": 1,
+          "changelogAccesses": 0,
+          "registryQueries": 4,
+          "uniqueFilesRead": 3,
+          "controllerChecks": 0,
+          "agentWallMs": 451291,
+          "controllerWallMs": 0,
+          "endToEndMs": 451291,
+          "costUsd": 1.0082892,
+          "grossBeforeFirstEdit": 412099,
+          "grossAfterFirstEdit": 2311738,
+          "grossInRepairSessions": 0,
+          "repairSessions": 0,
+          "filesModified": 4,
+          "medianFilesExposedPerSession": null,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 0,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 0,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 0,
+          "analysisMs": 0
+        }
+      },
+      "generic-orchestrated": {
+        "valid": 3,
+        "successes": 3,
+        "excluded": 0,
+        "medians": {
+          "gross": 2597124,
+          "uncached": 42729,
+          "output": 19775,
+          "modelCalls": 41,
+          "agentSessions": 1,
+          "toolCalls": 40,
+          "agentBroadChecks": 2,
+          "agentNarrowChecks": 4,
+          "agentBlockedChecks": 2,
+          "dependencyResearch": 7,
+          "dependencySourceAccesses": 5,
+          "changelogAccesses": 0,
+          "registryQueries": 1,
+          "uniqueFilesRead": 4,
+          "controllerChecks": 4,
+          "agentWallMs": 448753,
+          "controllerWallMs": 70035,
+          "endToEndMs": 518288,
+          "costUsd": 0.8761859999999999,
+          "grossBeforeFirstEdit": 641755,
+          "grossAfterFirstEdit": 1954334,
+          "grossInRepairSessions": 0,
+          "repairSessions": 0,
+          "filesModified": 4,
+          "medianFilesExposedPerSession": null,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 0,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 0,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 0,
+          "analysisMs": 0
+        }
+      },
+      "drift-orchestrated": {
+        "valid": 3,
+        "successes": 2,
+        "excluded": 0,
+        "medians": {
+          "gross": 3411612,
+          "uncached": 95358,
+          "output": 34911,
+          "modelCalls": 55,
+          "agentSessions": 3,
+          "toolCalls": 56,
+          "agentBroadChecks": 2,
+          "agentNarrowChecks": 2,
+          "agentBlockedChecks": 2,
+          "dependencyResearch": 15,
+          "dependencySourceAccesses": 13,
+          "changelogAccesses": 0,
+          "registryQueries": 1,
+          "uniqueFilesRead": 5,
+          "controllerChecks": 10,
+          "agentWallMs": 673386,
+          "controllerWallMs": 133526,
+          "endToEndMs": 872072,
+          "costUsd": 1.3639848,
+          "grossBeforeFirstEdit": 1178276,
+          "grossAfterFirstEdit": 2319824,
+          "grossInRepairSessions": 1929145,
+          "repairSessions": 2,
+          "filesModified": 2,
+          "medianFilesExposedPerSession": 1,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 2,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 1,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 0,
+          "analysisMs": 88531
+        }
+      }
+    },
+    "eth-ledger-bridge-keyring-ethereumjs-tx-5": {
+      "baseline": {
+        "valid": 3,
+        "successes": 3,
+        "excluded": 0,
+        "medians": {
+          "gross": 5107526,
+          "uncached": 85106,
+          "output": 26244,
+          "modelCalls": 61,
+          "agentSessions": 1,
+          "toolCalls": 63,
+          "agentBroadChecks": 12,
+          "agentNarrowChecks": 0,
+          "agentBlockedChecks": 0,
+          "dependencyResearch": 9,
+          "dependencySourceAccesses": 9,
+          "changelogAccesses": 0,
+          "registryQueries": 0,
+          "uniqueFilesRead": 2,
+          "controllerChecks": 0,
+          "agentWallMs": 699290,
+          "controllerWallMs": 0,
+          "endToEndMs": 699290,
+          "costUsd": 1.58039,
+          "grossBeforeFirstEdit": 274514,
+          "grossAfterFirstEdit": 4857037,
+          "grossInRepairSessions": 0,
+          "repairSessions": 0,
+          "filesModified": 4,
+          "medianFilesExposedPerSession": null,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 0,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 0,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 0,
+          "analysisMs": 0
+        }
+      },
+      "generic-orchestrated": {
+        "valid": 3,
+        "successes": 3,
+        "excluded": 0,
+        "medians": {
+          "gross": 6863079,
+          "uncached": 102434,
+          "output": 32309,
+          "modelCalls": 70,
+          "agentSessions": 1,
+          "toolCalls": 69,
+          "agentBroadChecks": 1,
+          "agentNarrowChecks": 10,
+          "agentBlockedChecks": 1,
+          "dependencyResearch": 15,
+          "dependencySourceAccesses": 14,
+          "changelogAccesses": 0,
+          "registryQueries": 0,
+          "uniqueFilesRead": 3,
+          "controllerChecks": 6,
+          "agentWallMs": 665064,
+          "controllerWallMs": 231979,
+          "endToEndMs": 873233,
+          "costUsd": 2.0814500000000002,
+          "grossBeforeFirstEdit": 1034379,
+          "grossAfterFirstEdit": 5131249,
+          "grossInRepairSessions": 0,
+          "repairSessions": 0,
+          "filesModified": 4,
+          "medianFilesExposedPerSession": null,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 0,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 0,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 0,
+          "analysisMs": 0
+        }
+      },
+      "drift-orchestrated": {
+        "valid": 3,
+        "successes": 2,
+        "excluded": 0,
+        "medians": {
+          "gross": 9558957,
+          "uncached": 147798,
+          "output": 39804,
+          "modelCalls": 87,
+          "agentSessions": 2,
+          "toolCalls": 87,
+          "agentBroadChecks": 2,
+          "agentNarrowChecks": 13,
+          "agentBlockedChecks": 2,
+          "dependencyResearch": 12,
+          "dependencySourceAccesses": 12,
+          "changelogAccesses": 0,
+          "registryQueries": 0,
+          "uniqueFilesRead": 5,
+          "controllerChecks": 12,
+          "agentWallMs": 1298032,
+          "controllerWallMs": 568451,
+          "endToEndMs": 2060005,
+          "costUsd": 2.7509788000000004,
+          "grossBeforeFirstEdit": 1177708,
+          "grossAfterFirstEdit": 7627010,
+          "grossInRepairSessions": 9558957,
+          "repairSessions": 2,
+          "filesModified": 4,
+          "medianFilesExposedPerSession": 15,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 1,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 0,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 1,
+          "analysisMs": 107494
+        }
+      }
+    },
+    "gh-aw-firewall-eslint-10": {
+      "baseline": {
+        "valid": 3,
+        "successes": 3,
+        "excluded": 0,
+        "medians": {
+          "gross": 9150040,
+          "uncached": 90068,
+          "output": 39986,
+          "modelCalls": 107,
+          "agentSessions": 1,
+          "toolCalls": 106,
+          "agentBroadChecks": 14,
+          "agentNarrowChecks": 3,
+          "agentBlockedChecks": 0,
+          "dependencyResearch": 11,
+          "dependencySourceAccesses": 6,
+          "changelogAccesses": 0,
+          "registryQueries": 5,
+          "uniqueFilesRead": 9,
+          "controllerChecks": 0,
+          "agentWallMs": 1552591,
+          "controllerWallMs": 0,
+          "endToEndMs": 1552591,
+          "costUsd": 2.5686964000000003,
+          "grossBeforeFirstEdit": 809315,
+          "grossAfterFirstEdit": 8339756,
+          "grossInRepairSessions": 0,
+          "repairSessions": 0,
+          "filesModified": 12,
+          "medianFilesExposedPerSession": null,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 0,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 0,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 0,
+          "analysisMs": 0
+        }
+      },
+      "generic-orchestrated": {
+        "valid": 3,
+        "successes": 3,
+        "excluded": 0,
+        "medians": {
+          "gross": 8480972,
+          "uncached": 108670,
+          "output": 37618,
+          "modelCalls": 91,
+          "agentSessions": 1,
+          "toolCalls": 90,
+          "agentBroadChecks": 3,
+          "agentNarrowChecks": 14,
+          "agentBlockedChecks": 3,
+          "dependencyResearch": 10,
+          "dependencySourceAccesses": 5,
+          "changelogAccesses": 0,
+          "registryQueries": 5,
+          "uniqueFilesRead": 11,
+          "controllerChecks": 12,
+          "agentWallMs": 1026849,
+          "controllerWallMs": 248304,
+          "endToEndMs": 1191379,
+          "costUsd": 2.4817584000000004,
+          "grossBeforeFirstEdit": 1215430,
+          "grossAfterFirstEdit": 6877498,
+          "grossInRepairSessions": 0,
+          "repairSessions": 0,
+          "filesModified": 12,
+          "medianFilesExposedPerSession": 20,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 0,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 0,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 0,
+          "analysisMs": 0
+        }
+      },
+      "drift-orchestrated": {
+        "valid": 3,
+        "successes": 3,
+        "excluded": 0,
+        "medians": {
+          "gross": 8231940,
+          "uncached": 150367,
+          "output": 54969,
+          "modelCalls": 117,
+          "agentSessions": 3,
+          "toolCalls": 114,
+          "agentBroadChecks": 3,
+          "agentNarrowChecks": 11,
+          "agentBlockedChecks": 3,
+          "dependencyResearch": 19,
+          "dependencySourceAccesses": 12,
+          "changelogAccesses": 0,
+          "registryQueries": 7,
+          "uniqueFilesRead": 11,
+          "controllerChecks": 30,
+          "agentWallMs": 1118142,
+          "controllerWallMs": 306290,
+          "endToEndMs": 1454789,
+          "costUsd": 2.717713,
+          "grossBeforeFirstEdit": 1734875,
+          "grossAfterFirstEdit": 6226475,
+          "grossInRepairSessions": 7888165,
+          "repairSessions": 2,
+          "filesModified": 11,
+          "medianFilesExposedPerSession": 15,
+          "outOfScopeRejections": 0,
+          "unitsTotal": 5,
+          "unitsDeterministic": 0,
+          "unitsSentToAgent": 1,
+          "unitsRequiringRepair": 0,
+          "unitsSkippedProtected": 3,
+          "analysisMs": 12900
+        }
+      }
+    }
+  },
+  "accuracy": [
+    {
+      "caseId": "aws-least-privilege-winston-3",
+      "counts": {
+        "baseline": {
+          "successes": 3,
+          "valid": 3
+        },
+        "generic-orchestrated": {
+          "successes": 3,
+          "valid": 3
+        },
+        "drift-orchestrated": {
+          "successes": 2,
+          "valid": 3
+        }
+      }
+    },
+    {
+      "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+      "counts": {
+        "baseline": {
+          "successes": 3,
+          "valid": 3
+        },
+        "generic-orchestrated": {
+          "successes": 3,
+          "valid": 3
+        },
+        "drift-orchestrated": {
+          "successes": 2,
+          "valid": 3
+        }
+      }
+    },
+    {
+      "caseId": "gh-aw-firewall-eslint-10",
+      "counts": {
+        "baseline": {
+          "successes": 3,
+          "valid": 3
+        },
+        "generic-orchestrated": {
+          "successes": 3,
+          "valid": 3
+        },
+        "drift-orchestrated": {
+          "successes": 3,
+          "valid": 3
+        }
+      }
+    }
+  ],
+  "accuracyTotals": {
+    "baseline": {
+      "successes": 9,
+      "valid": 9
+    },
+    "generic-orchestrated": {
+      "successes": 9,
+      "valid": 9
+    },
+    "drift-orchestrated": {
+      "successes": 7,
+      "valid": 9
+    }
+  },
+  "failures": [
+    {
+      "trialId": "controller-dev3-winston-r3/aws-least-privilege-winston-3/drift-orchestrated/3",
+      "caseId": "aws-least-privilege-winston-3",
+      "condition": "Drift orch.",
+      "repetition": 3,
+      "reasons": [
+        "build_failure",
+        "hidden_regression_failure"
+      ],
+      "details": [
+        "check failed: compile (tsc) — > tsc / node_modules/logform/index.d.ts(14,4): error TS1023: An index signature parameter type must be 'string' or 'number'.",
+        "hidden test failed: logger-behaviour — the project does not typecheck: / node_modules/logform/index.d.ts(14,4): error TS1023: An index signature parameter type must be 'string' or 'number'."
+      ],
+      "termination": "no-progress"
+    },
+    {
+      "trialId": "controller-dev3-ethereum-r2/eth-ledger-bridge-keyring-ethereumjs-tx-5/drift-orchestrated/2",
+      "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+      "condition": "Drift orch.",
+      "repetition": 2,
+      "reasons": [
+        "prohibited_workaround"
+      ],
+      "details": [
+        "workaround rule: Suppressing the type errors in the keyring with a directive is not a migration of it (the file's pre-existing ts-expect-error lines on the ethereumjs-tx v1 branch stay). Narrowed on 2026-09-16 from also forbidding any-typing, for the reason recorded on the winston case. (added in: src/ledger-keyring.ts)"
+      ],
+      "termination": "verified"
+    }
+  ],
+  "pairwise": [
+    {
+      "label": "Generic vs Raw",
+      "reference": "baseline",
+      "treatment": "generic-orchestrated",
+      "pairedCases": 3,
+      "caseGrossChangesPct": [
+        {
+          "caseId": "aws-least-privilege-winston-3",
+          "changePct": -4.189171790536617
+        },
+        {
+          "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+          "changePct": 34.371885723146576
+        },
+        {
+          "caseId": "gh-aw-firewall-eslint-10",
+          "changePct": -7.312186613391858
+        }
+      ],
+      "medianCaseGrossChangePct": -4.189171790536617,
+      "medianCaseUncachedChangePct": 20.360491622212294,
+      "medianCaseAfterFirstEditChangePct": -15.460402519662697,
+      "medianCaseModelCallsChangePct": -12.765957446808507,
+      "successes": {
+        "reference": 9,
+        "treatment": 9,
+        "valid": 9
+      },
+      "ci95MedianGrossChangePct": {
+        "low": -39.88299610540385,
+        "high": 82.34940396852596,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      }
+    },
+    {
+      "label": "Drift vs Raw",
+      "reference": "baseline",
+      "treatment": "drift-orchestrated",
+      "pairedCases": 3,
+      "caseGrossChangesPct": [
+        {
+          "caseId": "aws-least-privilege-winston-3",
+          "changePct": 25.85820748233192
+        },
+        {
+          "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+          "changePct": 87.15434830875066
+        },
+        {
+          "caseId": "gh-aw-firewall-eslint-10",
+          "changePct": -10.033835917657186
+        }
+      ],
+      "medianCaseGrossChangePct": 25.85820748233192,
+      "medianCaseUncachedChangePct": 66.94830572456367,
+      "medianCaseAfterFirstEditChangePct": 0.3497801221418628,
+      "medianCaseModelCallsChangePct": 17.021276595744684,
+      "successes": {
+        "reference": 9,
+        "treatment": 7,
+        "valid": 9
+      },
+      "ci95MedianGrossChangePct": {
+        "low": -32.50875540075907,
+        "high": 89.23808709306897,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      }
+    },
+    {
+      "label": "Drift vs Generic",
+      "reference": "generic-orchestrated",
+      "treatment": "drift-orchestrated",
+      "pairedCases": 3,
+      "caseGrossChangesPct": [
+        {
+          "caseId": "aws-least-privilege-winston-3",
+          "changePct": 31.361151797141762
+        },
+        {
+          "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+          "changePct": 39.28088253100395
+        },
+        {
+          "caseId": "gh-aw-firewall-eslint-10",
+          "changePct": -2.9363615396914455
+        }
+      ],
+      "medianCaseGrossChangePct": 31.361151797141762,
+      "medianCaseUncachedChangePct": 44.2860768885331,
+      "medianCaseAfterFirstEditChangePct": 18.70151161469842,
+      "medianCaseModelCallsChangePct": 28.57142857142858,
+      "successes": {
+        "reference": 9,
+        "treatment": 7,
+        "valid": 9
+      },
+      "ci95MedianGrossChangePct": {
+        "low": -29.030467293841454,
+        "high": 88.0340873317587,
+        "iterations": 2000,
+        "seed": 20260916,
+        "method": "two-level percentile bootstrap: cases resampled with replacement, then each condition's trials within each drawn case resampled with replacement"
+      }
+    }
+  ],
+  "exclusions": [],
+  "setAsideAttempts": [],
+  "positions": {
+    "Raw": [
+      3,
+      3,
+      3
+    ],
+    "Generic orch.": [
+      3,
+      3,
+      3
+    ],
+    "Drift orch.": [
+      3,
+      3,
+      3
+    ]
+  },
+  "gate": {
+    "driftAccuracyNotBelowRaw": false,
+    "driftAccuracyNotBelowRawInAnyCase": false,
+    "driftMedianGrossReductionVsRawPct": -25.85820748233192,
+    "meetsThirtyPercentTarget": false
+  },
+  "notes": [
+    "Development cases only (they informed the architecture). Nothing here is held-out evidence or a public claim.",
+    "Tiny sample: 3 case(s). Bootstrap intervals are shown but are wide by construction.",
+    "Tokens are provider-reported. For orchestrated conditions every session is summed (open, unit and repair sessions); controller verification is not model usage and is not in any token figure.",
+    "Token changes are case-level medians: per case, treatment median / reference median - 1; then the median across cases. Negative is fewer tokens.",
+    "Tokens before/after first edit: main-model usage up to and including the call that issued the first file edit across all sessions in order, and everything after it.",
+    "Agent broad checks: whole-project build/typecheck/lint/test commands the agent issued (shell commands only), classified by the product classifier for every condition. In orchestrated conditions the verification guard refuses them; refused attempts are counted separately and did not run. The raw baseline has no guard.",
+    "Dependency research: Read/Grep/Glob/shell accesses to node_modules/<dependency>, changelog/migration files, and registry queries.",
+    "Agent wall: time inside agent sessions. Controller wall: pre-upgrade baseline measurement + controller verification. End-to-end: from the start of Drift analysis (or the first session) to the end of the controller."
+  ]
+}

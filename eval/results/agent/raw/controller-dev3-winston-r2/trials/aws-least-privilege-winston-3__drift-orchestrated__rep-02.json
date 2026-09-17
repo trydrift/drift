@@ -1,0 +1,989 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "controller-dev3-winston-r2/aws-least-privilege-winston-3/drift-orchestrated/2",
+  "runId": "controller-dev3-winston-r2",
+  "suite": "agent-upgrade-v1",
+  "caseId": "aws-least-privilege-winston-3",
+  "caseHash": "2139e9a225088e62a7e1825ce1e3aa60ba88a809c2fc174e8b1007e884758a5b",
+  "condition": "drift-orchestrated",
+  "repetition": 2,
+  "scheduleIndex": 2,
+  "schedule": {
+    "design": "williams-v1",
+    "block": 1,
+    "row": 1,
+    "position": 2
+  },
+  "metadata": {
+    "repository": "https://github.com/functionalone/aws-least-privilege.git",
+    "baseCommit": "6273006ae69d7570fbf6c79fc67a8b37c8fe3c65",
+    "startCommit": "0133e946c179e8c69417748858585e7afd47b464",
+    "startTreeHash": "ce4dc754e7e55ae41be020b2fd4af4a953b5b254",
+    "driftCommit": "1bb4379190fe56397db55f6e53db2f6f1aa3e556",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "winston",
+      "fromVersion": "2.4.4",
+      "toVersion": "3.13.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch",
+        "ArtifactComments",
+        "ArtifactData"
+      ],
+      "cleanEnvironment": "isolated",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "environment": {
+        "tools": [
+          "Artifact",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "DesignSync",
+          "Edit",
+          "EnterWorktree",
+          "ExitWorktree",
+          "ListAgents",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "RemoteTrigger",
+          "ReportFindings",
+          "ScheduleWakeup",
+          "SendMessage",
+          "Skill",
+          "Task",
+          "TaskOutput",
+          "TaskStop",
+          "ToolSearch",
+          "Write"
+        ],
+        "mcpServers": [],
+        "skills": [
+          "artifact-capabilities",
+          "artifact-diagramming",
+          "batch",
+          "claude-api",
+          "code-review",
+          "dataviz",
+          "debug",
+          "design",
+          "design-sync",
+          "doctor",
+          "fewer-permission-prompts",
+          "loop",
+          "run",
+          "run-skill-generator",
+          "schedule",
+          "simplify",
+          "slides",
+          "update-config",
+          "verify"
+        ],
+        "slashCommands": [
+          "__remote-workflow",
+          "advisor",
+          "agents",
+          "artifact-capabilities",
+          "artifact-diagramming",
+          "auto-mode-setup",
+          "autocompact",
+          "batch",
+          "claude-api",
+          "clear",
+          "code-review",
+          "color",
+          "compact",
+          "config",
+          "context",
+          "dataviz",
+          "debug",
+          "design",
+          "design-consent",
+          "design-revoke",
+          "design-sync",
+          "doctor",
+          "effort",
+          "extra-usage",
+          "fast",
+          "fewer-permission-prompts",
+          "goal",
+          "heapdump",
+          "import",
+          "init",
+          "insights",
+          "list-agents",
+          "loop",
+          "mcp",
+          "model",
+          "recap",
+          "reload-plugins",
+          "reload-skills",
+          "rename",
+          "run",
+          "run-skill-generator",
+          "schedule",
+          "security-review",
+          "simplify",
+          "skill-doctor",
+          "slides",
+          "team-onboarding",
+          "ultrareview",
+          "update-config",
+          "usage",
+          "usage-credits",
+          "verify",
+          "workflow-launch-exec"
+        ],
+        "agents": [
+          "Explore",
+          "Plan",
+          "claude",
+          "claude-code-guide",
+          "general-purpose",
+          "statusline-setup"
+        ],
+        "plugins": [],
+        "memoryPaths": [],
+        "outputStyle": "default",
+        "apiKeySource": "none",
+        "fingerprint": "8d69d817761f3509"
+      },
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--setting-sources",
+        "",
+        "--mcp-config",
+        "{\"mcpServers\":{}}",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "ArtifactComments",
+        "ArtifactData",
+        "--settings",
+        "{\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash\",\"hooks\":[{\"type\":\"command\",\"command\":\"\\\"/Users/rudy/.nvm/versions/node/v24.20.0/bin/node\\\" \\\"/Users/rudy/Desktop/Developer/Drift/dist/agents/verification-guard-hook.js\\\"\"}]}]}}"
+      ]
+    },
+    "startedAt": "2026-09-17T12:48:55.719Z",
+    "endedAt": "2026-09-17T13:04:44.574Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "6f353451afd6bba6635d671d131c6b751f96a33ce0d61d5e0a67a815cb3db23d",
+    "promptHash": "1c42f55ea59dec26d8fd311dbea4dc40db4698e003bc3757bb07faa6857005c6",
+    "promptChars": 26532
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": 45496,
+    "driftCommand": "runPipeline (dry run) → applyDeterministicCommits → runRemediationController",
+    "driftStatus": "completed",
+    "driftFailure": null,
+    "driftPlan": {
+      "breakingChanges": 74,
+      "impactSites": 9,
+      "impactFiles": [
+        "package.json",
+        "src/lib/logger.ts"
+      ],
+      "symbols": [
+        ".unhandleExceptions",
+        "AbstractConfigSet",
+        "AbstractConfigSetColors",
+        "AbstractConfigSetLevels",
+        "CLILoggingLevel",
+        "CliConfigSetColors",
+        "CliConfigSetLevels",
+        "ConsoleTransportInstance",
+        "ConsoleTransportOptions",
+        "ContainerInstance",
+        "ContainerStatic",
+        "DailyRotateFileTransportInstance",
+        "DailyRotateFileTransportOptions",
+        "Exception",
+        "ExceptionAllInfo",
+        "ExceptionOsInfo",
+        "ExceptionProcessInfo",
+        "ExceptionTrace",
+        "FileTransportInstance",
+        "FileTransportOptions",
+        "GenericNetworkTransportOptions",
+        "GenericTextTransportOptions",
+        "GenericTransportOptions",
+        "HttpTransportInstance",
+        "HttpTransportOptions",
+        "Logger.paddings",
+        "LoggerInstance",
+        "LoggerOptions.filters",
+        "LoggerOptions.rewriters",
+        "LoggerStatic",
+        "MemoryTransportInstance",
+        "MemoryTransportOptions",
+        "MetadataFilter",
+        "MetadataRewriter",
+        "NPMLoggingLevel",
+        "Node.js",
+        "NpmConfigSetColors",
+        "NpmConfigSetLevels",
+        "ProfileHandler",
+        "SyslogConfigSetColors",
+        "SyslogConfigSetLevels",
+        "SyslogLoggingLevel",
+        "TransportInstance",
+        "TransportOptions",
+        "TransportStatic",
+        "Transports",
+        "WebhookTransportInstance",
+        "WebhookTransportOptions",
+        "Winston",
+        "WinstonModuleTransportOptions",
+        "WinstonModuleTrasportInstance",
+        "default",
+        "default.AbstractConfigSet",
+        "default.AbstractConfigSetColors",
+        "default.AbstractConfigSetLevels",
+        "default.CLILoggingLevel",
+        "default.CliConfigSetColors",
+        "default.CliConfigSetLevels",
+        "default.Config",
+        "default.ConsoleTransportInstance",
+        "default.ConsoleTransportOptions",
+        "default.ContainerInstance",
+        "default.ContainerStatic",
+        "default.DailyRotateFileTransportInstance",
+        "default.DailyRotateFileTransportOptions",
+        "default.Exception",
+        "default.ExceptionAllInfo",
+        "default.ExceptionOsInfo",
+        "default.ExceptionProcessInfo",
+        "default.ExceptionTrace",
+        "default.FileTransportInstance",
+        "default.FileTransportOptions",
+        "default.GenericNetworkTransportOptions",
+        "default.GenericTextTransportOptions",
+        "default.GenericTransportOptions",
+        "default.HttpTransportInstance",
+        "default.HttpTransportOptions",
+        "default.LoggerInstance",
+        "default.LoggerOptions.filters",
+        "default.LoggerOptions.rewriters",
+        "default.LoggerStatic",
+        "default.MemoryTransportInstance",
+        "default.MemoryTransportOptions",
+        "default.MetadataFilter",
+        "default.MetadataRewriter",
+        "default.NPMLoggingLevel",
+        "default.NpmConfigSetColors",
+        "default.NpmConfigSetLevels",
+        "default.ProfileHandler",
+        "default.SyslogConfigSetColors",
+        "default.SyslogConfigSetLevels",
+        "default.SyslogLoggingLevel",
+        "default.TransportInstance",
+        "default.TransportOptions",
+        "default.TransportStatic",
+        "default.Transports",
+        "default.WebhookTransportInstance",
+        "default.WebhookTransportOptions",
+        "default.Winston",
+        "default.WinstonModuleTransportOptions",
+        "default.WinstonModuleTrasportInstance",
+        "filters",
+        "humanReadableUnhandledException",
+        "options.transport",
+        "require",
+        "rewriters",
+        "winston",
+        "winston.Container",
+        "winston.Container.prototype.add",
+        "winston.Logger",
+        "winston.Logger.add",
+        "winston.common.log",
+        "winston.common.pad",
+        "winston.common.serialized",
+        "winston.exception",
+        "winston.hash",
+        "winston.paddings",
+        "winston.setLevels",
+        "winston.transports.Console",
+        "winston.transports.Memory"
+      ],
+      "verdict": "n/a",
+      "verificationStatus": "failed",
+      "evidenceSources": 7
+    }
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "controller:verified",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 59,
+    "durationMs": 673386,
+    "apiDurationMs": 366032,
+    "finalMessage": "Controller: verified — the checks pass after 2 repair round(s)\n\nClean tree, no conflicts. Also verified `npm ls` shows no invalid/missing entries.\n\n## Summary\n\nThe remaining `npm run compile` failure (`logform/index.d.ts:14 TS1023`) was caused by `typescript@3.0.3` (devDependency, unrelated to the winston bump itself but a peer type-checker) predating support for `symbol` in index signatures — a syntax winston 3.x's `logform` dependency's type declarations use. This isn't a winston API issue; it's a toolchain compatibility gap exposed by the upgrade.\n\nFix: bumped `typescript` to `^4.9.5` (first widely-used version supporting symbol index signatures, added in TS 4.4). That in turn exposed a second, cascading conflict: `@types/node@6.0.117`'s legacy `IteratorResult` forward-declare shim collided with the modern TS lib's generic `IteratorResult` type (`TS2300: Duplicate identifier`). Bumped `@types/node` to `^9.6.61` — the smallest available version without that legacy shim — to resolve it.\n\nVerified with `tsc --noEmit` directly (not the full `npm run compile`, per the no-broad-verification rule): exits clean, 0 errors.\n\nChanged only `package.json` and `package-lock.json`, both in scope. `src/lib/logger.ts` and `tsconfig.json` were untouched — the fix was purely in the dev toolchain, not the winston usage itself.",
+    "permissionDenials": 2
+  },
+  "usage": {
+    "grossInputTokens": 3064164,
+    "uncachedInputTokens": 79173,
+    "inputTokens": 9934,
+    "cacheReadTokens": 2984991,
+    "cacheCreationTokens": 69239,
+    "outputTokens": 28723,
+    "modelCalls": 55,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 9824,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 52
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 110,
+        "cacheReadTokens": 2984991,
+        "cacheCreationTokens": 69239,
+        "outputTokens": 28671
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 3054340,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 1.1709682000000001
+  },
+  "tools": {
+    "toolCalls": 56,
+    "byTool": {
+      "Read": 9,
+      "Bash": 44,
+      "Edit": 3
+    },
+    "fileReads": 9,
+    "uniqueFilesRead": 8,
+    "searches": 0,
+    "shellCommands": 44,
+    "edits": 3,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 3,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 2,
+    "otherFiles": 0,
+    "linesAdded": 206,
+    "linesDeleted": 53,
+    "changedFiles": [
+      "package-lock.json",
+      "package.json",
+      "src/lib/logger.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/package-lock.json b/package-lock.json\nindex 557ff22..2eb9df6 100644\n--- a/package-lock.json\n+++ b/package-lock.json\n@@ -24,7 +24,7 @@\n         \"@types/lodash\": \"^4.14.116\",\n         \"@types/mocha\": \"^5.2.5\",\n         \"@types/nock\": \"^9.3.0\",\n-        \"@types/node\": \"^6.0.117\",\n+        \"@types/node\": \"^9.6.61\",\n         \"@types/winston\": \"^2.4.4\",\n         \"chai\": \"^4.1.2\",\n         \"coveralls\": \"^3.0.2\",\n@@ -36,7 +36,7 @@\n         \"standard-version\": \"^4.4.0\",\n         \"ts-node\": \"^7.0.1\",\n         \"tslint\": \"^5.11.0\",\n-        \"typescript\": \"^3.0.3\"\n+        \"typescript\": \"^4.9.5\"\n       },\n       \"engines\": {\n         \"node\": \">=6.10.0\"\n@@ -230,10 +230,11 @@\n       }\n     },\n     \"node_modules/@types/node\": {\n-      \"version\": \"6.0.117\",\n-      \"resolved\": \"https://registry.npmjs.org/@types/node/-/node-6.0.117.tgz\",\n-      \"integrity\": \"sha512-sihk0SnN8PpiS5ihu5xJQ5ddnURNq4P+XPmW+nORlKkHy21CoZO/IVHK/Wq/l3G8fFW06Fkltgnqx229uPlnRg==\",\n-      \"dev\": true\n+      \"version\": \"9.6.61\",\n+      \"resolved\": \"https://registry.npmjs.org/@types/node/-/node-9.6.61.tgz\",\n+      \"integrity\": \"sha512-/aKAdg5c8n468cYLy2eQrcR5k6chlbNwZNGUj3TboyPa2hcO2QAJcfymlqPzMiRj8B6nYKXjzQz36minFE0RwQ==\",\n+      \"dev\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/@types/triple-beam\": {\n       \"version\": \"1.3.5\",\n@@ -2731,6 +2732,7 @@\n       \"integrity\": \"sha512-GrTZLRpmp6wIC2ztrWW9MjjTgSKccffgFagbNDOX95/dcjEcYZibYTeaOntySQLcdw1ztBoFkviiUvTMbb9MYg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"dependencies\": {\n         \"kind-of\": \"^3.0.2\",\n@@ -2746,6 +2748,7 @@\n       \"integrity\": \"sha512-S2Hw0TtNkMJhIabBwIojKL9YHO5T0n5eNqWJ7Lrlel/zDbftQpxpapi8tZs3X1HWa+u+QeydGmzzNU0m09+Rcg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause OR MIT\",\n       \"engines\": {\n         \"node\": \">=0.4.2\"\n       }\n@@ -2755,6 +2758,7 @@\n       \"integrity\": \"sha512-wFUFA5bg5dviipbQQ32yOQhl6gcJaJXiHE7dvR8VYPG97+J/GNC5FKGepKdEDUFeXRzDxPF1X/Btc8L+v7oqIQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -2764,6 +2768,7 @@\n       \"integrity\": \"sha512-P009oYkeHyU742iSZJzZZywj4QRJdnTWffaKuJQLablCZ1uz6/cW4yaRgcDaoQ+uwOxxnt0gRUcwfsNP2ri0gw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"default-require-extensions\": \"^2.0.0\"\n       },\n@@ -2775,13 +2780,15 @@\n       \"version\": \"1.0.0\",\n       \"integrity\": \"sha512-Xg+9RwCg/0p32teKdGMPTPnVXKD0w3DfHnFTficozsAgsvq2XenPJq/MYpzzQ/v8zrOyJn6Ds39VA4JIDwFfqw==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/arrify\": {\n       \"version\": \"1.0.1\",\n       \"integrity\": \"sha512-3CYzex9M9FGQjCGMGyi6/31c8GJbgb0qGyrx5HWxPd0aCwh4cB2YjMb2Xf9UuoogrMrlO9cTqnB5rI5GHZTcUA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -2790,19 +2797,22 @@\n       \"version\": \"1.5.2\",\n       \"integrity\": \"sha512-nSVgobk4rv61R9PUSDtYt7mPVB2olxNR5RWJcAsH676/ef11bUZwvu7+RGYrYauVdDPcO519v68wRhXQtxsV9w==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/balanced-match\": {\n       \"version\": \"1.0.0\",\n       \"integrity\": \"sha512-9Y0g0Q8rmSt+H33DfKv7FOc3v+iRI+o1lbzt8jGcIosYW37IIW/2XVYq5NPdmaD5NQ59Nk26Kl/vZbwW9Fr8vg==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/brace-expansion\": {\n       \"version\": \"1.1.11\",\n       \"integrity\": \"sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"balanced-match\": \"^1.0.0\",\n         \"concat-map\": \"0.0.1\"\n@@ -2813,6 +2823,7 @@\n       \"integrity\": \"sha512-wxXCdllwGhI2kCC0MnvTGYTMvnVZTvqgypkiTI8Pa5tcz2i6VqsqwYGgqwXji+4RgCzms6EajE4IxiUH6HH8nQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -2822,6 +2833,7 @@\n       \"integrity\": \"sha512-tTfemGmFWe7KZ3KN6VsSgQZbd9Bgo7A40wlp4PTsJJvFu4YAnEC5YnfdiKq6Vh2i9XJLnA9n8OXD46orVpnPMw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"make-dir\": \"^1.0.0\",\n         \"md5-hex\": \"^2.0.0\",\n@@ -2837,6 +2849,7 @@\n       \"integrity\": \"sha512-wzLkDa4K/mzI1OSITC+DUyjgIl/ETNHE9QvYgy6J6Jvqyyz4C0Xfd+lQhb19sX2jMpZV4IssUn0VDVmglV+s4g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n@@ -2847,6 +2860,7 @@\n       \"integrity\": \"sha512-Baz3aNe2gd2LP2qk5U+sDk/m4oSuwSDcBfayTCTBoWpfIGO5XFxPmjILQII4NGiZjD6DoDI6kf7gKaxkf7s3VQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"dependencies\": {\n         \"align-text\": \"^0.1.3\",\n@@ -2861,6 +2875,7 @@\n       \"integrity\": \"sha512-GIOYRizG+TGoc7Wgc1LiOTLare95R3mzKgoln+Q/lE4ceiYH19gUpl0l0Ffq4lJDEf3FxujMe6IBfOCs7pfqNA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"optional\": true,\n       \"dependencies\": {\n         \"center-align\": \"^0.1.1\",\n@@ -2873,6 +2888,7 @@\n       \"integrity\": \"sha512-xSBsCeh+g+dinoBv3GAOWM4LcVVO68wLXRanibtBSdUvkGWQRGeE9P7IwU9EmDDi4jA6L44lz15CGMwdw9N5+Q==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT/X11\",\n       \"optional\": true,\n       \"engines\": {\n         \"node\": \">=0.4.0\"\n@@ -2883,6 +2899,7 @@\n       \"integrity\": \"sha512-RpAVKQA5T63xEj6/giIbUEtZwJ4UFIc3ZtvEkiaUERylqe8xb5IvqcgOurZLahv93CLKfxcw5YI+DZcUBRyLXA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -2891,25 +2908,29 @@\n       \"version\": \"1.0.1\",\n       \"integrity\": \"sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/concat-map\": {\n       \"version\": \"0.0.1\",\n       \"integrity\": \"sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/convert-source-map\": {\n       \"version\": \"1.5.1\",\n       \"integrity\": \"sha512-LNHI/Ll1UqBTGhrR6vMhtVZmX4kjYdCJUjIM6Ydp7/oJ5w1C0MKrzELuUAmMlU0eKwBGx6PaO0TRZ/KDXAFTBg==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/cross-spawn\": {\n       \"version\": \"4.0.2\",\n       \"integrity\": \"sha512-yAXz/pA1tD8Gtg2S98Ekf/sewp3Lcp3YoFKJ4Hkp5h5yLWnKVTDU0kwjKJ8NDCYcfTLfyGkzTikst+jWypT1iA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"lru-cache\": \"^4.0.1\",\n         \"which\": \"^1.2.9\"\n@@ -2920,6 +2941,7 @@\n       \"integrity\": \"sha512-OX8XqP7/1a9cqkxYw2yXss15f26NKWBpDXQd0/uK/KPqdQhxbPa994hnzjcE2VqQpDslf55723cKPUOGSmMY3g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"ms\": \"2.0.0\"\n       }\n@@ -2929,6 +2951,7 @@\n       \"integrity\": \"sha512-gV/pe1YIaKNgLYnd1g9VNW80tcb7oV5qvNUxG7NM8rbDpnl6RGunzlAtlGSb0wEs3nesu2vHNiX9TSsZ+Y+RjA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -2938,6 +2961,7 @@\n       \"integrity\": \"sha512-z2S+W9X73hAUUki+N+9Za2lBlun89zigOyGrsax+KUQ6wKW4ZoWpEYBkGhQjwAjjDCkWxhY0VKEhk8wzY7F5cA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -2947,6 +2971,7 @@\n       \"integrity\": \"sha512-B0n2zDIXpzLzKeoEozorDSa1cHc1t0NjmxP0zuAxbizNU2MBqYJJKYXrrFdKuQliojXynrxgd7l4ahfg/+aA5g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"strip-bom\": \"^3.0.0\"\n       },\n@@ -2959,6 +2984,7 @@\n       \"integrity\": \"sha512-7dFHNmqeFSEt2ZBsCriorKnn3Z2pj+fd9kmI6QoWw4//DL+icEBfc0U7qJCisqrTsKTjw4fNFy2pW9OqStD84g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"is-arrayish\": \"^0.2.1\"\n       }\n@@ -2967,13 +2993,15 @@\n       \"version\": \"4.1.1\",\n       \"integrity\": \"sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/execa\": {\n       \"version\": \"0.7.0\",\n       \"integrity\": \"sha512-RztN09XglpYI7aBBrJCPW95jEH7YF1UEPOoX9yDhUTPdp7mK+CQvnLTuD10BNXZ3byLTu2uehZ8EcKT/4CGiFw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"cross-spawn\": \"^5.0.1\",\n         \"get-stream\": \"^3.0.0\",\n@@ -2992,6 +3020,7 @@\n       \"integrity\": \"sha512-pTgQJ5KC0d2hcY8eyL1IzlBPYjTkyH72XRZPnLyKus2mBfNjQs3klqbJU2VILqZryAZUt9JOb3h/mWMy23/f5A==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"lru-cache\": \"^4.0.1\",\n         \"shebang-command\": \"^1.2.0\",\n@@ -3003,6 +3032,7 @@\n       \"integrity\": \"sha512-LDUY6V1Xs5eFskUVYtIwatojt6+9xC9Chnlk/jYOOvn3FAFfSaWddxahDGyNHh0b2dMXa6YW2m0tk8TdVaXHlA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"commondir\": \"^1.0.1\",\n         \"make-dir\": \"^1.0.0\",\n@@ -3017,6 +3047,7 @@\n       \"integrity\": \"sha512-1yD6RmLI1XBfxugvORwlck6f75tYL+iR0jqwsOrOxMZyGYqUuDhJ0l4AXdO1iX/FTs9cBAMEk1gWSEx1kSbylg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"locate-path\": \"^3.0.0\"\n       },\n@@ -3029,6 +3060,7 @@\n       \"integrity\": \"sha512-3TOY+4TKV0Ml83PXJQY+JFQaHNV38lzQDIzzXYg1kWdBLenGgoZhAs0CKgzI31vi2pWEpQMq/Yi4bpKwCPkw7g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"cross-spawn\": \"^4\",\n         \"signal-exit\": \"^3.0.0\"\n@@ -3038,19 +3070,22 @@\n       \"version\": \"1.0.0\",\n       \"integrity\": \"sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/get-caller-file\": {\n       \"version\": \"1.0.3\",\n       \"integrity\": \"sha512-3t6rVToeoZfYSGd8YoLFR2DJkiQrIiUrGcjvFX2mDw3bn6k2OtwHN0TNCLbBO+w8qTvimhDkv+LSscbJY1vE6w==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/get-stream\": {\n       \"version\": \"3.0.0\",\n       \"integrity\": \"sha512-GlhdIUuVakc8SJ6kK0zAFbiGzRFzNnY4jUuEbV9UROo4Y+0Ny4fjvcZFVTeDA4odpFyOQzaw6hXukJSq/f28sQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3058,9 +3093,9 @@\n     \"node_modules/nyc/node_modules/glob\": {\n       \"version\": \"7.1.2\",\n       \"integrity\": \"sha512-MJTUg1kjuLeQCJ+ccE4Vpa6kKVXkPYJ2mOCQyUuKLcLQsdrMCpBPUi8qVE6+YuaJkozeA9NusTAw3hLr8Xe5EQ==\",\n-      \"deprecated\": \"Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"fs.realpath\": \"^1.0.0\",\n         \"inflight\": \"^1.0.4\",\n@@ -3078,6 +3113,7 @@\n       \"integrity\": \"sha512-9x6DLUuW+ROFdMTII9ec9t/FK8va6kYcC8/LggumssLM8kNv7IdFl3VrNUqgir2tJuBVxBga1QBoRziZacO5Zg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"engines\": {\n         \"node\": \">=0.4.0\"\n       }\n@@ -3087,6 +3123,7 @@\n       \"integrity\": \"sha512-yrsPfXULrvTP3Aw+zLpett0LUyv2PS/k1jj2UCpYkFElPhMEhspxrCAl4hKGt+vyDjvpxleyYUPF4AMSjCdnhQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"async\": \"^1.4.0\",\n         \"optimist\": \"^0.6.1\",\n@@ -3107,6 +3144,7 @@\n       \"integrity\": \"sha512-Y8nIfcb1s/7DcobUz1yOO1GSp7gyL+D9zLHDehT7iRESqGSxjJ448Sg7rvfgsRJCnKLdSl11uGf0s9X80cH0/A==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"dependencies\": {\n         \"amdefine\": \">=0.0.4\"\n       },\n@@ -3119,6 +3157,7 @@\n       \"integrity\": \"sha512-sKJf1+ceQBr4SMkvQnBDNDtf4TXpVhVGateu0t918bl30FnbE2m4vNLX+VWe/dpjlb+HugGYzW7uQXH98HPEYw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3127,13 +3166,15 @@\n       \"version\": \"2.7.1\",\n       \"integrity\": \"sha512-7T/BxH19zbcCTa8XkMlbK5lTo1WtgkFi3GvdWEyNuc4Vex7/9Dqbnpsf4JMydcfj9HCg4zUWFTL3Za6lapg5/w==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/imurmurhash\": {\n       \"version\": \"0.1.4\",\n       \"integrity\": \"sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.8.19\"\n       }\n@@ -3141,9 +3182,9 @@\n     \"node_modules/nyc/node_modules/inflight\": {\n       \"version\": \"1.0.6\",\n       \"integrity\": \"sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==\",\n-      \"deprecated\": \"This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"once\": \"^1.3.0\",\n         \"wrappy\": \"1\"\n@@ -3153,13 +3194,15 @@\n       \"version\": \"2.0.3\",\n       \"integrity\": \"sha512-x00IRNXNy63jwGkJmzPigoySHbaqpNuzKbBOmzK+g2OdZpQ9w+sxCN+VSB3ja7IAge2OP2qpfxTjeNcyjmW1uw==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/invert-kv\": {\n       \"version\": \"1.0.0\",\n       \"integrity\": \"sha512-xgs2NH9AE66ucSq4cNG1nhSFghr5l6tdL15Pk+jl46bmmBapgoaY/AacXyaDznAqmGL99TiLSQgO/XazFSKYeQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3168,13 +3211,15 @@\n       \"version\": \"0.2.1\",\n       \"integrity\": \"sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/is-buffer\": {\n       \"version\": \"1.1.6\",\n       \"integrity\": \"sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true\n     },\n     \"node_modules/nyc/node_modules/is-builtin-module\": {\n@@ -3182,6 +3227,7 @@\n       \"integrity\": \"sha512-C2wz7Juo5pUZTFQVer9c+9b4qw3I5T/CHQxQyhVu7BJel6C22FmsLIWsdseYyOw6xz9Pqy9eJWSkQ7+3iN1HVw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"builtin-modules\": \"^1.0.0\"\n       },\n@@ -3194,6 +3240,7 @@\n       \"integrity\": \"sha512-VHskAKYM8RfSFXwee5t5cbN5PZeq1Wrh6qd5bkyiXIf6UQcN6w/A0eXM9r6t8d+GYOh+o6ZhiEnb88LN/Y8m2w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3203,6 +3250,7 @@\n       \"integrity\": \"sha512-uQPm8kcs47jx38atAcWTVxyltQYoPT68y9aWYdV6yWXSyW8mzSat0TL6CiWdZeCdF3KrAvpVtnHbTv4RN+rqdQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3211,13 +3259,15 @@\n       \"version\": \"2.0.0\",\n       \"integrity\": \"sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/istanbul-lib-coverage\": {\n       \"version\": \"2.0.1\",\n       \"integrity\": \"sha512-nPvSZsVlbG9aLhZYaC3Oi1gT/tpyo3Yt5fNyf6NmcKIayz4VV/txxJFFKAK/gU4dcNn8ehsanBbVHVl0+amOLA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"engines\": {\n         \"node\": \">=6\"\n       }\n@@ -3227,6 +3277,7 @@\n       \"integrity\": \"sha512-ufiZoiJ8CxY577JJWEeFuxXZoMqiKpq/RqZtOAYuQLvlkbJWscq9n3gc4xrCGH9n4pW0qnTxOz1oyMmVtk8E1w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"dependencies\": {\n         \"append-transform\": \"^1.0.0\"\n       },\n@@ -3239,6 +3290,7 @@\n       \"integrity\": \"sha512-pXYOWwpDNc5AHIY93WjFTuxzkDOOZ7B8eSa0cBHTmTnKRst5ccc/xBfWu/5wcNJqB6/Qy0lDMhpn+Uy0qyyUjA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"dependencies\": {\n         \"istanbul-lib-coverage\": \"^2.0.1\",\n         \"make-dir\": \"^1.3.0\",\n@@ -3253,6 +3305,7 @@\n       \"integrity\": \"sha512-30l40ySg+gvBLcxTrLzR4Z2XTRj3HgRCA/p2rnbs/3OiTaoj054gAbuP5DcLOtwqmy4XW8qXBHzrmP2/bQ9i3A==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"dependencies\": {\n         \"debug\": \"^3.1.0\",\n         \"istanbul-lib-coverage\": \"^2.0.1\",\n@@ -3269,6 +3322,7 @@\n       \"integrity\": \"sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3278,6 +3332,7 @@\n       \"integrity\": \"sha512-d2YRSnAOHHb+6vMc5qjJEyPN4VapkgUMhKlMmr3BzKdMDWdJbyYGEi/7m5AjDjkvRRTjs68ttPRZ7W2jBZ31SQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"dependencies\": {\n         \"handlebars\": \"^4.0.11\"\n       },\n@@ -3289,13 +3344,15 @@\n       \"version\": \"1.0.2\",\n       \"integrity\": \"sha512-mrqyZKfX5EhL7hvqcV6WG1yYjnjeuYDzDhhcAAUrq8Po85NBQBJP+ZDUT75qZQ98IkUoBqdkExkukOU7Ts2wrw==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/kind-of\": {\n       \"version\": \"3.2.2\",\n       \"integrity\": \"sha512-NOW9QQXMoZGg/oqnVNoNTTIFEIid1627WCffUBJEdMxYApq7mNE7CpzucIPc+ZQg25Phej7IJSmX3hO+oblOtQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"dependencies\": {\n         \"is-buffer\": \"^1.1.5\"\n@@ -3309,6 +3366,7 @@\n       \"integrity\": \"sha512-RE2g0b5VGZsOCFOCgP7omTRYFqydmZkBwl5oNnQ1lDYC57uyO9KqNnNVxT7COSHTxrRCWVcAVOcbjk+tvh/rgQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n@@ -3319,6 +3377,7 @@\n       \"integrity\": \"sha512-YiGkH6EnGrDGqLMITnGjXtGmNtjoXw9SVUzcaos8RBi7Ps0VBylkq+vOcY9QE5poLasPCR849ucFUkl0UzUyOw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"invert-kv\": \"^1.0.0\"\n       },\n@@ -3331,6 +3390,7 @@\n       \"integrity\": \"sha512-Kx8hMakjX03tiGTLAIdJ+lL0htKnXjEZN6hk/tozf/WOuYGdZBJrZ+rCJRbVCugsjB3jMLn9746NsQIf5VjBMw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"graceful-fs\": \"^4.1.2\",\n         \"parse-json\": \"^4.0.0\",\n@@ -3346,6 +3406,7 @@\n       \"integrity\": \"sha512-7AO748wWnIhNqAuaty2ZWHkQHRSNfPVIsPIfwEOWO22AmaoVrWavlOcMR5nzTLNYvp36X220/maaRsrec1G65A==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"p-locate\": \"^3.0.0\",\n         \"path-exists\": \"^3.0.0\"\n@@ -3358,13 +3419,15 @@\n       \"version\": \"4.4.0\",\n       \"integrity\": \"sha512-uHaJFihxmJcEX3kT4I23ABqKKalJ/zDrDg0lsFtc1h+3uw49SIJ5beyhx5ExVRti3AvKoOJngIj7xz3oylPdWQ==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/longest\": {\n       \"version\": \"1.0.1\",\n       \"integrity\": \"sha512-k+yt5n3l48JU4k8ftnKG6V7u32wyH2NfKzeMto9F/QRE0amxy/LayxwlvjjkZEIzqR+19IrtFO8p5kB9QaYUFg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n@@ -3375,6 +3438,7 @@\n       \"integrity\": \"sha512-fFEhvcgzuIoJVUF8fYr5KR0YqxD238zgObTps31YdADwPPAp82a4M8TrckkWyx7ekNlf9aBcVn81cFwwXngrJA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"pseudomap\": \"^1.0.2\",\n         \"yallist\": \"^2.1.2\"\n@@ -3385,6 +3449,7 @@\n       \"integrity\": \"sha512-2w31R7SJtieJJnQtGc7RVL2StM2vGYVfqUOvUDxH6bC6aJTxPxTF0GnIgCyu7tjockiUWAYQRbxa7vKn34s5sQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"pify\": \"^3.0.0\"\n       },\n@@ -3397,6 +3462,7 @@\n       \"integrity\": \"sha512-0HLfzJTZ7707VBNM1ydr5sTb+IZLhmU4u2TVA+Eenfn/Ed42/gn10smbAPiuEm/jNgjvWKUiMNihqJQ6flus9w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"md5-o-matic\": \"^0.1.1\"\n       },\n@@ -3415,6 +3481,7 @@\n       \"integrity\": \"sha512-nOBDrc/wgpkd3X/JOhMqYR+/eLqlfLP4oQfoBA6QExIxEl+GU01oyEkwWyueyO8110pUKijtiHGhEmYoOn88oQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"mimic-fn\": \"^1.0.0\"\n       },\n@@ -3427,6 +3494,7 @@\n       \"integrity\": \"sha512-Qkcp7P2ygktpMPh2mCQZaf3jhN6D3Z/qVZHSdWvQ+2Ef5HgRAPBO57A77+ENm0CPx2+1Ce/MYKi3ymqdfuqibw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"source-map\": \"^0.6.1\"\n       }\n@@ -3436,6 +3504,7 @@\n       \"integrity\": \"sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3445,6 +3514,7 @@\n       \"integrity\": \"sha512-jf84uxzwiuiIVKiOLpfYk7N46TSy8ubTonmneY9vrpHNAnp0QBt2BxWV9dO3/j+BoVAb+a5G6YDPW3M5HOdMWQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3454,6 +3524,7 @@\n       \"integrity\": \"sha512-yJHVQEhyqPLUTgt9B83PXu6W3rx4MvvHvSUvToogpwoGDOUQ+yDrR0HRot+yOCdCO7u4hX3pWft6kWBBcqh0UA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"brace-expansion\": \"^1.1.7\"\n       },\n@@ -3465,14 +3536,15 @@\n       \"version\": \"0.0.10\",\n       \"integrity\": \"sha512-iotkTvxc+TwOm5Ieim8VnSNvCDjCK9S8G3scJ50ZthspSxa7jx50jkhYduuAtAjvfDUwSgOwf8+If99AlOEhyw==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/mkdirp\": {\n       \"version\": \"0.5.1\",\n       \"integrity\": \"sha512-SknJC52obPfGQPnjIkXbmA6+5H15E+fR+E4iR2oQ3zzCLbd7/ONua69R/Gw7AgkTLsRG+r5fzksYwWe1AgTyWA==\",\n-      \"deprecated\": \"Legacy versions of mkdirp are no longer supported. Please update to mkdirp 1.x. (Note that the API surface has changed to use Promises in 1.x.)\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"minimist\": \"0.0.8\"\n       },\n@@ -3484,19 +3556,22 @@\n       \"version\": \"0.0.8\",\n       \"integrity\": \"sha512-miQKw5Hv4NS1Psg2517mV4e4dYNaO3++hjAvLOAzKqZ61rH8NS1SK+vbfBWZ5PY/Me/bEWhUwqMghEW5Fb9T7Q==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/ms\": {\n       \"version\": \"2.0.0\",\n       \"integrity\": \"sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"MIT\"\n     },\n     \"node_modules/nyc/node_modules/normalize-package-data\": {\n       \"version\": \"2.4.0\",\n       \"integrity\": \"sha512-9jjUFbTPfEy3R/ad/2oNbKtW9Hgovl5O1FvFWKkKblNXoN/Oou6+9+KKohPK13Yc3/TyunyWhJp6gvRNR/PPAw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-2-Clause\",\n       \"dependencies\": {\n         \"hosted-git-info\": \"^2.1.4\",\n         \"is-builtin-module\": \"^1.0.0\",\n@@ -3509,6 +3584,7 @@\n       \"integrity\": \"sha512-lJxZYlT4DW/bRUtFh1MQIWqmLwQfAxnqWG4HhEdjMlkrJYnJn0Jrr2u3mgxqaWsdiBc76TYkTG/mhrnYTuzfHw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"path-key\": \"^2.0.0\"\n       },\n@@ -3521,6 +3597,7 @@\n       \"integrity\": \"sha512-4jbtZXNAsfZbAHiiqjLPBiCl16dES1zI4Hpzzxw61Tk+loF+sBDBKx1ICKKKwIqQ7M0mFn1TmkN7euSncWgHiQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3530,6 +3607,7 @@\n       \"integrity\": \"sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"wrappy\": \"1\"\n       }\n@@ -3539,6 +3617,7 @@\n       \"integrity\": \"sha512-snN4O4TkigujZphWLN0E//nQmm7790RYaE53DdL7ZYwee2D8DDo9/EyYiKUfN3rneWUjhJnueija3G9I2i0h3g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT/X11\",\n       \"dependencies\": {\n         \"minimist\": \"~0.0.1\",\n         \"wordwrap\": \"~0.0.2\"\n@@ -3549,6 +3628,7 @@\n       \"integrity\": \"sha512-B5JU3cabzk8c67mRRd3ECmROafjYMXbuzlwtqdM8IbS8ktlTix8aFGb2bAGKrSRIlnfKwovGUUr72JUPyOb6kQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3558,6 +3638,7 @@\n       \"integrity\": \"sha512-3sslG3zJbEYcaC4YVAvDorjGxc7tv6KVATnLPZONiljsUncvihe9BQoVCEs0RZ1kmf4Hk9OBqlZfJZWI4GanKA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"execa\": \"^0.7.0\",\n         \"lcid\": \"^1.0.0\",\n@@ -3572,6 +3653,7 @@\n       \"integrity\": \"sha512-LICb2p9CB7FS+0eR1oqWnHhp0FljGLZCWBE9aix0Uye9W8LTQPwMTYVGWQWIw9RdQiDg4+epXQODwIYJtSJaow==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3581,6 +3663,7 @@\n       \"integrity\": \"sha512-fl5s52lI5ahKCernzzIyAP0QAZbGIovtVHGwpcu1Jr/EpzLVDI2myISHwGqK7m8uQFugVWSrbxH7XnhGtvEc+A==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"p-try\": \"^2.0.0\"\n       },\n@@ -3593,6 +3676,7 @@\n       \"integrity\": \"sha512-x+12w/To+4GFfgJhBEpiDcLozRJGegY+Ei7/z0tSLkMmxGZNybVMSfWj9aJn8Z5Fc7dBUNJOOVgPv2H7IwulSQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"p-limit\": \"^2.0.0\"\n       },\n@@ -3605,6 +3689,7 @@\n       \"integrity\": \"sha512-hMp0onDKIajHfIkdRk3P4CdCmErkYAxxDtP3Wx/4nZ3aGlau2VKh3mZpcuFkH27WQkL/3WBCPOktzA9ZOAnMQQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=6\"\n       }\n@@ -3614,6 +3699,7 @@\n       \"integrity\": \"sha512-DH4/1cxLWA2wrv2uDwd8G41S0GXOnFG9vRqx4B7iAWeT19mEA9R3EUXZtZ/I87boGH9DNl8fMUV82dvsR3ckeA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"graceful-fs\": \"^4.1.11\",\n         \"lodash.flattendeep\": \"^4.4.0\",\n@@ -3629,6 +3715,7 @@\n       \"integrity\": \"sha512-aOIos8bujGN93/8Ox/jPLh7RwVnPEysynVFE+fQZyg6jKELEHwzgKdLRFHUgXJL6kylijVSBC4BvN9OmsB48Rw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"error-ex\": \"^1.3.1\",\n         \"json-parse-better-errors\": \"^1.0.1\"\n@@ -3642,6 +3729,7 @@\n       \"integrity\": \"sha512-bpC7GYwiDYQ4wYLe+FA8lhRjhQCMcQGuSgGGqDkg/QerRWw9CmGRT0iSOVRSZJ29NMLZgIzqaljJ63oaL4NIJQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3651,6 +3739,7 @@\n       \"integrity\": \"sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3660,6 +3749,7 @@\n       \"integrity\": \"sha512-fEHGKCSmUSDPv4uoj8AlD+joPlq3peND+HRYyxFz4KPw4z926S/b8rIuFs2FYJg3BwsxJf6A9/3eIdLaYC+9Dw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3669,6 +3759,7 @@\n       \"integrity\": \"sha512-T2ZUsdZFHgA3u4e5PfPbjd7HDDpxPnQb5jN0SrDsjNSuVXHJqtwTnWqG0B1jZrgmJ/7lj1EmVIByWt1gxGkWvg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"pify\": \"^3.0.0\"\n       },\n@@ -3681,6 +3772,7 @@\n       \"integrity\": \"sha512-C3FsVNH1udSEX48gGX1xfvwTWfsYWj5U+8/uK15BGzIGrKoUpghX8hWZwa/OFnakBiiVNmBvemTJR5mcy7iPcg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3690,6 +3782,7 @@\n       \"integrity\": \"sha512-/E57AYkoeQ25qkxMj5PBOVgF8Kiu/h7cYS30Z5+R7WaiCCBfLq58ZI/dSeaEKb9WVJV5n/03QwrN3IeWIFllvw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"find-up\": \"^3.0.0\"\n       },\n@@ -3701,13 +3794,15 @@\n       \"version\": \"1.0.2\",\n       \"integrity\": \"sha512-b/YwNhb8lk1Zz2+bXXpS/LK9OisiZZ1SNsSLxN1x2OXVEhW2Ckr/7mWE5vrC1ZTiJlD9g19jWszTmJsB+oEpFQ==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/read-pkg\": {\n       \"version\": \"3.0.0\",\n       \"integrity\": \"sha512-BLq/cCO9two+lBgiTYNqD6GdtK8s4NpaWrl6/rCO9w0TUS8oJl7cmToOZfRYllKTISY6nt1U7jQ53brmKqY6BA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"load-json-file\": \"^4.0.0\",\n         \"normalize-package-data\": \"^2.3.2\",\n@@ -3722,6 +3817,7 @@\n       \"integrity\": \"sha512-6etQSH7nJGsK0RbG/2TeDzZFa8shjQ1um+SwQQ5cwKy0dhSXdOncEhb1CPpvQG4h7FyOV6EB6YlV0yJvZQNAkA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"find-up\": \"^3.0.0\",\n         \"read-pkg\": \"^3.0.0\"\n@@ -3735,6 +3831,7 @@\n       \"integrity\": \"sha512-gUAyHVHPPC5wdqX/LG4LWtRYtgjxyX78oanFNTMMyFEfOqdC54s3eE82imuWKbOeqYht2CrNf64Qb8vgmmtZGA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"es6-error\": \"^4.0.1\"\n       },\n@@ -3747,6 +3844,7 @@\n       \"integrity\": \"sha512-PV0dzCYDNfRi1jCDbJzpW7jNNDRuCOG/jI5ctQcGKt/clZD+YcPS3yIlWuTJMmESC8aevCFmWJy5wjAFgNqN6w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"engines\": {\n         \"node\": \">=0.10\"\n@@ -3757,6 +3855,7 @@\n       \"integrity\": \"sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3765,13 +3864,15 @@\n       \"version\": \"1.0.1\",\n       \"integrity\": \"sha512-IqSUtOVP4ksd1C/ej5zeEh/BIP2ajqpn8c5x+q99gvcIG/Qf0cud5raVnE/Dwd0ua9TXYDoDc0RE5hBSdz22Ug==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/resolve-from\": {\n       \"version\": \"4.0.0\",\n       \"integrity\": \"sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3781,6 +3882,7 @@\n       \"integrity\": \"sha512-yqINtL/G7vs2v+dFIZmFUDbnVyFUJFKd6gK22Kgo6R4jfJGFtisKyncWDDULgjfqf4ASQuIQyjJ7XZ+3aWpsAg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"dependencies\": {\n         \"align-text\": \"^0.1.1\"\n@@ -3792,9 +3894,9 @@\n     \"node_modules/nyc/node_modules/rimraf\": {\n       \"version\": \"2.6.2\",\n       \"integrity\": \"sha512-lreewLK/BlghmxtfH36YYVg1i8IAce4TI7oao75I1g245+6BctqTVQiBP3YUJ9C6DQOXJmkYR9X9fCLtCOJc5w==\",\n-      \"deprecated\": \"Rimraf versions prior to v4 are no longer supported\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"glob\": \"^7.0.5\"\n       },\n@@ -3807,6 +3909,7 @@\n       \"integrity\": \"sha512-4SJ3dm0WAwWy/NVeioZh5AntkdJoWKxHxcmyP622fOkgHa4z3R0TdBJICINyaSDE6uNwVc8gZr+ZinwZAH4xIA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"bin\": {\n         \"semver\": \"bin/semver\"\n       }\n@@ -3815,13 +3918,15 @@\n       \"version\": \"2.0.0\",\n       \"integrity\": \"sha512-KiKBS8AnWGEyLzofFfmvKwpdPzqiy16LvQfK3yv/fVH7Bj13/wl3JSR1J+rfgRE9q7xUJK4qvgS8raSOeLUehw==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/shebang-command\": {\n       \"version\": \"1.2.0\",\n       \"integrity\": \"sha512-EV3L1+UQWGor21OmnvojK36mhg+TyIKDh3iFBKBohr5xeXIhNBcx8oWdgkTEEQ+BEFFYdLRuqMfd5L84N1V5Vg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"shebang-regex\": \"^1.0.0\"\n       },\n@@ -3834,6 +3939,7 @@\n       \"integrity\": \"sha512-wpoSFAxys6b2a2wHZ1XpDSgD7N9iVjg29Ph9uV/uaP9Ex/KXlkTZTeddxDPSYQpgvzKLGJke2UU0AzoGCjNIvQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3842,13 +3948,15 @@\n       \"version\": \"3.0.2\",\n       \"integrity\": \"sha512-meQNNykwecVxdu1RlYMKpQx4+wefIYpmxi6gexo/KAbwquJrBUrBmKYJrE8KFkVQAAVWEnwNdu21PgrD77J3xA==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/source-map\": {\n       \"version\": \"0.5.7\",\n       \"integrity\": \"sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-3-Clause\",\n       \"optional\": true,\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n@@ -3859,6 +3967,7 @@\n       \"integrity\": \"sha512-vMwR3OmmDhnxCVxM8M+xO/FtIp6Ju/mNaDfCMMW7FDcLRTPFWUswec4LXJHTJE2hwTI9O0YBfygu4DalFl7Ylg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"foreground-child\": \"^1.5.6\",\n         \"mkdirp\": \"^0.5.0\",\n@@ -3873,6 +3982,7 @@\n       \"integrity\": \"sha512-N19o9z5cEyc8yQQPukRCZ9EUmb4HUpnrmaL/fxS2pBo2jbfcFRVuFZ/oFC+vZz0MNNk0h80iMn5/S6qGZOL5+g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"Apache-2.0\",\n       \"dependencies\": {\n         \"spdx-expression-parse\": \"^3.0.0\",\n         \"spdx-license-ids\": \"^3.0.0\"\n@@ -3882,13 +3992,15 @@\n       \"version\": \"2.1.0\",\n       \"integrity\": \"sha512-4K1NsmrlCU1JJgUrtgEeTVyfx8VaYea9J9LvARxhbHtVtohPs/gFGG5yy49beySjlIMhhXZ4QqujIZEfS4l6Cg==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"CC-BY-3.0\"\n     },\n     \"node_modules/nyc/node_modules/spdx-expression-parse\": {\n       \"version\": \"3.0.0\",\n       \"integrity\": \"sha512-Yg6D3XpRD4kkOmTpdgbUiEJFKghJH03fiC1OPll5h/0sO6neh2jqRDVHOQ4o/LMea0tgCkbMgea5ip/e+MkWyg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"spdx-exceptions\": \"^2.1.0\",\n         \"spdx-license-ids\": \"^3.0.0\"\n@@ -3898,13 +4010,15 @@\n       \"version\": \"3.0.0\",\n       \"integrity\": \"sha512-2+EPwgbnmOIl8HjGBXXMd9NAu02vLjOO1nWw4kmeRDFyHn+M/ETfHxQUK0oXg8ctgVnl9t3rosNVsZ1jG61nDA==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"CC0-1.0\"\n     },\n     \"node_modules/nyc/node_modules/string-width\": {\n       \"version\": \"2.1.1\",\n       \"integrity\": \"sha512-nOqH59deCq9SRHlxq1Aw85Jnt4w6KvLKqWVik6oA9ZklXLNIOlqg4F2yrT1MVaTjAqvVwdfeZ7w7aCvJD7ugkw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"is-fullwidth-code-point\": \"^2.0.0\",\n         \"strip-ansi\": \"^4.0.0\"\n@@ -3918,6 +4032,7 @@\n       \"integrity\": \"sha512-4XaJ2zQdCzROZDivEVIDPkcQn8LMFSa8kj8Gxb/Lnwzv9A8VctNZ+lfivC/sV3ivW8ElJTERXZoPBRrZKkNKow==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"ansi-regex\": \"^3.0.0\"\n       },\n@@ -3930,6 +4045,7 @@\n       \"integrity\": \"sha512-vavAMRXOgBVNF6nyEEmL3DBK19iRpDcoIwW+swQ+CbGiu7lju6t+JklA1MHweoWtadgt4ISVUsXLyDq34ddcwA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -3939,6 +4055,7 @@\n       \"integrity\": \"sha512-7FCwGGmx8mD5xQd3RPUvnSpUXHM3BWuzjtpD4TXsfcZ9EL4azvVVUscFYwD9nx8Kh+uCBC00XBtAykoMHwTh8Q==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -3948,6 +4065,7 @@\n       \"integrity\": \"sha512-zjaXglF5nnWpsq470jSv6P9DwPvgLkuapYmfDm3JWOm0vkNTVF2tI4UrN2r6jH1qM/uc/WtxYY1hYoA2dOKj5w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"has-flag\": \"^3.0.0\"\n       },\n@@ -3960,6 +4078,7 @@\n       \"integrity\": \"sha512-bO3Lj5+qFa9YLfYW2ZcXMOV1pmQvw+KS/DpjqhyX6Y6UZ8zstpZJ+mA2ERkXfpOqhxsJlQiLeVXD3Smsrs6oLw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"arrify\": \"^1.0.1\",\n         \"minimatch\": \"^3.0.4\",\n@@ -3975,6 +4094,7 @@\n       \"integrity\": \"sha512-qLq/4y2pjcU3vhlhseXGGJ7VbFO4pBANu0kwl8VCa9KEI0V8VfZIx2Fy3w01iSTA/pGwKZSmu/+I4etLNDdt5w==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"BSD-2-Clause\",\n       \"optional\": true,\n       \"dependencies\": {\n         \"source-map\": \"~0.5.1\",\n@@ -3995,6 +4115,7 @@\n       \"integrity\": \"sha512-QFzUah88GAGy9lyDKGBqZdkYApt63rCXYBGYnEP4xDJPXNqXXnBDACnbrXnViV6jRSqAePwrATi2i8mfYm4L1A==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true,\n       \"dependencies\": {\n         \"camelcase\": \"^1.0.2\",\n@@ -4008,14 +4129,15 @@\n       \"integrity\": \"sha512-vb2s1lYx2xBtUgy+ta+b2J/GLVUR+wmpINwHePmPRhOsIVCG2wDzKJ0n14GslH1BifsqVzSOwQhRaCAsZ/nI4Q==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"optional\": true\n     },\n     \"node_modules/nyc/node_modules/uuid\": {\n       \"version\": \"3.3.2\",\n       \"integrity\": \"sha512-yXJmeNaw3DnnKAOKJE51sL/ZaYfWJRl1pK9dr19YFCu0ObS231AB1/LbqTKRAQ5kw8A90rA6fr4riOUpTZvQZA==\",\n-      \"deprecated\": \"uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"bin\": {\n         \"uuid\": \"bin/uuid\"\n       }\n@@ -4025,6 +4147,7 @@\n       \"integrity\": \"sha512-63ZOUnL4SIXj4L0NixR3L1lcjO38crAbgrTpl28t8jjrfuiOBL5Iygm+60qPs/KsZGzPNg6Smnc/oY16QTjF0g==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"Apache-2.0\",\n       \"dependencies\": {\n         \"spdx-correct\": \"^3.0.0\",\n         \"spdx-expression-parse\": \"^3.0.0\"\n@@ -4035,6 +4158,7 @@\n       \"integrity\": \"sha512-HxJdYWq1MTIQbJ3nw0cqssHoTNU267KlrDuGZ1WYlxDStUtKUhOaJmh112/TZmHxxUfuJqPXSOm7tDyas0OSIQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"isexe\": \"^2.0.0\"\n       },\n@@ -4046,7 +4170,8 @@\n       \"version\": \"2.0.0\",\n       \"integrity\": \"sha512-B+enWhmw6cjfVC7kS8Pj9pCrKSc5txArRyaYGe088shv/FGWH+0Rjx/xPgtsWfsUtS27FkP697E4DDhgrgoc0Q==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/window-size\": {\n       \"version\": \"0.1.0\",\n@@ -4063,6 +4188,7 @@\n       \"integrity\": \"sha512-1tMA907+V4QmxV7dbRvb4/8MaRALK6q9Abid3ndMYnbyo8piisCmeONVqVSXqQA3KaP4SLt5b7ud6E2sqP8TFw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.4.0\"\n       }\n@@ -4072,6 +4198,7 @@\n       \"integrity\": \"sha512-vAaEaDM946gbNpH5pLVNR+vX2ht6n0Bt3GXwVB1AuAqZosOvHNF3P7wDnh8KLkSqgUh0uh77le7Owgoz+Z9XBw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"string-width\": \"^1.0.1\",\n         \"strip-ansi\": \"^3.0.1\"\n@@ -4085,6 +4212,7 @@\n       \"integrity\": \"sha512-TIGnTpdo+E3+pCyAluZvtED5p5wCqLdezCyhPZzKPcxvFplEt4i+W7OONCKgeZFT3+y5NZZfOOS/Bdcanm1MYA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=0.10.0\"\n       }\n@@ -4094,6 +4222,7 @@\n       \"integrity\": \"sha512-1pqUqRjkhPJ9miNq9SwMfdvi6lBJcd6eFxvfaivQhaH3SgisfiuudvFntdKOmxuee/77l+FPjKrQjWvmPjWrRw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"number-is-nan\": \"^1.0.0\"\n       },\n@@ -4106,6 +4235,7 @@\n       \"integrity\": \"sha512-0XsVpQLnVCXHJfyEs8tC0zpTVIr5PKKsQtkT29IwupnPTjtPmQ3xT/4yCREF9hYkV/3M3kzcUTSAZT6a6h81tw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"code-point-at\": \"^1.0.0\",\n         \"is-fullwidth-code-point\": \"^1.0.0\",\n@@ -4120,6 +4250,7 @@\n       \"integrity\": \"sha512-VhumSSbBqDTP8p2ZLKj40UjBCV4+v8bUSEpUb4KjRgWk9pbqGF4REFj6KEagidb2f/M6AzC0EmFyDNGaw9OCzg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"ansi-regex\": \"^2.0.0\"\n       },\n@@ -4131,13 +4262,15 @@\n       \"version\": \"1.0.2\",\n       \"integrity\": \"sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/write-file-atomic\": {\n       \"version\": \"2.3.0\",\n       \"integrity\": \"sha512-xuPeK4OdjWqtfi59ylvVL0Yn35SF3zgcAcv7rBPFHVaEapaDr4GdGgm3j7ckTwH9wHL7fGmgfAnb0+THrHb8tA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"graceful-fs\": \"^4.1.11\",\n         \"imurmurhash\": \"^0.1.4\",\n@@ -4148,19 +4281,22 @@\n       \"version\": \"3.2.1\",\n       \"integrity\": \"sha512-Vd1yWKYGMtzFB6bAuTI7/POwJnwQStQXOe1PW1GmjUZgkaKYGc6/Pl3IDGFgplEklF65niuwBHeS5yve4+U01Q==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/yallist\": {\n       \"version\": \"2.1.2\",\n       \"integrity\": \"sha512-ncTzHV7NvsQZkYe1DW7cbDLm0YpzHmZF5r/iyP3ZnQtMiJ+pjzisCiMNI+Sj+xQF5pXhSHxSB3uDbsBTzY/c2A==\",\n       \"dev\": true,\n-      \"inBundle\": true\n+      \"inBundle\": true,\n+      \"license\": \"ISC\"\n     },\n     \"node_modules/nyc/node_modules/yargs\": {\n       \"version\": \"11.1.0\",\n       \"integrity\": \"sha512-NwW69J42EsCSanF8kyn5upxvjp5ds+t3+udGBeTbFnERA+lF541DDpMawzo4z6W/QrzNM18D+BPMiOBibnFV5A==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"cliui\": \"^4.0.0\",\n         \"decamelize\": \"^1.1.1\",\n@@ -4181,6 +4317,7 @@\n       \"integrity\": \"sha512-CswCfdOgCr4MMsT1GzbEJ7Z2uYudWyrGX8Bgh/0eyCzj/DXWdKq6a/ADufkzI1WAOIW6jYaXJvRyLhDO0kfqBw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"camelcase\": \"^4.1.0\"\n       }\n@@ -4190,6 +4327,7 @@\n       \"integrity\": \"sha512-FxAv7HpHrXbh3aPo4o2qxHay2lkLY3x5Mw3KeE4KQE8ysVfziWeRZDwcjauvwBSGEC/nXUPzZy8zeh4HokqOnw==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -4199,6 +4337,7 @@\n       \"integrity\": \"sha512-4FG+RSG9DL7uEwRUZXZn3SS34DiDPfzP0VOiEwtUWlE+AR2EIg+hSyvrIgUUfhdgR/UkAeW2QHgeP+hWrXs7jQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"ISC\",\n       \"dependencies\": {\n         \"string-width\": \"^2.1.1\",\n         \"strip-ansi\": \"^4.0.0\",\n@@ -4210,6 +4349,7 @@\n       \"integrity\": \"sha512-NWzkk0jSJtTt08+FBFMvXoeZnOJD+jTtsRmBYbAIzJdX6l7dLgR7CTubCM5/eDdPUBvLCeVasP1brfVR/9/EZQ==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"locate-path\": \"^2.0.0\"\n       },\n@@ -4222,6 +4362,7 @@\n       \"integrity\": \"sha512-NCI2kiDkyR7VeEKm27Kda/iQHyKJe1Bu0FlTbYp3CqJu+9IFe9bLyAjMxf5ZDDbEg+iMPzB5zYyUTSm8wVTKmA==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"p-locate\": \"^2.0.0\",\n         \"path-exists\": \"^3.0.0\"\n@@ -4235,6 +4376,7 @@\n       \"integrity\": \"sha512-vvcXsLAJ9Dr5rQOPk7toZQZJApBl2K4J6dANSsEuh6QI41JYcsS/qhTGa9ErIUUgK3WNQoJYvylxvjqmiqEA9Q==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"p-try\": \"^1.0.0\"\n       },\n@@ -4247,6 +4389,7 @@\n       \"integrity\": \"sha512-nQja7m7gSKuewoVRen45CtVfODR3crN3goVQ0DDZ9N3yHxgpkuBhZqsaiotSQRrADUrne346peY7kT3TSACykg==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"dependencies\": {\n         \"p-limit\": \"^1.1.0\"\n       },\n@@ -4259,6 +4402,7 @@\n       \"integrity\": \"sha512-U1etNYuMJoIz3ZXSrrySFjsXQTWOx2/jdi86L+2pRvph/qMKL6sbcCYdH23fqsbm8TH2Gn0OybpT4eSFlCVHww==\",\n       \"dev\": true,\n       \"inBundle\": true,\n+      \"license\": \"MIT\",\n       \"engines\": {\n         \"node\": \">=4\"\n       }\n@@ -5336,10 +5480,11 @@\n       \"dev\": true\n     },\n     \"node_modules/typescript\": {\n-      \"version\": \"3.0.3\",\n-      \"resolved\": \"https://registry.npmjs.org/typescript/-/typescript-3.0.3.tgz\",\n-      \"integrity\": \"sha512-kk80vLW9iGtjMnIv11qyxLqZm20UklzuR2tL0QAnDIygIUIemcZMxlMWudl9OOt76H3ntVzcTiddQ1/pAAJMYg==\",\n+      \"version\": \"4.9.5\",\n+      \"resolved\": \"https://registry.npmjs.org/typescript/-/typescript-4.9.5.tgz\",\n+      \"integrity\": \"sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==\",\n       \"dev\": true,\n+      \"license\": \"Apache-2.0\",\n       \"bin\": {\n         \"tsc\": \"bin/tsc\",\n         \"tsserver\": \"bin/tsserver\"\ndiff --git a/package.json b/package.json\nindex 4ad5830..ff1edd3 100644\n--- a/package.json\n+++ b/package.json\n@@ -42,7 +42,7 @@\n     \"@types/lodash\": \"^4.14.116\",\n     \"@types/mocha\": \"^5.2.5\",\n     \"@types/nock\": \"^9.3.0\",\n-    \"@types/node\": \"^6.0.117\",\n+    \"@types/node\": \"^9.6.61\",\n     \"@types/winston\": \"^2.4.4\",\n     \"chai\": \"^4.1.2\",\n     \"coveralls\": \"^3.0.2\",\n@@ -54,7 +54,7 @@\n     \"standard-version\": \"^4.4.0\",\n     \"ts-node\": \"^7.0.1\",\n     \"tslint\": \"^5.11.0\",\n-    \"typescript\": \"^3.0.3\"\n+    \"typescript\": \"^4.9.5\"\n   },\n   \"files\": [\n     \"dist/index.*\",\ndiff --git a/src/lib/logger.ts b/src/lib/logger.ts\nindex ea7b293..be3c733 100644\n--- a/src/lib/logger.ts\n+++ b/src/lib/logger.ts\n@@ -1,24 +1,32 @@\n import * as winston from 'winston';\n \n-const transports: winston.TransportInstance[] = [];\n+const transports: winston.transport[] = [];\n const consoleTransport = new (winston.transports.Console)({\n-  name: 'console-log',\n+  // Each transport must carry its own explicit level: winston no longer\n+  // propagates the level set on the default logger down to its transports.\n   level: 'error',\n-  timestamp: true,\n-  colorize: true,\n-  prettyPrint: true,\n+  // winston now defaults Console output to stdout for every level; make the\n+  // previous error->stderr routing explicit instead of relying on the new default.\n+  stderrLevels: ['error'],\n+  format: winston.format.combine(\n+    winston.format.timestamp(),\n+    winston.format.colorize(),\n+    winston.format.prettyPrint(),\n+  ),\n });\n transports.push(consoleTransport);\n \n if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {\n   transports.push(\n     new winston.transports.File({\n-      name: 'file-log',\n       filename: 'xray-scan.log',\n+      // Each transport must carry its own explicit level: winston no longer\n+      // propagates the level set on the default logger down to its transports.\n       level: 'debug',\n-      timestamp: true,\n-      json: false,\n-      prettyPrint: true,\n+      format: winston.format.combine(\n+        winston.format.timestamp(),\n+        winston.format.prettyPrint(),\n+      ),\n       maxsize: 1024 * 1024 * 100,\n       maxFiles: 10,\n       tailable: true,\n",
+    "diffTruncated": false,
+    "diffHash": "2029c11086431df727b1ebf26fcc9d18131724af4fc06f7174e5931f793cb483"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "3.13.0",
+      "installedVersion": "3.13.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 19856,
+        "outputExcerpt": "> aws-least-privilege@0.1.12 compile\n> tsc",
+        "kind": "build"
+      },
+      {
+        "name": "unit tests (offline subset)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 7187,
+        "outputExcerpt": "utils test\n    ✓ extract region from lambda arn\n    ✓ extract region from url\n(node:16754) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n    ✓ #startWithAny check\n    ✓ #removeAccountIdFromArn check\n\n  iam-policy-utils\n    ✓ #createPolicyMapped creates proper maps\n    ✓ #checkExcessPolicyPermissions finds excess permissions\n\n\n  6 passing (159ms)",
+        "kind": "test"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "logger-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 28822,
+        "outputExcerpt": "logger behaviour: ok",
+        "id": "logger-behaviour",
+        "description": "The project typechecks, and then, through the compiled logger module: errors print to the console at the default level and info does not; changeConsoleLevel('info') makes info print; outside Lambda a debug message still reaches xray-scan.log while staying off the console; inside Lambda no log file is written. These are the behaviours the winston 2 configuration had, and winston 3's logger-level filtering silently drops the file-only debug line unless the migration accounts for it.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The compile and test scripts the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "no-test-deletions",
+        "description": "The project's own tests must not be deleted.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The logger module the upgrade broke must still exist; every source file imports it.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "path-unchanged",
+        "description": "The tests never touch winston; an edit there is not part of this migration.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Suppressing the type errors in the logger module with a directive is not a migration of it. Narrowed on 2026-09-16 from also forbidding any-typing, because a live trial used any legitimately to read winston's splat symbol; the behavioural test is the real guard.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 2
+  },
+  "timing": {
+    "materializeMs": 663,
+    "installMs": 4622,
+    "contextMs": 64078,
+    "agentMs": 807998,
+    "validationMs": 71088,
+    "totalMs": 948855
+  },
+  "agentContext": {
+    "interface": "drift-orchestrated",
+    "initialDriftContextChars": 0,
+    "initialDriftContextEstimatedTokens": 0,
+    "driftToolCalls": 0,
+    "driftToolCallsByName": {},
+    "driftToolReturnedChars": 0,
+    "driftToolReturnedEstimatedTokens": 0,
+    "driftToolErrors": 0,
+    "findingsInPlan": 74,
+    "findingsInInitialBrief": null,
+    "findingsRetrievedOnDemand": 0,
+    "nonLocalFindingsOmitted": null,
+    "deterministicSitesCovered": null,
+    "residualSitesSentToAgent": null,
+    "tokensBeforeFirstEdit": {
+      "grossInputTokens": 464119,
+      "uncachedInputTokens": 21975,
+      "modelCalls": 9
+    },
+    "tokensAfterFirstEdit": {
+      "grossInputTokens": 2590221,
+      "uncachedInputTokens": 47374,
+      "modelCalls": 46
+    },
+    "timing": {
+      "preSessionDriftMs": 64078,
+      "sessionMs": 673386,
+      "driftToolMs": 0,
+      "endToEndMs": 872072
+    },
+    "agentVerification": {
+      "broad": 2,
+      "narrow": 2,
+      "blocked": 2,
+      "broadCommands": [
+        "npx tsc --noEmit -p . 2>&1 | grep -i \"logger.ts\" ",
+        "cat -n node_modules/logform/index.d.ts | sed -n '1,20p' && echo --- && npx tsc -v && echo --- && cat tsconfig.json && echo --- && grep -n '\"typescript\"' package.json package-lock.json | head -20"
+      ]
+    },
+    "research": {
+      "dependencySourceAccesses": 8,
+      "registryQueries": 7,
+      "changelogAccesses": 0
+    }
+  },
+  "orchestration": {
+    "kind": "drift",
+    "sessions": [
+      {
+        "index": 1,
+        "kind": "unit",
+        "unitId": "unit_360421994c",
+        "round": 0,
+        "allowedFiles": [
+          "src/lib/logger.ts"
+        ],
+        "changedFiles": [
+          "src/lib/logger.ts"
+        ],
+        "outcome": "accepted",
+        "reasons": [],
+        "scopeRequests": [],
+        "agentStatus": "completed",
+        "promptChars": 10947,
+        "promptHash": "cc5dc8fb774895a74ae445d73a947cc7d1e6687e5ce5f6e8b8892ff6f11a8b75",
+        "durationMs": 159768,
+        "usage": {
+          "grossInputTokens": 785281,
+          "uncachedInputTokens": 31286,
+          "inputTokens": 3831,
+          "cacheReadTokens": 753995,
+          "cacheCreationTokens": 27455,
+          "outputTokens": 10833,
+          "modelCalls": 14,
+          "byModel": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 3803,
+              "cacheReadTokens": 0,
+              "cacheCreationTokens": 0,
+              "outputTokens": 15
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 28,
+              "cacheReadTokens": 753995,
+              "cacheCreationTokens": 27455,
+              "outputTokens": 10818
+            }
+          },
+          "source": "result-model-usage",
+          "ledgerGrossInputTokens": 781478,
+          "ledgerAgreesWithResult": true,
+          "costUsd": 0.3727330000000001
+        },
+        "toolCalls": 13,
+        "tokensBeforeFirstEdit": {
+          "grossInputTokens": 464119,
+          "uncachedInputTokens": 21975,
+          "modelCalls": 9
+        },
+        "tokensAfterFirstEdit": {
+          "grossInputTokens": 317359,
+          "uncachedInputTokens": 5508,
+          "modelCalls": 5
+        },
+        "agentVerification": {
+          "broad": 1,
+          "narrow": 2,
+          "blocked": 1,
+          "broadCommands": [
+            "npx tsc --noEmit -p . 2>&1 | grep -i \"logger.ts\" "
+          ]
+        },
+        "verificationGuard": true,
+        "research": {
+          "dependencySourceAccesses": 7,
+          "registryQueries": 0,
+          "changelogAccesses": 0
+        },
+        "environmentFingerprint": "8d69d817761f3509"
+      },
+      {
+        "index": 2,
+        "kind": "repair",
+        "unitId": "residual",
+        "round": 1,
+        "allowedFiles": [
+          "src/lib/logger.ts"
+        ],
+        "changedFiles": [],
+        "outcome": "no-change",
+        "reasons": [],
+        "scopeRequests": [
+          "tsconfig.json",
+          "package.json"
+        ],
+        "agentStatus": "completed",
+        "promptChars": 7713,
+        "promptHash": "84dc9410e6bb2b64b39f4ce45f8ac28ea35eb7b86044568c975eeee5535d0614",
+        "durationMs": 72093,
+        "usage": {
+          "grossInputTokens": 238273,
+          "uncachedInputTokens": 15563,
+          "inputTokens": 3000,
+          "cacheReadTokens": 222710,
+          "cacheCreationTokens": 12563,
+          "outputTokens": 4426,
+          "modelCalls": 5,
+          "byModel": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 2990,
+              "cacheReadTokens": 0,
+              "cacheCreationTokens": 0,
+              "outputTokens": 20
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 10,
+              "cacheReadTokens": 222710,
+              "cacheCreationTokens": 12563,
+              "outputTokens": 4406
+            }
+          },
+          "source": "result-model-usage",
+          "ledgerGrossInputTokens": 235283,
+          "ledgerAgreesWithResult": true,
+          "costUsd": 0.141964
+        },
+        "toolCalls": 5,
+        "tokensBeforeFirstEdit": null,
+        "tokensAfterFirstEdit": null,
+        "agentVerification": {
+          "broad": 0,
+          "narrow": 0,
+          "blocked": 0,
+          "broadCommands": []
+        },
+        "verificationGuard": true,
+        "research": {
+          "dependencySourceAccesses": 0,
+          "registryQueries": 0,
+          "changelogAccesses": 0
+        },
+        "environmentFingerprint": "8d69d817761f3509"
+      },
+      {
+        "index": 3,
+        "kind": "repair",
+        "unitId": "residual",
+        "round": 2,
+        "allowedFiles": [
+          "package.json",
+          "src/lib/logger.ts",
+          "tsconfig.json",
+          "package-lock.json",
+          "yarn.lock",
+          "pnpm-lock.yaml",
+          "npm-shrinkwrap.json",
+          "bun.lock"
+        ],
+        "changedFiles": [
+          "package-lock.json",
+          "package.json"
+        ],
+        "outcome": "accepted",
+        "reasons": [
+          "installed dependencies were written during the session (node_modules/@types/node/LICENSE); reinstalled from the manifests"
+        ],
+        "scopeRequests": [],
+        "agentStatus": "completed",
+        "promptChars": 7820,
+        "promptHash": "b56cb137b5140c24ab9ec47d75ebc690790061a5755efe2555b170fbe161d467",
+        "durationMs": 441525,
+        "usage": {
+          "grossInputTokens": 2040610,
+          "uncachedInputTokens": 32324,
+          "inputTokens": 3103,
+          "cacheReadTokens": 2008286,
+          "cacheCreationTokens": 29221,
+          "outputTokens": 13464,
+          "modelCalls": 36,
+          "byModel": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 3031,
+              "cacheReadTokens": 0,
+              "cacheCreationTokens": 0,
+              "outputTokens": 17
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 72,
+              "cacheReadTokens": 2008286,
+              "cacheCreationTokens": 29221,
+              "outputTokens": 13447
+            }
+          },
+          "source": "result-model-usage",
+          "ledgerGrossInputTokens": 2037579,
+          "ledgerAgreesWithResult": true,
+          "costUsd": 0.6562712
+        },
+        "toolCalls": 38,
+        "tokensBeforeFirstEdit": {
+          "grossInputTokens": 285395,
+          "uncachedInputTokens": 13357,
+          "modelCalls": 6
+        },
+        "tokensAfterFirstEdit": {
+          "grossInputTokens": 1752184,
+          "uncachedInputTokens": 15936,
+          "modelCalls": 30
+        },
+        "agentVerification": {
+          "broad": 1,
+          "narrow": 0,
+          "blocked": 1,
+          "broadCommands": [
+            "cat -n node_modules/logform/index.d.ts | sed -n '1,20p' && echo --- && npx tsc -v && echo --- && cat tsconfig.json && echo --- && grep -n '\"typescript\"' package.json package-lock.json | head -20"
+          ]
+        },
+        "verificationGuard": true,
+        "research": {
+          "dependencySourceAccesses": 1,
+          "registryQueries": 7,
+          "changelogAccesses": 0
+        },
+        "environmentFingerprint": "8d69d817761f3509"
+      }
+    ],
+    "controller": {
+      "termination": "verified",
+      "terminationDetail": "the checks pass after 2 repair round(s)",
+      "repairRounds": 2,
+      "outOfScopeRejections": 0,
+      "workaroundRejections": 0,
+      "grantedFiles": [
+        "tsconfig.json",
+        "package.json"
+      ],
+      "deniedScopeRequests": [],
+      "needsHuman": [],
+      "verifications": [
+        {
+          "round": 0,
+          "fresh": false,
+          "passed": false,
+          "fingerprint": "341072b4b6cd70c1",
+          "durationMs": 14113,
+          "installed": false,
+          "failures": 7,
+          "preexisting": 0,
+          "checks": [
+            {
+              "label": "npm test",
+              "kind": "test",
+              "status": "failed",
+              "durationMs": 6531,
+              "failures": 3
+            },
+            {
+              "label": "npm run compile",
+              "kind": "build",
+              "status": "failed",
+              "durationMs": 7455,
+              "failures": 4
+            }
+          ],
+          "sideEffectsReverted": []
+        },
+        {
+          "round": 1,
+          "fresh": false,
+          "passed": false,
+          "fingerprint": "71332e1547da80c6",
+          "durationMs": 11495,
+          "installed": false,
+          "failures": 1,
+          "preexisting": 2,
+          "checks": [
+            {
+              "label": "npm test",
+              "kind": "test",
+              "status": "failed",
+              "durationMs": 6986,
+              "failures": 0
+            },
+            {
+              "label": "npm run compile",
+              "kind": "build",
+              "status": "failed",
+              "durationMs": 4412,
+              "failures": 1
+            }
+          ],
+          "sideEffectsReverted": []
+        },
+        {
+          "round": 2,
+          "fresh": false,
+          "passed": false,
+          "fingerprint": "71332e1547da80c6",
+          "durationMs": 13636,
+          "installed": false,
+          "failures": 1,
+          "preexisting": 2,
+          "checks": [
+            {
+              "label": "npm test",
+              "kind": "test",
+              "status": "failed",
+              "durationMs": 4648,
+              "failures": 0
+            },
+            {
+              "label": "npm run compile",
+              "kind": "build",
+              "status": "failed",
+              "durationMs": 8892,
+              "failures": 1
+            }
+          ],
+          "sideEffectsReverted": []
+        },
+        {
+          "round": 3,
+          "fresh": false,
+          "passed": true,
+          "fingerprint": "1ab620f96b00265b",
+          "durationMs": 34764,
+          "installed": false,
+          "failures": 0,
+          "preexisting": 2,
+          "checks": [
+            {
+              "label": "npm test",
+              "kind": "test",
+              "status": "failed",
+              "durationMs": 18916,
+              "failures": 0
+            },
+            {
+              "label": "npm run compile",
+              "kind": "build",
+              "status": "passed",
+              "durationMs": 14778,
+              "failures": 0
+            }
+          ],
+          "sideEffectsReverted": []
+        },
+        {
+          "round": 3,
+          "fresh": true,
+          "passed": true,
+          "fingerprint": "1ab620f96b00265b",
+          "durationMs": 40936,
+          "installed": true,
+          "failures": 0,
+          "preexisting": 2,
+          "checks": [
+            {
+              "label": "npm test",
+              "kind": "test",
+              "status": "failed",
+              "durationMs": 8739,
+              "failures": 0
+            },
+            {
+              "label": "npm run compile",
+              "kind": "build",
+              "status": "passed",
+              "durationMs": 18977,
+              "failures": 0
+            }
+          ],
+          "sideEffectsReverted": []
+        }
+      ]
+    },
+    "checks": [
+      "npm test",
+      "npm run compile"
+    ],
+    "units": {
+      "total": 2,
+      "resolvedByCodemod": 0,
+      "resolvedByFixPlan": 0,
+      "sentToAgent": 1,
+      "skippedProtected": 0,
+      "merged": 1,
+      "requiringRepair": 0
+    },
+    "analysis": {
+      "breakingChanges": 74,
+      "impactSites": 9,
+      "commits": 2,
+      "verificationStatus": "failed"
+    },
+    "timing": {
+      "analysisMs": 45496,
+      "deterministicMs": 0,
+      "baselineMeasurementMs": 18582,
+      "agentMs": 673386,
+      "controllerVerificationMs": 114944,
+      "endToEndMs": 872072
+    },
+    "agentBudgetMs": 1800000,
+    "budgetExhausted": false
+  }
+}
