@@ -440,6 +440,19 @@ describe('verification and repair', () => {
     }
   });
 
+  test('with no agent session since the last measurement, the checks are not run again', async () => {
+    const { root, cleanup } = await repoWith({ 'src/app.ts': 'a\n' });
+    try {
+      const fake = scriptedAgent(root, [async () => fake.write('src/app.ts', 'b\n')]);
+      const verify = scriptedVerifier([{ passed: false, failures: [{ file: 'src/app.ts', message: 'boom' }] }, { passed: true }]);
+      const record = await runRemediationController({ root, plan: plan([]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
+      assert.equal(record.termination, 'verified');
+      assert.equal(verify.calls, 2, 'one measurement before the repair, one after');
+    } finally {
+      await cleanup();
+    }
+  });
+
   test('a repository that already passes with no agent work makes no agent call', async () => {
     const { root, cleanup } = await repoWith({ 'src/app.ts': 'a\n' });
     try {

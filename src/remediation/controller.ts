@@ -334,9 +334,14 @@ export async function runRemediationController(options: RemediationControllerOpt
   let stalledRounds = 0;
   let round = 0;
 
+  // Nothing an agent did since the initial measurement means nothing to
+  // re-measure: every planned unit was skipped, or none existed.
+  let sessionsAtLastVerification = record.sessions.length === 0 ? 0 : -1;
+
   for (;;) {
     if (options.signal?.aborted) return finish('aborted', 'cancelled');
-    current = await verify(round + 1);
+    if (!(current && sessionsAtLastVerification === record.sessions.length)) current = await verify(round + 1);
+    sessionsAtLastVerification = record.sessions.length;
     if (current.passed) return finish('verified', round === 0 ? 'the checks pass after the planned units' : `the checks pass after ${round} repair round(s)`);
 
     if (previousFingerprint !== null && current.fingerprint === previousFingerprint) {
