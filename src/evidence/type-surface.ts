@@ -3191,8 +3191,12 @@ export function entryPointMoved(
  *    `parse` → `yamlParse` for `yaml`: the new name is the old one with the
  *    package's own name attached, which is what a package does when it stops
  *    exporting a namespace object and starts exporting flat functions.
- * 3. **The old name is the tail of exactly one new name**, at least three
- *    characters long: `Client` → `ApiClient`.
+ *
+ * A third rule — "the old name is the tail of exactly one new name" — was
+ * tried and removed: on vue 2 → 3 it read `Vue` as replaced by `CompatVue`,
+ * an internal compatibility symbol, and Drift's codemod tier then rewrote
+ * `new Vue({...})` to `new CompatVue({...})` when the actual migration is
+ * `createApp(App).mount(...)`. A plausible-looking name is not evidence.
  *
  * A wrong replacement is worse than none, so a caller must still verify: the
  * fix Drift applies from it is compiled and tested like any other.
@@ -3203,6 +3207,9 @@ export function inferReplacement(
   packageName?: string,
 ): SurfaceEntry | null {
   if (removed.shapeUnknown || added.length === 0) return null;
+  // A qualified name (`@vue/shared#IfAny`) is not something a consumer can
+  // write in place of the old symbol.
+  const plain = (entry: SurfaceEntry) => /^[A-Za-z_$][\w$]*$/.test(baseName(entry.name)) && !/[#/]/.test(entry.name);
   const base = baseName(removed.name);
   if (base.length < 3 || !/^[A-Za-z_$][\w$]*$/.test(base)) return null;
 
@@ -3212,6 +3219,7 @@ export function inferReplacement(
   // interface the new version added.
   const bySignature = added.filter(
     (entry) =>
+      plain(entry) &&
       entry.kind === removed.kind &&
       distinctiveShape(removed) &&
       distinctiveShape(entry) &&
@@ -3223,17 +3231,14 @@ export function inferReplacement(
   const alias = (packageName ?? '').replace(/^@[^/]+\//, '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
   if (alias) {
     const merged = added.filter((entry) => {
+      if (!plain(entry)) return false;
       const candidate = baseName(entry.name).toLowerCase();
       return candidate === `${alias}${base.toLowerCase()}` || candidate === `${base.toLowerCase()}${alias}`;
     });
     if (merged.length === 1) return merged[0]!;
   }
 
-  const suffix = added.filter((entry) => {
-    const candidate = baseName(entry.name);
-    return candidate.length > base.length && candidate.toLowerCase().endsWith(base.toLowerCase());
-  });
-  return suffix.length === 1 ? suffix[0]! : null;
+  return null;
 }
 
 /** Whether a declaration says enough about itself to identify the symbol by shape alone. */

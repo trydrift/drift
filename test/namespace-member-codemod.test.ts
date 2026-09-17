@@ -79,3 +79,28 @@ describe('namespace member to named import', () => {
     assert.match(after, /globSync\('glob\.sync'\)/);
   });
 });
+
+/**
+ * The local name an import binds is chosen by the consumer, not the package,
+ * so renaming it migrates nothing and only breaks the binding. Drift reached
+ * this on vue 2 -> 3 (`import Vue from "vue"` -> `import CompatVue from
+ * "vue"`); the successor inference no longer proposes that target, and the
+ * codemod declines the shape regardless of how it is reached.
+ */
+test('renaming a binding that an import introduced is declined', () => {
+  const vue = (overrides: Record<string, unknown>) =>
+    change({ dependency: 'vue', symbols: ['Vue'], replacementSymbols: ['CompatVue'], ...overrides });
+  const vueSite = (line: number) => ({ ...(site(line, 'src/main.ts') as Record<string, unknown>), matchedSymbol: 'Vue' }) as never;
+
+  const esm = 'import Vue from "vue";\n\nnew Vue({ el: "#app" });\n';
+  assert.equal(
+    attemptCodemod(vue({}), [vueSite(1), vueSite(3)], new Map([['src/main.ts', esm]])),
+    null,
+  );
+
+  const cjs = 'const Vue = require("vue");\nnew Vue({});\n';
+  assert.equal(
+    attemptCodemod(vue({}), [vueSite(1), vueSite(2)], new Map([['src/main.ts', cjs]])),
+    null,
+  );
+});

@@ -94,6 +94,16 @@ export interface CodemodResult {
 
 const PLAIN_IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
 
+/** Whether this line is the import/require that binds `name` to a module. */
+function bindsPackageImport(line: string, name: string): boolean {
+  const identifier = escapeRegExp(name);
+  return (
+    new RegExp(`\\bimport\\s+(?:\\*\\s+as\\s+)?${identifier}\\b[^,]*\\bfrom\\b`).test(line) ||
+    new RegExp(`\\b(?:const|let|var)\\s+${identifier}\\s*=\\s*require\\s*\\(`).test(line) ||
+    new RegExp(`\\bimport\\s+${identifier}\\s*=\\s*require\\s*\\(`).test(line)
+  );
+}
+
 /**
  * Attempt a deterministic fix for one breaking change.
  *
@@ -154,6 +164,10 @@ export function attemptCodemod(
       if (line === undefined || resolvedLines.has(index)) continue;
       if (isCommentOnly(line)) continue;
 
+      // The local name an import binds is arbitrary: renaming it fixes
+      // nothing and breaks the binding. `import Vue from 'vue'` becoming
+      // `import CompatVue from 'vue'` is not a migration of anything.
+      if (bindsPackageImport(line, from)) return null;
       const rewritten = renameOnLine(line, matcher, to);
       if (rewritten === line) continue;
 

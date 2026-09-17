@@ -21,15 +21,25 @@ describe('inferring what replaced a removed export', () => {
   });
 
   test('the same declaration under a new name', () => {
-    const removed = entry('Logger', 'function', 'function Logger(options: LoggerOptions): Logger;');
-    const added = [entry('createLogger', 'function', 'function createLogger(options: LoggerOptions): Logger;')];
+    const removed = entry('Logger', 'function', 'function Logger(options: LoggerOptions): Instance;');
+    const added = [entry('createLogger', 'function', 'function createLogger(options: LoggerOptions): Instance;')];
     assert.equal(inferReplacement(removed, added, 'winston')?.name, 'createLogger');
   });
 
-  test('the old name as the tail of exactly one new name', () => {
-    const removed = entry('Client', 'class', 'class Client', ['request', 'close']);
-    const added = [entry('ApiClient', 'class', 'class ApiClient', ['request', 'close'])];
-    assert.equal(inferReplacement(removed, added, 'sdk')?.name, 'ApiClient');
+  // A name that merely *contains* the old one is not evidence of anything. On
+  // vue 2 -> 3 this read `Vue` as replaced by `CompatVue` — an internal
+  // compatibility symbol — and the codemod tier then rewrote `new Vue({...})`
+  // to `new CompatVue({...})` when the migration is `createApp(App).mount()`.
+  test('a new name that merely ends with the old one is not a successor', () => {
+    const removed = entry('Vue', 'variable', 'const Vue: VueConstructor');
+    const added = [entry('CompatVue', 'variable', 'const CompatVue: CompatVue')];
+    assert.equal(inferReplacement(removed, added, 'vue'), null);
+  });
+
+  test('a successor in another package is not a name a consumer can write', () => {
+    const removed = entry('IfAny', 'type', 'type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;');
+    const added = [entry('@vue/shared#IfAny', 'type', 'type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;')];
+    assert.equal(inferReplacement(removed, added, 'vue'), null);
   });
 
   test('a bare declaration header identifies nothing: nineteen interfaces do not all become the one that was added', () => {
