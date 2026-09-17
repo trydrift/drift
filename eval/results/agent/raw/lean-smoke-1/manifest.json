@@ -1,0 +1,33 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "lean-smoke-1",
+  "suite": "smoke",
+  "suiteStatus": "draft",
+  "createdAt": "2026-09-17T15:19:30.107Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/agent/cli.ts run --suite smoke --runs 1 --conditions baseline,drift-lean,drift-lean-brief --run-id lean-smoke-1 --notes plumbing smoke for the lean conditions",
+  "driftCommit": "0c0c037b6895ec14a879d617e3ff03944c60a197",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 1,
+  "conditions": [
+    "baseline",
+    "drift-lean",
+    "drift-lean-brief"
+  ],
+  "scheduleDesign": "williams-v1",
+  "cleanEnvironment": "isolated",
+  "webTools": "disabled",
+  "maxBudgetUsd": null,
+  "maxTurns": null,
+  "driftVerify": true,
+  "caseIds": [
+    "smoke-glob-sync"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "plumbing smoke for the lean conditions"
+}
