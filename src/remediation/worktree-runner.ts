@@ -360,7 +360,11 @@ export async function commitFiles(worktree: string, files: readonly string[], me
   if (files.length === 0) return false;
   const add = await exec('git', ['add', '--', ...files], { cwd: worktree });
   if (add.code !== 0) return false;
-  const commit = await exec('git', ['commit', '-m', message], { cwd: worktree });
+  // --no-verify: a repository's own commit hooks (husky, lint-staged) run its
+  // linters against a tree that is mid-migration by construction, and would
+  // refuse a correct edit — or rewrite it. What the checks say about the result
+  // is verification's job, which runs them explicitly and reports them.
+  const commit = await exec('git', ['commit', '--no-verify', '-m', message], { cwd: worktree });
   return commit.code === 0;
 }
 

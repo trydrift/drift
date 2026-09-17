@@ -215,6 +215,20 @@ describe('deterministic work never reaches an agent', () => {
   });
 });
 
+describe('commits', () => {
+  test('a repository commit hook cannot refuse an accepted edit', async () => {
+    const { root, cleanup } = await repoWith({ 'src/app.ts': 'gone();\n' });
+    try {
+      await writeFile(join(root, '.git', 'hooks', 'pre-commit'), '#!/bin/sh\necho lint failed >&2\nexit 1\n', { mode: 0o755 });
+      const fake = scriptedAgent(root, [async () => fake.write('src/app.ts', 'arrived();\n')]);
+      const record = await runRemediationController({ root, plan: plan([unit()]), config, agent: fake.agent, verifier: null, logger: silent });
+      assert.equal(record.sessions[0]!.status, 'accepted');
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
 describe('unit scoping', () => {
   test('an edit outside the unit is rejected and reset, and counted', async () => {
     const { root, cleanup } = await repoWith({ 'src/app.ts': 'gone();\n', 'src/other.ts': 'x\n' });
