@@ -316,6 +316,17 @@ describe('verification guard', () => {
     assert.match(settings.hooks.PreToolUse[0]!.hooks[0]!.command, /verification-guard-hook\.js/);
   });
 
+  test('classifying an adversarial command line stays fast', async () => {
+    const { classifyVerificationCommand } = await import('../dist/agents/verification-commands.js');
+    const started = Date.now();
+    classifyVerificationCommand(`npm\t-${'--'.repeat(100_000)}`);
+    classifyVerificationCommand('!'.repeat(200_000));
+    classifyVerificationCommand(`npx jest ${'a b/'.repeat(50_000)}`);
+    assert.ok(Date.now() - started < 500);
+    assert.equal(classifyVerificationCommand('npx tsc --noEmit -p tsconfig.json 2>&1 | head -80'), 'broad');
+    assert.equal(classifyVerificationCommand('env CI=1 npm test -- src/a.test.ts'), 'narrow');
+  });
+
   test('the hook script exits 2 with the reason on stderr for a broad command', async () => {
     const { spawnSync } = await import('node:child_process');
     const script = new URL('../dist/agents/verification-guard-hook.js', import.meta.url).pathname;
