@@ -16,6 +16,7 @@ import {
   detectRemediationChecks,
   measureBaseline,
   parseScopeRequests,
+  verificationGuardSettings,
   runRemediationController,
   upgradedDependencyFindings,
   workaroundFindings,
@@ -117,6 +118,10 @@ export async function runOrchestrated(options: OrchestratedOptions): Promise<Orc
   let usedMs = 0;
   let pending: { kind: CapturedSession['kind']; unitId: string | null; round: number } = { kind: 'unit', unitId: null, round: 0 };
 
+  // Both orchestrated conditions verify outside the agent, so every session in
+  // either gets the product's verification guard — identical tools otherwise.
+  const guard = verificationGuardSettings();
+  const guarded = new Set<number>();
   const session = async (prompt: string): Promise<AgentRunResult | null> => {
     const remaining = budgetMs - usedMs;
     if (remaining < 30_000) {
@@ -137,10 +142,12 @@ export async function runOrchestrated(options: OrchestratedOptions): Promise<Orc
       maxTurns: null,
       env: options.env,
       mcpServers: {},
+      settings: guard,
       onEventLine: (line) => lines.push(line),
       onProgress: (message) => options.onProgress?.(`      ${message}`),
     });
     usedMs += result.durationMs;
+    guarded.add(sessions.length + 1);
     sessions.push({ index: sessions.length + 1, ...pending, prompt, result, lines, parsed: parseClaudeStream(lines) });
     if (result.status === 'provider-error' || result.status === 'launch-failure') {
       infrastructure = {
@@ -289,6 +296,7 @@ export async function runOrchestrated(options: OrchestratedOptions): Promise<Orc
         tokensBeforeFirstEdit: split.before,
         tokensAfterFirstEdit: split.after,
         agentVerification: agentVerificationCommands(captured.parsed),
+        verificationGuard: guarded.has(captured.index),
         research: researchSignals(captured.parsed, agentCase.dependency.name),
         environmentFingerprint: captured.result.session.environment?.fingerprint ?? null,
       };
@@ -384,7 +392,7 @@ async function settleOpenSession(repo: string, dependency: string, captured: Cap
   }
   const staged = (await git('diff', '--cached', '--name-only')).trim();
   if (staged) {
-    await git('-c', 'user.email=bench@drift.invalid', '-c', 'user.name=Drift Benchmark', '-c', 'commit.gpgsign=false', 'commit', '-q', '-m', 'open session edits');
+    await git('-c', 'user.email=bench@drift.invalid', '-c', 'user.name=Drift Benchmark', '-c', 'commit.gpgsign=false', 'commit', '-q', '--no-verify', '-m', 'open session edits');
     record.outcome = 'accepted';
   } else {
     record.outcome = 'no-change';
