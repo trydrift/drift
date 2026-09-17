@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `ac9c8b852a6738755271fd8c34d5c5db3abff875` |
-| Run date | 2026-09-16T01:39:53.979Z |
+| Drift commit | `606bbf402083b2679f7ee65c81724290e5c21cb8` |
+| Run date | 2026-09-17T03:13:08.873Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -60,7 +60,8 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | --- | ---: |
 | `verification-install-failed` | 10 |
 | `consumer-usage-not-found` | 5 |
-| `verification-inconclusive` | 4 |
+| `verification-inconclusive` | 3 |
+| `consumer-match-insufficient-confidence` | 1 |
 | **Total** | **19** |
 
 ### Breakdown
