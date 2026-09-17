@@ -42,8 +42,8 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "a255808f6c0deb6e75ce031b5804e722306e46a8",
-    "capturedAt": "2026-09-16T17:37:11.488Z",
+    "commit": "f9831f7c949f92cd06cf7c975749171a45adbb8c",
+    "capturedAt": "2026-09-17T02:29:05.717Z",
     "packagesChecked": 549,
     "candidates": 262
   },
@@ -78,10 +78,10 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "e13d4247681cf3e62289b135cd6c5f7db18fa8bc",
-    "capturedAt": "2026-09-16T17:35:46.579Z",
+    "commit": "34158e17b885bcc749fac6003b2be665a3a2765f",
+    "capturedAt": "2026-09-17T02:28:11.371Z",
     "packagesChecked": 31,
-    "candidates": 8
+    "candidates": 9
   },
   {
     "id": "solrnet",
