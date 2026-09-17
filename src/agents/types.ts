@@ -179,6 +179,13 @@ export interface FixTask {
    * else from before.
    */
   repair?: RepairRequest;
+  /**
+   * Who runs the project's broad verification for this session. `controller`
+   * means Drift does, after the session; an agent that supports it is then
+   * prevented from running whole-project checks itself (see
+   * `verification-guard.ts`), not merely asked not to.
+   */
+  verificationOwner?: 'controller' | 'agent';
 }
 
 export interface RepairRequest {

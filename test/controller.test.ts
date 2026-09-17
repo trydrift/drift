@@ -300,6 +300,47 @@ describe('unit scoping', () => {
   });
 });
 
+describe('verification guard', () => {
+  test('refuses whole-project checks and allows targeted ones', async () => {
+    const { guardDecision, verificationGuardSettings } = await import('../dist/agents/verification-guard.js');
+    const call = (command: string) => JSON.stringify({ tool_name: 'Bash', tool_input: { command } });
+    for (const command of ['npm test', 'npx tsc --noEmit -p tsconfig.json 2>&1 | head -80', 'corepack yarn build', 'npx eslint src']) {
+      assert.equal(guardDecision(call(command)).block, true, command);
+    }
+    for (const command of ['npx jest src/ledger-keyring.test.ts', 'node eslint-rules/no-unsafe-execa.test.js', 'cat package.json', 'npm install typescript-eslint@8']) {
+      assert.equal(guardDecision(call(command)).block, false, command);
+    }
+    assert.equal(guardDecision(JSON.stringify({ tool_name: 'Read', tool_input: { file_path: 'x' } })).block, false);
+    const settings = verificationGuardSettings('/usr/bin/node') as { hooks: { PreToolUse: { matcher: string; hooks: { command: string }[] }[] } };
+    assert.equal(settings.hooks.PreToolUse[0]!.matcher, 'Bash');
+    assert.match(settings.hooks.PreToolUse[0]!.hooks[0]!.command, /verification-guard-hook\.js/);
+  });
+
+  test('the hook script exits 2 with the reason on stderr for a broad command', async () => {
+    const { spawnSync } = await import('node:child_process');
+    const script = new URL('../dist/agents/verification-guard-hook.js', import.meta.url).pathname;
+    const broad = spawnSync(process.execPath, [script], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'npm test' } }), encoding: 'utf8' });
+    assert.equal(broad.status, 2);
+    assert.match(broad.stderr, /Drift runs this repository's full build/);
+    const narrow = spawnSync(process.execPath, [script], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'npx jest src/a.test.ts' } }), encoding: 'utf8' });
+    assert.equal(narrow.status, 0);
+  });
+
+  test('controller sessions are marked as controller-verified', async () => {
+    const { root, cleanup } = await repoWith({ 'src/app.ts': 'gone();\n' });
+    try {
+      const fake = scriptedAgent(root, [async () => fake.write('src/app.ts', 'arrived();\n')]);
+      await runRemediationController({ root, plan: plan([unit()]), config, agent: fake.agent, verifier: scriptedVerifier([{ passed: true }]).verifier, logger: silent });
+      assert.equal(fake.tasks[0].verificationOwner, 'controller');
+      const unverified = scriptedAgent(root, [async () => undefined]);
+      await runRemediationController({ root, plan: plan([unit()]), config, agent: unverified.agent, verifier: null, logger: silent });
+      assert.equal(unverified.tasks[0].verificationOwner, undefined);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
 describe('installed dependencies', () => {
   test('an agent that patches node_modules without a manifest change is rejected, and the tree is reinstalled', async () => {
     const { root, cleanup } = await repoWith({ 'src/app.ts': 'gone();\n' });

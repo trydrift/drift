@@ -228,6 +228,7 @@ export async function runRemediationController(options: RemediationControllerOpt
       model: options.config.remediation.agent.model ?? options.config.remediation.model,
       effort: options.config.remediation.agent.effort,
       fast: options.config.remediation.agent.fast,
+      ...(options.verifier ? { verificationOwner: 'controller' as const } : {}),
       ...(extras.diagnostics ? { diagnostics: extras.diagnostics } : {}),
       ...(extras.repair ? { repair: extras.repair } : {}),
     };

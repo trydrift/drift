@@ -614,6 +614,11 @@ never runs the project's broad checks; Drift does:
 - Units that cannot succeed are not dispatched — a unit whose every file is
   protected (a CI workflow) is reported as needing a human — and units over the
   same files share one session.
+- The agent does not run the project's broad checks — and for Claude Code this
+  is enforced, not requested: a PreToolUse hook (`--settings`,
+  `src/agents/verification-guard.ts`) refuses whole-project build, typecheck,
+  lint and test commands and lets targeted ones (one test file, one file's
+  lint) run. Sessions told only in the prompt kept running them.
 - Each remaining unit is one fresh agent session, given the finding's
   replacement symbols and before/after declarations when Drift has them (and an
   explicit "none established" when it does not), the measured failures on its

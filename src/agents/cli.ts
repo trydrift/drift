@@ -3,6 +3,7 @@ import { constants } from 'node:fs';
 import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
+import { verificationGuardSettings } from './verification-guard.js';
 import {
   composeAgentPrompt,
   parseScopeRequests,
@@ -49,6 +50,11 @@ export interface CliAgentSpec {
   buildArgs: (prompt: string) => string[];
   /** Passed on stdin instead of argv when the prompt is large. */
   promptOnStdin?: boolean;
+  /**
+   * How this CLI takes an inline settings document, when it has one. Used to
+   * install the verification guard for sessions the controller verifies.
+   */
+  settingsArgs?: (settings: Record<string, unknown>) => string[];
   /**
    * The models this subscription offers, best first.
    *
@@ -174,6 +180,7 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
       },
     ],
     modelArgs: (model) => ['--model', model],
+    settingsArgs: (settings) => ['--settings', JSON.stringify(settings)],
     efforts: CLAUDE_EFFORTS,
     // Claude Code grew a real `--effort` flag, so the reasoning budget can be
     // set directly instead of asked for in words. The prompt keywords stay as
@@ -321,7 +328,11 @@ export class CliFixAgent implements FixAgent {
     const thinking = await this.thinking(task, command);
     const prompt = composeAgentPrompt(task, thinking);
 
-    const args = [...this.spec.buildArgs(prompt), ...(await this.selection(task, command))];
+    const args = [
+      ...this.spec.buildArgs(prompt),
+      ...(await this.selection(task, command)),
+      ...(task.verificationOwner === 'controller' && this.spec.settingsArgs ? this.spec.settingsArgs(verificationGuardSettings()) : []),
+    ];
     ctx.report(`$ ${displayCommand(command, args)}\n# cwd: ${task.workspaceRoot}`);
 
     try {
