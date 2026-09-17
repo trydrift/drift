@@ -36,7 +36,7 @@ describe('isolated sessions', () => {
     assert.equal(env['CLAUDE_CODE_DISABLE_CLAUDE_MDS'], '1');
     assert.equal(env['CLAUDE_CODE_DISABLE_AUTO_MEMORY'], '1');
     // Only the browsing tools; every other ordinary tool is left as the CLI provides it, in every condition.
-    assert.deepEqual(disallowedTools, ['WebFetch', 'WebSearch']);
+    assert.deepEqual(disallowedTools, ['WebFetch', 'WebSearch', 'ArtifactComments', 'ArtifactData']);
   });
 
   test('a condition without Drift tools gets an explicitly empty server list, not the machine’s', () => {

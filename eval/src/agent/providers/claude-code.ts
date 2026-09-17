@@ -40,6 +40,15 @@ export const CLAUDE_STREAM_FORMAT_VERSION = 'claude-code-2.1.x-stream-json';
 
 export const DEFAULT_DISALLOWED_WEB_TOOLS = ['WebFetch', 'WebSearch'];
 
+/**
+ * Built-in tools the provider exposes to some sessions and not others, with
+ * nothing on this machine changing. In v3 two sessions loaded them and had to
+ * be excluded as environment mismatches; an orchestrated trial starts several
+ * sessions, so the flicker would exclude far more. They have nothing to do with
+ * editing a repository, and every condition disallows them identically.
+ */
+export const UNSTABLE_BUILT_IN_TOOLS = ['ArtifactComments', 'ArtifactData'];
+
 /** How tool activity is counted. Printed verbatim in every report. */
 export const TOOL_COUNTING_NOTE =
   'Counts are `tool_use` blocks in the session event stream, deduplicated by block id. "File reads" are Read calls; ' +
@@ -501,6 +510,7 @@ export function buildClaudeArgs(
   }
   const disallowedTools = [
     ...(request.webTools === 'disabled' ? DEFAULT_DISALLOWED_WEB_TOOLS : []),
+    ...UNSTABLE_BUILT_IN_TOOLS,
   ];
   const argv = [
     '-p',
