@@ -223,12 +223,21 @@ export function testWeakeningFindings(
     if (/^\+.*\b(describe|it|test)\.skip\s*\(/.test(line) || /^\+.*\b(skip|todo)\s*:\s*true\b/.test(line)) {
       errors.push('Agent added a skipped or todo test while test weakening is forbidden.');
     }
-    if (/^-.*\b(assert|expect)\b/.test(line)) {
-      errors.push('Agent removed an assertion while test weakening is forbidden.');
-    }
+
     if (/^-.*\b(describe|it|test)\s*\(/.test(line)) {
       warnings.push('Agent changed test structure; review is required for behavioural migrations.');
     }
+  }
+
+  // Fewer assertions in a test file is weakening. A rewritten assertion — the
+  // same check against the migrated API, which a real migration of a test file
+  // is made of — removes one line and adds one, and is not. This used to reject
+  // any removed assertion line, which threw out correct test migrations.
+  for (const [file, lines] of patchByFile(patch)) {
+    if (!isTestPath(file)) continue;
+    const removed = lines.filter((line) => /^-.*\b(assert|expect)\b/.test(line)).length;
+    const added = lines.filter((line) => /^\+.*\b(assert|expect)\b/.test(line)).length;
+    if (removed > added) errors.push(`Agent removed an assertion while test weakening is forbidden (${file}: ${removed} removed, ${added} added).`);
   }
 
   return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };

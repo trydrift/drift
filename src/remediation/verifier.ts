@@ -409,8 +409,9 @@ export function extractFailures(check: string, rawOutput: string, root: string):
       add({ key: `test:${match[1]}::${match[2] ?? ''}`, file, message: `Test failed: ${match[1]}${match[2] ? `::${match[2]}` : ''}` });
     } else if ((match = /coverage threshold for (\w+) \(([\d.]+)%\) not met/.exec(trimmed))) {
       add({ key: `coverage:${match[1]}`, message: trimmed });
-    } else if ((match = /^(\/?[^\s:]+\.[cm]?[jt]sx?)$/.exec(trimmed)) && /^\s+\d+:\d+\s+error\s/.test(lines[index + 1] ?? '')) {
-      // ESLint's stylish formatter: a path line, then `  line:col  error  message  rule`.
+    } else if ((match = /^(\/?[^\s:]+\.[cm]?[jt]sx?)$/.exec(trimmed)) && /^\s+\d+:\d+\s+(?:error|warning)\s/.test(lines[index + 1] ?? '')) {
+      // ESLint's stylish formatter: a path line, then `  line:col  error|warning  message  rule`
+      // lines in any order. Warnings commonly come first; only errors fail the run.
       const file = repoRelative(match[1]!, root);
       for (let next = index + 1; next < lines.length && /^\s+\d+:\d+\s+/.test(lines[next]!); next += 1) {
         const lint = /^\s+(\d+):\d+\s+error\s+(.+?)\s{2,}(\S+)\s*$/.exec(lines[next]!);

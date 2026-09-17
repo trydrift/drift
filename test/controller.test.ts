@@ -403,6 +403,49 @@ describe('workaround detection', () => {
   });
 });
 
+describe('accuracy fixes from the development run', () => {
+  test('eslint stylish output with warnings before errors still yields the errors', () => {
+    const output = [
+      '/repo/src/cli.ts',
+      '   13:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any',
+      '   91:21  error    \'x\' is defined but never used            @typescript-eslint/no-unused-vars',
+      '',
+    ].join('\n');
+    const failures = extractFailures('npm run lint', output, '/repo');
+    assert.equal(failures.length, 1);
+    assert.equal(failures[0]!.line, 91);
+  });
+
+  test('a rewritten assertion is not weakening; a removed one is', async () => {
+    const { testWeakeningFindings } = await import('../dist/agents/scope.js');
+    const changed = [{ path: 'src/a.test.ts', status: 'modified' }];
+    const rewritten = ['diff --git a/src/a.test.ts b/src/a.test.ts', "-    expect(tx.getMessageToSign(false)).toBe(x);", "+    expect(tx.getMessageToSign()).toBe(x);"].join('\n');
+    assert.deepEqual(testWeakeningFindings(rewritten, changed as never).errors, []);
+    const removed = ['diff --git a/src/a.test.ts b/src/a.test.ts', "-    expect(a).toBe(1);", "-    expect(b).toBe(2);", "+    expect(a).toBe(1);"].join('\n');
+    assert.match(testWeakeningFindings(removed, changed as never).errors.join(' '), /removed an assertion/);
+  });
+
+  test('a rejected session earns one more round, told why', async () => {
+    const { root, cleanup } = await repoWith({ 'src/app.ts': 'a\n', 'src/app.test.ts': 'expect(a).toBe(1);\nexpect(b).toBe(2);\n' });
+    try {
+      const fake = scriptedAgent(root, [
+        async () => fake.write('src/app.test.ts', 'expect(a).toBe(1);\n'),
+        async (task) => {
+          assert.match(task.repair.previousRejection, /removed an assertion/);
+          await fake.write('src/app.ts', 'b\n');
+        },
+      ]);
+      const failing = { passed: false, failures: [{ message: 'boom' }] };
+      const verify = scriptedVerifier([failing, failing, { passed: true }]);
+      const record = await runRemediationController({ root, plan: plan([]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
+      assert.equal(record.sessions[0]!.status, 'rejected');
+      assert.equal(record.termination, 'verified');
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
 describe('the agent prompt', () => {
   const task = (overrides: Record<string, unknown> = {}) => ({
     plan: plan([unit()]),

@@ -367,8 +367,11 @@ export async function runRemediationController(options: RemediationControllerOpt
       const lastRound = record.sessions.filter((session) => session.round === round);
       const changedSomething = lastRound.some((session) => session.status === 'accepted');
       const grantedSomething = lastRound.some((session) => session.scopeRequests.some((request) => record.grantedFiles.includes(normalizePlanPath(request.path))));
+      // A session whose edits validation discarded did work that can be
+      // redone correctly once told why; it earns a round, not a stop.
+      const rejectedSomething = lastRound.some((session) => session.status === 'rejected');
       stalledRounds += 1;
-      if ((!changedSomething && !grantedSomething) || stalledRounds >= 2) {
+      if ((!changedSomething && !grantedSomething && !rejectedSomething) || stalledRounds >= 2) {
         return finish('no-progress', `the same ${current.failures.length} failure(s) remained after ${changedSomething ? 'two rounds of edits' : 'a round that changed nothing'}`);
       }
     } else {
@@ -386,8 +389,13 @@ export async function runRemediationController(options: RemediationControllerOpt
     for (const repair of repairs) {
       if (options.signal?.aborted) return finish('aborted', 'cancelled');
       const previousDiff = await diffSince(options.root, startRef, repair.commit.allowedFiles, exec);
+      const rejection = record.sessions
+        .filter((session) => session.round === round - 1 && session.status === 'rejected' && (session.unitId === repair.commit.id || session.unitId === repair.parentId))
+        .flatMap((session) => session.reasons)
+        .join('\n');
       await runUnit(repair, round, {
         repair: {
+          ...(rejection ? { previousRejection: rejection } : {}),
           round,
           failures: renderFailures(repair.failures ?? [], current, { unitFiles: repair.commit.allowedFiles, includeTails: repair.parentId === RESIDUAL_ID }),
           ...(previousDiff ? { previousDiff } : {}),

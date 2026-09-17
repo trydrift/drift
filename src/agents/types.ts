@@ -195,6 +195,8 @@ export interface RepairRequest {
   failures: string;
   /** Edits already applied to the files in scope, so they are neither redone nor undone blindly. */
   previousDiff?: string;
+  /** Why Drift discarded the previous session's edits for this work, when it did. */
+  previousRejection?: string;
 }
 
 export interface RevisionRequest {
@@ -475,6 +477,18 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
       '',
       task.repair.failures.trim(),
     ];
+    if (task.repair.previousRejection?.trim()) {
+      lines.push(
+        '',
+        'The previous session\'s edits for this were discarded by Drift\'s validation, so the files are as they were before it. Why:',
+        '',
+        '```',
+        task.repair.previousRejection.trim().slice(0, 2000),
+        '```',
+        '',
+        'Make the fix without repeating what was rejected.',
+      );
+    }
     if (task.repair.previousDiff?.trim()) {
       lines.push(
         '',
