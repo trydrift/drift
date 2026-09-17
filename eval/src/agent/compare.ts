@@ -184,7 +184,18 @@ export function compatibilityProblems(
   const sessions = trials.filter((t) => t.validity.valid || t.validity.infrastructureFailure === 'environment_mismatch');
   const unrecorded = sessions.filter((t) => !t.metadata.agentConfiguration.environment);
   if (unrecorded.length > 0) problems.push(`${unrecorded.length} trial(s) did not record the session environment (e.g. ${unrecorded[0]!.trialId})`);
-  differ('session environment (excluding Drift MCP)', sessions.map((t) => t.metadata.agentConfiguration.environment?.fingerprint));
+  // Conditions may declare their own tool set (the lean profile); everything
+  // else the sessions loaded must match across the experiment, and tools must
+  // match within each condition.
+  const declaresTools = sessions.some((t) => t.condition === 'drift-lean' || t.condition === 'drift-lean-brief');
+  if (declaresTools) {
+    differ('session environment (excluding Drift MCP, tools, skills and slash commands)', sessions.map((t) => t.metadata.agentConfiguration.environment?.baseFingerprint));
+    for (const condition of new Set(sessions.map((t) => t.condition))) {
+      differ(`session tools within ${condition}`, sessions.filter((t) => t.condition === condition).map((t) => t.metadata.agentConfiguration.environment?.toolsFingerprint));
+    }
+  } else {
+    differ('session environment (excluding Drift MCP)', sessions.map((t) => t.metadata.agentConfiguration.environment?.fingerprint));
+  }
 
   const byCase = new Map<string, TrialArtifact[]>();
   for (const trial of trials) byCase.set(trial.caseId, [...(byCase.get(trial.caseId) ?? []), trial]);

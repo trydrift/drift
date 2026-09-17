@@ -86,5 +86,5 @@ export function sha256(text: string): string {
 }
 
 export function contextKindFor(condition: Condition): 'none' | 'drift' {
-  return condition === 'baseline' || condition === 'generic-orchestrated' ? 'none' : 'drift';
+  return condition === 'baseline' || condition === 'generic-orchestrated' || condition === 'drift-lean' ? 'none' : 'drift';
 }

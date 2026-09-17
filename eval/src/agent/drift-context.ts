@@ -85,7 +85,8 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
     };
   }
 
-  const render = condition === 'drift-agent-brief' ? '--agent' : '--markdown';
+  const briefCondition = condition === 'drift-agent-brief' || condition === 'drift-lean-brief';
+  const render = briefCondition ? '--agent' : '--markdown';
   const command = `drift analyze --before ${workspace.baseCommit.slice(0, 12)} --after ${workspace.startCommit.slice(0, 12)} ${render}${options.verify ? ' --verify' : ''}`;
 
   try {
@@ -109,7 +110,7 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
     const verdict = String(resolvePlanVerdict(result.plan));
     let preamble: string;
     let brief: BriefStats | null = null;
-    if (condition === 'drift-agent-brief') {
+    if (briefCondition) {
       // Exactly what `drift analyze --agent` prints, with no retrieval named:
       // this session has no Drift tools to fetch omitted detail with.
       const checks = (await availableChecks(workspace.project)).map((check) => ({ label: check.label, kind: check.kind }));

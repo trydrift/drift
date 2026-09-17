@@ -38,7 +38,7 @@ function usage(): string {
     '  benchmark:agent verify',
     '  benchmark:agent runs | cases | suites',
     '',
-    '  benchmark:agent compare-orchestration --runs a,b --name NAME   # raw vs generic-orchestrated vs drift-orchestrated',
+    '  benchmark:agent compare-orchestration --runs a,b --name NAME [--conditions baseline,drift-lean,drift-lean-brief]   # three-way, first is the reference',
     '  benchmark:agent compare --runs a,b [--reference-runs c,d] [--exploratory-runs e,f] --name NAME',
     '                                        # every Drift condition against the baseline; refuses incompatible runs',
     '',
@@ -202,7 +202,12 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     }
     const { buildThreeWay, writeThreeWay } = await import('./orchestration-compare.ts');
     try {
-      const comparison = await buildThreeWay({ name, runIds: runs, root });
+      const conditions = flag(argv, 'conditions')?.split(',').filter(Boolean).map(parseCondition);
+      if (conditions && conditions.length !== 3) {
+        console.error('--conditions takes exactly three conditions; the first is the reference.');
+        return 2;
+      }
+      const comparison = await buildThreeWay({ name, runIds: runs, root, ...(conditions ? { conditions: conditions as unknown as readonly [never, never, never] } : {}) });
       const paths = await writeThreeWay(comparison, root);
       log(`three-way comparison written to ${paths.markdown} and ${paths.json}`);
       return 0;

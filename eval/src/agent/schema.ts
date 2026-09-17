@@ -54,6 +54,8 @@ export const CONDITIONS = [
   'drift-mcp',
   'generic-orchestrated',
   'drift-orchestrated',
+  'drift-lean',
+  'drift-lean-brief',
 ] as const;
 export type Condition = (typeof CONDITIONS)[number];
 export const conditionSchema = z.enum(CONDITIONS);
@@ -68,6 +70,8 @@ export const CONDITION_LABELS: Record<Condition, string> = {
   'drift-mcp': 'drift-mcp',
   'generic-orchestrated': 'generic-orchestrated',
   'drift-orchestrated': 'drift-orchestrated',
+  'drift-lean': 'drift-lean',
+  'drift-lean-brief': 'drift-lean-brief',
 };
 
 /** Accepts a stored id or its label (`drift-full-report` → `drift`). */
@@ -83,7 +87,17 @@ export function parseCondition(name: string): Condition {
 export const HEADLINE_CONDITIONS: readonly Condition[] = ['baseline', 'drift'];
 
 /** Every condition whose trials are compared against the baseline. */
-export const DRIFT_CONDITIONS: readonly Condition[] = ['drift', 'drift-agent-brief', 'drift-mcp', 'drift-evidence-only', 'drift-localization-only', 'generic-orchestrated', 'drift-orchestrated'];
+export const DRIFT_CONDITIONS: readonly Condition[] = ['drift', 'drift-agent-brief', 'drift-mcp', 'drift-evidence-only', 'drift-localization-only', 'generic-orchestrated', 'drift-orchestrated', 'drift-lean', 'drift-lean-brief'];
+
+/**
+ * Conditions whose agent session Drift starts with the product's lean launch
+ * profile (`CLAUDE_CODE_LEAN_SESSION_ARGS`): only the tools a code fix uses, no
+ * skills or slash commands. Same task, same single autonomous session as the
+ * baseline; `drift-lean` changes nothing else, `drift-lean-brief` also appends
+ * the production agent brief exactly as `drift-agent-brief` does.
+ */
+export const LEAN_CONDITIONS: readonly Condition[] = ['drift-lean', 'drift-lean-brief'];
+export const isLean = (condition: Condition): boolean => LEAN_CONDITIONS.includes(condition);
 
 /**
  * Conditions in which a controller, not the agent, owns the remediation loop:
@@ -478,7 +492,7 @@ const tokenSplitSchema = z.object({
 });
 
 export const agentContextSchema = z.object({
-  interface: z.enum(['none', 'full-report', 'agent-brief', 'mcp', 'generic-orchestrated', 'drift-orchestrated']),
+  interface: z.enum(['none', 'full-report', 'agent-brief', 'mcp', 'generic-orchestrated', 'drift-orchestrated', 'lean', 'lean-brief']),
   /** What Drift placed in the initial prompt, after the task. */
   initialDriftContextChars: z.number().int().nonnegative(),
   /** `ceil(bytes / 3)`, the production brief's own estimator. Not a provider count. */
@@ -705,6 +719,15 @@ export const trialSchema = z
             apiKeySource: z.string().nullable(),
             /** Hash of the environment without Drift's MCP server and tools. Equal across conditions of one experiment. */
             fingerprint: z.string(),
+            /**
+             * Hash of the environment's tools, skills and slash commands alone.
+             * A condition that declares its tools (the lean profile) differs from
+             * the baseline here by design; within one condition it must not.
+             * Absent on artifacts recorded before it existed.
+             */
+            toolsFingerprint: z.string().optional(),
+            /** `fingerprint` computed without tools, skills and slash commands. Absent before it existed. */
+            baseFingerprint: z.string().optional(),
           })
           .nullable()
           .optional(),

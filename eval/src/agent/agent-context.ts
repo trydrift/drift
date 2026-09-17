@@ -25,6 +25,8 @@ export const estimatedTokens = (chars: string | number): number =>
 export function interfaceFor(condition: Condition): AgentContextDiagnostics['interface'] {
   if (condition === 'baseline') return 'none';
   if (condition === 'drift-agent-brief') return 'agent-brief';
+  if (condition === 'drift-lean') return 'lean';
+  if (condition === 'drift-lean-brief') return 'lean-brief';
   if (condition === 'drift-mcp') return 'mcp';
   if (condition === 'generic-orchestrated') return 'generic-orchestrated';
   if (condition === 'drift-orchestrated') return 'drift-orchestrated';

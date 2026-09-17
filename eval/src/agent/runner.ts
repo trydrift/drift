@@ -4,11 +4,13 @@ import { agentContextDiagnostics } from './agent-context.ts';
 import { blockOrder, SCHEDULE_DESIGN, type ScheduleSlot } from './schedule.ts';
 import { buildDriftContext, type DriftContext } from './drift-context.ts';
 import { environmentProblems, parseClaudeStream } from './providers/claude-code.ts';
+import { CLAUDE_CODE_LEAN_SESSION_ARGS, CLAUDE_CODE_LEAN_TOOLS } from '../../../dist/index.js';
 import { runOrchestrated, type OrchestratedCondition, type OrchestratedOptions, type OrchestratedResult } from './orchestrated.ts';
 import type { AgentProvider, AgentRunResult } from './providers/types.ts';
 import {
   AGENT_TRIAL_SCHEMA_VERSION,
   HEADLINE_CONDITIONS,
+  isLean,
   isOrchestrated,
   type AgentCase,
   type Condition,
@@ -480,6 +482,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       agent = await options.provider.run({
         prompt,
         cwd: workspace.repo,
+        ...(isLean(condition) ? { extraArgs: CLAUDE_CODE_LEAN_SESSION_ARGS } : {}),
         model: options.model,
         effort: options.effort,
         timeoutMs: agentCase.agent.timeoutSeconds * 1000,
@@ -496,7 +499,10 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
 
     // Every session must have run the condition it is labelled as.
     const expectedServers = Object.keys(driftContext?.mcpServers ?? {});
-    const environmentIssues = agent.status === 'launch-failure' ? [] : environmentProblems(agent.session.environment, expectedServers);
+    const environmentIssues =
+      agent.status === 'launch-failure'
+        ? []
+        : environmentProblems(agent.session.environment, expectedServers, isLean(condition) ? { tools: CLAUDE_CODE_LEAN_TOOLS, noSkills: true } : {});
     if (orchestrated) {
       for (const captured of orchestrated.sessions) {
         if (captured.result.status === 'launch-failure') continue;

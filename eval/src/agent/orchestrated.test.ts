@@ -409,7 +409,7 @@ describe('usage and environment aggregation', () => {
       result: {
         status, exitCode: 0, terminalReason: null, resultSubtype: null, apiErrorStatus: null, numTurns: 2, durationMs: 100, apiDurationMs: 90, finalMessage: '', permissionDenials: 0,
         usage: usageFromStream(parsed), tools: toolMetricsFromStream(parsed),
-        session: { agentCliVersion: 'x', confirmedModel: 'm', permissionMode: 'p', tools: [], mcpServers: [], environment: { tools: [], mcpServers: [], skills: [], slashCommands: [], agents: [], plugins: [], memoryPaths: [], outputStyle: null, apiKeySource: null, fingerprint }, argv: [], disallowedTools: [], cleanEnvironment: 'isolated' },
+        session: { agentCliVersion: 'x', confirmedModel: 'm', permissionMode: 'p', tools: [], mcpServers: [], environment: { tools: [], mcpServers: [], skills: [], slashCommands: [], agents: [], plugins: [], memoryPaths: [], outputStyle: null, apiKeySource: null, fingerprint, toolsFingerprint: 't', baseFingerprint: fingerprint }, argv: [], disallowedTools: [], cleanEnvironment: 'isolated' },
         assistantMessages: 1, stderr: '',
       },
     };
@@ -538,7 +538,7 @@ describe('three-way comparison', () => {
     assert.equal(comparison.gate.meetsThirtyPercentTarget, true);
     const text = renderThreeWay(comparison);
     assert.match(text, /\| \*\*Total\*\* \| \*\*6\/6\*\* \| \*\*6\/6\*\* \| \*\*5\/6\*\* \|/);
-    assert.match(text, /Drift accuracy not below raw overall: \*\*NO\*\*/);
+    assert.match(text, /Drift orch\.: accuracy not below Raw overall \*\*NO\*\*/);
   });
 
   test('orchestrated trial metrics count sessions, repair tokens and controller time', () => {

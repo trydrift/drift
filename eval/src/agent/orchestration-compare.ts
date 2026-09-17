@@ -23,13 +23,21 @@ import { readRunManifest, readTrials, reportsRoot, resultsRoot } from './store.t
  */
 
 export const THREE_WAY_CONDITIONS = ['baseline', 'generic-orchestrated', 'drift-orchestrated'] as const satisfies readonly Condition[];
-type ThreeWay = (typeof THREE_WAY_CONDITIONS)[number];
+/** Any three conditions; the first is the reference every other is gated against. */
+export type ConditionTriple = readonly [Condition, Condition, Condition];
+type ThreeWay = Condition;
 
-export const LABELS: Record<ThreeWay, string> = {
+const NAMES: Partial<Record<Condition, string>> = {
   baseline: 'Raw',
   'generic-orchestrated': 'Generic orch.',
   'drift-orchestrated': 'Drift orch.',
+  'drift-lean': 'Drift lean',
+  'drift-lean-brief': 'Drift lean + brief',
+  'drift-agent-brief': 'Drift brief',
 };
+const PAIR_NAMES: Partial<Record<Condition, string>> = { baseline: 'Raw', 'generic-orchestrated': 'Generic', 'drift-orchestrated': 'Drift' };
+const pairName = (condition: Condition) => PAIR_NAMES[condition] ?? NAMES[condition] ?? condition;
+export const LABELS = new Proxy({} as Record<Condition, string>, { get: (_target, key: string) => NAMES[key as Condition] ?? key });
 
 export interface TrialMetrics {
   success: boolean;
@@ -156,7 +164,10 @@ export interface ThreeWayComparison {
   accuracy: { caseId: string; counts: Record<string, { successes: number; valid: number }> }[];
   accuracyTotals: Record<string, { successes: number; valid: number }>;
   failures: FailureEntry[];
+  conditions: Condition[];
   pairwise: PairwiseComparison[];
+  /** The acceptance gate for every condition against the first. */
+  gates: { condition: string; accuracyNotBelowReference: boolean; accuracyNotBelowReferenceInAnyCase: boolean; medianGrossReductionPct: number | null; meetsThirtyPercentTarget: boolean }[];
   exclusions: { trialId: string; reason: string; detail: string }[];
   setAsideAttempts: { runId: string; file: string; reason: string }[];
   positions: Record<string, number[]>;
@@ -186,16 +197,17 @@ const med = (values: readonly (number | null | undefined)[]): number | null => m
 export function threeWayFromTrials(
   trials: readonly TrialArtifact[],
   manifests: readonly RunManifest[],
-  extras: { name: string; now?: Date; setAsideAttempts?: ThreeWayComparison['setAsideAttempts'] },
+  extras: { name: string; now?: Date; setAsideAttempts?: ThreeWayComparison['setAsideAttempts']; conditions?: ConditionTriple },
 ): ThreeWayComparison {
-  const relevant = trials.filter((t) => (THREE_WAY_CONDITIONS as readonly string[]).includes(t.condition));
+  const CONDS: ConditionTriple = extras.conditions ?? THREE_WAY_CONDITIONS;
+  const relevant = trials.filter((t) => (CONDS as readonly string[]).includes(t.condition));
   const caseIds = [...new Set(relevant.map((t) => t.caseId))].sort();
   const valid = (caseId: string, condition: ThreeWay) => relevant.filter((t) => t.caseId === caseId && t.condition === condition && t.validity.valid);
 
   const cells: ThreeWayComparison['cells'] = {};
   for (const caseId of caseIds) {
     cells[caseId] = {};
-    for (const condition of THREE_WAY_CONDITIONS) {
+    for (const condition of CONDS) {
       const all = relevant.filter((t) => t.caseId === caseId && t.condition === condition);
       const ok = all.filter((t) => t.validity.valid);
       const metrics = ok.map(trialMetrics);
@@ -207,10 +219,10 @@ export function threeWayFromTrials(
 
   const accuracy = caseIds.map((caseId) => ({
     caseId,
-    counts: Object.fromEntries(THREE_WAY_CONDITIONS.map((c) => [c, { successes: cells[caseId]![c]!.successes, valid: cells[caseId]![c]!.valid }])),
+    counts: Object.fromEntries(CONDS.map((c) => [c, { successes: cells[caseId]![c]!.successes, valid: cells[caseId]![c]!.valid }])),
   }));
   const accuracyTotals = Object.fromEntries(
-    THREE_WAY_CONDITIONS.map((c) => [c, accuracy.reduce((sum, row) => ({ successes: sum.successes + row.counts[c]!.successes, valid: sum.valid + row.counts[c]!.valid }), { successes: 0, valid: 0 })]),
+    CONDS.map((c) => [c, accuracy.reduce((sum, row) => ({ successes: sum.successes + row.counts[c]!.successes, valid: sum.valid + row.counts[c]!.valid }), { successes: 0, valid: 0 })]),
   );
 
   const pair = (reference: ThreeWay, treatment: ThreeWay, label: string): PairwiseComparison => {
@@ -242,10 +254,11 @@ export function threeWayFromTrials(
     };
   };
 
+  const [first, second, third] = CONDS;
   const pairwise = [
-    pair('baseline', 'generic-orchestrated', 'Generic vs Raw'),
-    pair('baseline', 'drift-orchestrated', 'Drift vs Raw'),
-    pair('generic-orchestrated', 'drift-orchestrated', 'Drift vs Generic'),
+    pair(first, second, `${pairName(second)} vs ${pairName(first)}`),
+    pair(first, third, `${pairName(third)} vs ${pairName(first)}`),
+    pair(second, third, `${pairName(third)} vs ${pairName(second)}`),
   ];
 
   const failures: FailureEntry[] = relevant
@@ -267,10 +280,21 @@ export function threeWayFromTrials(
     }));
 
   const drift = pairwise[1]!;
-  const rawTotal = accuracyTotals['baseline']!;
-  const driftTotal = accuracyTotals['drift-orchestrated']!;
+  const rawTotal = accuracyTotals[first]!;
+  const driftTotal = accuracyTotals[third]!;
+  const gates = [pairwise[0]!, pairwise[1]!].map((p) => {
+    const reference = accuracyTotals[p.reference]!;
+    const treatment = accuracyTotals[p.treatment]!;
+    return {
+      condition: LABELS[p.treatment],
+      accuracyNotBelowReference: reference.valid > 0 && treatment.valid > 0 && treatment.successes / treatment.valid >= reference.successes / reference.valid,
+      accuracyNotBelowReferenceInAnyCase: accuracy.every((row) => row.counts[p.treatment]!.successes / Math.max(1, row.counts[p.treatment]!.valid) >= row.counts[p.reference]!.successes / Math.max(1, row.counts[p.reference]!.valid)),
+      medianGrossReductionPct: p.medianCaseGrossChangePct === null ? null : -p.medianCaseGrossChangePct,
+      meetsThirtyPercentTarget: p.medianCaseGrossChangePct !== null && p.medianCaseGrossChangePct <= -30,
+    };
+  });
   const positions: Record<string, number[]> = {};
-  for (const condition of THREE_WAY_CONDITIONS) {
+  for (const condition of CONDS) {
     const counts = [0, 0, 0];
     for (const t of relevant.filter((x) => x.condition === condition && x.schedule)) counts[t.schedule!.position - 1] = (counts[t.schedule!.position - 1] ?? 0) + 1;
     positions[LABELS[condition]] = counts;
@@ -296,13 +320,15 @@ export function threeWayFromTrials(
     accuracy,
     accuracyTotals,
     failures,
+    conditions: [...CONDS],
     pairwise,
+    gates,
     exclusions: relevant.filter((t) => !t.validity.valid).map((t) => ({ trialId: t.trialId, reason: t.validity.infrastructureFailure ?? 'unknown', detail: (t.validity.detail ?? '').split('\n')[0]!.slice(0, 200) })),
     setAsideAttempts: extras.setAsideAttempts ?? [],
     positions,
     gate: {
       driftAccuracyNotBelowRaw: rawTotal.valid > 0 && driftTotal.successes / Math.max(1, driftTotal.valid) >= rawTotal.successes / rawTotal.valid && driftTotal.successes >= rawTotal.successes * (driftTotal.valid / Math.max(1, rawTotal.valid)),
-      driftAccuracyNotBelowRawInAnyCase: accuracy.every((row) => row.counts['drift-orchestrated']!.successes >= row.counts['baseline']!.successes),
+      driftAccuracyNotBelowRawInAnyCase: accuracy.every((row) => row.counts[third]!.successes >= row.counts[first]!.successes),
       driftMedianGrossReductionVsRawPct: drift.medianCaseGrossChangePct === null ? null : -drift.medianCaseGrossChangePct,
       meetsThirtyPercentTarget: drift.medianCaseGrossChangePct !== null && drift.medianCaseGrossChangePct <= -30,
     },
@@ -319,7 +345,7 @@ export function threeWayFromTrials(
   };
 }
 
-export async function buildThreeWay(args: { name: string; runIds: string[]; root: string; now?: Date }): Promise<ThreeWayComparison> {
+export async function buildThreeWay(args: { name: string; runIds: string[]; root: string; now?: Date; conditions?: ConditionTriple }): Promise<ThreeWayComparison> {
   const runs = [];
   for (const runId of args.runIds) {
     const aborted = await readFile(join(resultsRoot(args.root), 'raw', runId, 'ABORTED.md'), 'utf8').then(() => true, () => false);
@@ -335,7 +361,7 @@ export async function buildThreeWay(args: { name: string; runIds: string[]; root
       setAside.push({ runId, file, reason: `${attempt.validity.infrastructureFailure ?? 'environment'}: ${(attempt.validity.detail ?? '').split('\n')[0]!.slice(0, 120)}` });
     }
   }
-  return threeWayFromTrials(runs.flatMap((r) => r.trials), runs.map((r) => r.manifest), { name: args.name, now: args.now, setAsideAttempts: setAside });
+  return threeWayFromTrials(runs.flatMap((r) => r.trials), runs.map((r) => r.manifest), { name: args.name, now: args.now, setAsideAttempts: setAside, ...(args.conditions ? { conditions: args.conditions } : {}) });
 }
 
 export async function writeThreeWay(comparison: ThreeWayComparison, root: string): Promise<{ json: string; markdown: string }> {
@@ -355,7 +381,7 @@ const sec = (v: number | null | undefined) => (v === null || v === undefined ? '
 const usd = (v: number | null | undefined) => (v === null || v === undefined ? '—' : `$${v.toFixed(2)}`);
 
 export function renderThreeWay(c: ThreeWayComparison): string {
-  const out: string[] = [`# Controller-owned remediation: ${c.name}`, '', `Generated ${c.generatedAt}.`, ''];
+  const out: string[] = [`# Agent benchmark comparison: ${c.name}`, '', `Generated ${c.generatedAt}. Conditions: ${c.conditions.map((x) => LABELS[x]).join(', ')}.`, ''];
   for (const note of c.notes) out.push(`- ${note}`);
   out.push('');
   for (const m of c.manifests) {
@@ -364,13 +390,13 @@ export function renderThreeWay(c: ThreeWayComparison): string {
   out.push(`- Session environment fingerprint(s) across valid trials: ${c.environmentFingerprints.join(', ') || '—'}.`, '');
 
   out.push('## Accuracy', '');
-  out.push(`| Case | ${THREE_WAY_CONDITIONS.map((x) => LABELS[x]).join(' | ')} |`, `| --- | ${THREE_WAY_CONDITIONS.map(() => '---:').join(' | ')} |`);
-  for (const row of c.accuracy) out.push(`| ${row.caseId} | ${THREE_WAY_CONDITIONS.map((x) => `${row.counts[x]!.successes}/${row.counts[x]!.valid}`).join(' | ')} |`);
-  out.push(`| **Total** | ${THREE_WAY_CONDITIONS.map((x) => `**${c.accuracyTotals[x]!.successes}/${c.accuracyTotals[x]!.valid}**`).join(' | ')} |`, '');
-  out.push(
-    `Drift accuracy not below raw overall: **${c.gate.driftAccuracyNotBelowRaw ? 'yes' : 'NO'}**; in every case: **${c.gate.driftAccuracyNotBelowRawInAnyCase ? 'yes' : 'NO'}**.`,
-    '',
-  );
+  out.push(`| Case | ${c.conditions.map((x) => LABELS[x]).join(' | ')} |`, `| --- | ${c.conditions.map(() => '---:').join(' | ')} |`);
+  for (const row of c.accuracy) out.push(`| ${row.caseId} | ${c.conditions.map((x) => `${row.counts[x]!.successes}/${row.counts[x]!.valid}`).join(' | ')} |`);
+  out.push(`| **Total** | ${c.conditions.map((x) => `**${c.accuracyTotals[x]!.successes}/${c.accuracyTotals[x]!.valid}**`).join(' | ')} |`, '');
+  for (const gate of c.gates) {
+    out.push(`${gate.condition}: accuracy not below ${LABELS[c.conditions[0]!]} overall **${gate.accuracyNotBelowReference ? 'yes' : 'NO'}**, in every case **${gate.accuracyNotBelowReferenceInAnyCase ? 'yes' : 'NO'}**; median case gross reduction ${gate.medianGrossReductionPct === null ? '—' : `${gate.medianGrossReductionPct.toFixed(1)}%`}.`);
+  }
+  out.push('');
   out.push('### Every failure', '');
   if (c.failures.length === 0) out.push('No valid trial failed.');
   for (const f of c.failures) {
@@ -413,9 +439,9 @@ export function renderThreeWay(c: ThreeWayComparison): string {
   ];
   for (const caseId of c.caseIds) {
     out.push(`### ${caseId}`, '');
-    out.push(`| | ${THREE_WAY_CONDITIONS.map((x) => LABELS[x]).join(' | ')} |`, `| --- | ${THREE_WAY_CONDITIONS.map(() => '---:').join(' | ')} |`);
-    out.push(`| Success | ${THREE_WAY_CONDITIONS.map((x) => `${c.cells[caseId]![x]!.successes}/${c.cells[caseId]![x]!.valid}${c.cells[caseId]![x]!.excluded ? ` (+${c.cells[caseId]![x]!.excluded} excl.)` : ''}`).join(' | ')} |`);
-    for (const [label, key, fmt] of rows) out.push(`| ${label} | ${THREE_WAY_CONDITIONS.map((x) => fmt(c.cells[caseId]![x]!.medians[key])).join(' | ')} |`);
+    out.push(`| | ${c.conditions.map((x) => LABELS[x]).join(' | ')} |`, `| --- | ${c.conditions.map(() => '---:').join(' | ')} |`);
+    out.push(`| Success | ${c.conditions.map((x) => `${c.cells[caseId]![x]!.successes}/${c.cells[caseId]![x]!.valid}${c.cells[caseId]![x]!.excluded ? ` (+${c.cells[caseId]![x]!.excluded} excl.)` : ''}`).join(' | ')} |`);
+    for (const [label, key, fmt] of rows) out.push(`| ${label} | ${c.conditions.map((x) => fmt(c.cells[caseId]![x]!.medians[key])).join(' | ')} |`);
     out.push('');
   }
 

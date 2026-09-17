@@ -241,6 +241,8 @@ export interface SessionEnvironment {
   outputStyle: string | null;
   apiKeySource: string | null;
   fingerprint: string;
+  toolsFingerprint: string;
+  baseFingerprint: string;
 }
 
 const DRIFT_SERVER = 'drift';
@@ -273,7 +275,14 @@ export function sessionEnvironmentFrom(event: Record<string, unknown>): SessionE
     tools: environment.tools.filter((tool) => !tool.startsWith(`mcp__${DRIFT_SERVER}__`)),
     mcpServers: environment.mcpServers.filter((server) => server.name !== DRIFT_SERVER),
   };
-  return { ...environment, fingerprint: createHash('sha256').update(JSON.stringify(withoutDrift)).digest('hex').slice(0, 16) };
+  const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 16);
+  const { tools, skills, slashCommands, ...base } = withoutDrift;
+  return {
+    ...environment,
+    fingerprint: hash(withoutDrift),
+    toolsFingerprint: hash({ tools, skills, slashCommands }),
+    baseFingerprint: hash(base),
+  };
 }
 
 /**
@@ -284,7 +293,11 @@ export function sessionEnvironmentFrom(event: Record<string, unknown>): SessionE
  * server, a plugin, memory, or failed to connect Drift did not run the
  * condition it is labelled as.
  */
-export function environmentProblems(environment: SessionEnvironment | null, expectedServers: readonly string[]): string[] {
+export function environmentProblems(
+  environment: SessionEnvironment | null,
+  expectedServers: readonly string[],
+  declared: { tools?: readonly string[]; noSkills?: boolean } = {},
+): string[] {
   if (!environment) return ['the session reported no init record'];
   const problems: string[] = [];
   const names = environment.mcpServers.map((s) => s.name);
@@ -299,6 +312,14 @@ export function environmentProblems(environment: SessionEnvironment | null, expe
   if (foreignTools.length > 0) problems.push(`unexpected MCP tools: ${foreignTools.join(', ')}`);
   if (environment.plugins.length > 0) problems.push(`plugins loaded: ${environment.plugins.join(', ')}`);
   if (environment.memoryPaths.length > 0) problems.push(`memory loaded: ${environment.memoryPaths.join(', ')}`);
+  if (declared.tools) {
+    const loaded = environment.tools.filter((tool) => !tool.startsWith('mcp__')).sort();
+    const declaredTools = [...declared.tools].sort();
+    if (JSON.stringify(loaded) !== JSON.stringify(declaredTools)) problems.push(`tools ${JSON.stringify(loaded)}, expected ${JSON.stringify(declaredTools)}`);
+  }
+  if (declared.noSkills && (environment.skills.length > 0 || environment.slashCommands.length > 0)) {
+    problems.push(`skills or slash commands loaded (${environment.skills.length} skills, ${environment.slashCommands.length} commands) in a session started without them`);
+  }
   return problems;
 }
 
@@ -500,7 +521,7 @@ export interface ClaudeCodeProviderOptions {
 }
 
 export function buildClaudeArgs(
-  request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns' | 'mcpServers' | 'settings'>,
+  request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns' | 'mcpServers' | 'settings' | 'extraArgs'>,
   options: ClaudeCodeProviderOptions,
 ): {
   argv: string[];
@@ -535,6 +556,7 @@ export function buildClaudeArgs(
     ...(request.maxBudgetUsd !== null ? ['--max-budget-usd', String(request.maxBudgetUsd)] : []),
     ...(request.maxTurns !== null ? ['--max-turns', String(request.maxTurns)] : []),
     ...(request.settings ? ['--settings', JSON.stringify(request.settings)] : []),
+    ...(request.extraArgs ?? []),
   ];
   return { argv, env: clean === 'isolated' ? { ...ISOLATED_ENVIRONMENT } : {}, disallowedTools, cleanEnvironment: clean };
 }
