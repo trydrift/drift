@@ -1,0 +1,617 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "controller-smoke-3/smoke-glob-sync/drift-orchestrated/1",
+  "runId": "controller-smoke-3",
+  "suite": "smoke",
+  "caseId": "smoke-glob-sync",
+  "caseHash": "da128b5375a4159917163d644ad2dea5f0750ab4c6360a832379cd28aee6d710",
+  "condition": "drift-orchestrated",
+  "repetition": 1,
+  "scheduleIndex": 3,
+  "schedule": {
+    "design": "williams-v1",
+    "block": 0,
+    "row": 0,
+    "position": 3
+  },
+  "metadata": {
+    "repository": "fixture:fixture",
+    "baseCommit": "4f8089f8d5da8af0fbeab28cbebc065d4483658e",
+    "startCommit": "00db03b535628e642315db95d1a8b367c42c71df",
+    "startTreeHash": "92e9ef725d153ac4d15a1483451fddfdf92764ac",
+    "driftCommit": "8a1b536db17e6898a70100485e0db075eb2957d5",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "glob",
+      "fromVersion": "8.1.0",
+      "toVersion": "13.0.6"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch",
+        "ArtifactComments",
+        "ArtifactData"
+      ],
+      "cleanEnvironment": "isolated",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "environment": {
+        "tools": [
+          "Artifact",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "DesignSync",
+          "Edit",
+          "EnterWorktree",
+          "ExitWorktree",
+          "ListAgents",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "RemoteTrigger",
+          "ReportFindings",
+          "ScheduleWakeup",
+          "SendMessage",
+          "Skill",
+          "Task",
+          "TaskOutput",
+          "TaskStop",
+          "ToolSearch",
+          "Write"
+        ],
+        "mcpServers": [],
+        "skills": [
+          "artifact-capabilities",
+          "artifact-diagramming",
+          "batch",
+          "claude-api",
+          "code-review",
+          "dataviz",
+          "debug",
+          "design",
+          "design-sync",
+          "doctor",
+          "fewer-permission-prompts",
+          "loop",
+          "run",
+          "run-skill-generator",
+          "schedule",
+          "simplify",
+          "slides",
+          "update-config",
+          "verify"
+        ],
+        "slashCommands": [
+          "__remote-workflow",
+          "advisor",
+          "agents",
+          "artifact-capabilities",
+          "artifact-diagramming",
+          "auto-mode-setup",
+          "autocompact",
+          "batch",
+          "claude-api",
+          "clear",
+          "code-review",
+          "color",
+          "compact",
+          "config",
+          "context",
+          "dataviz",
+          "debug",
+          "design",
+          "design-consent",
+          "design-revoke",
+          "design-sync",
+          "doctor",
+          "effort",
+          "extra-usage",
+          "fast",
+          "fewer-permission-prompts",
+          "goal",
+          "heapdump",
+          "import",
+          "init",
+          "insights",
+          "list-agents",
+          "loop",
+          "mcp",
+          "model",
+          "recap",
+          "reload-plugins",
+          "reload-skills",
+          "rename",
+          "run",
+          "run-skill-generator",
+          "schedule",
+          "security-review",
+          "simplify",
+          "skill-doctor",
+          "slides",
+          "team-onboarding",
+          "ultrareview",
+          "update-config",
+          "usage",
+          "usage-credits",
+          "verify",
+          "workflow-launch-exec"
+        ],
+        "agents": [
+          "Explore",
+          "Plan",
+          "claude",
+          "claude-code-guide",
+          "general-purpose",
+          "statusline-setup"
+        ],
+        "plugins": [],
+        "memoryPaths": [],
+        "outputStyle": "default",
+        "apiKeySource": "none",
+        "fingerprint": "8d69d817761f3509"
+      },
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--setting-sources",
+        "",
+        "--mcp-config",
+        "{\"mcpServers\":{}}",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "ArtifactComments",
+        "ArtifactData",
+        "--settings",
+        "{\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash\",\"hooks\":[{\"type\":\"command\",\"command\":\"\\\"/Users/rudy/.nvm/versions/node/v24.20.0/bin/node\\\" \\\"/Users/rudy/Desktop/Developer/Drift/dist/agents/verification-guard-hook.js\\\"\"}]}]}}"
+      ]
+    },
+    "startedAt": "2026-09-17T05:51:39.741Z",
+    "endedAt": "2026-09-17T05:52:35.175Z",
+    "timeoutSeconds": 900,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "8d602a7fe74a6f01820b6e67c58cedfa1af20293bffbfdc55950e980771bd5e9",
+    "promptHash": "7bd158d0ff9c16f12c0473c0cff78330009cdc77acdea05618b8ad5e3ce87418",
+    "promptChars": 5366
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": 6258,
+    "driftCommand": "runPipeline (dry run) → applyDeterministicCommits → runRemediationController",
+    "driftStatus": "completed",
+    "driftFailure": null,
+    "driftPlan": {
+      "breakingChanges": 14,
+      "impactSites": 3,
+      "impactFiles": [
+        "package.json",
+        "src/files.js"
+      ],
+      "symbols": [
+        "Glob",
+        "GlobSync",
+        "IGlob",
+        "IGlobBase",
+        "IGlobStatic",
+        "IGlobSyncStatic",
+        "IOptions",
+        "Node.js",
+        "default",
+        "default.Glob",
+        "default.GlobSync",
+        "default.IGlob",
+        "default.IGlobBase",
+        "default.IGlobStatic",
+        "default.IGlobSyncStatic",
+        "default.IOptions",
+        "default.__promisify__",
+        "default.glob",
+        "default.hasMagic",
+        "default.sync",
+        "glob",
+        "hasMagic",
+        "sync"
+      ],
+      "verdict": "n/a",
+      "verificationStatus": "failed",
+      "evidenceSources": 5
+    }
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "controller:verified",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 8,
+    "durationMs": 41156,
+    "apiDurationMs": 28463,
+    "finalMessage": "Controller: verified — the checks pass after the planned units\n\nFixed both call sites in `src/files.js` by switching from the removed default `glob` import with `.sync` to the named `globSync` export that glob 13 provides (confirmed in `node_modules/glob/dist/commonjs/index.d.ts`). Syntax check passes.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 238527,
+    "uncachedInputTokens": 15190,
+    "inputTokens": 2379,
+    "cacheReadTokens": 223337,
+    "cacheCreationTokens": 12811,
+    "outputTokens": 1418,
+    "modelCalls": 5,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 2369,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 11
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 10,
+        "cacheReadTokens": 223337,
+        "cacheCreationTokens": 12811,
+        "outputTokens": 1407
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 236158,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.1124254
+  },
+  "tools": {
+    "toolCalls": 7,
+    "byTool": {
+      "Read": 2,
+      "Bash": 2,
+      "Edit": 3
+    },
+    "fileReads": 2,
+    "uniqueFilesRead": 2,
+    "searches": 0,
+    "shellCommands": 2,
+    "edits": 3,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 3,
+    "linesDeleted": 3,
+    "changedFiles": [
+      "src/files.js"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/files.js b/src/files.js\nindex 0aff875..58f5a3b 100644\n--- a/src/files.js\n+++ b/src/files.js\n@@ -1,17 +1,17 @@\n import { statSync } from 'node:fs';\n import { join } from 'node:path';\n-import glob from 'glob';\n+import { globSync } from 'glob';\n \n /**\n  * Every file under `root` matching `pattern`, as root-relative paths in\n  * sorted order. Directories are never returned.\n  */\n export function findAll(pattern, root) {\n-  return glob.sync(pattern, { cwd: root, nodir: true }).sort();\n+  return globSync(pattern, { cwd: root, nodir: true }).sort();\n }\n \n /** The same listing, restricted to files modified after `since` (a Date). */\n export function findModifiedSince(pattern, root, since) {\n-  const matches = glob.sync(pattern, { cwd: root, nodir: true, dot: true });\n+  const matches = globSync(pattern, { cwd: root, nodir: true, dot: true });\n   return matches.filter((path) => statSync(join(root, path)).mtime > since).sort();\n }\n",
+    "diffTruncated": false,
+    "diffHash": "2211a7ca18d4c1f60b103c72d2d4ae81f8d07fcee2ad2eef9fd40ff6023f194c"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "13.0.6",
+      "installedVersion": "13.0.6",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "npm test",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 624,
+        "outputExcerpt": "> smoke-glob-consumer@1.0.0 test\n> node --test test/*.test.js\n\n✔ findAll lists matching files, sorted, without directories (11.866974ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 169.211325",
+        "kind": "test"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "listing-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 287,
+        "outputExcerpt": "✔ findAll returns sorted, root-relative file paths for a recursive pattern and never a directory (14.335122ms)\n✔ findAll matches nothing for a pattern with no hits (2.794102ms)\n✔ findModifiedSince keeps only files newer than the cut-off and includes dotfiles (3.315842ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 175.121273",
+        "id": "listing-behaviour",
+        "description": "findAll and findModifiedSince still return sorted root-relative file paths, exclude directories, and honour the modification cut-off, including for the function the project's own test never calls."
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The test script the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "no-test-deletions",
+        "description": "The project's own tests must not be deleted.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The module the upgrade broke must still exist; deleting it is not a migration.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 412,
+    "installMs": 831,
+    "contextMs": 7664,
+    "agentMs": 44464,
+    "validationMs": 1860,
+    "totalMs": 55434
+  },
+  "agentContext": {
+    "interface": "drift-orchestrated",
+    "initialDriftContextChars": 0,
+    "initialDriftContextEstimatedTokens": 0,
+    "driftToolCalls": 0,
+    "driftToolCallsByName": {},
+    "driftToolReturnedChars": 0,
+    "driftToolReturnedEstimatedTokens": 0,
+    "driftToolErrors": 0,
+    "findingsInPlan": 14,
+    "findingsInInitialBrief": null,
+    "findingsRetrievedOnDemand": 0,
+    "nonLocalFindingsOmitted": null,
+    "deterministicSitesCovered": null,
+    "residualSitesSentToAgent": null,
+    "tokensBeforeFirstEdit": {
+      "grossInputTokens": 137163,
+      "uncachedInputTokens": 11486,
+      "modelCalls": 3
+    },
+    "tokensAfterFirstEdit": {
+      "grossInputTokens": 98995,
+      "uncachedInputTokens": 1335,
+      "modelCalls": 2
+    },
+    "timing": {
+      "preSessionDriftMs": 7664,
+      "sessionMs": 41156,
+      "driftToolMs": 0,
+      "endToEndMs": 52128
+    },
+    "agentVerification": {
+      "broad": 0,
+      "narrow": 0,
+      "blocked": 0,
+      "broadCommands": []
+    },
+    "research": {
+      "dependencySourceAccesses": 2,
+      "registryQueries": 0,
+      "changelogAccesses": 0
+    }
+  },
+  "orchestration": {
+    "kind": "drift",
+    "sessions": [
+      {
+        "index": 1,
+        "kind": "unit",
+        "unitId": "unit_a5263a0c35",
+        "round": 0,
+        "allowedFiles": [
+          "src/files.js"
+        ],
+        "changedFiles": [
+          "src/files.js"
+        ],
+        "outcome": "accepted",
+        "reasons": [],
+        "scopeRequests": [],
+        "agentStatus": "completed",
+        "promptChars": 5366,
+        "promptHash": "7bd158d0ff9c16f12c0473c0cff78330009cdc77acdea05618b8ad5e3ce87418",
+        "durationMs": 41156,
+        "usage": {
+          "grossInputTokens": 238527,
+          "uncachedInputTokens": 15190,
+          "inputTokens": 2379,
+          "cacheReadTokens": 223337,
+          "cacheCreationTokens": 12811,
+          "outputTokens": 1418,
+          "modelCalls": 5,
+          "byModel": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 2369,
+              "cacheReadTokens": 0,
+              "cacheCreationTokens": 0,
+              "outputTokens": 11
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 10,
+              "cacheReadTokens": 223337,
+              "cacheCreationTokens": 12811,
+              "outputTokens": 1407
+            }
+          },
+          "source": "result-model-usage",
+          "ledgerGrossInputTokens": 236158,
+          "ledgerAgreesWithResult": true,
+          "costUsd": 0.1124254
+        },
+        "toolCalls": 7,
+        "tokensBeforeFirstEdit": {
+          "grossInputTokens": 137163,
+          "uncachedInputTokens": 11486,
+          "modelCalls": 3
+        },
+        "tokensAfterFirstEdit": {
+          "grossInputTokens": 98995,
+          "uncachedInputTokens": 1335,
+          "modelCalls": 2
+        },
+        "agentVerification": {
+          "broad": 0,
+          "narrow": 0,
+          "blocked": 0,
+          "broadCommands": []
+        },
+        "verificationGuard": true,
+        "research": {
+          "dependencySourceAccesses": 2,
+          "registryQueries": 0,
+          "changelogAccesses": 0
+        },
+        "environmentFingerprint": "8d69d817761f3509"
+      }
+    ],
+    "controller": {
+      "termination": "verified",
+      "terminationDetail": "the checks pass after the planned units",
+      "repairRounds": 0,
+      "outOfScopeRejections": 0,
+      "workaroundRejections": 0,
+      "grantedFiles": [],
+      "deniedScopeRequests": [],
+      "needsHuman": [],
+      "verifications": [
+        {
+          "round": 0,
+          "passed": false,
+          "fingerprint": "b7736e7e7acacf59",
+          "durationMs": 713,
+          "installed": false,
+          "failures": 2,
+          "preexisting": 0,
+          "checks": [
+            {
+              "label": "npm test",
+              "kind": "test",
+              "status": "failed",
+              "durationMs": 616,
+              "failures": 2
+            }
+          ],
+          "sideEffectsReverted": []
+        },
+        {
+          "round": 1,
+          "passed": true,
+          "fingerprint": "398135fe0aac39cd",
+          "durationMs": 854,
+          "installed": false,
+          "failures": 0,
+          "preexisting": 0,
+          "checks": [
+            {
+              "label": "npm test",
+              "kind": "test",
+              "status": "passed",
+              "durationMs": 738,
+              "failures": 0
+            }
+          ],
+          "sideEffectsReverted": []
+        }
+      ]
+    },
+    "checks": [
+      "npm test"
+    ],
+    "units": {
+      "total": 1,
+      "resolvedByCodemod": 0,
+      "resolvedByFixPlan": 0,
+      "sentToAgent": 1,
+      "skippedProtected": 0,
+      "merged": 0,
+      "requiringRepair": 0
+    },
+    "analysis": {
+      "breakingChanges": 14,
+      "impactSites": 3,
+      "commits": 1,
+      "verificationStatus": "failed"
+    },
+    "timing": {
+      "analysisMs": 6258,
+      "deterministicMs": 0,
+      "baselineMeasurementMs": 1406,
+      "agentMs": 41156,
+      "controllerVerificationMs": 1567,
+      "endToEndMs": 52128
+    },
+    "agentBudgetMs": 900000,
+    "budgetExhausted": false
+  }
+}

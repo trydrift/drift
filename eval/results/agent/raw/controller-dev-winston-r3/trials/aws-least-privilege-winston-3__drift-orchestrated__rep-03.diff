@@ -1,0 +1,54 @@
+diff --git a/src/lib/logger.ts b/src/lib/logger.ts
+index ea7b293..fe4483f 100644
+--- a/src/lib/logger.ts
++++ b/src/lib/logger.ts
+@@ -1,24 +1,28 @@
+ import * as winston from 'winston';
+ 
+-const transports: winston.TransportInstance[] = [];
++const transports: winston.transport[] = [];
+ const consoleTransport = new (winston.transports.Console)({
+-  name: 'console-log',
+   level: 'error',
+-  timestamp: true,
+-  colorize: true,
+-  prettyPrint: true,
++  // winston 3 no longer sends only 'error' to stderr by default; make the
++  // prior behaviour explicit instead of letting everything go to stdout.
++  stderrLevels: ['error'],
++  format: winston.format.combine(
++    winston.format.timestamp(),
++    winston.format.colorize(),
++    winston.format.prettyPrint(),
++  ),
+ });
+ transports.push(consoleTransport);
+ 
+ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+   transports.push(
+     new winston.transports.File({
+-      name: 'file-log',
+       filename: 'xray-scan.log',
+       level: 'debug',
+-      timestamp: true,
+-      json: false,
+-      prettyPrint: true,
++      format: winston.format.combine(
++        winston.format.timestamp(),
++        winston.format.prettyPrint(),
++      ),
+       maxsize: 1024 * 1024 * 100,
+       maxFiles: 10,
+       tailable: true,
+diff --git a/tsconfig.json b/tsconfig.json
+index 68d1eac..5a6c4ce 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -3,6 +3,7 @@
+   "compilerOptions": {    
+     "strict": true,
+     "noUnusedLocals": true,
++    "skipLibCheck": true,
+     "outDir": "./dist",
+     "declaration": true,
+     "rootDir": "src",    

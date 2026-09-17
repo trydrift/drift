@@ -1,0 +1,488 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "controller-dev-ethereum-r3/eth-ledger-bridge-keyring-ethereumjs-tx-5/baseline/3",
+  "runId": "controller-dev-ethereum-r3",
+  "suite": "agent-upgrade-v1",
+  "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+  "caseHash": "4626d854d5d459a39a6f70cc08dde6d1390767c2ee9dd8a2a61b0dde399da9fb",
+  "condition": "baseline",
+  "repetition": 3,
+  "scheduleIndex": 2,
+  "schedule": {
+    "design": "williams-v1",
+    "block": 5,
+    "row": 5,
+    "position": 2
+  },
+  "metadata": {
+    "repository": "https://github.com/MetaMask/eth-ledger-bridge-keyring.git",
+    "baseCommit": "127eb744ca0ba4de74e9bcdb3a8c997dfccdb644",
+    "startCommit": "a6a26493f472a7e7f26dd086e385b96b81c81181",
+    "startTreeHash": "0fd33ea7882b6e45ae29183c5e840319fe712f94",
+    "driftCommit": "8a1b536db17e6898a70100485e0db075eb2957d5",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "@ethereumjs/tx",
+      "fromVersion": "4.2.0",
+      "toVersion": "5.3.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch",
+        "ArtifactComments",
+        "ArtifactData"
+      ],
+      "cleanEnvironment": "isolated",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "environment": {
+        "tools": [
+          "Artifact",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "DesignSync",
+          "Edit",
+          "EnterWorktree",
+          "ExitWorktree",
+          "ListAgents",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "RemoteTrigger",
+          "ReportFindings",
+          "ScheduleWakeup",
+          "SendMessage",
+          "Skill",
+          "Task",
+          "TaskOutput",
+          "TaskStop",
+          "ToolSearch",
+          "Write"
+        ],
+        "mcpServers": [],
+        "skills": [
+          "artifact-capabilities",
+          "artifact-diagramming",
+          "batch",
+          "claude-api",
+          "code-review",
+          "dataviz",
+          "debug",
+          "design",
+          "design-sync",
+          "doctor",
+          "fewer-permission-prompts",
+          "loop",
+          "run",
+          "run-skill-generator",
+          "schedule",
+          "simplify",
+          "slides",
+          "update-config",
+          "verify"
+        ],
+        "slashCommands": [
+          "__remote-workflow",
+          "advisor",
+          "agents",
+          "artifact-capabilities",
+          "artifact-diagramming",
+          "auto-mode-setup",
+          "autocompact",
+          "batch",
+          "claude-api",
+          "clear",
+          "code-review",
+          "color",
+          "compact",
+          "config",
+          "context",
+          "dataviz",
+          "debug",
+          "design",
+          "design-consent",
+          "design-revoke",
+          "design-sync",
+          "doctor",
+          "effort",
+          "extra-usage",
+          "fast",
+          "fewer-permission-prompts",
+          "goal",
+          "heapdump",
+          "import",
+          "init",
+          "insights",
+          "list-agents",
+          "loop",
+          "mcp",
+          "model",
+          "recap",
+          "reload-plugins",
+          "reload-skills",
+          "rename",
+          "run",
+          "run-skill-generator",
+          "schedule",
+          "security-review",
+          "simplify",
+          "skill-doctor",
+          "slides",
+          "team-onboarding",
+          "ultrareview",
+          "update-config",
+          "usage",
+          "usage-credits",
+          "verify",
+          "workflow-launch-exec"
+        ],
+        "agents": [
+          "Explore",
+          "Plan",
+          "claude",
+          "claude-code-guide",
+          "general-purpose",
+          "statusline-setup"
+        ],
+        "plugins": [],
+        "memoryPaths": [],
+        "outputStyle": "default",
+        "apiKeySource": "none",
+        "fingerprint": "8d69d817761f3509"
+      },
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--setting-sources",
+        "",
+        "--mcp-config",
+        "{\"mcpServers\":{}}",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "ArtifactComments",
+        "ArtifactData"
+      ]
+    },
+    "startedAt": "2026-09-17T06:45:48.824Z",
+    "endedAt": "2026-09-17T07:04:24.896Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "75693618a94602f688fe7118d2309615485ca5d4bf8eb0fbb425bdc0eff26c80",
+    "promptHash": "75693618a94602f688fe7118d2309615485ca5d4bf8eb0fbb425bdc0eff26c80",
+    "promptChars": 319
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 101,
+    "durationMs": 1074290,
+    "apiDurationMs": 544362,
+    "finalMessage": "All checks pass. Summary of the fix:\n\n**Root cause:** `@ethereumjs/tx` 5.3.0 changed its API and its peer versions of `@ethereumjs/common`/`rlp`/`util` (v4/v5/v9, which use `Uint8Array` instead of `Buffer` and drop several `Buffer`-only helpers), while the rest of the repo's dependencies were still pinned to the old v3/v4/v8 lines.\n\n**Changes:**\n- `package.json`: bumped `@ethereumjs/rlp` → `^5.0.2`, `@ethereumjs/util` → `^9.0.3` (prod deps), and `@ethereumjs/common` → `^4.3.0` (dev dep) so the whole `@ethereumjs/*` family is on compatible major versions instead of relying on duplicated/nested installs.\n- `src/ledger-keyring.ts`:\n  - `TxData` (a mapped type, not a usable object shape in 5.x) → `TypedTxData`.\n  - `tx.getMessageToSign(false)` → `tx.getMessageToSign()` (the boolean arg was removed); replaced the now-incorrect `Buffer.isBuffer` check with `Array.isArray` since typed-tx messages are plain `Uint8Array`, not `Buffer`.\n  - `ethUtil.bufferToHex` (removed in util v9) → `ethUtil.bytesToHex(ethUtil.toBytes(...))`, needed because `tx.getChainId()` from the old `ethereumjs-tx` v1 lib returns a plain number at runtime despite its stale type declaration.\n  - `ethUtil.publicToAddress` now returns `Uint8Array` instead of `Buffer`, so `.toString('hex')` was replaced with `ethUtil.bytesToHex(...)`.\n- `src/ledger-keyring.test.ts`: updated to match the new `getMessageToSign()`/`TypedTxData` APIs, plus added two small tests (`attemptMakeApp`, `updateTransportMethod`) to keep coverage above threshold.\n- `jest.config.js`: coverage thresholds auto-bumped upward by `jest-it-up` to reflect the (now higher) actual coverage.\n\nBuild, lint, and the full test suite (68 tests) all pass cleanly.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 10761444,
+    "uncachedInputTokens": 120852,
+    "inputTokens": 1167,
+    "cacheReadTokens": 10640592,
+    "cacheCreationTokens": 119685,
+    "outputTokens": 46331,
+    "modelCalls": 97,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 973,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 21
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 194,
+        "cacheReadTokens": 10640592,
+        "cacheCreationTokens": 119685,
+        "outputTokens": 46310
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 10760471,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 3.0714243999999997
+  },
+  "tools": {
+    "toolCalls": 100,
+    "byTool": {
+      "Bash": 76,
+      "Read": 10,
+      "Edit": 14
+    },
+    "fileReads": 10,
+    "uniqueFilesRead": 4,
+    "searches": 0,
+    "shellCommands": 76,
+    "edits": 14,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 5,
+    "sourceFiles": 2,
+    "testFiles": 1,
+    "configFiles": 0,
+    "dependencyFiles": 2,
+    "otherFiles": 0,
+    "linesAdded": 64,
+    "linesDeleted": 34,
+    "changedFiles": [
+      "jest.config.js",
+      "package.json",
+      "src/ledger-keyring.test.ts",
+      "src/ledger-keyring.ts",
+      "yarn.lock"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/jest.config.js b/jest.config.js\nindex 95af46b..5b6035c 100644\n--- a/jest.config.js\n+++ b/jest.config.js\n@@ -42,9 +42,9 @@ module.exports = {\n   coverageThreshold: {\n     global: {\n       branches: 69.76,\n-      functions: 88.73,\n-      lines: 81.93,\n-      statements: 81.84,\n+      functions: 91.54,\n+      lines: 82.33,\n+      statements: 82.24,\n     },\n   },\n \ndiff --git a/package.json b/package.json\nindex 289a3b7..e8981ac 100644\n--- a/package.json\n+++ b/package.json\n@@ -37,14 +37,14 @@\n     \"test:watch\": \"jest --watch\"\n   },\n   \"dependencies\": {\n-    \"@ethereumjs/rlp\": \"^4.0.0\",\n+    \"@ethereumjs/rlp\": \"^5.0.2\",\n     \"@ethereumjs/tx\": \"5.3.0\",\n-    \"@ethereumjs/util\": \"^8.0.0\",\n+    \"@ethereumjs/util\": \"^9.0.3\",\n     \"@metamask/eth-sig-util\": \"^7.0.0\",\n     \"hdkey\": \"^2.1.0\"\n   },\n   \"devDependencies\": {\n-    \"@ethereumjs/common\": \"^3.1.1\",\n+    \"@ethereumjs/common\": \"^4.3.0\",\n     \"@lavamoat/allow-scripts\": \"^2.5.1\",\n     \"@ledgerhq/hw-app-eth\": \"^6.32.0\",\n     \"@ledgerhq/types-cryptoassets\": \"^7.6.0\",\ndiff --git a/src/ledger-keyring.test.ts b/src/ledger-keyring.test.ts\nindex 82c1801..5492c80 100644\n--- a/src/ledger-keyring.test.ts\n+++ b/src/ledger-keyring.test.ts\n@@ -1,6 +1,6 @@\n import { Common, Chain, Hardfork } from '@ethereumjs/common';\n import { RLP } from '@ethereumjs/rlp';\n-import { TransactionFactory } from '@ethereumjs/tx';\n+import { TransactionFactory, TypedTxData } from '@ethereumjs/tx';\n import * as ethUtil from '@ethereumjs/util';\n import * as sigUtil from '@metamask/eth-sig-util';\n import EthereumTx from 'ethereumjs-tx';\n@@ -160,6 +160,28 @@ describe('LedgerKeyring', function () {\n     });\n   });\n \n+  describe('attemptMakeApp', function () {\n+    it('should call bridge attemptMakeApp', async function () {\n+      jest.spyOn(bridge, 'attemptMakeApp').mockResolvedValue(true);\n+\n+      await keyring.attemptMakeApp();\n+\n+      // eslint-disable-next-line @typescript-eslint/unbound-method\n+      expect(bridge.attemptMakeApp).toHaveBeenCalledTimes(1);\n+    });\n+  });\n+\n+  describe('updateTransportMethod', function () {\n+    it('should call bridge updateTransportMethod', async function () {\n+      jest.spyOn(bridge, 'updateTransportMethod').mockResolvedValue(true);\n+\n+      await keyring.updateTransportMethod('webhid');\n+\n+      // eslint-disable-next-line @typescript-eslint/unbound-method\n+      expect(bridge.updateTransportMethod).toHaveBeenCalledWith('webhid');\n+    });\n+  });\n+\n   describe('serialize', function () {\n     it('serializes an instance', async function () {\n       const output = await keyring.serialize();\n@@ -525,7 +547,7 @@ describe('LedgerKeyring', function () {\n           {\n             ...newFakeTx.toJSON(),\n             ...expectedRSV,\n-          },\n+          } as TypedTxData,\n           { freeze: false },\n         );\n \n@@ -543,7 +565,7 @@ describe('LedgerKeyring', function () {\n             expect(params).toStrictEqual({\n               hdPath: \"m/44'/60'/0'/0\",\n               tx: Buffer.from(\n-                RLP.encode(newFakeTx.getMessageToSign(false)),\n+                RLP.encode(newFakeTx.getMessageToSign()),\n               ).toString('hex'),\n             });\n             return expectedRSV;\n@@ -574,7 +596,7 @@ describe('LedgerKeyring', function () {\n             ...fakeTypeTwoTx.toJSON(),\n             type: fakeTypeTwoTx.type,\n             ...expectedRSV,\n-          },\n+          } as TypedTxData,\n           { common: commonEIP1559, freeze: false },\n         );\n         jest\n@@ -590,7 +612,9 @@ describe('LedgerKeyring', function () {\n           .mockImplementation(async (params) => {\n             expect(params).toStrictEqual({\n               hdPath: \"m/44'/60'/0'/0\",\n-              tx: fakeTypeTwoTx.getMessageToSign(false).toString('hex'),\n+              tx: Buffer.from(\n+                fakeTypeTwoTx.getMessageToSign() as Uint8Array,\n+              ).toString('hex'),\n             });\n             return expectedRSV;\n           });\ndiff --git a/src/ledger-keyring.ts b/src/ledger-keyring.ts\nindex c875a85..1d82ad7 100644\n--- a/src/ledger-keyring.ts\n+++ b/src/ledger-keyring.ts\n@@ -1,5 +1,9 @@\n import { RLP } from '@ethereumjs/rlp';\n-import { TransactionFactory, TxData, TypedTransaction } from '@ethereumjs/tx';\n+import {\n+  TransactionFactory,\n+  TypedTransaction,\n+  TypedTxData,\n+} from '@ethereumjs/tx';\n import * as ethUtil from '@ethereumjs/util';\n import type { MessageTypes, TypedMessage } from '@metamask/eth-sig-util';\n import {\n@@ -302,7 +306,7 @@ export class LedgerKeyring extends EventEmitter {\n       // value. In newer versions the chainId is communicated via the 'Common'\n       // object.\n       // @ts-expect-error tx.v should be a Buffer but we are assigning a string\n-      tx.v = ethUtil.bufferToHex(tx.getChainId());\n+      tx.v = ethUtil.bytesToHex(ethUtil.toBytes(tx.getChainId()));\n       // @ts-expect-error tx.r should be a Buffer but we are assigning a string\n       tx.r = '0x00';\n       // @ts-expect-error tx.s should be a Buffer but we are assigning a string\n@@ -326,23 +330,25 @@ export class LedgerKeyring extends EventEmitter {\n     // Note also that `getMessageToSign` will return valid RLP for all transaction types, whereas the\n     // `serialize` method will not for any transaction type except legacy. This is because `serialize` includes\n     // empty r, s and v values in the encoded rlp. This is why we use `getMessageToSign` here instead of `serialize`.\n-    const messageToSign = tx.getMessageToSign(false);\n+    const messageToSign = tx.getMessageToSign();\n \n-    rawTxHex = Buffer.isBuffer(messageToSign)\n-      ? messageToSign.toString('hex')\n-      : Buffer.from(RLP.encode(messageToSign)).toString('hex');\n+    rawTxHex = Array.isArray(messageToSign)\n+      ? Buffer.from(RLP.encode(messageToSign)).toString('hex')\n+      : Buffer.from(messageToSign).toString('hex');\n \n     return this.#signTransaction(address, rawTxHex, (payload) => {\n       // Because tx will be immutable, first get a plain javascript object that\n       // represents the transaction. Using txData here as it aligns with the\n       // nomenclature of ethereumjs/tx.\n-      const txData: TxData = tx.toJSON();\n-      // The fromTxData utility expects a type to support transactions with a type other than 0\n-      txData.type = tx.type;\n-      // The fromTxData utility expects v,r and s to be hex prefixed\n-      txData.v = ethUtil.addHexPrefix(payload.v);\n-      txData.r = ethUtil.addHexPrefix(payload.r);\n-      txData.s = ethUtil.addHexPrefix(payload.s);\n+      const txData = {\n+        ...tx.toJSON(),\n+        // The fromTxData utility expects a type to support transactions with a type other than 0\n+        type: tx.type,\n+        // The fromTxData utility expects v,r and s to be hex prefixed\n+        v: ethUtil.addHexPrefix(payload.v),\n+        r: ethUtil.addHexPrefix(payload.r),\n+        s: ethUtil.addHexPrefix(payload.s),\n+      } as TypedTxData;\n       // Adopt the 'common' option from the original transaction and set the\n       // returned object to be frozen if the original is frozen.\n       return TransactionFactory.fromTxData(txData, {\n@@ -597,10 +603,10 @@ export class LedgerKeyring extends EventEmitter {\n \n   #addressFromIndex(basePath: string, i: number) {\n     const dkey = this.hdk.derive(`${basePath}/${i}`);\n-    const address = ethUtil\n-      .publicToAddress(dkey.publicKey, true)\n-      .toString('hex');\n-    return ethUtil.toChecksumAddress(`0x${address}`);\n+    const address = ethUtil.bytesToHex(\n+      ethUtil.publicToAddress(dkey.publicKey, true),\n+    );\n+    return ethUtil.toChecksumAddress(address);\n   }\n \n   #pathFromAddress(address: string) {\ndiff --git a/yarn.lock b/yarn.lock\nindex f71caad..ed43754 100644\n--- a/yarn.lock\n+++ b/yarn.lock\n@@ -493,7 +493,7 @@ __metadata:\n   languageName: node\n   linkType: hard\n \n-\"@ethereumjs/common@npm:^3.1.1, @ethereumjs/common@npm:^3.2.0\":\n+\"@ethereumjs/common@npm:^3.2.0\":\n   version: 3.2.0\n   resolution: \"@ethereumjs/common@npm:3.2.0\"\n   dependencies:\n@@ -512,7 +512,7 @@ __metadata:\n   languageName: node\n   linkType: hard\n \n-\"@ethereumjs/rlp@npm:^4.0.0, @ethereumjs/rlp@npm:^4.0.1\":\n+\"@ethereumjs/rlp@npm:^4.0.1\":\n   version: 4.0.1\n   resolution: \"@ethereumjs/rlp@npm:4.0.1\"\n   bin:\n@@ -554,7 +554,7 @@ __metadata:\n   languageName: node\n   linkType: hard\n \n-\"@ethereumjs/util@npm:^8.0.0, @ethereumjs/util@npm:^8.1.0\":\n+\"@ethereumjs/util@npm:^8.1.0\":\n   version: 8.1.0\n   resolution: \"@ethereumjs/util@npm:8.1.0\"\n   dependencies:\n@@ -1635,10 +1635,10 @@ __metadata:\n   version: 0.0.0-use.local\n   resolution: \"@metamask/eth-ledger-bridge-keyring@workspace:.\"\n   dependencies:\n-    \"@ethereumjs/common\": ^3.1.1\n-    \"@ethereumjs/rlp\": ^4.0.0\n+    \"@ethereumjs/common\": ^4.3.0\n+    \"@ethereumjs/rlp\": ^5.0.2\n     \"@ethereumjs/tx\": 5.3.0\n-    \"@ethereumjs/util\": ^8.0.0\n+    \"@ethereumjs/util\": ^9.0.3\n     \"@lavamoat/allow-scripts\": ^2.5.1\n     \"@ledgerhq/hw-app-eth\": ^6.32.0\n     \"@ledgerhq/types-cryptoassets\": ^7.6.0\n",
+    "diffTruncated": false,
+    "diffHash": "150f2d5d66e559d8849a6699b2aedc2ffaac0ba4dae861b7b337a09e8922f021"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "5.3.0",
+      "installedVersion": "5.3.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "build (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 7235,
+        "outputExcerpt": "",
+        "kind": "build"
+      },
+      {
+        "name": "jest (with the project's coverage thresholds)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 7639,
+        "outputExcerpt": "PASS src/ledger-iframe-bridge.test.ts\nPASS src/ledger-keyring.test.ts\n-------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------\nFile                     | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                               \n-------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------\nAll files                |   82.24 |    69.76 |   91.54 |   82.33 |                                                                                 \n index.ts                |       0 |      100 |     100 |       0 | 1-3                                                                             \n ledger-iframe-bridge.ts |   75.86 |    74.41 |      92 |   75.86 | 169,181-186,279,294-302,310-334,354                                             \n ledger-keyring.ts       |   85.71 |    67.44 |    91.3 |    85.9 | 171,182,210,371,381,391,403,413,431,440,464,487,498,505,548,560-582,625,646-658 \n-------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------\n\nTest Suites: 2 passed, 2 total\nTests:       68 passed, 68 total\nSnapshots:   0 total\nTime:        5.632 s\nRan all test suites.",
+        "kind": "test"
+      },
+      {
+        "name": "eslint",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 5762,
+        "outputExcerpt": "",
+        "kind": "lint"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "keyring-signing",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 4886,
+        "outputExcerpt": "PASS .drift-hidden/keyring-signing.test.ts\n  LedgerKeyring.signTransaction against the installed @ethereumjs/tx\n    ✓ signs a legacy transaction: device sees the RLP signing payload, result is the exact signed transaction (98 ms)\n    ✓ signs an EIP-1559 transaction: device sees the typed signing payload, result is the exact signed transaction (28 ms)\n    ✓ keeps the transaction frozen when the input was frozen, and mutable otherwise (29 ms)\n\nTest Suites: 1 passed, 1 total\nTests:       3 passed, 3 total\nSnapshots:   0 total\nTime:        2.907 s\nRan all test suites.",
+        "id": "keyring-signing",
+        "description": "Through the keyring's public signTransaction, with the device simulated by a known private key: the bytes handed to the device are the transaction's unsigned signing payload (RLP-encoded field list for a legacy transaction, the typed payload for EIP-1559), the transaction handed back verifies, recovers the key's address, and serializes byte-for-byte to the transaction signed directly with the key, and frozenness is preserved. Independent of the project's own tests, which mock TransactionFactory.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build, test and lint scripts the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "path-unchanged",
+        "description": "Coverage thresholds, the package-manager policy and compiler strictness are not part of this migration.",
+        "passed": false,
+        "detail": "changed: jest.config.js"
+      },
+      {
+        "kind": "no-test-deletions",
+        "description": "The project's own tests must not be deleted.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Tests may be updated to the new API; they may not be disabled.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Suppressing the type errors in the keyring with a directive is not a migration of it (the file's pre-existing ts-expect-error lines on the ethereumjs-tx v1 branch stay). Narrowed on 2026-09-16 from also forbidding any-typing, for the reason recorded on the winston case.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The keyring module and its test suite must still exist.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": [
+      "prohibited_workaround"
+    ]
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 4,
+    "referencePatchFiles": 4
+  },
+  "timing": {
+    "materializeMs": 945,
+    "installMs": 11897,
+    "contextMs": 0,
+    "agentMs": 1074291,
+    "validationMs": 28705,
+    "totalMs": 1116072
+  },
+  "agentContext": {
+    "interface": "none",
+    "initialDriftContextChars": 0,
+    "initialDriftContextEstimatedTokens": 0,
+    "driftToolCalls": 0,
+    "driftToolCallsByName": {},
+    "driftToolReturnedChars": 0,
+    "driftToolReturnedEstimatedTokens": 0,
+    "driftToolErrors": 0,
+    "findingsInPlan": null,
+    "findingsInInitialBrief": null,
+    "findingsRetrievedOnDemand": 0,
+    "nonLocalFindingsOmitted": null,
+    "deterministicSitesCovered": null,
+    "residualSitesSentToAgent": null,
+    "tokensBeforeFirstEdit": {
+      "grossInputTokens": 2345649,
+      "uncachedInputTokens": 61911,
+      "modelCalls": 32
+    },
+    "tokensAfterFirstEdit": {
+      "grossInputTokens": 8414822,
+      "uncachedInputTokens": 57968,
+      "modelCalls": 65
+    },
+    "timing": {
+      "preSessionDriftMs": 0,
+      "sessionMs": 1074290,
+      "driftToolMs": 0,
+      "endToEndMs": 1074290
+    },
+    "agentVerification": {
+      "broad": 16,
+      "narrow": 0,
+      "blocked": 0,
+      "broadCommands": [
+        "yarn build 2>&1 | head -100",
+        "yarn build 2>&1 | head -100",
+        "yarn build 2>&1 | head -100",
+        "yarn jest 2>&1 | tail -150",
+        "yarn jest 2>&1 | tail -150",
+        "yarn jest 2>&1 | tail -150",
+        "yarn build 2>&1 | tail -40 && echo \"---TEST---\" && yarn jest 2>&1 | tail -80",
+        "yarn jest --coverage --coverageReporters=json-summary 2>&1 | tail -5 && cat coverage/coverage-summary.json | python3 -m json.tool | head -40",
+        "yarn build 2>&1 | tail -20 && yarn jest --coverage --coverageReporters=json-summary 2>&1 | tail -20",
+        "yarn build 2>&1 | tail -30 && echo \"===JEST===\" && yarn jest --coverage --coverageReporters=json-summary 2>&1 | tail -30",
+        "yarn jest --coverage 2>&1 | grep -A5 \"ledger-keyring.ts \"",
+        "yarn jest --coverage 2>&1 | tail -20",
+        "yarn test 2>&1 | tail -40",
+        "yarn lint:eslint 2>&1 | tail -80",
+        "yarn build:clean 2>&1 | tail -30 && echo \"===TEST===\" && yarn test 2>&1 | tail -25",
+        "yarn lint:dependencies 2>&1 | tail -40"
+      ]
+    },
+    "research": {
+      "dependencySourceAccesses": 17,
+      "registryQueries": 0,
+      "changelogAccesses": 0
+    }
+  }
+}
