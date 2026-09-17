@@ -3,10 +3,11 @@ import { lstat, realpath, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { CommitUnit, RemediationPlan } from '../types.js';
+import { matchesAny as matchesGlob } from '../util/glob.js';
 
 const run = promisify(execFile);
 
-const DEFAULT_PROTECTED_PATHS = [
+export const DEFAULT_PROTECTED_PATHS = [
   '.git/**',
   '.github/workflows/**',
   '.env',
@@ -38,6 +39,11 @@ export interface ScopeValidationOptions {
   maxFiles?: number;
   maxChangedLines?: number;
   forbidTestWeakening?: boolean;
+  /**
+   * Packages this remediation upgraded. An edit to their manifest entries is
+   * a revert or a downgrade, whatever else the agent changed with it.
+   */
+  upgradedDependencies?: readonly string[];
 }
 
 export interface ScopeValidationResult {
@@ -148,6 +154,11 @@ export async function validateAgentWorktree(
     const weakening = testWeakeningFindings(patch, changed);
     reasons.push(...weakening.errors);
     warnings.push(...weakening.warnings);
+    reasons.push(...workaroundFindings(patch, changed));
+  }
+
+  if (options.upgradedDependencies?.length) {
+    reasons.push(...upgradedDependencyFindings(patch, options.upgradedDependencies));
   }
 
   for (const entry of changed) {
@@ -212,15 +223,133 @@ export function testWeakeningFindings(
     if (/^\+.*\b(describe|it|test)\.skip\s*\(/.test(line) || /^\+.*\b(skip|todo)\s*:\s*true\b/.test(line)) {
       errors.push('Agent added a skipped or todo test while test weakening is forbidden.');
     }
-    if (/^-.*\b(assert|expect)\b/.test(line)) {
-      errors.push('Agent removed an assertion while test weakening is forbidden.');
-    }
+
     if (/^-.*\b(describe|it|test)\s*\(/.test(line)) {
       warnings.push('Agent changed test structure; review is required for behavioural migrations.');
     }
   }
 
+  // Fewer assertions in a test file is weakening. A rewritten assertion — the
+  // same check against the migrated API, which a real migration of a test file
+  // is made of — removes one line and adds one, and is not. This used to reject
+  // any removed assertion line, which threw out correct test migrations.
+  for (const [file, lines] of patchByFile(patch)) {
+    if (!isTestPath(file)) continue;
+    const removed = lines.filter((line) => /^-.*\b(assert|expect)\b/.test(line)).length;
+    const added = lines.filter((line) => /^\+.*\b(assert|expect)\b/.test(line)).length;
+    if (removed > added) errors.push(`Agent removed an assertion while test weakening is forbidden (${file}: ${removed} removed, ${added} added).`);
+  }
+
   return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
+}
+
+/**
+ * Ways to make a check pass without fixing anything that live outside test
+ * files: a deleted test file, a lowered coverage threshold, a compiler
+ * strictness flag switched off.
+ *
+ * `testWeakeningFindings` only looks inside test files, and these are exactly
+ * the edits an agent under pressure from a red check reaches for — lowering
+ * `coverageThreshold` in `jest.config.js` was the single most common failure
+ * in Drift's own agent benchmark, in every condition.
+ */
+export function workaroundFindings(patch: string, changed: readonly ChangedPath[]): string[] {
+  const errors: string[] = [];
+  for (const entry of changed) {
+    if (entry.status === 'deleted' && isTestPath(entry.path)) errors.push(`Agent deleted test file ${entry.path}.`);
+  }
+
+  for (const [file, lines] of patchByFile(patch)) {
+    const removed = new Map<string, number>();
+    for (const line of lines) {
+      const threshold = /^-.*\b(branches|functions|lines|statements)\b['"]?\s*:\s*(\d+(?:\.\d+)?)/.exec(line);
+      if (threshold) removed.set(threshold[1]!, Number(threshold[2]));
+    }
+    for (const line of lines) {
+      const threshold = /^\+.*\b(branches|functions|lines|statements)\b['"]?\s*:\s*(\d+(?:\.\d+)?)/.exec(line);
+      if (threshold && removed.has(threshold[1]!) && Number(threshold[2]) < removed.get(threshold[1]!)!) {
+        errors.push(`Agent lowered the ${threshold[1]} coverage threshold in ${file}.`);
+      }
+      if (/^-.*coverageThreshold/.test(line) && !lines.some((other) => /^\+.*coverageThreshold/.test(other))) {
+        errors.push(`Agent removed the coverage threshold in ${file}.`);
+      }
+    }
+
+    // Suppression directives silence a check at the line it complains about.
+    // In source, a type-check suppression that is new or reworded is not a
+    // migration (a pure move leaves an identical removed line); in tests, only
+    // more of them counts. A lint or coverage suppression may be renamed —
+    // ESLint 10's own migration renames rules inside existing comments — but
+    // not multiplied outside tests.
+    const typeDirective = /@ts-(?:ignore|expect-error|nocheck)\b/;
+    const lintDirective = /eslint-disable|istanbul ignore|c8 ignore|v8 ignore|#\s*type:\s*ignore|#\s*noqa|NOLINT/;
+    const removedText = new Set(lines.filter((line) => line.startsWith('-')).map((line) => line.slice(1).trim()));
+    const count = (sign: string, pattern: RegExp) => lines.filter((line) => line.startsWith(sign) && pattern.test(line)).length;
+    if (isTestPath(file)) {
+      if (count('+', typeDirective) > count('-', typeDirective)) errors.push(`Agent added a type-check suppression in ${file}.`);
+    } else if (SOURCE_EXTENSION.test(file)) {
+      if (lines.some((line) => line.startsWith('+') && typeDirective.test(line) && !removedText.has(line.slice(1).trim()))) {
+        errors.push(`Agent added or changed a type-check suppression (@ts-ignore/@ts-expect-error/@ts-nocheck) in ${file}.`);
+      }
+      if (count('+', lintDirective) > count('-', lintDirective)) errors.push(`Agent added a lint or coverage suppression in ${file}.`);
+    }
+
+    if (/(^|\/)tsconfig[\w.-]*\.json$/.test(file)) {
+      for (const flag of ['strict', 'noImplicitAny', 'strictNullChecks', 'noImplicitReturns', 'noUnusedLocals', 'noUnusedParameters']) {
+        const wasOn = lines.some((line) => new RegExp(`^-.*"${flag}"\\s*:\\s*true`).test(line));
+        const nowOff = lines.some((line) => new RegExp(`^\\+.*"${flag}"\\s*:\\s*false`).test(line));
+        const dropped = wasOn && !lines.some((line) => new RegExp(`^\\+.*"${flag}"\\s*:\\s*true`).test(line));
+        if (nowOff || dropped) errors.push(`Agent relaxed \`${flag}\` in ${file}.`);
+      }
+    }
+  }
+  return [...new Set(errors)];
+}
+
+const SOURCE_EXTENSION = /\.(?:[cm]?[jt]sx?|py|java|kt|go|rs|rb|php|cs|swift|scala)$/;
+
+/** Any manifest line naming an upgraded dependency that was changed. */
+export function upgradedDependencyFindings(patch: string, dependencies: readonly string[]): string[] {
+  const errors: string[] = [];
+  for (const [file, lines] of patchByFile(patch)) {
+    if (!isManifest(file)) continue;
+    for (const dependency of dependencies) {
+      const escaped = dependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const named = new RegExp(`^[-+](?![-+])(?:.*["'\`]${escaped}["'\`]|\\s*${escaped}\\s*(?:[=<>~!^\\[;]|$))`);
+      if (lines.some((line) => named.test(line))) {
+        errors.push(`Agent changed the declaration of upgraded dependency ${dependency} in ${file}.`);
+      }
+    }
+  }
+  return [...new Set(errors)];
+}
+
+export function isProtectedPath(path: string, patterns: readonly string[] = DEFAULT_PROTECTED_PATHS): boolean {
+  const normalized = normalizePlanPath(path);
+  return !normalized || matchesAny(patterns, normalized) || isWorkflow(normalized);
+}
+
+export function isManifest(path: string): boolean {
+  return /(^|\/)(package\.json|pyproject\.toml|requirements[\w.-]*\.txt|setup\.py|Pipfile|go\.mod|Cargo\.toml|Gemfile|pom\.xml|build\.gradle(?:\.kts)?|composer\.json|[\w.-]+\.csproj|pubspec\.yaml|mix\.exs)$/.test(path);
+}
+
+function patchByFile(patch: string): Map<string, string[]> {
+  const files = new Map<string, string[]>();
+  let current: string[] | null = null;
+  for (const line of patch.split('\n')) {
+    if (line.startsWith('diff --git a/')) {
+      // String search, not a regex: `a\/(.+?) b\/(.+)` backtracks polynomially
+      // on a header repeating ' b/'. A renamed path keeps its new name after
+      // the last ' b/'.
+      const at = line.lastIndexOf(' b/');
+      current = [];
+      files.set(at >= 0 ? line.slice(at + 3) : line.slice('diff --git a/'.length), current);
+      continue;
+    }
+    if (!current || line.startsWith('---') || line.startsWith('+++')) continue;
+    if (line.startsWith('+') || line.startsWith('-')) current.push(line);
+  }
+  return files;
 }
 
 async function diff(root: string, ref: string): Promise<string> {
@@ -314,7 +443,7 @@ function isWorkflow(path: string): boolean {
   return path.startsWith('.github/workflows/');
 }
 
-function isLockfile(path: string): boolean {
+export function isLockfile(path: string): boolean {
   return /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb|Pipfile\.lock|poetry\.lock|Cargo\.lock|Gemfile\.lock|composer\.lock|go\.sum|conan\.lock|packages\.lock\.json|mix\.lock|pubspec\.lock|Podfile\.lock)$/.test(path);
 }
 
@@ -322,14 +451,14 @@ function isTestPath(path: string): boolean {
   return /(^|\/)(__tests__|test|tests|spec)\//.test(path) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(path);
 }
 
+/**
+ * The shared matcher. This file used to carry its own glob conversion, which
+ * rewrote `**` to `.*` and then rewrote that `*` again to `[^/]*` — so every
+ * `dir/**` protected path guarded one level only: `node_modules/x/index.d.ts`
+ * and `.github/workflows/sub/ci.yml` were editable.
+ */
 function matchesAny(patterns: readonly string[], path: string): boolean {
-  return patterns.some((pattern) => globToRegExp(pattern).test(path));
-}
-
-function globToRegExp(pattern: string): RegExp {
-  const escaped = normalizePlanPath(pattern).replace(/[.+^${}()|[\]\\]/g, '\\$&');
-  const source = escaped.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*');
-  return new RegExp(`^${source}$`);
+  return matchesGlob(patterns.map(normalizePlanPath), path);
 }
 
 function isInside(root: string, child: string): boolean {

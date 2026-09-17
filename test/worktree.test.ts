@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -227,11 +228,16 @@ function fakeGitRepo(commonDirOutput: string) {
   return { calls, exec };
 }
 
+const repoKey = (commonDir: string) => createHash('sha256').update(commonDir).digest('hex').slice(0, 12);
+
 describe('where a worktree is put', () => {
-  test('an ordinary checkout resolves the relative .git dir against root', async () => {
+  test('an ordinary checkout resolves the relative .git dir against root, and the worktree lives outside it', async () => {
     const { exec } = fakeGitRepo('.git\n');
     const worktree = await createWorktree('/repo', 'probe-root', { exec: exec as never, runId: 'r1' });
-    assert.equal(worktree.path, join('/repo', '.git', 'drift-worktrees', 'r1', 'probe-root'));
+    assert.equal(worktree.path, join(tmpdir(), 'drift-worktrees', repoKey(join('/repo', '.git')), 'r1', 'probe-root'));
+    // Jest ignores any path with a `.git` segment, and ESLint cascades configs from enclosing directories.
+    assert.ok(!worktree.path.startsWith('/repo'));
+    assert.ok(!worktree.path.split(/[\\/]/).includes('.git'));
   });
 
   test('a linked worktree (an absolute --git-common-dir) is used as-is, never joined onto root again', async () => {
@@ -244,7 +250,7 @@ describe('where a worktree is put', () => {
       exec: exec as never,
       runId: 'r1',
     });
-    assert.equal(worktree.path, join('/main-checkout/.git', 'drift-worktrees', 'r1', 'probe-root'));
+    assert.equal(worktree.path, join(tmpdir(), 'drift-worktrees', repoKey('/main-checkout/.git'), 'r1', 'probe-root'));
     assert.ok(!worktree.path.includes('linked-worktree'));
   });
 
@@ -276,8 +282,8 @@ describe('where a worktree is put', () => {
     });
 
     try {
-      const mine = join(common, 'drift-worktrees', 'run-a', 'probe-root');
-      const theirs = join(common, 'drift-worktrees', 'run-b', 'probe-root');
+      const mine = join(tmpdir(), 'drift-worktrees', repoKey(common), 'run-a', 'probe-root');
+      const theirs = join(tmpdir(), 'drift-worktrees', repoKey(common), 'run-b', 'probe-root');
       for (const path of [mine, theirs]) {
         await mkdir(path, { recursive: true });
         await writeFile(join(path, 'leftover.txt'), 'from a run that was killed', 'utf8');

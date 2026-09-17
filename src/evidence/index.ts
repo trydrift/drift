@@ -719,6 +719,7 @@ function surfaceRecord(
       before: c.before,
       after: c.after,
       ...(c.changed ? { changed: c.changed } : {}),
+      ...(c.replacement ? { replacement: c.replacement } : {}),
       ...(c.fromKind ? { fromKind: c.fromKind } : {}),
       ...(c.toKind ? { toKind: c.toKind } : {}),
       ...(c.moduleSystem
@@ -829,6 +830,7 @@ async function diffTypeSurfaces(
     const changes = diffSurfaces(before.api, after.api, {
       beforeComplete: !before.incomplete,
       afterComplete: !after.incomplete,
+      packageName,
     });
 
     // Only incomparable when both sides resolved to the *same* `@types`
