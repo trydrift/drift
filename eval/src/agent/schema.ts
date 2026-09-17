@@ -538,6 +538,8 @@ export const agentContextSchema = z.object({
     .object({
       broad: z.number().int().nonnegative(),
       narrow: z.number().int().nonnegative(),
+      /** Broad commands the controller's verification guard refused. Absent before the guard existed. */
+      blocked: z.number().int().nonnegative().optional(),
       broadCommands: z.array(z.string()),
     })
     .optional(),
@@ -573,7 +575,9 @@ const orchestrationSessionSchema = z.object({
   toolCalls: z.number().int().nonnegative(),
   tokensBeforeFirstEdit: tokenSplitSchema.nullable(),
   tokensAfterFirstEdit: tokenSplitSchema.nullable(),
-  agentVerification: z.object({ broad: z.number().int().nonnegative(), narrow: z.number().int().nonnegative(), broadCommands: z.array(z.string()) }),
+  agentVerification: z.object({ broad: z.number().int().nonnegative(), narrow: z.number().int().nonnegative(), blocked: z.number().int().nonnegative().optional(), broadCommands: z.array(z.string()) }),
+  /** Whether the controller's verification guard was installed for this session. */
+  verificationGuard: z.boolean().optional(),
   research: z.object({
     dependencySourceAccesses: z.number().int().nonnegative(),
     registryQueries: z.number().int().nonnegative(),

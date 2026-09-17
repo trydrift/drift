@@ -149,6 +149,8 @@ function scriptedVerifier(runs: { passed: boolean; failures?: { file?: string; m
       verifier: {
         checks: [],
         markInstalled: async () => undefined,
+        watchDependencies: async () => async () => null,
+        reinstallClean: async () => undefined,
         run: async () => {
           const scripted = runs[Math.min(calls, runs.length - 1)]!;
           calls += 1;
@@ -440,6 +442,39 @@ describe('agent verification commands', () => {
     for (const cmd of ['npm install', 'npm view eslint versions', 'cat package.json', 'git diff', 'ls node_modules']) {
       assert.equal(classifyVerificationCommand(cmd), null, cmd);
     }
+  });
+});
+
+describe('verification guard', () => {
+  test('every orchestrated session carries the product guard; the raw provider call does not', async () => {
+    const workspace = await workspaceWith({ 'src/app.ts': 'gone();\n' });
+    try {
+      const provider = scriptedProvider(workspace.repo, [{ gross: [1, 1, 1], edits: { 'src/app.ts': 'arrived();\n' } }]);
+      const verify = scriptedVerifier([{ passed: true }]);
+      const result = await runOrchestrated({ ...baseOptions(workspace, provider), condition: 'generic-orchestrated', seams: { verifier: verify.seam } });
+      const hooks = (provider.requests[0]!.settings as { hooks: { PreToolUse: { matcher: string }[] } }).hooks;
+      assert.equal(hooks.PreToolUse[0]!.matcher, 'Bash');
+      assert.equal(result.orchestration.sessions[0]!.verificationGuard, true);
+    } finally {
+      await workspace.teardown();
+    }
+  });
+
+  test('--settings reaches argv only when a settings document is given', async () => {
+    const { buildClaudeArgs } = await import('./providers/claude-code.ts');
+    const base = { model: 'claude-sonnet-5', effort: 'high', webTools: 'disabled' as const, maxBudgetUsd: null, maxTurns: null, mcpServers: {} };
+    assert.equal(buildClaudeArgs(base, { cleanEnvironment: 'isolated' }).argv.includes('--settings'), false);
+    const argv = buildClaudeArgs({ ...base, settings: { hooks: {} } }, { cleanEnvironment: 'isolated' }).argv;
+    assert.deepEqual(JSON.parse(argv[argv.indexOf('--settings') + 1]!), { hooks: {} });
+  });
+
+  test('a refused broad command is counted from the event stream', async () => {
+    const { agentVerificationCommands } = await import('./verification-commands.ts');
+    const parsed = parseClaudeStream([
+      JSON.stringify({ type: 'assistant', message: { id: 'm1', model: 'x', usage: {}, content: [{ type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'npm test' } }, { type: 'tool_use', id: 't2', name: 'Bash', input: { command: 'npx jest src/a.test.ts' } }] } }),
+      JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 't1', is_error: true, content: "PreToolUse:Bash hook error: Drift runs this repository's full build, typecheck, lint and tests itself" }, { type: 'tool_result', tool_use_id: 't2', content: 'ok' }] } }),
+    ]);
+    assert.deepEqual(agentVerificationCommands(parsed), { broad: 1, narrow: 1, blocked: 1, broadCommands: ['npm test'] });
   });
 });
 

@@ -41,6 +41,7 @@ export interface TrialMetrics {
   toolCalls: number;
   agentBroadChecks: number;
   agentNarrowChecks: number;
+  agentBlockedChecks: number;
   dependencyResearch: number;
   dependencySourceAccesses: number;
   changelogAccesses: number;
@@ -83,6 +84,7 @@ export function trialMetrics(trial: TrialArtifact): TrialMetrics {
     toolCalls: trial.tools.toolCalls,
     agentBroadChecks: ctx?.agentVerification?.broad ?? 0,
     agentNarrowChecks: ctx?.agentVerification?.narrow ?? 0,
+    agentBlockedChecks: ctx?.agentVerification?.blocked ?? 0,
     dependencyResearch: research.dependencySourceAccesses + research.changelogAccesses + research.registryQueries,
     dependencySourceAccesses: research.dependencySourceAccesses,
     changelogAccesses: research.changelogAccesses,
@@ -168,7 +170,7 @@ export interface ThreeWayComparison {
 }
 
 const METRIC_KEYS: NumericKey[] = [
-  'gross', 'uncached', 'output', 'modelCalls', 'agentSessions', 'toolCalls', 'agentBroadChecks', 'agentNarrowChecks', 'dependencyResearch',
+  'gross', 'uncached', 'output', 'modelCalls', 'agentSessions', 'toolCalls', 'agentBroadChecks', 'agentNarrowChecks', 'agentBlockedChecks', 'dependencyResearch',
   'dependencySourceAccesses', 'changelogAccesses', 'registryQueries', 'uniqueFilesRead', 'controllerChecks', 'agentWallMs', 'controllerWallMs',
   'endToEndMs', 'costUsd', 'grossBeforeFirstEdit', 'grossAfterFirstEdit', 'grossInRepairSessions', 'repairSessions', 'filesModified',
   'medianFilesExposedPerSession', 'outOfScopeRejections', 'unitsTotal', 'unitsDeterministic', 'unitsSentToAgent', 'unitsRequiringRepair',
@@ -310,7 +312,7 @@ export function threeWayFromTrials(
       'Tokens are provider-reported. For orchestrated conditions every session is summed (open, unit and repair sessions); controller verification is not model usage and is not in any token figure.',
       'Token changes are case-level medians: per case, treatment median / reference median - 1; then the median across cases. Negative is fewer tokens.',
       'Tokens before/after first edit: main-model usage up to and including the call that issued the first file edit across all sessions in order, and everything after it.',
-      'Agent broad checks: whole-project build/typecheck/lint/test commands the agent ran itself (shell commands only), classified identically for every condition.',
+      'Agent broad checks: whole-project build/typecheck/lint/test commands the agent issued (shell commands only), classified by the product classifier for every condition. In orchestrated conditions the verification guard refuses them; refused attempts are counted separately and did not run. The raw baseline has no guard.',
       'Dependency research: Read/Grep/Glob/shell accesses to node_modules/<dependency>, changelog/migration files, and registry queries.',
       'Agent wall: time inside agent sessions. Controller wall: pre-upgrade baseline measurement + controller verification. End-to-end: from the start of Drift analysis (or the first session) to the end of the controller.',
     ],
@@ -387,6 +389,7 @@ export function renderThreeWay(c: ThreeWayComparison): string {
     ['Agent tool calls', 'toolCalls', int],
     ['Agent broad checks', 'agentBroadChecks', int],
     ['Agent narrow checks', 'agentNarrowChecks', int],
+    ['Agent broad checks refused by the guard', 'agentBlockedChecks', int],
     ['Dependency research', 'dependencyResearch', int],
     ['Gross before first edit', 'grossBeforeFirstEdit', int],
     ['Gross after first edit', 'grossAfterFirstEdit', int],

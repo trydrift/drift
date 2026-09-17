@@ -22,6 +22,8 @@ export interface AgentRunRequest {
   env: NodeJS.ProcessEnv;
   /** MCP servers for this session only, as `--mcp-config` declares them. Empty for every non-MCP condition. */
   mcpServers?: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
+  /** An inline settings document (`--settings`), e.g. the controller's verification guard. Absent for the baseline. */
+  settings?: Record<string, unknown>;
   /** Receives the raw event stream, line by line, for the audit log. */
   onEventLine?: (line: string) => void;
   onProgress?: (message: string) => void;

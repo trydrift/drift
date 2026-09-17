@@ -89,7 +89,7 @@ export interface ParsedStream {
    */
   toolUses: { id: string; name: string; input: Record<string, unknown>; ledgerIndex: number; at: number | null }[];
   /** Tool results as the session recorded them, by tool_use id: characters handed back to the model, and when. */
-  toolResults: Map<string, { chars: number; isError: boolean; at: number | null }>;
+  toolResults: Map<string, { chars: number; isError: boolean; at: number | null; guardRefused?: boolean }>;
   result: {
     subtype: string | null;
     isError: boolean;
@@ -180,7 +180,13 @@ export function parseClaudeStream(lines: Iterable<string>): ParsedStream {
       const content = Array.isArray(message?.['content']) ? (message!['content'] as Record<string, unknown>[]) : [];
       for (const block of content) {
         if (block['type'] !== 'tool_result' || typeof block['tool_use_id'] !== 'string') continue;
-        parsed.toolResults.set(block['tool_use_id'], { chars: toolResultChars(block['content']), isError: block['is_error'] === true, at: timestampOf(event) });
+        const text = toolResultText(block['content']);
+        parsed.toolResults.set(block['tool_use_id'], {
+          chars: text.length,
+          isError: block['is_error'] === true,
+          at: timestampOf(event),
+          ...(block['is_error'] === true && text.includes(GUARD_MESSAGE) ? { guardRefused: true } : {}),
+        });
       }
       continue;
     }
@@ -296,16 +302,15 @@ export function environmentProblems(environment: SessionEnvironment | null, expe
   return problems;
 }
 
-/** Characters of text a tool result carried back to the model: a string, or text blocks. */
-function toolResultChars(content: unknown): number {
-  if (typeof content === 'string') return content.length;
-  if (!Array.isArray(content)) return 0;
-  let chars = 0;
-  for (const part of content as Record<string, unknown>[]) {
-    if (typeof part['text'] === 'string') chars += part['text'].length;
-  }
-  return chars;
+/** Text a tool result carried back to the model: a string, or text blocks. */
+function toolResultText(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return (content as Record<string, unknown>[]).map((part) => (typeof part['text'] === 'string' ? part['text'] : '')).join('');
 }
+
+/** The product verification guard's refusal text (`VERIFICATION_GUARD_MARKER`), kept literal so the parser has no product import. */
+export const GUARD_MESSAGE = 'Drift runs this repository';
 
 const n = (value: number | undefined): number => (typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0);
 
@@ -495,7 +500,7 @@ export interface ClaudeCodeProviderOptions {
 }
 
 export function buildClaudeArgs(
-  request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns' | 'mcpServers'>,
+  request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns' | 'mcpServers' | 'settings'>,
   options: ClaudeCodeProviderOptions,
 ): {
   argv: string[];
@@ -529,6 +534,7 @@ export function buildClaudeArgs(
     ...(disallowedTools.length > 0 ? ['--disallowedTools', ...disallowedTools] : []),
     ...(request.maxBudgetUsd !== null ? ['--max-budget-usd', String(request.maxBudgetUsd)] : []),
     ...(request.maxTurns !== null ? ['--max-turns', String(request.maxTurns)] : []),
+    ...(request.settings ? ['--settings', JSON.stringify(request.settings)] : []),
   ];
   return { argv, env: clean === 'isolated' ? { ...ISOLATED_ENVIRONMENT } : {}, disallowedTools, cleanEnvironment: clean };
 }
