@@ -1,0 +1,33 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "lean-dev-eslint-r2",
+  "suite": "agent-upgrade-v1",
+  "suiteStatus": "draft",
+  "createdAt": "2026-09-17T15:49:14.869Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/agent/cli.ts run --suite agent-upgrade-v1 --case gh-aw-firewall-eslint-10 --runs 3 --repetitions 2 --conditions baseline,drift-lean,drift-lean-brief --run-id lean-dev-eslint-r2 --notes lean session profile development experiment (raw vs drift-lean vs drift-lean-brief)",
+  "driftCommit": "3cb16e3c46e891fa1660717ff0379389d47e2779",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 3,
+  "conditions": [
+    "baseline",
+    "drift-lean",
+    "drift-lean-brief"
+  ],
+  "scheduleDesign": "williams-v1",
+  "cleanEnvironment": "isolated",
+  "webTools": "disabled",
+  "maxBudgetUsd": null,
+  "maxTurns": null,
+  "driftVerify": true,
+  "caseIds": [
+    "gh-aw-firewall-eslint-10"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "lean session profile development experiment (raw vs drift-lean vs drift-lean-brief)"
+}
