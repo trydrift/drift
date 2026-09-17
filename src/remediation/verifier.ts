@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
-import { readFile, rm } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, relative, resolve, sep } from 'node:path';
 import type { LocalCheck } from '../detect/checks.js';
 import { detectPackageManagers } from '../detect/package-manager.js';
 import { nodeWorkspaceFs } from '../detect/workspace.js';
@@ -85,6 +86,17 @@ export interface RemediationVerifier {
    * between is installed rather than taken as the starting state.
    */
   markInstalled(): Promise<void>;
+  /**
+   * Start watching the installed dependency tree for one agent session. The
+   * returned function says which installed file (if any) was written since.
+   *
+   * Installed dependencies are ignored by git, so scope validation cannot see
+   * an agent patch `node_modules/…/index.d.ts` — and a check run on that tree
+   * passes where a fresh install would not.
+   */
+  watchDependencies(): Promise<() => Promise<string | null>>;
+  /** Delete the installed dependency tree and install it again from the manifests. */
+  reinstallClean(): Promise<string | undefined>;
 }
 
 export interface ProjectVerifierOptions {
@@ -216,6 +228,33 @@ export function createProjectVerifier(options: ProjectVerifierOptions): Remediat
     checks: options.checks,
     async markInstalled() {
       installedFor = await dependencyStateKey(cwd);
+    },
+    async watchDependencies() {
+      const dir = join(cwd, 'node_modules');
+      const exists = await readdir(dir).then(() => true, () => false);
+      if (!exists) return async () => null;
+      const marker = join(tmpdir(), `drift-deps-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      await writeFile(marker, '');
+      // Filesystem timestamps can be coarse; make the marker strictly older than anything written next.
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      return async () => {
+        try {
+          const found = await exec('find', [dir, '-type', 'f', '-newer', marker, '-not', '-path', '*/.cache/*', '-print', '-quit'], { cwd, timeoutMs: 120_000 });
+          const first = found.stdout.trim().split('\n')[0];
+          return first ? relative(options.root, first).split(sep).join('/') : null;
+        } finally {
+          await rm(marker, { force: true });
+        }
+      };
+    },
+    async reinstallClean() {
+      await rm(join(cwd, 'node_modules'), { recursive: true, force: true });
+      const untouched = await trackedState(options.root, exec);
+      const failure = await install(cwd, exec, options.env);
+      // A clean install of unchanged manifests must not rewrite the lockfile.
+      if (installedFor !== null && (await dependencyStateKey(cwd)) !== installedFor) await revertSideEffects(options.root, untouched, exec);
+      installedFor = await dependencyStateKey(cwd);
+      return failure;
     },
     async run(runOptions = {}) {
       const started = Date.now();

@@ -631,8 +631,11 @@ never runs the project's broad checks; Drift does:
 
 Every edit still passes the same validation — scope, protected paths, secrets,
 test weakening — plus rejection of lowered coverage thresholds, relaxed
-compiler strictness, deleted test files, and any change to the upgraded
-dependency's own declaration. A companion package that must move with the
+compiler strictness, deleted test files, any change to the upgraded
+dependency's own declaration, and any write to installed dependencies
+(`node_modules`) without a manifest change — git cannot see those files, and a
+check that passes on a patched dependency tree fails on a fresh install. Any
+write there is followed by a clean reinstall before the next verification. A companion package that must move with the
 upgrade can change when its manifest is in scope; Drift reinstalls and commits
 the lockfile.
 

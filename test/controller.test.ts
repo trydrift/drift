@@ -116,15 +116,27 @@ function scriptedAgent(root: string, script: Array<(task: any) => Promise<Partia
 }
 
 /** A verifier that replays scripted runs, counting calls. */
-function scriptedVerifier(runs: Array<{ passed: boolean; failures?: Array<{ file?: string; message: string; signature?: string }>; tail?: string }>) {
+function scriptedVerifier(
+  runs: Array<{ passed: boolean; failures?: Array<{ file?: string; message: string; signature?: string }>; tail?: string }>,
+  touched: (string | null)[] = [],
+) {
   let calls = 0;
+  let reinstalls = 0;
   return {
     get calls() {
       return calls;
     },
+    get reinstalls() {
+      return reinstalls;
+    },
     verifier: {
       checks: [],
       markInstalled: async () => undefined,
+      watchDependencies: async () => async () => touched.shift() ?? null,
+      reinstallClean: async () => {
+        reinstalls += 1;
+        return undefined;
+      },
       run: async () => {
         const scripted = runs[Math.min(calls, runs.length - 1)]!;
         calls += 1;
@@ -285,6 +297,44 @@ describe('unit scoping', () => {
     ].join('\n');
     assert.deepEqual(upgradedDependencyFindings(patch, ['eslint']), []);
     assert.equal(upgradedDependencyFindings(patch, ['typescript-eslint']).length, 1);
+  });
+});
+
+describe('installed dependencies', () => {
+  test('an agent that patches node_modules without a manifest change is rejected, and the tree is reinstalled', async () => {
+    const { root, cleanup } = await repoWith({ 'src/app.ts': 'gone();\n' });
+    try {
+      const fake = scriptedAgent(root, [async () => fake.write('src/app.ts', 'arrived();\n')]);
+      const verify = scriptedVerifier([{ passed: true }], ['node_modules/logform/index.d.ts']);
+      const record = await runRemediationController({ root, plan: plan([unit()]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
+      assert.equal(record.sessions[0]!.status, 'rejected');
+      assert.match(record.sessions[0]!.reasons.join('\n'), /installed dependency files \(node_modules\/logform\/index\.d\.ts\)/);
+      assert.equal(verify.reinstalls, 1);
+      assert.equal(await readFile(join(root, 'src/app.ts'), 'utf8'), 'gone();\n');
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('a dependency write that comes with a manifest change is kept, and still reinstalled clean', async () => {
+    const { root, cleanup } = await repoWith({ 'package.json': '{"devDependencies":{"typescript-eslint":"^6.0.0"}}\n' });
+    try {
+      const fake = scriptedAgent(root, [async () => fake.write('package.json', '{"devDependencies":{"typescript-eslint":"^8.0.0"}}\n')]);
+      const verify = scriptedVerifier([{ passed: true }], ['node_modules/typescript-eslint/package.json']);
+      const record = await runRemediationController({ root, plan: plan([unit({ files: ['package.json'], allowedFiles: ['package.json'] })]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
+      assert.equal(record.sessions[0]!.status, 'accepted');
+      assert.equal(verify.reinstalls, 1);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('protected paths guard every depth, not only the first level', async () => {
+    const { isProtectedPath } = await import('../dist/agents/scope.js');
+    assert.equal(isProtectedPath('node_modules/logform/index.d.ts'), true);
+    assert.equal(isProtectedPath('.github/workflows/nested/ci.yml'), true);
+    assert.equal(isProtectedPath('packages/a/secrets/key.pem'), true);
+    assert.equal(isProtectedPath('src/node_modules_helper.ts'), false);
   });
 });
 
@@ -594,6 +644,22 @@ describe('the project verifier', () => {
       const run = await verifier.run();
       assert.equal(run.installed, true);
       assert.ok(commands.includes('npm install'));
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('a write inside installed dependencies is detected on the real filesystem', async () => {
+    const { root, cleanup } = await repoWith({ '.gitignore': 'node_modules/\n', 'package.json': '{}' });
+    try {
+      await mkdir(join(root, 'node_modules', 'logform'), { recursive: true });
+      await writeFile(join(root, 'node_modules', 'logform', 'index.d.ts'), 'before');
+      const verifier = createProjectVerifier({ root, checks: [], install: 'never', runChecks: (async () => []) as never });
+      const quiet = await verifier.watchDependencies();
+      assert.equal(await quiet(), null);
+      const noisy = await verifier.watchDependencies();
+      await writeFile(join(root, 'node_modules', 'logform', 'index.d.ts'), 'patched');
+      assert.equal(await noisy(), 'node_modules/logform/index.d.ts');
     } finally {
       await cleanup();
     }

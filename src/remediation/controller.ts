@@ -232,6 +232,7 @@ export async function runRemediationController(options: RemediationControllerOpt
       ...(extras.repair ? { repair: extras.repair } : {}),
     };
 
+    const dependencyWrites = options.verifier ? await options.verifier.watchDependencies() : null;
     let outcome: FixOutcome | null = null;
     const session: ControllerSessionRecord = {
       index,
@@ -257,6 +258,7 @@ export async function runRemediationController(options: RemediationControllerOpt
       outcome = { status: 'failed', message: (err as Error).message };
     }
 
+    const touchedDependency = dependencyWrites ? await dependencyWrites() : null;
     session.message = outcome.message.slice(0, 2000);
     session.scopeRequests = outcome.scopeRequests ?? [];
     if (outcome.sessionId) session.sessionId = outcome.sessionId;
@@ -272,12 +274,21 @@ export async function runRemediationController(options: RemediationControllerOpt
         upgradedDependencies: upgraded,
       });
       session.changedFiles = [...new Set(validation.changed.flatMap((entry) => [entry.oldPath, entry.path].filter((path): path is string => Boolean(path))))];
+      // Writing installed dependencies without declaring a dependency change
+      // is patching the library, not migrating to it: invisible to git, and
+      // gone on the next fresh install. An agent that ran an install for a
+      // manifest change it made also writes there, legitimately.
+      const declaredChange = session.changedFiles.some((file) => isManifest(file) || isLockfile(file));
+      if (touchedDependency && !declaredChange) {
+        validation.ok = false;
+        validation.reasons.push(`Agent edited installed dependency files (${touchedDependency}) without changing a manifest; installed dependencies are not part of the fix and were reinstalled.`);
+      }
       if (!validation.ok) {
         await reset(options.root, baseline, exec);
         session.status = 'rejected';
         session.reasons = validation.reasons;
         if (validation.reasons.some((reason) => /outside this unit's allowed files/.test(reason))) record.outOfScopeRejections += 1;
-        if (validation.reasons.some((reason) => /coverage|relaxed|deleted test|skipped or todo|removed an assertion|upgraded dependency/.test(reason))) {
+        if (validation.reasons.some((reason) => /coverage|relaxed|deleted test|skipped or todo|removed an assertion|upgraded dependency|installed dependency files/.test(reason))) {
           record.workaroundRejections += 1;
         }
       } else if (validation.changed.length === 0) {
@@ -290,6 +301,12 @@ export async function runRemediationController(options: RemediationControllerOpt
         session.status = 'rejected';
         session.reasons.push('Could not commit the accepted edits.');
       }
+    }
+
+    if (touchedDependency && options.verifier) {
+      session.reasons.push(`installed dependencies were written during the session (${touchedDependency}); reinstalled from the manifests`);
+      const failure = await options.verifier.reinstallClean();
+      if (failure) session.reasons.push(`reinstall: ${failure.slice(0, 300)}`);
     }
 
     // A request is only ever a request. It is granted to the unit that asked,

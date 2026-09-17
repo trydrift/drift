@@ -3,6 +3,7 @@ import { lstat, realpath, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { CommitUnit, RemediationPlan } from '../types.js';
+import { matchesAny as matchesGlob } from '../util/glob.js';
 
 const run = promisify(execFile);
 
@@ -420,14 +421,14 @@ function isTestPath(path: string): boolean {
   return /(^|\/)(__tests__|test|tests|spec)\//.test(path) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(path);
 }
 
+/**
+ * The shared matcher. This file used to carry its own glob conversion, which
+ * rewrote `**` to `.*` and then rewrote that `*` again to `[^/]*` — so every
+ * `dir/**` protected path guarded one level only: `node_modules/x/index.d.ts`
+ * and `.github/workflows/sub/ci.yml` were editable.
+ */
 function matchesAny(patterns: readonly string[], path: string): boolean {
-  return patterns.some((pattern) => globToRegExp(pattern).test(path));
-}
-
-function globToRegExp(pattern: string): RegExp {
-  const escaped = normalizePlanPath(pattern).replace(/[.+^${}()|[\]\\]/g, '\\$&');
-  const source = escaped.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*');
-  return new RegExp(`^${source}$`);
+  return matchesGlob(patterns.map(normalizePlanPath), path);
 }
 
 function isInside(root: string, child: string): boolean {
