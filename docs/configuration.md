@@ -793,6 +793,23 @@ when set, this is consulted only in its absence, and the effective default is
 
 `string` — optional. Model hint passed to the Copilot agent API.
 
+### `remediation.loop`
+
+`"single-pass" | "verified"` — default **`"single-pass"`**
+
+Who owns the fixing loop after Drift's deterministic tiers. `single-pass` hands
+each remaining commit unit to the local agent once. `verified` has Drift run the
+project's own checks after the units land — subtracting failures that already
+happened before the upgrade — and hand what the upgrade broke to fresh, bounded
+repair sessions until the checks pass or a repair stops making progress. See
+[Dispatch](architecture.md#7--dispatch). Applies to workspace agents (CLI and
+Action); cloud agents receive a whole-plan task either way.
+
+```yaml
+remediation:
+  loop: verified
+```
+
 ### `remediation.customInstructions`
 
 `string` — default **`""`**
