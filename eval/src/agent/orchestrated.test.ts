@@ -44,6 +44,10 @@ async function workspaceWith(files: Record<string, string>): Promise<Workspace> 
   const repo = join(root, 'repo');
   await mkdir(repo);
   git(repo, 'init', '--quiet', '--initial-branch=main');
+  // The product commits with plain `git commit`; a CI runner has no global identity.
+  git(repo, 'config', 'user.email', 't@t');
+  git(repo, 'config', 'user.name', 't');
+  git(repo, 'config', 'commit.gpgsign', 'false');
   for (const [path, content] of Object.entries(files)) {
     await mkdir(dirname(join(repo, path)), { recursive: true });
     await writeFile(join(repo, path), content);
