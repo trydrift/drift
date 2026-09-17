@@ -793,6 +793,20 @@ when set, this is consulted only in its absence, and the effective default is
 
 `string` — optional. Model hint passed to the Copilot agent API.
 
+### `remediation.agent.leanSession`
+
+`boolean` — default **`true`**
+
+Start the local coding agent with only the tools a code fix uses. For Claude
+Code that is `--tools Bash Read Edit Write TaskOutput TaskStop
+--disable-slash-commands`: no subagents, scheduling, artifact, design or
+worktree tools, no skills. Every model call re-reads the system prompt and all
+loaded tool definitions before any of the conversation; with the default tools
+that is about 41.5k tokens per call, and lean it is about 12.6k. Agents fixing
+upgrades in Drift's benchmark called nothing outside the lean set. Set `false`
+to start the agent with its own defaults. An agent CLI without a `--tools` flag
+is always started with its defaults.
+
 ### `remediation.loop`
 
 `"single-pass" | "verified"` — default **`"single-pass"`**

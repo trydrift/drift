@@ -295,6 +295,7 @@ export async function runAgentCommitsInWorktree(options: WorktreeAgentRunOptions
         model: options.config.remediation.agent.model ?? options.config.remediation.model,
         effort: options.config.remediation.agent.effort,
         fast: options.config.remediation.agent.fast,
+        leanSession: options.config.remediation.agent.leanSession,
       },
       { report: (message) => options.logger.info(message), signal: new AbortController().signal },
     );

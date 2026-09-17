@@ -271,6 +271,13 @@ export const DriftConfigSchema = z.object({
           model: z.string().optional(),
           effort: AGENT_EFFORT.optional(),
           fast: z.boolean().default(false),
+          /**
+           * Start the agent with only the tools a code fix uses — for Claude
+           * Code, Bash, Read, Edit and Write (plus background-task control),
+           * without skills or slash commands. Its fixed per-call context drops
+           * from about 41.5k to 12.6k tokens. Off restores the CLI's defaults.
+           */
+          leanSession: z.boolean().default(true),
           timeoutSeconds: z.number().int().min(30).max(24 * 60 * 60).default(600),
         })
         .prefault({}),

@@ -263,6 +263,7 @@ export { runChecks } from './verification/checks.js';
 export type { CheckOutcome } from './verification/checks.js';
 export { composeAgentPrompt, parseScopeRequests, SCOPE_REQUEST_MARKER } from './agents/types.js';
 export { classifyVerificationCommand } from './agents/verification-commands.js';
+export { CLAUDE_CODE_LEAN_SESSION_ARGS, CLAUDE_CODE_LEAN_TOOLS } from './agents/cli.js';
 export { guardDecision, verificationGuardSettings, VERIFICATION_GUARD_MARKER } from './agents/verification-guard.js';
 export { digestDiagnostics, renderDigest } from './verification/digest.js';
 export { awaitTerminalCloudTask, reconcileCloudTask } from './remediation/cloud-lifecycle.js';

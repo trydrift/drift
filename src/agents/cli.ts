@@ -35,6 +35,27 @@ async function envWithShellPath(): Promise<NodeJS.ProcessEnv> {
  * authenticated on their machine.
  */
 
+/**
+ * The tools a code fix uses, and nothing else.
+ *
+ * Every model call in a Claude Code session re-reads the system prompt and
+ * every loaded tool, skill and slash command before any of the conversation.
+ * Measured on Claude Code 2.1.267 that fixed part is 41,550 tokens per call
+ * with the default tools; in Drift's agent benchmark it was 49% of all input
+ * tokens across 18 unassisted upgrade sessions — more than every test log,
+ * file read and dependency lookup combined (about 20%). Nearly all of it is
+ * tool definitions a dependency fix never calls: scheduling, artifacts,
+ * design, remote triggers, worktrees, subagents, skills.
+ *
+ * Across 90 benchmark sessions, agents fixing upgrades called Bash, Edit,
+ * Read and Write, plus TaskOutput/TaskStop four times to manage a background
+ * command. Loading exactly those, with skills and slash commands off, is
+ * 12,557 tokens per call (−70%) and leaves the agent's workflow, scope and
+ * autonomy unchanged.
+ */
+export const CLAUDE_CODE_LEAN_TOOLS = ['Bash', 'Read', 'Edit', 'Write', 'TaskOutput', 'TaskStop'] as const;
+export const CLAUDE_CODE_LEAN_SESSION_ARGS: readonly string[] = ['--tools', ...CLAUDE_CODE_LEAN_TOOLS, '--disable-slash-commands'];
+
 export interface CliAgentSpec {
   id: string;
   label: string;
@@ -55,6 +76,12 @@ export interface CliAgentSpec {
    * install the verification guard for sessions the controller verifies.
    */
   settingsArgs?: (settings: Record<string, unknown>) => string[];
+  /**
+   * Arguments that load only what a code fix uses. Probed with `leanArgsFlag`
+   * so an older CLI without the flag is started as before.
+   */
+  leanArgs?: readonly string[];
+  leanArgsFlag?: string;
   /**
    * The models this subscription offers, best first.
    *
@@ -181,6 +208,8 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     ],
     modelArgs: (model) => ['--model', model],
     settingsArgs: (settings) => ['--settings', JSON.stringify(settings)],
+    leanArgs: CLAUDE_CODE_LEAN_SESSION_ARGS,
+    leanArgsFlag: '--tools',
     efforts: CLAUDE_EFFORTS,
     // Claude Code grew a real `--effort` flag, so the reasoning budget can be
     // set directly instead of asked for in words. The prompt keywords stay as
@@ -332,6 +361,7 @@ export class CliFixAgent implements FixAgent {
       ...this.spec.buildArgs(prompt),
       ...(await this.selection(task, command)),
       ...(task.verificationOwner === 'controller' && this.spec.settingsArgs ? this.spec.settingsArgs(verificationGuardSettings()) : []),
+      ...(await this.lean(task, command)),
     ];
     ctx.report(`$ ${displayCommand(command, args)}\n# cwd: ${task.workspaceRoot}`);
 
@@ -376,6 +406,12 @@ export class CliFixAgent implements FixAgent {
    * flag is worse than not passing one: an unknown flag makes the agent exit
    * before it has read the task at all.
    */
+  private async lean(task: FixTask, command: string): Promise<readonly string[]> {
+    if (task.leanSession === false || !this.spec.leanArgs) return [];
+    const gated = this.spec.leanArgsFlag;
+    return !gated || (await supportsFlag(command, gated)) ? this.spec.leanArgs : [];
+  }
+
   private async selection(task: FixTask, command: string): Promise<string[]> {
     const args: string[] = [];
     if (task.model && this.spec.modelArgs) args.push(...this.spec.modelArgs(task.model));

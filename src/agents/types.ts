@@ -186,6 +186,11 @@ export interface FixTask {
    * `verification-guard.ts`), not merely asked not to.
    */
   verificationOwner?: 'controller' | 'agent';
+  /**
+   * Start the agent with only the tools a code fix uses (see
+   * `CLAUDE_CODE_LEAN_SESSION_ARGS`). On unless a caller turns it off.
+   */
+  leanSession?: boolean;
 }
 
 export interface RepairRequest {
