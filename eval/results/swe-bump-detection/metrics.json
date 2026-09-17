@@ -171,7 +171,8 @@
     "total": 19,
     "byReason": {
       "consumer-usage-not-found": 5,
-      "verification-inconclusive": 4,
+      "verification-inconclusive": 3,
+      "consumer-match-insufficient-confidence": 1,
       "verification-install-failed": 10
     },
     "unclassified": 0
