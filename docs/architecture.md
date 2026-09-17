@@ -607,6 +607,59 @@ everything else.
 A commit Drift resolved itself is never handed to an agent, and a commit whose
 plan left residual sites is handed over for those sites only.
 
+With `remediation.loop: verified`, Drift also owns what happens after step 3
+(`src/remediation/controller.ts`, `src/remediation/verifier.ts`). The agent
+never runs the project's broad checks; Drift does:
+
+- Units that cannot succeed are not dispatched — a unit whose every file is
+  protected (a CI workflow) is reported as needing a human — and units over the
+  same files share one session.
+- The agent does not run the project's broad checks — and for Claude Code this
+  is enforced, not requested: a PreToolUse hook (`--settings`,
+  `src/agents/verification-guard.ts`) refuses whole-project build, typecheck,
+  lint and test commands and lets targeted ones (one test file, one file's
+  lint) run. Sessions told only in the prompt kept running them.
+- Each remaining unit is one fresh agent session, given the finding's
+  replacement symbols and before/after declarations when Drift has them (and an
+  explicit "none established" when it does not), the measured failures on its
+  own files, and its allowed files. A file outside that scope is requested, not
+  edited; Drift grants it in the next session unless it is protected.
+- After the units land Drift runs the project's typecheck, test, build and lint
+  scripts itself, subtracts failures that already happened at the pre-upgrade
+  commit, and restores anything a check rewrote.
+- Each remaining failure goes to a new session scoped to the unit whose files it
+  names, or to one residual session for the rest, with only that failure, the
+  edits already made to its files, and the findings its text mentions.
+- A check that passes by checking less is a failure. What the lint, test and
+  compiler configuration enforce is measured at the pre-upgrade commit and
+  again when the checks pass (`src/remediation/coverage.ts`), with the project's
+  own tools: ESLint's resolved rules and ignored files, `jest --listTests`,
+  TypeScript's parsed options and file list. Dropped or downgraded rules,
+  newly ignored files, lost tests, relaxed strictness and dropped source files
+  become verification failures on the configuration file. Rules the new version
+  removed or deprecated, a rule that moved plugin namespace, and rules a loaded
+  plugin's own presets switch off are not.
+- A pass is confirmed on a clean install from the lockfile (`npm ci`,
+  `yarn install --immutable`) before it is reported; a lockfile out of step with
+  the manifest is synced and committed by Drift.
+- A failure that names no file, reports weakened coverage, or survived the
+  previous round widens its repair's scope to the member's manifest and tool
+  configuration files, so a migration that needs a companion package or a new
+  configuration file is not squeezed into the one file a diagnostic named.
+- The loop stops when the checks pass, when the same failures survive a round
+  that changed nothing (or two that did), or at a high ceiling on rounds. The
+  reason is recorded.
+
+Every edit still passes the same validation — scope, protected paths, secrets,
+test weakening — plus rejection of lowered coverage thresholds, relaxed
+compiler strictness, deleted test files, any change to the upgraded
+dependency's own declaration, and any write to installed dependencies
+(`node_modules`) without a manifest change — git cannot see those files, and a
+check that passes on a patched dependency tree fails on a fresh install. Any
+write there is followed by a clean reinstall before the next verification. A companion package that must move with the
+upgrade can change when its manifest is in scope; Drift reinstalls and commits
+the lockfile.
+
 The optional `ANTHROPIC_API_KEY` / `llm.enabled` setting is used in two
 distinct places, and it is worth keeping them apart. In stage 3
 (`src/analyze/llm.ts`) it assists breaking-change *detection*, capped at

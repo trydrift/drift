@@ -1,7 +1,7 @@
 import { cp, copyFile, mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { tmpdir } from 'node:os';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { execCommand, type Exec } from '../util/exec.js';
 
 /**
@@ -151,7 +151,11 @@ export async function createWorktree(
   const gitDir = common.stdout.trim() || '.git';
   const commonDir = isAbsolute(gitDir) ? gitDir : join(root, gitDir);
   const runId = options.runId ?? DEFAULT_RUN_ID;
-  const worktreesDir = join(commonDir, 'drift-worktrees');
+  // In the temp directory, keyed by the repository, never under `.git/`: Jest
+  // ignores every path with a `.git` segment, so a test check run in a worktree
+  // there found no tests at all, and ESLint's cascading config loaded the
+  // enclosing repository's config on top of the worktree's own.
+  const worktreesDir = join(tmpdir(), 'drift-worktrees', createHash('sha256').update(commonDir).digest('hex').slice(0, 12));
   const path = join(worktreesDir, sanitize(runId), sanitize(label));
   sweepAbandonedTrash(worktreesDir);
 

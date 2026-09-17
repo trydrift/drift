@@ -169,6 +169,13 @@ export interface StructuredFinding {
    */
   changed?: 'parameters' | 'return-type' | 'both';
   /**
+   * The symbol the new version publishes in this one's place, when the two
+   * published surfaces establish it on their own (`inferReplacement`). What a
+   * codemod renames to, and what the agent is told instead of being left to
+   * find it in the package's source.
+   */
+  replacement?: string;
+  /**
    * The declaration's own shape on each side of a `kind-changed` finding —
    * `function`, `class`, `interface`, and so on. What a caller needs to edit
    * for "class became a function" (drop every `new`) and "function became a
@@ -677,6 +684,8 @@ export interface CommitUnit {
     ruleId: string;
     from: string;
     to: string;
+    /** `namespace-member-to-named-import` only: the package whose import the rule rewrites. */
+    packageName?: string;
     files: string[];
     /**
      * Line-level, and safe to remain so. This tier only ever performs

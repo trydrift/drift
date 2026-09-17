@@ -16,7 +16,13 @@ import type { Command, PackageManagerId } from './package-manager.js';
  * meaningless failure is worse than no check at all.
  */
 
-export type CheckKind = 'typecheck' | 'test' | 'build';
+/**
+ * `lint` is never offered by `detectChecks`: upgrade verification asks whether
+ * the code still compiles and behaves, and a lint failure answers neither. The
+ * remediation controller, which has to leave a repository whose own checks
+ * pass, discovers it separately (see `remediation/verifier.ts`).
+ */
+export type CheckKind = 'typecheck' | 'test' | 'build' | 'lint';
 
 export interface LocalCheck {
   kind: CheckKind;
@@ -70,6 +76,7 @@ const SCRIPT_NAMES: Record<CheckKind, string[]> = {
   typecheck: ['typecheck', 'type-check', 'types', 'check-types', 'tsc', 'check'],
   test: ['test', 'tests', 'test:unit'],
   build: ['build', 'compile'],
+  lint: [],
 };
 
 /**

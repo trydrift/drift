@@ -1,5 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { FixAgent, FileSnapshot } from '../agents/types.js';
@@ -72,7 +74,57 @@ export async function runWorktreeRemediation(
   const nonInteractive = options.nonInteractive ?? !canPrompt();
 
   const worktree = await createRemediationWorktree({ repo, plan, workspace, exec });
+  const { builtinResolved, fixPlanResolved, documents, needsAgent, committedAny } = await applyDeterministicCommits({
+    worktree,
+    plan,
+    config,
+    logger,
+    planOnly: options.planOnly,
+    nonInteractive,
+    ask: options.ask,
+    exec,
+  });
 
+  return {
+    branch: plan.branchName,
+    builtinResolved,
+    fixPlanResolved,
+    documents,
+    needsAgent,
+    pushed: committedAny,
+    worktree,
+    teardown: () => removeRemediationWorktree(workspace, worktree, exec),
+  };
+}
+
+
+export interface DeterministicResult {
+  builtinResolved: number;
+  fixPlanResolved: number;
+  documents: string[];
+  /** Units that still need an agent, in plan order. */
+  needsAgent: CommitUnit[];
+  committedAny: boolean;
+}
+
+/**
+ * The tiers that need no model: a built-in codemod, then a validated fix plan,
+ * each committed on its own. Whatever neither resolves is returned for an agent.
+ * Runs against any git working tree, so a caller that already has one (the
+ * remediation controller, a benchmark workspace) need not create another.
+ */
+export async function applyDeterministicCommits(options: {
+  worktree: string;
+  plan: RemediationPlan;
+  config: DriftConfig;
+  logger: Logger;
+  planOnly?: boolean;
+  nonInteractive: boolean;
+  ask?: (question: string, options: string[]) => Promise<string>;
+  exec?: Exec;
+}): Promise<DeterministicResult> {
+  const { worktree, plan, config, logger, nonInteractive } = options;
+  const exec = options.exec ?? execCommand;
   let builtinResolved = 0;
   let fixPlanResolved = 0;
   const documents: string[] = [];
@@ -129,23 +181,18 @@ export async function runWorktreeRemediation(
     needsAgent.push(commit);
   }
 
-  return {
-    branch: plan.branchName,
-    builtinResolved,
-    fixPlanResolved,
-    documents,
-    needsAgent,
-    pushed: committedAny,
-    worktree,
-    teardown: () => removeRemediationWorktree(workspace, worktree, exec),
-  };
+  return { builtinResolved, fixPlanResolved, documents, needsAgent, committedAny };
 }
 
 export async function createRemediationWorktree(options: WorktreeRunOptions): Promise<string> {
   const exec = options.exec ?? execCommand;
-  const common = await exec('git', ['rev-parse', '--git-common-dir'], { cwd: options.workspace });
-  const gitDir = common.stdout.trim() || '.git';
-  const dir = join(options.workspace, gitDir, 'drift-worktrees', options.plan.branchName.replace(/[^\w.-]+/g, '-'));
+  // Outside the repository: a worktree under `.git/` is invisible to Jest (it
+  // ignores any path with a `.git` segment) and inherits the enclosing
+  // repository's cascading ESLint config, so verifying a fix there measures
+  // something other than the project. Stable per workspace and branch, so a
+  // rerun replaces the previous one.
+  const key = createHash('sha256').update(resolve(options.workspace)).digest('hex').slice(0, 12);
+  const dir = join(tmpdir(), 'drift-remediation', key, options.plan.branchName.replace(/[^\w.-]+/g, '-'));
 
   await exec('git', ['worktree', 'remove', '--force', dir], { cwd: options.workspace });
 
@@ -248,6 +295,7 @@ export async function runAgentCommitsInWorktree(options: WorktreeAgentRunOptions
         model: options.config.remediation.agent.model ?? options.config.remediation.model,
         effort: options.config.remediation.agent.effort,
         fast: options.config.remediation.agent.fast,
+        leanSession: options.config.remediation.agent.leanSession,
       },
       { report: (message) => options.logger.info(message), signal: new AbortController().signal },
     );
@@ -319,7 +367,11 @@ export async function commitFiles(worktree: string, files: readonly string[], me
   if (files.length === 0) return false;
   const add = await exec('git', ['add', '--', ...files], { cwd: worktree });
   if (add.code !== 0) return false;
-  const commit = await exec('git', ['commit', '-m', message], { cwd: worktree });
+  // --no-verify: a repository's own commit hooks (husky, lint-staged) run its
+  // linters against a tree that is mid-migration by construction, and would
+  // refuse a correct edit — or rewrite it. What the checks say about the result
+  // is verification's job, which runs them explicitly and reports them.
+  const commit = await exec('git', ['commit', '--no-verify', '-m', message], { cwd: worktree });
   return commit.code === 0;
 }
 

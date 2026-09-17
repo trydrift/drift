@@ -11,6 +11,7 @@ import { planForCommits } from '../remediation/partition.js';
 import type { FixAgent } from '../agents/types.js';
 import { execCommand } from '../util/exec.js';
 import { runAgentCommitsInWorktree, runWorktreeRemediation } from '../remediation/worktree-runner.js';
+import { runVerifiedAgentRemediation } from '../remediation/verified-runner.js';
 
 /**
  * Dispatch: decide what to do with a plan, and do it.
@@ -229,7 +230,8 @@ async function dispatchViaWorkspaceAgent(options: DispatchOptions & { agent: Fix
 
   try {
     if (fix.needsAgent.length > 0) {
-      const agentRun = await runAgentCommitsInWorktree({
+      const runAgents = config.remediation.loop === 'verified' ? runVerifiedAgentRemediation : runAgentCommitsInWorktree;
+      const agentRun = await runAgents({
         repo,
         plan,
         config,

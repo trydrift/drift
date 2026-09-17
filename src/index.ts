@@ -229,6 +229,7 @@ export type {
 } from './agents/types.js';
 export {
   applyBuiltinCommit,
+  applyDeterministicCommits,
   applyFixPlanCommit,
   assessmentOf,
   createRemediationWorktree,
@@ -242,10 +243,33 @@ export type {
   WorktreeRemediationOptions,
   WorktreeRemediationResult,
 } from './remediation/worktree-runner.js';
+export type { DeterministicResult } from './remediation/worktree-runner.js';
+export { planRepairs, prepareAgentUnits, renderFailures, runRemediationController, RESIDUAL_ID } from './remediation/controller.js';
+export type {
+  ControllerRecord,
+  ControllerSessionRecord,
+  ControllerTermination,
+  ControllerUnitRecord,
+  ControllerVerificationRecord,
+  RemediationControllerOptions,
+} from './remediation/controller.js';
+export { createProjectVerifier, detectRemediationChecks, extractFailures, measureBaseline } from './remediation/verifier.js';
+export { runVerifiedAgentRemediation } from './remediation/verified-runner.js';
+export { COVERAGE_CHECK_LABEL, coverageTargets, coverageWeakening, measureCoverage } from './remediation/coverage.js';
+export type { CoverageInventory } from './remediation/coverage.js';
+export { discoverToolFiles } from './remediation/controller.js';
+export type { CheckResult, CoverageBaseline, RemediationVerifier, VerificationFailure, VerificationRun } from './remediation/verifier.js';
+export { runChecks } from './verification/checks.js';
+export type { CheckOutcome } from './verification/checks.js';
+export { composeAgentPrompt, parseScopeRequests, SCOPE_REQUEST_MARKER } from './agents/types.js';
+export { classifyVerificationCommand } from './agents/verification-commands.js';
+export { CLAUDE_CODE_LEAN_SESSION_ARGS, CLAUDE_CODE_LEAN_TOOLS } from './agents/cli.js';
+export { guardDecision, verificationGuardSettings, VERIFICATION_GUARD_MARKER } from './agents/verification-guard.js';
+export { digestDiagnostics, renderDigest } from './verification/digest.js';
 export { awaitTerminalCloudTask, reconcileCloudTask } from './remediation/cloud-lifecycle.js';
 export type { CloudTaskReconciliation } from './remediation/cloud-lifecycle.js';
 export type { CloudFixAgent, CloudTaskStatus } from './agents/types.js';
-export { validateCloudChangedFiles, validateAgentWorktree } from './agents/scope.js';
+export { isProtectedPath, upgradedDependencyFindings, validateAgentWorktree, validateCloudChangedFiles, workaroundFindings } from './agents/scope.js';
 export type { CloudScopeValidationOptions, CloudScopeValidationResult, ScopeValidationResult } from './agents/scope.js';
 
 export { authorizeApproval, canApprove } from './approval/authorize.js';
