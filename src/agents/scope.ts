@@ -275,6 +275,25 @@ export function workaroundFindings(patch: string, changed: readonly ChangedPath[
       }
     }
 
+    // Suppression directives silence a check at the line it complains about.
+    // In source, a type-check suppression that is new or reworded is not a
+    // migration (a pure move leaves an identical removed line); in tests, only
+    // more of them counts. A lint or coverage suppression may be renamed —
+    // ESLint 10's own migration renames rules inside existing comments — but
+    // not multiplied outside tests.
+    const typeDirective = /@ts-(?:ignore|expect-error|nocheck)\b/;
+    const lintDirective = /eslint-disable|istanbul ignore|c8 ignore|v8 ignore|#\s*type:\s*ignore|#\s*noqa|NOLINT/;
+    const removedText = new Set(lines.filter((line) => line.startsWith('-')).map((line) => line.slice(1).trim()));
+    const count = (sign: string, pattern: RegExp) => lines.filter((line) => line.startsWith(sign) && pattern.test(line)).length;
+    if (isTestPath(file)) {
+      if (count('+', typeDirective) > count('-', typeDirective)) errors.push(`Agent added a type-check suppression in ${file}.`);
+    } else if (SOURCE_EXTENSION.test(file)) {
+      if (lines.some((line) => line.startsWith('+') && typeDirective.test(line) && !removedText.has(line.slice(1).trim()))) {
+        errors.push(`Agent added or changed a type-check suppression (@ts-ignore/@ts-expect-error/@ts-nocheck) in ${file}.`);
+      }
+      if (count('+', lintDirective) > count('-', lintDirective)) errors.push(`Agent added a lint or coverage suppression in ${file}.`);
+    }
+
     if (/(^|\/)tsconfig[\w.-]*\.json$/.test(file)) {
       for (const flag of ['strict', 'noImplicitAny', 'strictNullChecks', 'noImplicitReturns', 'noUnusedLocals', 'noUnusedParameters']) {
         const wasOn = lines.some((line) => new RegExp(`^-.*"${flag}"\\s*:\\s*true`).test(line));
@@ -286,6 +305,8 @@ export function workaroundFindings(patch: string, changed: readonly ChangedPath[
   }
   return [...new Set(errors)];
 }
+
+const SOURCE_EXTENSION = /\.(?:[cm]?[jt]sx?|py|java|kt|go|rs|rb|php|cs|swift|scala)$/;
 
 /** Any manifest line naming an upgraded dependency that was changed. */
 export function upgradedDependencyFindings(patch: string, dependencies: readonly string[]): string[] {

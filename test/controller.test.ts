@@ -356,19 +356,36 @@ describe('verification guard', () => {
 });
 
 describe('installed dependencies', () => {
-  test('an agent that patches node_modules without a manifest change is rejected, and the tree is reinstalled', async () => {
+  test('a session that writes to node_modules keeps its repository edits; the tree is reinstalled clean before verification', async () => {
     const { root, cleanup } = await repoWith({ 'src/app.ts': 'gone();\n' });
     try {
       const fake = scriptedAgent(root, [async () => fake.write('src/app.ts', 'arrived();\n')]);
-      const verify = scriptedVerifier([{ passed: true }], ['node_modules/logform/index.d.ts']);
+      const verify = scriptedVerifier([{ passed: true }], ['node_modules/typescript/AUTHORS.md']);
       const record = await runRemediationController({ root, plan: plan([unit()]), config, agent: fake.agent, verifier: verify.verifier, logger: silent });
-      assert.equal(record.sessions[0]!.status, 'rejected');
-      assert.match(record.sessions[0]!.reasons.join('\n'), /installed dependency files \(node_modules\/logform\/index\.d\.ts\)/);
+      assert.equal(record.sessions[0]!.status, 'accepted');
+      assert.match(record.sessions[0]!.reasons.join('\n'), /reinstalled from the manifests/);
       assert.equal(verify.reinstalls, 1);
-      assert.equal(await readFile(join(root, 'src/app.ts'), 'utf8'), 'gone();\n');
+      assert.equal(verify.fresh.at(-1), true, 'and any pass is confirmed on a clean install');
     } finally {
       await cleanup();
     }
+  });
+
+  test('suppression directives: new or reworded in source is rejected; renames and test-only additions of lint suppressions are not', async () => {
+    const { workaroundFindings } = await import('../dist/agents/scope.js');
+    const patch = (file: string, ...lines: string[]) => [`diff --git a/${file} b/${file}`, ...lines].join('\n');
+    const reworded = patch('src/ledger-keyring.ts', '-      // @ts-expect-error tx.v should be a Buffer but we are assigning a string', '+      // @ts-expect-error tx.v should be a Buffer but we are assigning a string,');
+    assert.match(workaroundFindings(reworded, []).join('\n'), /type-check suppression/);
+    const moved = patch('src/a.ts', '-  // @ts-expect-error legacy', '+  // @ts-expect-error legacy');
+    assert.deepEqual(workaroundFindings(moved, []), []);
+    const renamed = patch('src/cli.ts', '-      // eslint-disable-next-line rulesdir/no-unsafe-execa', '+      // eslint-disable-next-line local/no-unsafe-execa');
+    assert.deepEqual(workaroundFindings(renamed, []), []);
+    const addedLint = patch('src/cli.ts', '+      // eslint-disable-next-line no-undef');
+    assert.match(workaroundFindings(addedLint, []).join('\n'), /lint or coverage suppression/);
+    const testLint = patch('src/ledger-keyring.test.ts', '+      // eslint-disable-next-line @typescript-eslint/unbound-method');
+    assert.deepEqual(workaroundFindings(testLint, []), []);
+    const testTs = patch('src/ledger-keyring.test.ts', '+      // @ts-ignore');
+    assert.match(workaroundFindings(testTs, []).join('\n'), /type-check suppression/);
   });
 
   test('a dependency write that comes with a manifest change is kept, and still reinstalled clean', async () => {

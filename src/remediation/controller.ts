@@ -280,21 +280,18 @@ export async function runRemediationController(options: RemediationControllerOpt
         upgradedDependencies: upgraded,
       });
       session.changedFiles = [...new Set(validation.changed.flatMap((entry) => [entry.oldPath, entry.path].filter((path): path is string => Boolean(path))))];
-      // Writing installed dependencies without declaring a dependency change
-      // is patching the library, not migrating to it: invisible to git, and
-      // gone on the next fresh install. An agent that ran an install for a
-      // manifest change it made also writes there, legitimately.
-      const declaredChange = session.changedFiles.some((file) => isManifest(file) || isLockfile(file));
-      if (touchedDependency && !declaredChange) {
-        validation.ok = false;
-        validation.reasons.push(`Agent edited installed dependency files (${touchedDependency}) without changing a manifest; installed dependencies are not part of the fix and were reinstalled.`);
-      }
+      // Writes to installed dependencies are not rejected: `npx` fetching a
+      // tool or an exploratory install writes there too, and rejecting those
+      // sessions threw away a correct tsconfig fix (winston, development run 3).
+      // What must not happen is a pass that depends on them, and that is
+      // prevented by the clean reinstall below and the clean-install
+      // confirmation before any pass is reported.
       if (!validation.ok) {
         await reset(options.root, baseline, exec);
         session.status = 'rejected';
         session.reasons = validation.reasons;
         if (validation.reasons.some((reason) => /outside this unit's allowed files/.test(reason))) record.outOfScopeRejections += 1;
-        if (validation.reasons.some((reason) => /coverage|relaxed|deleted test|skipped or todo|removed an assertion|upgraded dependency|installed dependency files/.test(reason))) {
+        if (validation.reasons.some((reason) => /coverage|relaxed|deleted test|skipped or todo|removed an assertion|upgraded dependency|suppression/.test(reason))) {
           record.workaroundRejections += 1;
         }
       } else if (validation.changed.length === 0) {
