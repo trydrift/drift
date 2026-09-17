@@ -684,6 +684,8 @@ export interface CommitUnit {
     ruleId: string;
     from: string;
     to: string;
+    /** `namespace-member-to-named-import` only: the package whose import the rule rewrites. */
+    packageName?: string;
     files: string[];
     /**
      * Line-level, and safe to remain so. This tier only ever performs

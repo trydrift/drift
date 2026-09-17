@@ -37,9 +37,11 @@ import { escapeRegExp, isCommentOnly, replaceOutsideStrings } from './line.js';
 
 /** A rule and its parameters — not a snapshot of any particular file. */
 export interface CodemodTransform {
-  ruleId: 'rename-identifier';
+  ruleId: 'rename-identifier' | 'namespace-member-to-named-import';
   from: string;
   to: string;
+  /** `namespace-member-to-named-import` only: the package whose import is rewritten. */
+  packageName?: string;
   /** Exact original lines this transform is allowed to touch. See `CodemodAnchor`. */
   anchors: CodemodAnchor[];
 }
@@ -112,6 +114,8 @@ export function attemptCodemod(
   fileContents: ReadonlyMap<string, string>,
 ): CodemodResult | null {
   if (change.kind !== 'renamed-export') return null;
+  const memberFix = attemptNamespaceMemberRename(change, sites, fileContents);
+  if (memberFix) return memberFix;
   if (change.symbols.length !== 1) return null;
 
   const from = change.symbols[0]!;
@@ -171,6 +175,123 @@ export function attemptCodemod(
 }
 
 /**
+ * A member of a package's default/namespace export that the new version
+ * publishes as a named export: `import glob from 'glob'` with
+ * `glob.sync(...)` becomes `import { globSync } from 'glob'` with
+ * `globSync(...)`.
+ *
+ * The single most common shape of a modern npm major (a package dropping its
+ * default export in favour of flat named ones), and the reason a plain rename
+ * could never fix one: the call site and the import must move together, and
+ * renaming the member alone would leave `glob.globSync` on a namespace that no
+ * longer exists.
+ *
+ * Declines unless the file's binding for the package is used for *only* this
+ * member. Anything else — another member, the binding passed around whole, a
+ * re-export — means the import cannot be narrowed to one named symbol without
+ * reasoning this module deliberately does not do.
+ */
+function attemptNamespaceMemberRename(
+  change: BreakingChange,
+  sites: readonly ImpactSite[],
+  fileContents: ReadonlyMap<string, string>,
+): CodemodResult | null {
+  const to = change.replacementSymbols?.[0];
+  if (!to || !PLAIN_IDENTIFIER.test(to)) return null;
+
+  // `default.sync` / `glob.sync`: the member is what call sites actually name.
+  const dotted = change.symbols.find((symbol) => /^[\w$]+\.[\w$]+$/.test(symbol));
+  const member = dotted?.split('.')[1];
+  if (!member || !PLAIN_IDENTIFIER.test(member) || member === to) return null;
+
+  const packageName = change.dependency;
+  const edits: CodemodEdit[] = [];
+  const anchors: CodemodAnchor[] = [];
+  let sitesResolved = 0;
+
+  const sitesByFile = new Map<string, ImpactSite[]>();
+  for (const site of sites) sitesByFile.set(site.file, [...(sitesByFile.get(site.file) ?? []), site]);
+
+  for (const [file, fileSites] of sitesByFile) {
+    const before = fileContents.get(file);
+    if (before === undefined) continue;
+    const rewritten = rewriteNamespaceMember(before, packageName, member, to);
+    if (!rewritten) continue;
+
+    edits.push({ file, before, after: rewritten.content });
+    for (const line of rewritten.touched) anchors.push({ file, line: line.text, lineNumber: line.number });
+    sitesResolved += fileSites.filter((site) => rewritten.touched.some((line) => line.number === site.line)).length;
+  }
+
+  if (edits.length === 0 || sitesResolved === 0) return null;
+  return { transform: { ruleId: 'namespace-member-to-named-import', from: member, to, packageName, anchors }, edits, sitesResolved };
+}
+
+const IMPORT_PATTERNS = (packageName: string): RegExp[] => {
+  const pkg = escapeRegExp(packageName);
+  return [
+    // import glob from 'glob'  |  import * as glob from 'glob'
+    new RegExp(`^(\\s*)import\\s+(?:\\*\\s+as\\s+)?([A-Za-z_$][\\w$]*)\\s+from\\s+(['"\`])${pkg}\\3(\\s*;?)\\s*$`),
+    // const glob = require('glob')
+    new RegExp(`^(\\s*)(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*require\\(\\s*(['"\`])${pkg}\\3\\s*\\)(\\s*;?)\\s*$`),
+  ];
+};
+
+function rewriteNamespaceMember(
+  source: string,
+  packageName: string,
+  member: string,
+  to: string,
+): { content: string; touched: { text: string; number: number }[] } | null {
+  const lines = source.split('\n');
+  const patterns = IMPORT_PATTERNS(packageName);
+
+  let importIndex = -1;
+  let binding = '';
+  let rewrittenImport = '';
+  for (const [index, line] of lines.entries()) {
+    for (const [which, pattern] of patterns.entries()) {
+      const match = pattern.exec(line);
+      if (!match) continue;
+      importIndex = index;
+      binding = match[2]!;
+      const [indent, , , quote, tail] = [match[1]!, match[2]!, '', match[3]!, match[4] ?? ''];
+      rewrittenImport =
+        which === 0
+          ? `${indent}import { ${to} } from ${quote}${packageName}${quote}${tail}`
+          : `${indent}const { ${to} } = require(${quote}${packageName}${quote})${tail}`;
+      break;
+    }
+    if (importIndex >= 0) break;
+  }
+  if (importIndex < 0 || !binding) return null;
+
+  // Every use of the binding must be this member. Anything else and narrowing
+  // the import would break it.
+  const uses = new RegExp(`(?<![\\w$.])${escapeRegExp(binding)}\\b`, 'g');
+  const memberUse = new RegExp(`(?<![\\w$.])${escapeRegExp(binding)}\\s*\\.\\s*${escapeRegExp(member)}\\b`, 'g');
+  const touched: { text: string; number: number }[] = [];
+  const out = [...lines];
+
+  for (const [index, line] of lines.entries()) {
+    if (index === importIndex || isCommentOnly(line)) continue;
+    const totalUses = (line.match(uses) ?? []).length;
+    if (totalUses === 0) continue;
+    const memberUses = (line.match(memberUse) ?? []).length;
+    if (memberUses !== totalUses) return null;
+    const rewritten = replaceOutsideStrings(line, memberUse, to);
+    if (rewritten === line) return null;
+    out[index] = rewritten;
+    touched.push({ text: line, number: index + 1 });
+  }
+
+  if (touched.length === 0) return null;
+  out[importIndex] = rewrittenImport;
+  touched.push({ text: lines[importIndex]!, number: importIndex + 1 });
+  return { content: out.join('\n'), touched };
+}
+
+/**
  * Apply a codemod transform to one file's content, fresh.
  *
  * Deliberately re-derived from the rule and its anchors rather than replayed
@@ -184,12 +305,19 @@ export function attemptCodemod(
  */
 export function applyCodemodTransform(
   content: string,
-  transform: { ruleId: string; from: string; to: string; anchors: readonly CodemodAnchor[] },
+  transform: { ruleId: string; from: string; to: string; packageName?: string; anchors: readonly CodemodAnchor[] },
   file: string,
 ): string {
   switch (transform.ruleId) {
     case 'rename-identifier':
       return renameAtAnchors(content, transform.from, transform.to, transform.anchors, file);
+    case 'namespace-member-to-named-import': {
+      // Re-derived against the file as it reads now, like every other rule
+      // here: the import is found again rather than replayed by line number.
+      if (!transform.packageName || !transform.anchors.some((anchor) => anchor.file === file)) return content;
+      const rewritten = rewriteNamespaceMember(content, transform.packageName, transform.from, transform.to);
+      return rewritten ? rewritten.content : content;
+    }
     default:
       return content;
   }
