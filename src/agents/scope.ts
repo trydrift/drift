@@ -6,7 +6,7 @@ import type { CommitUnit, RemediationPlan } from '../types.js';
 
 const run = promisify(execFile);
 
-const DEFAULT_PROTECTED_PATHS = [
+export const DEFAULT_PROTECTED_PATHS = [
   '.git/**',
   '.github/workflows/**',
   '.env',
@@ -38,6 +38,11 @@ export interface ScopeValidationOptions {
   maxFiles?: number;
   maxChangedLines?: number;
   forbidTestWeakening?: boolean;
+  /**
+   * Packages this remediation upgraded. An edit to their manifest entries is
+   * a revert or a downgrade, whatever else the agent changed with it.
+   */
+  upgradedDependencies?: readonly string[];
 }
 
 export interface ScopeValidationResult {
@@ -148,6 +153,11 @@ export async function validateAgentWorktree(
     const weakening = testWeakeningFindings(patch, changed);
     reasons.push(...weakening.errors);
     warnings.push(...weakening.warnings);
+    reasons.push(...workaroundFindings(patch, changed));
+  }
+
+  if (options.upgradedDependencies?.length) {
+    reasons.push(...upgradedDependencyFindings(patch, options.upgradedDependencies));
   }
 
   for (const entry of changed) {
@@ -221,6 +231,91 @@ export function testWeakeningFindings(
   }
 
   return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
+}
+
+/**
+ * Ways to make a check pass without fixing anything that live outside test
+ * files: a deleted test file, a lowered coverage threshold, a compiler
+ * strictness flag switched off.
+ *
+ * `testWeakeningFindings` only looks inside test files, and these are exactly
+ * the edits an agent under pressure from a red check reaches for — lowering
+ * `coverageThreshold` in `jest.config.js` was the single most common failure
+ * in Drift's own agent benchmark, in every condition.
+ */
+export function workaroundFindings(patch: string, changed: readonly ChangedPath[]): string[] {
+  const errors: string[] = [];
+  for (const entry of changed) {
+    if (entry.status === 'deleted' && isTestPath(entry.path)) errors.push(`Agent deleted test file ${entry.path}.`);
+  }
+
+  for (const [file, lines] of patchByFile(patch)) {
+    const removed = new Map<string, number>();
+    for (const line of lines) {
+      const threshold = /^-.*\b(branches|functions|lines|statements)\b['"]?\s*:\s*(\d+(?:\.\d+)?)/.exec(line);
+      if (threshold) removed.set(threshold[1]!, Number(threshold[2]));
+    }
+    for (const line of lines) {
+      const threshold = /^\+.*\b(branches|functions|lines|statements)\b['"]?\s*:\s*(\d+(?:\.\d+)?)/.exec(line);
+      if (threshold && removed.has(threshold[1]!) && Number(threshold[2]) < removed.get(threshold[1]!)!) {
+        errors.push(`Agent lowered the ${threshold[1]} coverage threshold in ${file}.`);
+      }
+      if (/^-.*coverageThreshold/.test(line) && !lines.some((other) => /^\+.*coverageThreshold/.test(other))) {
+        errors.push(`Agent removed the coverage threshold in ${file}.`);
+      }
+    }
+
+    if (/(^|\/)tsconfig[\w.-]*\.json$/.test(file)) {
+      for (const flag of ['strict', 'noImplicitAny', 'strictNullChecks', 'noImplicitReturns', 'noUnusedLocals', 'noUnusedParameters']) {
+        const wasOn = lines.some((line) => new RegExp(`^-.*"${flag}"\\s*:\\s*true`).test(line));
+        const nowOff = lines.some((line) => new RegExp(`^\\+.*"${flag}"\\s*:\\s*false`).test(line));
+        const dropped = wasOn && !lines.some((line) => new RegExp(`^\\+.*"${flag}"\\s*:\\s*true`).test(line));
+        if (nowOff || dropped) errors.push(`Agent relaxed \`${flag}\` in ${file}.`);
+      }
+    }
+  }
+  return [...new Set(errors)];
+}
+
+/** Any manifest line naming an upgraded dependency that was changed. */
+export function upgradedDependencyFindings(patch: string, dependencies: readonly string[]): string[] {
+  const errors: string[] = [];
+  for (const [file, lines] of patchByFile(patch)) {
+    if (!isManifest(file)) continue;
+    for (const dependency of dependencies) {
+      const escaped = dependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const named = new RegExp(`^[-+](?![-+])(?:.*["'\`]${escaped}["'\`]|\\s*${escaped}\\s*(?:[=<>~!^\\[;]|$))`);
+      if (lines.some((line) => named.test(line))) {
+        errors.push(`Agent changed the declaration of upgraded dependency ${dependency} in ${file}.`);
+      }
+    }
+  }
+  return [...new Set(errors)];
+}
+
+export function isProtectedPath(path: string, patterns: readonly string[] = DEFAULT_PROTECTED_PATHS): boolean {
+  const normalized = normalizePlanPath(path);
+  return !normalized || matchesAny(patterns, normalized) || isWorkflow(normalized);
+}
+
+export function isManifest(path: string): boolean {
+  return /(^|\/)(package\.json|pyproject\.toml|requirements[\w.-]*\.txt|setup\.py|Pipfile|go\.mod|Cargo\.toml|Gemfile|pom\.xml|build\.gradle(?:\.kts)?|composer\.json|[\w.-]+\.csproj|pubspec\.yaml|mix\.exs)$/.test(path);
+}
+
+function patchByFile(patch: string): Map<string, string[]> {
+  const files = new Map<string, string[]>();
+  let current: string[] | null = null;
+  for (const line of patch.split('\n')) {
+    const header = /^diff --git a\/(.+?) b\/(.+)$/.exec(line);
+    if (header) {
+      current = [];
+      files.set(header[2]!, current);
+      continue;
+    }
+    if (!current || line.startsWith('---') || line.startsWith('+++')) continue;
+    if (line.startsWith('+') || line.startsWith('-')) current.push(line);
+  }
+  return files;
 }
 
 async function diff(root: string, ref: string): Promise<string> {
@@ -314,7 +409,7 @@ function isWorkflow(path: string): boolean {
   return path.startsWith('.github/workflows/');
 }
 
-function isLockfile(path: string): boolean {
+export function isLockfile(path: string): boolean {
   return /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb|Pipfile\.lock|poetry\.lock|Cargo\.lock|Gemfile\.lock|composer\.lock|go\.sum|conan\.lock|packages\.lock\.json|mix\.lock|pubspec\.lock|Podfile\.lock)$/.test(path);
 }
 
