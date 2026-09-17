@@ -78,6 +78,13 @@ export interface VerificationRun {
 export interface RemediationVerifier {
   readonly checks: readonly LocalCheck[];
   run(options?: { signal?: AbortSignal }): Promise<VerificationRun>;
+  /**
+   * Record the current manifests and lockfiles as installed. A caller that lets
+   * something else edit the tree before the first run (and knows the tree was
+   * installed before that) calls this first, so a dependency change made in
+   * between is installed rather than taken as the starting state.
+   */
+  markInstalled(): Promise<void>;
 }
 
 export interface ProjectVerifierOptions {
@@ -207,6 +214,9 @@ export function createProjectVerifier(options: ProjectVerifierOptions): Remediat
 
   return {
     checks: options.checks,
+    async markInstalled() {
+      installedFor = await dependencyStateKey(cwd);
+    },
     async run(runOptions = {}) {
       const started = Date.now();
       let installed = false;

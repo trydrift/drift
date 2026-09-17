@@ -120,6 +120,7 @@ function scriptedVerifier(runs: Array<{ passed: boolean; failures?: Array<{ file
     },
     verifier: {
       checks: [],
+      markInstalled: async () => undefined,
       run: async () => {
         const scripted = runs[Math.min(calls, runs.length - 1)]!;
         calls += 1;
@@ -552,6 +553,29 @@ describe('the project verifier', () => {
       assert.equal(run.passed, true);
       assert.deepEqual(run.sideEffectsReverted, ['coverage.txt', 'jest.config.js']);
       assert.equal(await readFile(join(root, 'jest.config.js'), 'utf8'), 'lines: 80\n');
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('a dependency change made after markInstalled is installed before the checks', async () => {
+    const { root, cleanup } = await repoWith({ 'package.json': '{"dependencies":{"a":"1"}}', 'package-lock.json': '{}' });
+    try {
+      const commands: string[] = [];
+      const verifier = createProjectVerifier({
+        root,
+        checks: [],
+        exec: (async (command: string, args: readonly string[]) => {
+          commands.push([command, ...args].join(' '));
+          return { code: 0, stdout: '', stderr: '' };
+        }) as never,
+        runChecks: (async () => []) as never,
+      });
+      await verifier.markInstalled();
+      await writeFile(join(root, 'package.json'), '{"dependencies":{"a":"1","b":"2"}}');
+      const run = await verifier.run();
+      assert.equal(run.installed, true);
+      assert.ok(commands.includes('npm install'));
     } finally {
       await cleanup();
     }
