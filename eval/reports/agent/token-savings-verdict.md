@@ -58,17 +58,21 @@ Three attempts to convert the analysis itself into savings all failed:
   repairing residuals — scored 6/9 then 7/9, never matching raw. The dev2
   −51% was an artifact: narrow scope caused under-migration, so the agent did
   less work and failed more hidden tests. Cheaper because worse.
-- **The deterministic tier does not fire on real cases.** Over 18 scored
-  swe-bump cases, exactly one reached full deterministic coverage — vue 2.7 →
-  3.5 — and that one was *wrong*: it read `Vue` as replaced by `CompatVue` and
-  would have committed `new CompatVue({...})` where the migration is
-  `createApp(App).mount()`. With that false positive removed, correct full
-  deterministic coverage on real cases is **0 of 18**.
+- **The deterministic tier does not fire on real cases.** Over 52 scored
+  swe-bump cases it produced **0 codemod units and 0 fully deterministic
+  cases**. Before the successor inference was tightened it had exactly one —
+  vue 2.7 -> 3.5 — and that one was *wrong*: it read `Vue` as replaced by
+  `CompatVue` and would have committed `new CompatVue({...})` where the
+  migration is `createApp(App).mount()`.
 
-**On "generate one fix, replay it at every site":** the data says there are no
-sites to replay to. Median impact sites per case is **2**, maximum 6, and not
-one of the 18 cases has 10 or more. Deduplicating a fix across sites cannot
-save what a 2-site case does not spend.
+**On "generate one fix, replay it at every site":** mostly no, but not never.
+The median case has **2** impact sites and 28 of 52 have two or fewer — there
+is nothing to replay to, and dedupe cannot save what those cases never spend.
+There is a tail, though: seven cases have nine or more sites (9, 15, 17, 18,
+24, 25, and one with **211**). If the idea is worth testing, it is worth
+testing only there, and the open question is not the saving but whether one
+authored fix is actually valid at 211 sites — which is the same correctness
+question the `CompatVue` case just answered badly.
 
 ## Merge / do not merge
 
