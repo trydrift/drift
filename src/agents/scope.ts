@@ -306,10 +306,13 @@ function patchByFile(patch: string): Map<string, string[]> {
   const files = new Map<string, string[]>();
   let current: string[] | null = null;
   for (const line of patch.split('\n')) {
-    const header = /^diff --git a\/(.+?) b\/(.+)$/.exec(line);
-    if (header) {
+    if (line.startsWith('diff --git a/')) {
+      // String search, not a regex: `a\/(.+?) b\/(.+)` backtracks polynomially
+      // on a header repeating ' b/'. A renamed path keeps its new name after
+      // the last ' b/'.
+      const at = line.lastIndexOf(' b/');
       current = [];
-      files.set(header[2]!, current);
+      files.set(at >= 0 ? line.slice(at + 3) : line.slice('diff --git a/'.length), current);
       continue;
     }
     if (!current || line.startsWith('---') || line.startsWith('+++')) continue;

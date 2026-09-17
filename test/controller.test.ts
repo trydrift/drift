@@ -21,6 +21,10 @@ function git(cwd: string, ...args: string[]): string {
 async function repoWith(files: Record<string, string>): Promise<{ root: string; cleanup: () => Promise<void> }> {
   const root = await mkdtemp(join(tmpdir(), 'drift-controller-'));
   git(root, 'init', '--quiet', '--initial-branch=main');
+  // The product commits with plain `git commit`; a CI runner has no global identity.
+  git(root, 'config', 'user.email', 't@t');
+  git(root, 'config', 'user.name', 't');
+  git(root, 'config', 'commit.gpgsign', 'false');
   for (const [path, content] of Object.entries(files)) {
     await mkdir(dirname(join(root, path)), { recursive: true });
     await writeFile(join(root, path), content);

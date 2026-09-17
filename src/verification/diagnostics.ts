@@ -108,7 +108,9 @@ function clean(text: string): string {
 function normalizePath(raw: string, root?: string): string {
   let path = raw.replace(/\\/g, '/').replace(/^\.\//, '');
   if (root) {
-    const base = root.replace(/\\/g, '/').replace(/\/+$/, '');
+    let base = root.replace(/\\/g, '/');
+    // A loop, not /\/+$/: that pattern is polynomial on a long run of slashes.
+    while (base.length > 1 && base.endsWith('/')) base = base.slice(0, -1);
     if (path === base) return path;
     if (path.startsWith(`${base}/`)) path = path.slice(base.length + 1);
   }
