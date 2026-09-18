@@ -1,0 +1,72 @@
+schemaVersion: drift-agent-case-v1
+id: open-balena-vpn-telnet-client-2
+title: telnet-client 1.4.11 → 2.2.14 in balena-io/open-balena-vpn
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/balena-io/open-balena-vpn.git
+  licence: AGPL-3.0
+  baseCommit: a9e7155948fa5a57a2d80501b009a2c231c1d1bb
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task balena-io__open-balena-vpn-telnet-client__^2.2.0)
+workspaceDir: ""
+dependency:
+  name: telnet-client
+  fromVersion: 1.4.11
+  toVersion: 2.2.14
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node (declared >=16); run on the host Node
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm install --ignore-scripts --no-audit --no-fund
+  installTimeoutSeconds: 900
+  checks:
+    - name: compile (tsc)
+      kind: build
+      command: npm run build
+      timeoutSeconds: 600
+  installedVersion: node -p "require('./node_modules/telnet-client/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 80
+  repositorySourceLines: 4000
+  failureMode: mixed
+  knownAffectedLocations: 2
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the exact
+    published telnet-client 2.2.14 (manifest and regenerated lockfile) is the
+    case's public start patch. The project's own `test` script builds a Docker
+    image, so it is not a check here; the TypeScript build is.
+
+    telnet-client 2 publishes named exports, which breaks the deliberate
+    `require('telnet-client') as typeof import('telnet-client').default` this
+    file used to get past the 1.x typings' `export =`/`export default`
+    mismatch — and a second error follows from it, an implicitly-typed `data`
+    parameter on the connector's event handler.
+
+    Casting to `any`, or keeping the require and widening the type, both
+    compile and leave the connector constructed from something that is no longer
+    the client class. The service then stops seeing OpenVPN's client
+    connect/disconnect events with nothing failing anywhere, which is why the
+    hidden test runs the compiled VpnManager against a TCP server standing in
+    for the management interface: it connects for real, sends a command, and the
+    log and client lines written back have to come out as parsed events.
+
+    The module reads its configuration from the environment at import time, so
+    the hidden test supplies the variables the config module requires.

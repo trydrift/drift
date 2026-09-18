@@ -1,0 +1,38 @@
+schemaVersion: drift-agent-case-v1
+caseId: open-balena-vpn-telnet-client-2
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - Telnet
+  - connect
+  - send
+tests:
+  - id: management-events
+    description: >
+      Through the compiled VpnManager against a TCP server standing in for
+      OpenVPN's management interface: connect() opens a real connection,
+      enableLogging()'s command reaches the server, and the >LOG: and
+      >CLIENT:CONNECT lines written back surface as parsed events. Casting the
+      require to `any` compiles and fails this with "Telnet is not a
+      constructor".
+    files:
+      - management-events.mjs
+    command: npm run build && env VPN_API_PORT=8080 DEFAULT_SIGTERM_TIMEOUT=10 DEFAULT_VERBOSE_LOGS=false VPN_BASE_SUBNET=10.2.0.0/16 VPN_BASE_PORT=10000 VPN_BASE_MANAGEMENT_PORT=20000 VPN_INSTANCE_COUNT=1 BALENA_API_HOST=api.test VPN_SERVICE_API_KEY=key VPN_CONNECT_PROXY_PORT=3128 VPN_FORWARD_PROXY_PORT=3129 VPN_SERVICE_REGISTRY_INTERVAL=10000 VPN_HOST=127.0.0.1 VPN_SUBNET_SIZE=10 node .drift-hidden/management-events.mjs
+    timeoutSeconds: 300
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The build script the check invokes must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/utils/openvpn.ts
+    description: The OpenVPN management client the upgrade broke must still exist.
+  - kind: pattern-not-added
+    glob: src/utils/openvpn.ts
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Silencing the missing `default` with a directive is not a migration of the import.
+notes: >
+  telnet-client 2 exports `Telnet` as a named export, so the import is direct
+  and the cast the 1.x typings needed goes away with it. The connector's
+  `data` handler then needs its parameter typed, since the inferred type came
+  from the cast.
