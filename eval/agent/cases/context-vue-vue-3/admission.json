@@ -28,13 +28,18 @@
       "detail": "reference fix passes every layer"
     },
     {
+      "step": "fixed-state-2",
+      "passed": true,
+      "detail": "reference fix passes every layer"
+    },
+    {
       "step": "deterministic",
       "passed": true,
-      "detail": "1 identical validation outcomes"
+      "detail": "2 identical validation outcomes"
     }
   ],
-  "checkedAt": "2026-09-18T15:20:17.970Z",
-  "driftCommit": "d49aba026cc4f2827c336eef7a4c81dbb0d844cf",
+  "checkedAt": "2026-09-18T15:29:56.414Z",
+  "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4",
   "failingHiddenTestsAtStart": [
     "ssr-render"
   ],

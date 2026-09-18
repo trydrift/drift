@@ -58,6 +58,21 @@ export async function listCaseIds(root?: string): Promise<string[]> {
   }
 }
 
+/**
+ * Every case that stands for a real upgrade. Synthetic cases exercise the
+ * harness itself — they are real enough to run and deliberately trivial — so a
+ * published suite must never be assembled from them.
+ */
+export async function listRealCaseIds(root?: string): Promise<string[]> {
+  const ids = await listCaseIds(root);
+  const real: string[] = [];
+  for (const id of ids) {
+    const loaded = await loadCase(id, root).catch(() => null);
+    if (loaded && loaded.provenance !== 'synthetic') real.push(id);
+  }
+  return real;
+}
+
 export async function loadCase(caseId: string, root?: string): Promise<AgentCase> {
   const body = await readFile(join(caseDir(caseId, root), 'case.yml'), 'utf8');
   const parsed = caseSchema.parse(YAML.parse(body));
