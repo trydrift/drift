@@ -6,10 +6,10 @@
   "language": "PHP",
   "repo": "https://github.com/guzzle/guzzle",
   "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
-  "capturedAt": "2026-09-16T17:36:05.721Z",
+  "capturedAt": "2026-09-18T07:04:08.452Z",
   "commit": "93939470950a9b11e2e84204166ef5e048c55fe4",
-  "engine": "e72c5813a0cdf531",
-  "durationMs": 2796,
+  "engine": "3612fb09ece2becd",
+  "durationMs": 2152,
   "packagesChecked": 10,
   "manifests": [
     "composer.json",
@@ -21,7 +21,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 323,
+      "at": 145,
       "phase": "Looking for manifests",
       "detail": "guzzle/guzzle",
       "done": 0,
@@ -29,7 +29,7 @@
     },
     {
       "type": "progress",
-      "at": 333,
+      "at": 156,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
@@ -37,7 +37,7 @@
     },
     {
       "type": "progress",
-      "at": 335,
+      "at": 159,
       "phase": "Reading manifest",
       "detail": "composer.json",
       "done": 0,
@@ -45,7 +45,7 @@
     },
     {
       "type": "progress",
-      "at": 336,
+      "at": 159,
       "phase": "Reading manifest",
       "detail": "vendor-bin/composer-normalize/composer.json",
       "done": 0,
@@ -53,7 +53,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 336,
+      "at": 160,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -97,7 +97,7 @@
     },
     {
       "type": "progress",
-      "at": 336,
+      "at": 160,
       "phase": "Reading manifest",
       "detail": "vendor-bin/php-cs-fixer/composer.json",
       "done": 0,
@@ -105,7 +105,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 336,
+      "at": 160,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -149,7 +149,7 @@
     },
     {
       "type": "progress",
-      "at": 336,
+      "at": 160,
       "phase": "Reading manifest",
       "detail": "vendor-bin/phpstan/composer.json",
       "done": 0,
@@ -157,7 +157,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 336,
+      "at": 160,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -201,7 +201,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 336,
+      "at": 160,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -245,7 +245,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 380,
+      "at": 414,
       "candidate": {
         "id": "composer.json#guzzlehttp/promises@3.0.2",
         "name": "guzzlehttp/promises",
@@ -289,95 +289,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 380,
-      "candidate": {
-        "id": "composer.json#psr/http-factory@1.1.0",
-        "name": "psr/http-factory",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.1.0",
-        "latest": "1.1.0",
-        "selected": "1.1.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 381,
-      "candidate": {
-        "id": "composer.json#guzzlehttp/psr7@3.1.0",
-        "name": "guzzlehttp/psr7",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "3.1.0",
-        "latest": "3.1.0",
-        "selected": "3.1.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 382,
+      "at": 429,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.3",
         "name": "psr/http-client",
@@ -421,7 +333,95 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 382,
+      "at": 444,
+      "candidate": {
+        "id": "composer.json#guzzlehttp/psr7@3.1.0",
+        "name": "guzzlehttp/psr7",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "3.1.0",
+        "latest": "3.1.0",
+        "selected": "3.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 445,
+      "candidate": {
+        "id": "composer.json#psr/http-factory@1.1.0",
+        "name": "psr/http-factory",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.1.0",
+        "latest": "1.1.0",
+        "selected": "1.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 452,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@v1.38.1",
         "name": "symfony/polyfill-php82",
@@ -465,7 +465,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@v1.37.0",
         "name": "symfony/polyfill-php80",
@@ -509,7 +509,7 @@
     },
     {
       "type": "progress",
-      "at": 383,
+      "at": 453,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -517,7 +517,7 @@
     },
     {
       "type": "progress",
-      "at": 383,
+      "at": 453,
       "phase": "Checking registries",
       "detail": "10 direct dependencies",
       "done": 0,
@@ -525,7 +525,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -569,7 +569,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -613,7 +613,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -657,7 +657,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -701,7 +701,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "composer.json#guzzlehttp/promises@3.0.2",
         "name": "guzzlehttp/promises",
@@ -745,95 +745,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
-      "candidate": {
-        "id": "composer.json#psr/http-factory@1.1.0",
-        "name": "psr/http-factory",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.1.0",
-        "latest": "1.1.0",
-        "selected": "1.1.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking Packagist what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 383,
-      "candidate": {
-        "id": "composer.json#guzzlehttp/psr7@3.1.0",
-        "name": "guzzlehttp/psr7",
-        "ecosystem": "packagist",
-        "manifestPath": "composer.json",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "3.1.0",
-        "latest": "3.1.0",
-        "selected": "3.1.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking Packagist what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "composer.json#psr/http-client@1.0.3",
         "name": "psr/http-client",
@@ -877,7 +789,95 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
+      "candidate": {
+        "id": "composer.json#guzzlehttp/psr7@3.1.0",
+        "name": "guzzlehttp/psr7",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "3.1.0",
+        "latest": "3.1.0",
+        "selected": "3.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking Packagist what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 453,
+      "candidate": {
+        "id": "composer.json#psr/http-factory@1.1.0",
+        "name": "psr/http-factory",
+        "ecosystem": "packagist",
+        "manifestPath": "composer.json",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.1.0",
+        "latest": "1.1.0",
+        "selected": "1.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking Packagist what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 453,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php82@v1.38.1",
         "name": "symfony/polyfill-php82",
@@ -921,7 +921,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 383,
+      "at": 453,
       "candidate": {
         "id": "composer.json#symfony/polyfill-php80@v1.37.0",
         "name": "symfony/polyfill-php80",
@@ -965,12 +965,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 384,
+      "at": 454,
       "id": "composer.json#guzzlehttp/promises@3.0.2"
     },
     {
       "type": "progress",
-      "at": 384,
+      "at": 454,
       "phase": "Up to date",
       "detail": "guzzlehttp/promises@3.0.2",
       "done": 1,
@@ -978,25 +978,25 @@
     },
     {
       "type": "candidate-drop",
-      "at": 384,
-      "id": "composer.json#psr/http-factory@1.1.0"
+      "at": 454,
+      "id": "composer.json#psr/http-client@1.0.3"
     },
     {
       "type": "progress",
-      "at": 384,
+      "at": 454,
       "phase": "Up to date",
-      "detail": "psr/http-factory@1.1.0",
+      "detail": "psr/http-client@1.0.3",
       "done": 2,
       "total": 10
     },
     {
       "type": "candidate-drop",
-      "at": 384,
+      "at": 454,
       "id": "composer.json#guzzlehttp/psr7@3.1.0"
     },
     {
       "type": "progress",
-      "at": 384,
+      "at": 454,
       "phase": "Up to date",
       "detail": "guzzlehttp/psr7@3.1.0",
       "done": 3,
@@ -1004,25 +1004,25 @@
     },
     {
       "type": "candidate-drop",
-      "at": 384,
-      "id": "composer.json#psr/http-client@1.0.3"
+      "at": 454,
+      "id": "composer.json#psr/http-factory@1.1.0"
     },
     {
       "type": "progress",
-      "at": 384,
+      "at": 454,
       "phase": "Up to date",
-      "detail": "psr/http-client@1.0.3",
+      "detail": "psr/http-factory@1.1.0",
       "done": 4,
       "total": 10
     },
     {
       "type": "candidate-drop",
-      "at": 384,
+      "at": 454,
       "id": "composer.json#symfony/polyfill-php82@v1.38.1"
     },
     {
       "type": "progress",
-      "at": 384,
+      "at": 454,
       "phase": "Up to date",
       "detail": "symfony/polyfill-php82@v1.38.1",
       "done": 5,
@@ -1030,12 +1030,12 @@
     },
     {
       "type": "candidate-drop",
-      "at": 384,
+      "at": 454,
       "id": "composer.json#symfony/polyfill-php80@v1.37.0"
     },
     {
       "type": "progress",
-      "at": 384,
+      "at": 454,
       "phase": "Up to date",
       "detail": "symfony/polyfill-php80@v1.37.0",
       "done": 6,
@@ -1043,7 +1043,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1178,
+      "at": 510,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1089,7 +1089,7 @@
     },
     {
       "type": "progress",
-      "at": 1178,
+      "at": 510,
       "phase": "Outdated",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 7,
@@ -1097,61 +1097,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1179,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.53.0",
-        "selected": "2.53.0",
-        "safeLatest": null,
-        "publishedVersions": [
-          "2.53.0"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1179,
-      "phase": "Outdated",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
-      "done": 8,
-      "total": 10
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1185,
+      "at": 521,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1214,15 +1160,15 @@
     },
     {
       "type": "progress",
-      "at": 1185,
+      "at": 521,
       "phase": "Outdated",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
-      "done": 9,
+      "done": 8,
       "total": 10
     },
     {
       "type": "candidate-upsert",
-      "at": 1190,
+      "at": 527,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1283,15 +1229,77 @@
     },
     {
       "type": "progress",
-      "at": 1190,
+      "at": 527,
       "phase": "Outdated",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
+      "done": 9,
+      "total": 10
+    },
+    {
+      "type": "progress",
+      "at": 539,
+      "phase": "Indexing your code",
+      "detail": "140 files indexed · 10 direct dependencies to check",
+      "done": 0,
+      "total": 10
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 654,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.53.0",
+        "selected": "2.53.0",
+        "safeLatest": null,
+        "publishedVersions": [
+          "2.53.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 654,
+      "phase": "Outdated",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
       "done": 10,
       "total": 10
     },
     {
       "type": "progress",
-      "at": 1190,
+      "at": 655,
       "phase": "Reading release notes and changelog",
       "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
       "done": 0,
@@ -1299,7 +1307,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1190,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -1343,7 +1351,7 @@
     },
     {
       "type": "progress",
-      "at": 1191,
+      "at": 655,
       "phase": "Checking package metadata",
       "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
       "done": 0,
@@ -1351,7 +1359,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1191,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -1395,7 +1403,7 @@
     },
     {
       "type": "progress",
-      "at": 1191,
+      "at": 655,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
@@ -1403,7 +1411,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1191,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1447,7 +1455,7 @@
     },
     {
       "type": "progress",
-      "at": 1191,
+      "at": 655,
       "phase": "Checking package metadata",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
@@ -1455,7 +1463,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1191,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1499,7 +1507,7 @@
     },
     {
       "type": "progress",
-      "at": 1191,
+      "at": 655,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -1507,7 +1515,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1191,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1551,7 +1559,7 @@
     },
     {
       "type": "progress",
-      "at": 1191,
+      "at": 655,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -1559,7 +1567,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1191,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1603,7 +1611,7 @@
     },
     {
       "type": "progress",
-      "at": 1191,
+      "at": 655,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1611,7 +1619,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1191,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1655,7 +1663,7 @@
     },
     {
       "type": "progress",
-      "at": 1191,
+      "at": 655,
       "phase": "Checking package metadata",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1663,7 +1671,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1191,
+      "at": 655,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1707,7 +1715,7 @@
     },
     {
       "type": "progress",
-      "at": 1194,
+      "at": 662,
       "phase": "Checking repository status",
       "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
       "done": 0,
@@ -1715,7 +1723,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1194,
+      "at": 662,
       "candidate": {
         "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
         "name": "ergebnis/composer-normalize",
@@ -1759,7 +1767,7 @@
     },
     {
       "type": "progress",
-      "at": 1194,
+      "at": 662,
       "phase": "Checking repository status",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 0,
@@ -1767,7 +1775,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1194,
+      "at": 662,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -1811,7 +1819,7 @@
     },
     {
       "type": "progress",
-      "at": 1194,
+      "at": 662,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -1819,7 +1827,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1194,
+      "at": 662,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1863,7 +1871,7 @@
     },
     {
       "type": "progress",
-      "at": 1194,
+      "at": 662,
       "phase": "Checking security advisories",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -1871,7 +1879,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1194,
+      "at": 662,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -1915,7 +1923,7 @@
     },
     {
       "type": "progress",
-      "at": 1194,
+      "at": 662,
       "phase": "Checking repository status",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 0,
@@ -1923,7 +1931,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1194,
+      "at": 662,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -1967,267 +1975,7 @@
     },
     {
       "type": "progress",
-      "at": 1219,
-      "phase": "Checking security advisories",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1219,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1219,
-      "phase": "Checking security advisories",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1219,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.52.0",
-        "selected": "2.52.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1219,
-      "phase": "Checking security advisories",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1219,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2098,
-      "phase": "Checking license",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2098,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.52.0",
-        "selected": "2.52.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2098,
-      "phase": "Checking license",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2098,
-      "candidate": {
-        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
-        "name": "friendsofphp/php-cs-fixer",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
-        "workspace": "vendor-bin/php-cs-fixer",
-        "workspaceName": null,
-        "current": "3.95.2",
-        "latest": "3.95.2",
-        "selected": "3.95.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2098,
+      "at": 1305,
       "phase": "Checking license",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -2235,7 +1983,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2098,
+      "at": 1305,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2279,59 +2027,7 @@
     },
     {
       "type": "progress",
-      "at": 2098,
-      "phase": "Checking license",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2098,
-      "candidate": {
-        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
-        "name": "phpstan/phpstan-deprecation-rules",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/phpstan/composer.json",
-        "workspace": "vendor-bin/phpstan",
-        "workspaceName": null,
-        "current": "2.0.4",
-        "latest": "2.0.4",
-        "selected": "2.0.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2099,
+      "at": 1305,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -2339,7 +2035,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2099,
+      "at": 1305,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2383,7 +2079,7 @@
     },
     {
       "type": "progress",
-      "at": 2099,
+      "at": 1305,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14 · 1 evidence source",
       "done": 0,
@@ -2391,7 +2087,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2099,
+      "at": 1305,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2435,7 +2131,7 @@
     },
     {
       "type": "progress",
-      "at": 2099,
+      "at": 1305,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -2443,7 +2139,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2099,
+      "at": 1305,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2487,15 +2183,7 @@
     },
     {
       "type": "progress",
-      "at": 2679,
-      "phase": "Indexing your code",
-      "detail": "140 files indexed · 10 direct dependencies to check",
-      "done": 0,
-      "total": 10
-    },
-    {
-      "type": "progress",
-      "at": 2715,
+      "at": 1305,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -2503,7 +2191,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2715,
+      "at": 1305,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2547,7 +2235,7 @@
     },
     {
       "type": "progress",
-      "at": 2724,
+      "at": 1313,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14",
       "done": 0,
@@ -2555,7 +2243,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2724,
+      "at": 1313,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2599,7 +2287,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2725,
+      "at": 1314,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan@2.1.55",
         "name": "phpstan/phpstan",
@@ -2679,7 +2367,7 @@
     },
     {
       "type": "progress",
-      "at": 2726,
+      "at": 1314,
       "phase": "Checked",
       "detail": "phpstan/phpstan 2.1.55 → 2.2.14 · evidence missing · drift could not obtain enough upstream evidence to decide",
       "done": 1,
@@ -2687,15 +2375,660 @@
     },
     {
       "type": "progress",
-      "at": 2746,
-      "phase": "Reading release notes and changelog",
+      "at": 1339,
+      "phase": "Checking security advisories",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1339,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.52.0",
+        "selected": "2.52.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1339,
+      "phase": "Checking license",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1339,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.52.0",
+        "selected": "2.52.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1340,
+      "phase": "Checking security advisories",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1340,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1340,
+      "phase": "Checking license",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1340,
+      "candidate": {
+        "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
+        "name": "phpstan/phpstan-deprecation-rules",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/phpstan/composer.json",
+        "workspace": "vendor-bin/phpstan",
+        "workspaceName": null,
+        "current": "2.0.4",
+        "latest": "2.0.4",
+        "selected": "2.0.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1346,
+      "phase": "Checking security advisories",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
       "done": 1,
       "total": 4
     },
     {
       "type": "candidate-upsert",
-      "at": 2746,
+      "at": 1346,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1346,
+      "phase": "Checking license",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1346,
+      "candidate": {
+        "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
+        "name": "friendsofphp/php-cs-fixer",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+        "workspace": "vendor-bin/php-cs-fixer",
+        "workspaceName": null,
+        "current": "3.95.2",
+        "latest": "3.95.2",
+        "selected": "3.95.2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking license",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1616,
+      "phase": "Reading release notes and changelog",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1616,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.52.0",
+        "selected": "2.52.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Reading release notes and changelog",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1616,
+      "phase": "Comparing the public API surface",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0 · 1 evidence source",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1616,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.52.0",
+        "selected": "2.52.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Comparing the public API surface",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1616,
+      "phase": "No breaking changes to look for",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1617,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.52.0",
+        "selected": "2.52.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "No breaking changes to look for",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1617,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1617,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.52.0",
+        "selected": "2.52.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1633,
+      "phase": "Checking maintenance signals",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1633,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.52.0",
+        "selected": "2.52.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 1634,
+      "candidate": {
+        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
+        "name": "ergebnis/composer-normalize",
+        "ecosystem": "packagist",
+        "manifestPath": "vendor-bin/composer-normalize/composer.json",
+        "workspace": "vendor-bin/composer-normalize",
+        "workspaceName": null,
+        "current": "2.52.0",
+        "latest": "2.53.0",
+        "selected": "2.53.0",
+        "safeLatest": null,
+        "publishedVersions": [
+          "2.53.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "clean",
+        "phase": null,
+        "risk": "none",
+        "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.53.0 release notes](https://github.com/ergebnis/composer-normalize/releases/tag/2.53.0)) and the changelog ([CHANGELOG.md](https://github.com/ergebnis/composer-normalize/blob/main/CHANGELOG.md)) for ergebnis/composer-normalize 2.53.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "recommendation": "safe-to-upgrade",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "clean",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": {
+          "localizationRan": true,
+          "localizationComplete": true,
+          "sourceFilesDiscovered": 137,
+          "sourceFilesIndexed": 137,
+          "sourceTruncated": false,
+          "generatedFilesSkipped": 0,
+          "oversizedSourceSkipped": 0,
+          "runtimeConfigsDiscovered": 3,
+          "runtimeConfigsIndexed": 3,
+          "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": false,
+          "reason": "unsupported-ecosystem",
+          "inspection": "failed",
+          "tool": "none",
+          "detail": "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone."
+        },
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 1,
+        "gaps": [
+          "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.53.0 release notes](https://github.com/ergebnis/composer-normalize/releases/tag/2.53.0)) and the changelog ([CHANGELOG.md](https://github.com/ergebnis/composer-normalize/blob/main/CHANGELOG.md)) for ergebnis/composer-normalize 2.53.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        ],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 1634,
+      "phase": "Checked",
+      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 2,
+      "total": 4
+    },
+    {
+      "type": "progress",
+      "at": 2109,
+      "phase": "Reading release notes and changelog",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
+      "done": 2,
+      "total": 4
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2109,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2739,15 +3072,15 @@
     },
     {
       "type": "progress",
-      "at": 2746,
+      "at": 2109,
       "phase": "Comparing the public API surface",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25 · 1 evidence source",
-      "done": 1,
+      "done": 2,
       "total": 4
     },
     {
       "type": "candidate-upsert",
-      "at": 2746,
+      "at": 2109,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2791,15 +3124,15 @@
     },
     {
       "type": "progress",
-      "at": 2746,
+      "at": 2109,
       "phase": "No breaking changes to look for",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
-      "done": 1,
+      "done": 2,
       "total": 4
     },
     {
       "type": "candidate-upsert",
-      "at": 2746,
+      "at": 2109,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2843,15 +3176,15 @@
     },
     {
       "type": "progress",
-      "at": 2746,
+      "at": 2109,
       "phase": "Weighing what this upgrade is worth",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
-      "done": 1,
+      "done": 2,
       "total": 4
     },
     {
       "type": "candidate-upsert",
-      "at": 2746,
+      "at": 2109,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2895,15 +3228,15 @@
     },
     {
       "type": "progress",
-      "at": 2754,
+      "at": 2117,
       "phase": "Checking maintenance signals",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25",
-      "done": 1,
+      "done": 2,
       "total": 4
     },
     {
       "type": "candidate-upsert",
-      "at": 2754,
+      "at": 2117,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -2947,7 +3280,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2755,
+      "at": 2119,
       "candidate": {
         "id": "vendor-bin/php-cs-fixer/composer.json#friendsofphp/php-cs-fixer@3.95.2",
         "name": "friendsofphp/php-cs-fixer",
@@ -3029,348 +3362,15 @@
     },
     {
       "type": "progress",
-      "at": 2755,
+      "at": 2119,
       "phase": "Checked",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → v3.95.25 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 2,
-      "total": 4
-    },
-    {
-      "type": "progress",
-      "at": 2775,
-      "phase": "Reading release notes and changelog",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
-      "done": 2,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2775,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.52.0",
-        "selected": "2.52.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2775,
-      "phase": "Comparing the public API surface",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0 · 1 evidence source",
-      "done": 2,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2775,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.52.0",
-        "selected": "2.52.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2775,
-      "phase": "No breaking changes to look for",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
-      "done": 2,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2775,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.52.0",
-        "selected": "2.52.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2775,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
-      "done": 2,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2775,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.52.0",
-        "selected": "2.52.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2783,
-      "phase": "Checking maintenance signals",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0",
-      "done": 2,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2783,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.52.0",
-        "selected": "2.52.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2783,
-      "candidate": {
-        "id": "vendor-bin/composer-normalize/composer.json#ergebnis/composer-normalize@2.52.0",
-        "name": "ergebnis/composer-normalize",
-        "ecosystem": "packagist",
-        "manifestPath": "vendor-bin/composer-normalize/composer.json",
-        "workspace": "vendor-bin/composer-normalize",
-        "workspaceName": null,
-        "current": "2.52.0",
-        "latest": "2.53.0",
-        "selected": "2.53.0",
-        "safeLatest": null,
-        "publishedVersions": [
-          "2.53.0"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.53.0 release notes](https://github.com/ergebnis/composer-normalize/releases/tag/2.53.0)) and the changelog ([CHANGELOG.md](https://github.com/ergebnis/composer-normalize/blob/main/CHANGELOG.md)) for ergebnis/composer-normalize 2.53.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "recommendation": "safe-to-upgrade",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "clean",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": {
-          "localizationRan": true,
-          "localizationComplete": true,
-          "sourceFilesDiscovered": 137,
-          "sourceFilesIndexed": 137,
-          "sourceTruncated": false,
-          "generatedFilesSkipped": 0,
-          "oversizedSourceSkipped": 0,
-          "runtimeConfigsDiscovered": 3,
-          "runtimeConfigsIndexed": 3,
-          "runtimeConfigComplete": true
-        },
-        "surfaceAssessment": {
-          "available": false,
-          "reason": "unsupported-ecosystem",
-          "inspection": "failed",
-          "tool": "none",
-          "detail": "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone."
-        },
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes ([2.53.0 release notes](https://github.com/ergebnis/composer-normalize/releases/tag/2.53.0)) and the changelog ([CHANGELOG.md](https://github.com/ergebnis/composer-normalize/blob/main/CHANGELOG.md)) for ergebnis/composer-normalize 2.53.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2783,
-      "phase": "Checked",
-      "detail": "ergebnis/composer-normalize 2.52.0 → 2.53.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
       "total": 4
     },
     {
       "type": "progress",
-      "at": 2788,
+      "at": 2142,
       "phase": "Reading release notes and changelog",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 3,
@@ -3378,7 +3378,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2788,
+      "at": 2142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3422,7 +3422,7 @@
     },
     {
       "type": "progress",
-      "at": 2788,
+      "at": 2142,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
       "done": 3,
@@ -3430,7 +3430,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2788,
+      "at": 2142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3474,7 +3474,7 @@
     },
     {
       "type": "progress",
-      "at": 2788,
+      "at": 2142,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 3,
@@ -3482,7 +3482,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2788,
+      "at": 2142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3526,7 +3526,7 @@
     },
     {
       "type": "progress",
-      "at": 2788,
+      "at": 2142,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 3,
@@ -3534,7 +3534,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2788,
+      "at": 2142,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3578,7 +3578,7 @@
     },
     {
       "type": "progress",
-      "at": 2795,
+      "at": 2151,
       "phase": "Checking maintenance signals",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 3,
@@ -3586,7 +3586,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2151,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3630,7 +3630,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2796,
+      "at": 2152,
       "candidate": {
         "id": "vendor-bin/phpstan/composer.json#phpstan/phpstan-deprecation-rules@2.0.4",
         "name": "phpstan/phpstan-deprecation-rules",
@@ -3695,7 +3695,7 @@
     },
     {
       "type": "progress",
-      "at": 2796,
+      "at": 2152,
       "phase": "Checked",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
