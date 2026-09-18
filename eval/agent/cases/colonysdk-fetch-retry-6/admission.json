@@ -1,0 +1,42 @@
+{
+  "caseId": "colonysdk-fetch-retry-6",
+  "admitted": true,
+  "steps": [
+    {
+      "step": "shape",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "step": "start-state",
+      "passed": true,
+      "detail": "materialized and installed"
+    },
+    {
+      "step": "broken-state-hidden-tests-fail",
+      "passed": true,
+      "detail": "failing at start: request-behaviour (project checks also fail)"
+    },
+    {
+      "step": "broken-state-dependency-upgraded",
+      "passed": true,
+      "detail": "installed 6.0.0"
+    },
+    {
+      "step": "fixed-state-1",
+      "passed": true,
+      "detail": "reference fix passes every layer"
+    },
+    {
+      "step": "deterministic",
+      "passed": true,
+      "detail": "1 identical validation outcomes"
+    }
+  ],
+  "checkedAt": "2026-09-18T14:53:01.918Z",
+  "driftCommit": "8d6d4ee38030020c67b28bbbe3672f0cae628ebe",
+  "failingHiddenTestsAtStart": [
+    "request-behaviour"
+  ],
+  "projectChecksFailAtStart": true
+}

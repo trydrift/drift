@@ -1,0 +1,66 @@
+schemaVersion: drift-agent-case-v1
+id: colonysdk-fetch-retry-6
+title: fetch-retry 5.0.6 → 6.0.0 in JoinColony/colonySDK
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/JoinColony/colonySDK.git
+  licence: GPL-3.0
+  baseCommit: 9f492f02a69e325fc4a511d54f09a801ca8d0c4e
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task JoinColony__colonySDK-fetch-retry__^6.0.0)
+workspaceDir: ""
+dependency:
+  name: fetch-retry
+  fromVersion: 5.0.6
+  toVersion: 6.0.0
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node 16.18.1 (declared); run on the host Node
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm install --ignore-scripts --no-audit --no-fund
+  installTimeoutSeconds: 600
+  checks:
+    - name: typecheck (tsc)
+      kind: build
+      command: npm run typecheck
+      timeoutSeconds: 600
+  installedVersion: node -p "require('./node_modules/fetch-retry/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 120
+  repositorySourceLines: 6000
+  failureMode: mixed
+  knownAffectedLocations: 1
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the exact
+    published fetch-retry 6.0.0 (manifest and regenerated lockfile) is the
+    case's public start patch. The project's own `test` script is lint plus
+    typecheck — it has no runtime suite — so the check here is the typecheck,
+    which fails at the start state with one error in the project's own source.
+
+    fetch-retry 6 narrowed the wrapper's defaults to retry parameters only, so
+    the `headers` that sat beside `retryOn`/`retries`/`retryDelay` no longer
+    belong there. In v5 those defaults were merged into every request, so the
+    one-line route to a green typecheck — delete the headers — stops sending
+    `Accept: application/json` to the IPFS gateway on every call, and nothing
+    anywhere fails. That is what the hidden test is for: it runs the compiled
+    `IpfsMetadata` against a local server that records what it was sent, and
+    also checks a 404 is still retried, since the retry parameters are the other
+    half of what the wrapper is configured for.
