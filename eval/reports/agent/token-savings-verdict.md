@@ -65,6 +65,20 @@ Three attempts to convert the analysis itself into savings all failed:
   `CompatVue` and would have committed `new CompatVue({...})` where the
   migration is `createApp(App).mount()`.
 
+### What the analysis does get right
+
+The tier produces no automated fix, but what it *says* is accurate. Re-deriving
+every successor it proposes across the 57 cases, against the final build: nine
+proposals on five cases, and all nine are correct — `glob.sync` -> `globSync`
+(three cases), `winston.Logger` -> `winston.createLogger`, and all five mkdirp
+flat exports (`sync` -> `mkdirpSync`, `manual` -> `mkdirpManual`, `manualSync`,
+`native`, `nativeSync`). Zero false positives, where before the tightening this
+same corpus produced the `CompatVue` fix.
+
+That is worth something to whoever reads the report — it is simply not worth
+tokens, because naming the successor does not shorten the session that applies
+it.
+
 **On "generate one fix, replay it at every site":** mostly no, but not never.
 The median case has **2** impact sites and 28 of 52 have two or fewer — there
 is nothing to replay to, and dedupe cannot save what those cases never spend.
