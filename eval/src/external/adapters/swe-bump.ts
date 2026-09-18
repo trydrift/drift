@@ -121,6 +121,21 @@ export interface SweBumpPrediction {
   dependencyChanges: { name: string; from: string | null; to: string | null }[];
   breakingChanges: { kind: string; symbols: string[] }[];
   impactSites: { file: string; line: number; matchedSymbol: string; siteKind?: 'manifest' | 'runtime-declaration' }[];
+  /**
+   * What Drift could fix with no model at all: the codemod and fix-plan tiers.
+   * `null` when no plan was produced.
+   */
+  deterministic: {
+    units: number;
+    unitsWithCodemod: number;
+    unitsWithFixPlan: number;
+    codemodRules: string[];
+    findingsWithReplacement: number;
+    findings: number;
+    sites: number;
+    sitesInCodemodUnits: number;
+    fullyDeterministic: boolean;
+  } | null;
   verdict: string;
   summary: string;
   /**
@@ -293,6 +308,28 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
         matchedSymbol: site.matchedSymbol,
         ...(site.siteKind ? { siteKind: site.siteKind } : {}),
       })),
+      // What Drift could fix without a model: the tiers that need no agent
+      // session at all. Recorded per case so "how often does the deterministic
+      // tier actually apply to a real upgrade" is answerable from the corpus
+      // rather than from the three development cases.
+      deterministic: plan
+        ? {
+            units: plan.commits.length,
+            unitsWithCodemod: plan.commits.filter((commit) => (commit.codemod?.length ?? 0) > 0).length,
+            unitsWithFixPlan: plan.commits.filter((commit) => Boolean(commit.fixPlan)).length,
+            codemodRules: [...new Set(plan.commits.flatMap((commit) => (commit.codemod ?? []).map((transform) => transform.ruleId)))],
+            findingsWithReplacement: plan.breakingChanges.filter((change) => (change.replacementSymbols?.length ?? 0) > 0).length,
+            findings: plan.breakingChanges.length,
+            sites: plan.impactSites.length,
+            sitesInCodemodUnits: plan.commits
+              .filter((commit) => (commit.codemod?.length ?? 0) > 0)
+              .reduce((sum, commit) => sum + plan.impactSites.filter((site) => commit.breakingChangeIds.includes(site.breakingChangeId)).length, 0),
+            /** Every unit the plan has is covered by a codemod or a fully covering fix plan: no agent needed. */
+            fullyDeterministic:
+              plan.commits.length > 0 &&
+              plan.commits.every((commit) => (commit.codemod?.length ?? 0) > 0 || (commit.fixPlan ? commit.fixPlan.residual === 0 : false)),
+          }
+        : null,
       verdict,
       summary: result.summary,
       manifestVersionTo: task.versionTo,
