@@ -1,0 +1,46 @@
+schemaVersion: drift-agent-case-v1
+caseId: context-vue-vue-3
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - Vue
+  - createApp
+  - mount
+tests:
+  - id: ssr-render
+    description: >
+      The app is built for the server with the project's own Vite toolchain and
+      rendered: the provider's dynamic root tag resolves with the classes it was
+      given, and both context consumers render, which is what proves
+      provide/inject came up under vue 3. A migration that rewrites main.ts but
+      leaves the vue 2 SFC plugin in place cannot build this.
+    files:
+      - ssr-render.ts
+    command: npm run build && npx vite build --ssr .drift-hidden/ssr-render.ts --outDir .drift-hidden/out --logLevel error && node .drift-hidden/out/ssr-render.js
+    timeoutSeconds: 600
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The build script the check invokes must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/main.ts
+      - src/App.vue
+    description: The application entry point and its root component must both still exist.
+  - kind: path-unchanged
+    paths:
+      - src/contexts/**
+      - src/components/**
+    description: >
+      These components are already vue 3 composition API and are not what this
+      upgrade breaks. Rewriting them would be replacing the application rather
+      than migrating its entry point and toolchain.
+  - kind: pattern-not-added
+    glob: src/main.ts
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Silencing the removed constructor with a directive is not a migration of the bootstrap.
+notes: >
+  vue 3 bootstraps with `createApp(App).mount('#app')`, and the SFC plugin must
+  move from `@vitejs/plugin-vue2` to `@vitejs/plugin-vue` — version 3 of it,
+  since the project pins Vite 3. `CompatVue`, which vue 3.5 does export, is not
+  a substitute for the removed default export.
