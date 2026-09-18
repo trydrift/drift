@@ -1,0 +1,68 @@
+schemaVersion: drift-agent-case-v1
+id: zeal-user-contrib-tar-7
+title: tar 6.2.1 → 7.5.22 in jmerle/zeal-user-contrib
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/jmerle/zeal-user-contrib.git
+  licence: MIT
+  baseCommit: 1c637a061a11dc9111e8839dbc7bb37d098810e8
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task jmerle__zeal-user-contrib-tar__^7.0.1)
+workspaceDir: ""
+dependency:
+  name: tar
+  fromVersion: 6.2.1
+  toVersion: 7.5.22
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node (ESM, .mts sources); run on the host Node
+  packageManager: pnpm
+  timezone: UTC
+  locale: C
+commands:
+  install: pnpm install --ignore-scripts --frozen-lockfile
+  installTimeoutSeconds: 900
+  checks:
+    - name: compile (tsc)
+      kind: build
+      command: npm run build
+      timeoutSeconds: 600
+  installedVersion: node -p "require('./node_modules/tar/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: pnpm-lock.yaml
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 20
+  repositorySourceLines: 900
+  failureMode: mixed
+  knownAffectedLocations: 1
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the exact
+    published tar 7.5.22 (manifest and regenerated pnpm lockfile) is the case's
+    public start patch. The project has no test script, so the only project
+    check is the TypeScript build.
+
+    Two errors, and they are different kinds. tar 7 removed the default export,
+    so `import tar from 'tar'` fails in the project's own source. tar 7 also
+    pulls minizlib 3, whose declarations reference `zlib.ZstdCompress` — absent
+    from the `@types/node` 20 the project pins — so the build also fails inside
+    `node_modules`. A complete migration handles both; the reference fix bumps
+    `@types/node` to 22.
+
+    The build is not the whole upgrade. `extract` still takes `file`, `cwd` and
+    `strip`, and a migration that drops `strip: 1` while chasing a green build
+    unpacks every docset one directory too deep — Zeal then finds nothing where
+    it was told a docset would be, silently. The hidden test drives the compiled
+    `extractDocset` against a real gzipped tarball for that reason.
