@@ -1,0 +1,67 @@
+schemaVersion: drift-agent-case-v1
+id: feature-flags-ajv-8
+title: ajv 6.15.0 → 8.20.0 in creditkarma/feature-flags
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/creditkarma/feature-flags.git
+  licence: Apache-2.0
+  baseCommit: 5998c0d70e379e44ac1fd3260e4ff114979c594d
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task creditkarma__feature-flags-ajv__^8.12.0)
+workspaceDir: ""
+dependency:
+  name: ajv
+  fromVersion: 6.15.0
+  toVersion: 8.20.0
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node (declared none); run on the host Node
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm install --ignore-scripts --no-audit --no-fund
+  installTimeoutSeconds: 600
+  checks:
+    - name: compile (tsc)
+      kind: build
+      command: npm run build
+      timeoutSeconds: 600
+  installedVersion: node -p "require('./node_modules/ajv/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 30
+  repositorySourceLines: 1200
+  failureMode: compile-time
+  knownAffectedLocations: 1
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the exact
+    published ajv 8.20.0 (manifest and regenerated lockfile) is the case's
+    public start patch. ajv 8 publishes its class as a default export, so the
+    project's `import * as JsonValidator from 'ajv'` with `new JsonValidator()`
+    no longer constructs, and the build fails with one error in the project's
+    own source (`src/main/utils.ts:3:47 TS2351`).
+
+    The project's own test script needs Docker and a live Consul, so it is not
+    a check here; the build is. That makes the shortest route to a green build
+    deleting the validator rather than migrating it — returning `true`, widening
+    the type, dropping the dependency — which is what the hidden test is for:
+    the toggle schema must still reject a fraction of 7 and a toggle with no
+    type, because this service writes whatever it accepts into its toggle store.
+
+    `npm run build` runs the project's `prebuild` (clean + tslint --fix) first;
+    that is the project's own pipeline and is left as the project defines it.

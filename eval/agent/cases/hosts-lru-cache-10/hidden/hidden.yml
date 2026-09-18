@@ -1,0 +1,49 @@
+schemaVersion: drift-agent-case-v1
+caseId: hosts-lru-cache-10
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - LRU
+  - LRUCache
+  - maxSize
+tests:
+  - id: cache-behaviour
+    description: >
+      Through the compiled BaseDNS class: resolving a host reaches the
+      underlying lookup exactly once, and resolving it again is served from the
+      cache. lru-cache 10 throws on every `set` when `maxSize` is configured
+      without `sizeCalculation`, so a migration that repairs only the removed
+      default export compiles and then caches nothing — `lookup`'s try/catch
+      hides the error and returns the hostname unresolved.
+    files:
+      - cache-behaviour.mjs
+    command: npm run build && node .drift-hidden/cache-behaviour.mjs
+    timeoutSeconds: 300
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The build script the check invokes must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/dns/base.ts
+    description: The DNS base class the upgrade broke must still exist; every DNS implementation extends it.
+  - kind: path-unchanged
+    paths:
+      - src/dns/choice.ts
+    description: >
+      `DynamicChoice` has a pre-existing bug on the cache-hit path that predates
+      this upgrade and is not part of it. The hidden test does not depend on
+      that path, and editing it is not this migration.
+  - kind: pattern-not-added
+    glob: src/dns/base.ts
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: >
+      Silencing TS2351 with a directive is not a migration of the constructor.
+      The start state already carries a `@ts-ignore` on the import, which a
+      correct fix removes rather than adds to.
+notes: >
+  lru-cache 10 removed the default export (`import LRU from 'lru-cache'` →
+  `import { LRUCache } from 'lru-cache'`) and changed what `maxSize` means. The
+  compile error names only the first; the second is silent, survives the build,
+  and is what the behavioural test is here for. `max` is the v10 spelling of the
+  entry-count bound this code always wanted.

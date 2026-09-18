@@ -1,0 +1,42 @@
+{
+  "caseId": "hosts-lru-cache-10",
+  "admitted": true,
+  "steps": [
+    {
+      "step": "shape",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "step": "start-state",
+      "passed": true,
+      "detail": "materialized and installed"
+    },
+    {
+      "step": "broken-state-hidden-tests-fail",
+      "passed": true,
+      "detail": "failing at start: cache-behaviour (project checks also fail)"
+    },
+    {
+      "step": "broken-state-dependency-upgraded",
+      "passed": true,
+      "detail": "installed 10.4.3"
+    },
+    {
+      "step": "fixed-state-1",
+      "passed": true,
+      "detail": "reference fix passes every layer"
+    },
+    {
+      "step": "deterministic",
+      "passed": true,
+      "detail": "1 identical validation outcomes"
+    }
+  ],
+  "checkedAt": "2026-09-18T14:07:49.267Z",
+  "driftCommit": "4d7a60d93b656f8e5c8fe8b4a785e2a39cd7c5ad",
+  "failingHiddenTestsAtStart": [
+    "cache-behaviour"
+  ],
+  "projectChecksFailAtStart": true
+}
