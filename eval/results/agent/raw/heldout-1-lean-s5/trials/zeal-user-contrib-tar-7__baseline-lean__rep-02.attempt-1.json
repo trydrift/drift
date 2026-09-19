@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s5/zeal-user-contrib-tar-7/baseline-lean/2",
+  "runId": "heldout-1-lean-s5",
+  "suite": "agent-upgrade-v1",
+  "caseId": "zeal-user-contrib-tar-7",
+  "caseHash": "14caaf9ce8b6dade9d447fed7e34a85d63d07f02dc224fb57cfce9020f205cdc",
+  "condition": "baseline-lean",
+  "repetition": 2,
+  "scheduleIndex": 4,
+  "metadata": {
+    "repository": "https://github.com/jmerle/zeal-user-contrib.git",
+    "baseCommit": "1c637a061a11dc9111e8839dbc7bb37d098810e8",
+    "startCommit": "d32ca1930280a31c8b65d6c6a49e1d7ead63e4ae",
+    "startTreeHash": "c59240a5f8729a3d952e3bd299f473f3504256e4",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "tar",
+      "fromVersion": "6.2.1",
+      "toVersion": "7.5.22"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-18T18:08:55.710Z",
+    "endedAt": "2026-09-18T18:09:24.870Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "2dd6cf91e100146d233e356e0c61a901578422b4eeb74963d3c19b808a4d5ec7",
+    "promptHash": "2dd6cf91e100146d233e356e0c61a901578422b4eeb74963d3c19b808a4d5ec7",
+    "promptChars": 309
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "provider-error",
+    "exitCode": 1,
+    "terminalReason": "api_error",
+    "resultSubtype": "success",
+    "apiErrorStatus": 429,
+    "numTurns": 1,
+    "durationMs": 2539,
+    "apiDurationMs": 0,
+    "finalMessage": "You've hit your session limit · resets 6:30pm (UTC)",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 0,
+    "uncachedInputTokens": 0,
+    "inputTokens": 0,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "outputTokens": 0,
+    "modelCalls": 1,
+    "byModel": {
+      "<synthetic>": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    "source": "event-ledger",
+    "ledgerGrossInputTokens": 0,
+    "ledgerAgreesWithResult": null,
+    "costUsd": null
+  },
+  "tools": {
+    "toolCalls": 0,
+    "byTool": {},
+    "fileReads": 0,
+    "uniqueFilesRead": 0,
+    "searches": 0,
+    "shellCommands": 0,
+    "edits": 0,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 0,
+    "sourceFiles": 0,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 0,
+    "linesDeleted": 0,
+    "changedFiles": [],
+    "deletedFiles": [],
+    "diff": "",
+    "diffTruncated": false,
+    "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "7.5.22",
+      "installedVersion": "7.5.22",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 12936,
+        "outputExcerpt": "> zeal-user-contrib@2.0.0 build\n> rm -rf lib && tsc\n\nnode_modules/.pnpm/minizlib@3.1.0/node_modules/minizlib/dist/esm/index.d.ts(21,205): error TS2694: Namespace '\"zlib\"' has no exported member 'ZstdCompress'.\nnode_modules/.pnpm/minizlib@3.1.0/node_modules/minizlib/dist/esm/index.d.ts(21,229): error TS2694: Namespace '\"zlib\"' has no exported member 'ZstdDecompress'.\nsrc/docsets.mts(3,8): error TS1192: Module '\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-zeal-user-contrib-tar-7-eIe6vw/repo/node_modules/.pnpm/tar@7.5.22/node_modules/tar/dist/esm/index\"' has no default export.",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "extract-behaviour",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 6408,
+        "outputExcerpt": "> zeal-user-contrib@2.0.0 build\n> rm -rf lib && tsc\n\nnode_modules/.pnpm/minizlib@3.1.0/node_modules/minizlib/dist/esm/index.d.ts(21,205): error TS2694: Namespace '\"zlib\"' has no exported member 'ZstdCompress'.\nnode_modules/.pnpm/minizlib@3.1.0/node_modules/minizlib/dist/esm/index.d.ts(21,229): error TS2694: Namespace '\"zlib\"' has no exported member 'ZstdDecompress'.\nsrc/docsets.mts(3,8): error TS1192: Module '\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-zeal-user-contrib-tar-7-eIe6vw/repo/node_modules/.pnpm/tar@7.5.22/node_modules/tar/dist/esm/index\"' has no default export.",
+        "id": "extract-behaviour",
+        "description": "Through the compiled `extractDocset`, against a real gzipped tarball shaped like a docset: the archive's single top-level directory is stripped, every entry is written, contents survive, and the downloaded archive is removed afterwards. A migration that drops `strip: 1` while chasing a green build unpacks one directory too deep and fails here.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The module that downloads and unpacks docsets must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the missing default export with a directive is not a migration of the import.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": [
+      "build_failure",
+      "hidden_regression_failure",
+      "incomplete_fix"
+    ]
+  },
+  "validity": {
+    "valid": false,
+    "infrastructureFailure": "provider_error",
+    "detail": "api error status 429: You've hit your session limit · resets 6:30pm (UTC)"
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 0,
+    "referencePatchFiles": 3
+  },
+  "timing": {
+    "materializeMs": 790,
+    "installMs": 5045,
+    "contextMs": 0,
+    "agentMs": 2539,
+    "validationMs": 20449,
+    "totalMs": 29160
+  }
+}

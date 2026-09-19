@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s2/colonysdk-fetch-retry-6/baseline-lean/3",
+  "runId": "heldout-1-lean-s2",
+  "suite": "agent-upgrade-v1",
+  "caseId": "colonysdk-fetch-retry-6",
+  "caseHash": "c8b54b6b49b8ce715aaeb68a70166f7e8a67666ed65d351afe4cc3b34e92e32c",
+  "condition": "baseline-lean",
+  "repetition": 3,
+  "scheduleIndex": 5,
+  "metadata": {
+    "repository": "https://github.com/JoinColony/colonySDK.git",
+    "baseCommit": "9f492f02a69e325fc4a511d54f09a801ca8d0c4e",
+    "startCommit": "1f87ed3dfb43f7c915f379e51f701ea874020f24",
+    "startTreeHash": "b1c818029bf97c62ec8055aa991ec27cc2e4133c",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "fetch-retry",
+      "fromVersion": "5.0.6",
+      "toVersion": "6.0.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-18T18:10:15.214Z",
+    "endedAt": "2026-09-18T18:10:58.526Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "ce11a01be266b3da39e583a682767efdec706f296fa38275972b20b3d521e130",
+    "promptHash": "ce11a01be266b3da39e583a682767efdec706f296fa38275972b20b3d521e130",
+    "promptChars": 316
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "provider-error",
+    "exitCode": 1,
+    "terminalReason": "api_error",
+    "resultSubtype": "success",
+    "apiErrorStatus": 429,
+    "numTurns": 1,
+    "durationMs": 2420,
+    "apiDurationMs": 0,
+    "finalMessage": "You've hit your session limit · resets 6:30pm (UTC)",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 0,
+    "uncachedInputTokens": 0,
+    "inputTokens": 0,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "outputTokens": 0,
+    "modelCalls": 1,
+    "byModel": {
+      "<synthetic>": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    "source": "event-ledger",
+    "ledgerGrossInputTokens": 0,
+    "ledgerAgreesWithResult": null,
+    "costUsd": null
+  },
+  "tools": {
+    "toolCalls": 0,
+    "byTool": {},
+    "fileReads": 0,
+    "uniqueFilesRead": 0,
+    "searches": 0,
+    "shellCommands": 0,
+    "edits": 0,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 0,
+    "sourceFiles": 0,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 0,
+    "linesDeleted": 0,
+    "changedFiles": [],
+    "deletedFiles": [],
+    "diff": "",
+    "diffTruncated": false,
+    "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "6.0.0",
+      "installedVersion": "6.0.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "typecheck (tsc)",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 10370,
+        "outputExcerpt": "> @colony/sdk@1.6.0 typecheck\n> tsc --noEmit\n\nsrc/ipfs/IpfsMetadata.ts(22,3): error TS2345: Argument of type '{ headers: { Accept: string; }; retryOn: number[]; retries: number; retryDelay: number; }' is not assignable to parameter of type 'RequestInitRetryParams<(input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>>'.\n  Object literal may only specify known properties, and 'headers' does not exist in type 'RequestInitRetryParams<(input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>>'.",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "request-behaviour",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 10888,
+        "outputExcerpt": "> @colony/sdk@1.6.0 compile-cjs\n> tsc -p tsconfig.build.json --module commonjs --outDir dist/cjs\n\nsrc/ipfs/IpfsMetadata.ts(22,3): error TS2345: Argument of type '{ headers: { Accept: string; }; retryOn: number[]; retries: number; retryDelay: number; }' is not assignable to parameter of type 'RequestInitRetryParams<(input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>>'.\n  Object literal may only specify known properties, and 'headers' does not exist in type 'RequestInitRetryParams<(input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>>'.",
+        "id": "request-behaviour",
+        "description": "Through the compiled `IpfsMetadata` against a local server, with a stub adapter standing in for the gateway: every IPFS request sends `Accept: application/json`, and a 404 is retried. Deleting the headers from the wrapper defaults typechecks and fails this.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The typecheck and compile scripts the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The IPFS metadata reader the upgrade broke must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the rejected options object with a directive is not a migration of it.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": [
+      "build_failure",
+      "hidden_regression_failure",
+      "incomplete_fix"
+    ]
+  },
+  "validity": {
+    "valid": false,
+    "infrastructureFailure": "provider_error",
+    "detail": "api error status 429: You've hit your session limit · resets 6:30pm (UTC)"
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 0,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 1631,
+    "installMs": 15899,
+    "contextMs": 0,
+    "agentMs": 2422,
+    "validationMs": 23125,
+    "totalMs": 43312
+  }
+}

@@ -1,0 +1,35 @@
+diff --git a/src/axePuppeteer.ts b/src/axePuppeteer.ts
+index 6fc2ae4..3ff0f42 100644
+--- a/src/axePuppeteer.ts
++++ b/src/axePuppeteer.ts
+@@ -101,15 +101,13 @@ function normalizeContext(
+     return null
+   }
+ 
+-  const ctx: Axe.ElementContext = {}
+-  if (excludes.length) {
+-    ctx.exclude = excludes
++  if (excludes.length && includes.length) {
++    return { include: includes, exclude: excludes }
+   }
+-  if (includes.length) {
+-    ctx.include = includes
++  if (excludes.length) {
++    return { exclude: excludes }
+   }
+-
+-  return ctx
++  return { include: includes }
+ }
+ 
+ export class AxePuppeteer {
+diff --git a/test/mocha.opts b/test/mocha.opts
+index df7d826..7db9b54 100644
+--- a/test/mocha.opts
++++ b/test/mocha.opts
+@@ -3,4 +3,5 @@
+ --recursive
+ --full-trace
+ --bail
++--timeout 20000
+ test/**/*.test.ts

@@ -1,0 +1,254 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-s1/axe-puppeteer-axe-core-4/baseline/1",
+  "runId": "heldout-1-s1",
+  "suite": "agent-upgrade-v1",
+  "caseId": "axe-puppeteer-axe-core-4",
+  "caseHash": "a64be6f485a276a8494fa58725d50a7537368d239a1aa0e8a1d9217bbb319d3e",
+  "condition": "baseline",
+  "repetition": 1,
+  "scheduleIndex": 3,
+  "metadata": {
+    "repository": "https://github.com/dequelabs/axe-puppeteer.git",
+    "baseCommit": "f80627763c57b898f15c44124733b1506a08fed2",
+    "startCommit": "89ccff6dbf0ef0cdc7452b436b747a6a01d7b50c",
+    "startTreeHash": "bed81a6dc14ea3970554038ed90363459cc6d200",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "axe-core",
+      "fromVersion": "3.5.6",
+      "toVersion": "4.13.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-18T16:18:21.172Z",
+    "endedAt": "2026-09-18T16:23:12.651Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptChars": 314
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 32,
+    "durationMs": 276162,
+    "apiDurationMs": 92495,
+    "finalMessage": "Build, lint, and all 25 tests pass cleanly.\n\n## Summary\n\nThe `axe-core` upgrade (3.5.6 → 4.13.0) changed its TypeScript type definitions for context specifications: `ElementContext`/`ContextSpec` no longer accepts an empty `{}` object being mutated in place — `ContextObject` is now a discriminated union requiring either `include` (with optional `exclude`) or `exclude` (with optional `include`) to be present from construction.\n\n**Fixes made:**\n1. **`src/axePuppeteer.ts`** — Rewrote `normalizeContext()` to build the `Axe.ContextObject` directly matching the new union type instead of starting from `{}` and assigning `include`/`exclude` onto it, which no longer type-checks.\n2. **`test/mocha.opts`** — Added `--timeout 10000`. The new axe-core bundle is ~2x larger (1.3MB vs ~600KB), so injecting it into multiple frames occasionally exceeded mocha's default 2000ms timeout, causing a flaky/failing test (`injects into nexted frames`).\n\nVerified with `npm run build`, `npm run lint`, and `npm test` (all pass, 25/25 tests green). No functional/runtime incompatibilities were found beyond the type and timing issues above.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 1882409,
+    "uncachedInputTokens": 35236,
+    "inputTokens": 1035,
+    "cacheReadTokens": 1847173,
+    "cacheCreationTokens": 34201,
+    "outputTokens": 6813,
+    "modelCalls": 32,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 971,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 20
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 64,
+        "cacheReadTokens": 1847173,
+        "cacheCreationTokens": 34201,
+        "outputTokens": 6793
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 1881438,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.5753676
+  },
+  "tools": {
+    "toolCalls": 31,
+    "byTool": {
+      "Bash": 21,
+      "Read": 8,
+      "Edit": 2
+    },
+    "fileReads": 8,
+    "uniqueFilesRead": 8,
+    "searches": 0,
+    "shellCommands": 21,
+    "edits": 2,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 2,
+    "sourceFiles": 1,
+    "testFiles": 1,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 7,
+    "linesDeleted": 6,
+    "changedFiles": [
+      "src/axePuppeteer.ts",
+      "test/mocha.opts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/axePuppeteer.ts b/src/axePuppeteer.ts\nindex 6fc2ae4..738d9a2 100644\n--- a/src/axePuppeteer.ts\n+++ b/src/axePuppeteer.ts\n@@ -101,15 +101,15 @@ function normalizeContext(\n     return null\n   }\n \n-  const ctx: Axe.ElementContext = {}\n-  if (excludes.length) {\n-    ctx.exclude = excludes\n-  }\n   if (includes.length) {\n-    ctx.include = includes\n+    const ctx: Axe.ContextObject = { include: includes }\n+    if (excludes.length) {\n+      ctx.exclude = excludes\n+    }\n+    return ctx\n   }\n \n-  return ctx\n+  return { exclude: excludes }\n }\n \n export class AxePuppeteer {\ndiff --git a/test/mocha.opts b/test/mocha.opts\nindex df7d826..e7ad7dc 100644\n--- a/test/mocha.opts\n+++ b/test/mocha.opts\n@@ -3,4 +3,5 @@\n --recursive\n --full-trace\n --bail\n+--timeout 10000\n test/**/*.test.ts\n",
+    "diffTruncated": false,
+    "diffHash": "e09f1d19b7241d09d1e604e2567a9f297a7b7acd76576e53b848d48f3312fe4e"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "4.13.0",
+      "installedVersion": "4.13.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 2572,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "context-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 2689,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc\n\ncontext-behaviour: include and exclude selectors still reach the axe run",
+        "id": "context-behaviour",
+        "description": "Through the compiled AxePuppeteer against a stub frame: an include and an exclude together both reach the axe run, each reaches it alone, and with neither the context stays null so axe scans the document. Typing the context object `any` to silence the union compiles and fails here.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The class the upgrade broke must still exist; it is the package's entry point.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the union with a directive is not a migration of the context shape.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 815,
+    "installMs": 7605,
+    "contextMs": 0,
+    "agentMs": 276162,
+    "validationMs": 6646,
+    "totalMs": 291479
+  }
+}

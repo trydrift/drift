@@ -1,0 +1,244 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s1/axe-puppeteer-axe-core-4/baseline-lean/1",
+  "runId": "heldout-1-lean-s1",
+  "suite": "agent-upgrade-v1",
+  "caseId": "axe-puppeteer-axe-core-4",
+  "caseHash": "a64be6f485a276a8494fa58725d50a7537368d239a1aa0e8a1d9217bbb319d3e",
+  "condition": "baseline-lean",
+  "repetition": 1,
+  "scheduleIndex": 2,
+  "metadata": {
+    "repository": "https://github.com/dequelabs/axe-puppeteer.git",
+    "baseCommit": "f80627763c57b898f15c44124733b1506a08fed2",
+    "startCommit": "2ae15310a461efdd88a11f5363b605a4da0da18f",
+    "startTreeHash": "bed81a6dc14ea3970554038ed90363459cc6d200",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "axe-core",
+      "fromVersion": "3.5.6",
+      "toVersion": "4.13.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-18T18:05:46.204Z",
+    "endedAt": "2026-09-18T18:11:03.634Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptChars": 314
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "provider-error",
+    "exitCode": 1,
+    "terminalReason": "api_error",
+    "resultSubtype": "success",
+    "apiErrorStatus": 429,
+    "numTurns": 28,
+    "durationMs": 302809,
+    "apiDurationMs": 85110,
+    "finalMessage": "You've hit your session limit · resets 6:30pm (UTC)",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 557517,
+    "uncachedInputTokens": 27785,
+    "inputTokens": 1013,
+    "cacheReadTokens": 529732,
+    "cacheCreationTokens": 26772,
+    "outputTokens": 6313,
+    "modelCalls": 22,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 971,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 20
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 42,
+        "cacheReadTokens": 529732,
+        "cacheCreationTokens": 26772,
+        "outputTokens": 6293
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 556546,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.2771194
+  },
+  "tools": {
+    "toolCalls": 27,
+    "byTool": {
+      "Bash": 16,
+      "Read": 9,
+      "Edit": 2
+    },
+    "fileReads": 9,
+    "uniqueFilesRead": 9,
+    "searches": 0,
+    "shellCommands": 16,
+    "edits": 2,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 2,
+    "sourceFiles": 1,
+    "testFiles": 1,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 6,
+    "linesDeleted": 7,
+    "changedFiles": [
+      "src/axePuppeteer.ts",
+      "test/mocha.opts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/axePuppeteer.ts b/src/axePuppeteer.ts\nindex 6fc2ae4..3ff0f42 100644\n--- a/src/axePuppeteer.ts\n+++ b/src/axePuppeteer.ts\n@@ -101,15 +101,13 @@ function normalizeContext(\n     return null\n   }\n \n-  const ctx: Axe.ElementContext = {}\n-  if (excludes.length) {\n-    ctx.exclude = excludes\n+  if (excludes.length && includes.length) {\n+    return { include: includes, exclude: excludes }\n   }\n-  if (includes.length) {\n-    ctx.include = includes\n+  if (excludes.length) {\n+    return { exclude: excludes }\n   }\n-\n-  return ctx\n+  return { include: includes }\n }\n \n export class AxePuppeteer {\ndiff --git a/test/mocha.opts b/test/mocha.opts\nindex df7d826..7db9b54 100644\n--- a/test/mocha.opts\n+++ b/test/mocha.opts\n@@ -3,4 +3,5 @@\n --recursive\n --full-trace\n --bail\n+--timeout 20000\n test/**/*.test.ts\n",
+    "diffTruncated": false,
+    "diffHash": "55dd92265afc9281773ad0ba7a62b715f05f68bbb52ea99bbd816061f6b960ad"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "4.13.0",
+      "installedVersion": "4.13.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 2957,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "context-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 5016,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc\n\ncontext-behaviour: include and exclude selectors still reach the axe run",
+        "id": "context-behaviour",
+        "description": "Through the compiled AxePuppeteer against a stub frame: an include and an exclude together both reach the axe run, each reaches it alone, and with neither the context stays null so axe scans the document. Typing the context object `any` to silence the union compiles and fails here.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The class the upgrade broke must still exist; it is the package's entry point.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the union with a directive is not a migration of the context shape.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": false,
+    "infrastructureFailure": "provider_error",
+    "detail": "api error status 429: You've hit your session limit · resets 6:30pm (UTC)"
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 567,
+    "installMs": 4312,
+    "contextMs": 0,
+    "agentMs": 302810,
+    "validationMs": 9357,
+    "totalMs": 317430
+  }
+}

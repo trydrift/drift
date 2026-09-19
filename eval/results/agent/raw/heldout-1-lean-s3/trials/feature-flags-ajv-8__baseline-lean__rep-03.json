@@ -1,0 +1,249 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s3/feature-flags-ajv-8/baseline-lean/3",
+  "runId": "heldout-1-lean-s3",
+  "suite": "agent-upgrade-v1",
+  "caseId": "feature-flags-ajv-8",
+  "caseHash": "897109bc1162690238e8a228bf71bcabd8f68824ba1afe0115457227de637f58",
+  "condition": "baseline-lean",
+  "repetition": 3,
+  "scheduleIndex": 6,
+  "metadata": {
+    "repository": "https://github.com/creditkarma/feature-flags.git",
+    "baseCommit": "5998c0d70e379e44ac1fd3260e4ff114979c594d",
+    "startCommit": "e7aac412f2f435672723b99d16f5fa55911afd7a",
+    "startTreeHash": "98e28f8440c79853d0eb5bedc1c47fc5f43b74f9",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "ajv",
+      "fromVersion": "6.15.0",
+      "toVersion": "8.20.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-19T03:33:05.942Z",
+    "endedAt": "2026-09-19T03:38:50.112Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "51898d3b7526a2995158a6e92c91190250b695d022f4a6b3f799615c04797aa3",
+    "promptHash": "51898d3b7526a2995158a6e92c91190250b695d022f4a6b3f799615c04797aa3",
+    "promptChars": 310
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 23,
+    "durationMs": 291767,
+    "apiDurationMs": 78874,
+    "finalMessage": "Only `src/main/utils.ts` needed changes (the `dist/` build output is gitignored).\n\n## Summary\n\nThe incompatibility was in `src/main/utils.ts`: ajv 6 exported the `Ajv` constructor as `module.exports`, so `import * as JsonValidator from 'ajv'; new JsonValidator()` worked directly. Ajv 8 is compiled from TypeScript with `export default Ajv` plus a named `export { Ajv }`, so a namespace import no longer yields a constructable value.\n\nFix:\n```ts\nimport { Ajv } from 'ajv'\nconst JSON_VALIDATOR: Ajv = new Ajv()\n```\n\nThe `validate(schema, data)` call signature and the existing JSON schema (`src/main/schema.ts`) remained compatible with ajv 8's stricter defaults, so no other changes were needed.\n\nVerified with `tsc --noEmit`, `npm run build`, a runtime smoke test of `objectMatchesSchema`, and the full `npm test` integration suite (spins up Consul via Docker) — all 4 tests pass, including toggle schema validation paths.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 435855,
+    "uncachedInputTokens": 15534,
+    "inputTokens": 1015,
+    "cacheReadTokens": 420321,
+    "cacheCreationTokens": 14519,
+    "outputTokens": 5485,
+    "modelCalls": 23,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 969,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 27
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 46,
+        "cacheReadTokens": 420321,
+        "cacheCreationTokens": 14519,
+        "outputTokens": 5458
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 434886,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.19791620000000001
+  },
+  "tools": {
+    "toolCalls": 22,
+    "byTool": {
+      "Bash": 17,
+      "Read": 4,
+      "Edit": 1
+    },
+    "fileReads": 4,
+    "uniqueFilesRead": 4,
+    "searches": 0,
+    "shellCommands": 17,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 2,
+    "linesDeleted": 2,
+    "changedFiles": [
+      "src/main/utils.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/main/utils.ts b/src/main/utils.ts\nindex 27a717c..33192c8 100644\n--- a/src/main/utils.ts\n+++ b/src/main/utils.ts\n@@ -1,6 +1,6 @@\n-import * as JsonValidator from 'ajv'\n+import { Ajv } from 'ajv'\n \n-const JSON_VALIDATOR: JsonValidator.Ajv = new JsonValidator()\n+const JSON_VALIDATOR: Ajv = new Ajv()\n \n export function objectMatchesSchema(schema: object, data: any): boolean {\n     return JSON_VALIDATOR.validate(schema, data) as boolean\n",
+    "diffTruncated": false,
+    "diffHash": "41ad042503b8f562fc5c393438a50721f55baea75a7c6c624c8009454c496ca2"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "8.20.0",
+      "installedVersion": "8.20.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 18089,
+        "outputExcerpt": "> @creditkarma/feature-flags@1.0.1 prebuild\n> npm run clean && npm run lint\n\n\n> @creditkarma/feature-flags@1.0.1 clean\n> rimraf dist/\n\n\n> @creditkarma/feature-flags@1.0.1 lint\n> tslint --fix './src/**/*.ts'\n\n\n> @creditkarma/feature-flags@1.0.1 build\n> tsc",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "validation-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 16234,
+        "outputExcerpt": "> @creditkarma/feature-flags@1.0.1 prebuild\n> npm run clean && npm run lint\n\n\n> @creditkarma/feature-flags@1.0.1 clean\n> rimraf dist/\n\n\n> @creditkarma/feature-flags@1.0.1 lint\n> tslint --fix './src/**/*.ts'\n\n\n> @creditkarma/feature-flags@1.0.1 build\n> tsc\n\nvalidation-behaviour: the toggle schema still accepts valid maps and rejects invalid ones",
+        "id": "validation-behaviour",
+        "description": "Through the compiled `objectMatchesSchema`, against the project's own `toggleSchema`: valid toggle maps are accepted, and a fraction above the schema maximum, a missing required `type`, and a non-numeric fraction are all rejected. A migration that reaches a green build by no longer validating passes the build and fails this.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The validator and the schema it enforces must both still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "path-unchanged",
+        "description": "The schema states what a valid toggle map is. Weakening it — dropping the maximum, dropping `required` — would make the hidden test pass without validating anything, and is not a migration of the ajv API.\n",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing TS2351 with a directive is not a migration of the constructor call.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 1384,
+    "installMs": 13078,
+    "contextMs": 0,
+    "agentMs": 291768,
+    "validationMs": 37448,
+    "totalMs": 344170
+  }
+}

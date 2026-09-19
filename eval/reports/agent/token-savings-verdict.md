@@ -1,7 +1,15 @@
 # Can Drift save agent tokens without costing accuracy?
 
-Yes — one lever works, and it is not the one the plan was built around. This
-note states what is established, what is not, and what should not be merged.
+**No.** This note was written against three development cases and said yes; the
+ten-case held-out run says no, and [`heldout-1-analysis.md`](heldout-1-analysis.md)
+supersedes everything below about the size of the saving. Kept because the
+mechanism and the failed approaches it records are still accurate — and because
+the development estimate it reports is what the held-out run was run to check.
+
+The short version of the correction: the lean tool set does cut tokens (42%
+median, held out), but it costs accuracy (24/30 against a baseline's 29/30),
+and Drift's report buys the accuracy back (28/30) while costing more tokens
+than the tools saved. Net, through Drift: +12.4% tokens and −3.3pp accuracy.
 
 ## The short version
 

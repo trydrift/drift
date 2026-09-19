@@ -1,0 +1,244 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s2/colonysdk-fetch-retry-6/baseline-lean/2",
+  "runId": "heldout-1-lean-s2",
+  "suite": "agent-upgrade-v1",
+  "caseId": "colonysdk-fetch-retry-6",
+  "caseHash": "c8b54b6b49b8ce715aaeb68a70166f7e8a67666ed65d351afe4cc3b34e92e32c",
+  "condition": "baseline-lean",
+  "repetition": 2,
+  "scheduleIndex": 3,
+  "metadata": {
+    "repository": "https://github.com/JoinColony/colonySDK.git",
+    "baseCommit": "9f492f02a69e325fc4a511d54f09a801ca8d0c4e",
+    "startCommit": "7b31a7251f7295544906306fe6ced031db54052a",
+    "startTreeHash": "b1c818029bf97c62ec8055aa991ec27cc2e4133c",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "fetch-retry",
+      "fromVersion": "5.0.6",
+      "toVersion": "6.0.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-19T01:40:10.604Z",
+    "endedAt": "2026-09-19T01:48:55.709Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "ce11a01be266b3da39e583a682767efdec706f296fa38275972b20b3d521e130",
+    "promptHash": "ce11a01be266b3da39e583a682767efdec706f296fa38275972b20b3d521e130",
+    "promptChars": 316
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 18,
+    "durationMs": 390489,
+    "apiDurationMs": 47561,
+    "finalMessage": "## Summary\n\n`fetch-retry` 6.0.0 tightened its TypeScript types: the `defaults` object passed to the wrapper now only accepts `retries`/`retryDelay`/`retryOn` (typed generically against the wrapped fetch function), rejecting arbitrary fetch `init` fields. `src/ipfs/IpfsMetadata.ts` was passing a `headers` field into that defaults object — which the runtime already silently ignored (only `retries`/`retryDelay`/`retryOn` are read from defaults), so it never actually applied `Accept: application/json` to requests. This is now a type error under 6.0.0.\n\nFix: moved `headers` out of the `wrapFetch` defaults and into a `fetchInit` object passed as the `init` argument on each of the three `fetchRetry(url, ...)` call sites, which is the correct way to set per-request headers and actually makes them take effect.\n\nVerified `npm run typecheck`, `npm run lint`, and `npm run build` all pass cleanly (`npm test` = lint + typecheck).",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 411350,
+    "uncachedInputTokens": 22347,
+    "inputTokens": 1006,
+    "cacheReadTokens": 389003,
+    "cacheCreationTokens": 21341,
+    "outputTokens": 4132,
+    "modelCalls": 18,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 970,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 19
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 36,
+        "cacheReadTokens": 389003,
+        "cacheCreationTokens": 21341,
+        "outputTokens": 4113
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 410380,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.2054316
+  },
+  "tools": {
+    "toolCalls": 17,
+    "byTool": {
+      "Bash": 14,
+      "Read": 1,
+      "Edit": 1,
+      "TaskOutput": 1
+    },
+    "fileReads": 1,
+    "uniqueFilesRead": 1,
+    "searches": 0,
+    "shellCommands": 14,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 9,
+    "linesDeleted": 6,
+    "changedFiles": [
+      "src/ipfs/IpfsMetadata.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/ipfs/IpfsMetadata.ts b/src/ipfs/IpfsMetadata.ts\nindex 743a177..ff6c6f9 100644\n--- a/src/ipfs/IpfsMetadata.ts\n+++ b/src/ipfs/IpfsMetadata.ts\n@@ -19,14 +19,17 @@ import IpfsAdapter from './IpfsAdapter';\n import CloudflareReadonlyAdapter from './CloudflareReadonlyAdapter';\n \n const fetchRetry = wrapFetch(fetch, {\n-  headers: {\n-    Accept: 'application/json',\n-  },\n   retryOn: [404, 503],\n   retries: 3,\n   retryDelay: 5000,\n });\n \n+const fetchInit = {\n+  headers: {\n+    Accept: 'application/json',\n+  },\n+};\n+\n export const IPFS_METADATA_EVENTS = {\n   [MetadataType.Annotation]: 'Annotation(address,bytes32,string)',\n   [MetadataType.Colony]: 'ColonyMetadata(address,string)',\n@@ -88,7 +91,7 @@ export class IpfsMetadata {\n     cid: string,\n   ): Promise<MetadataValue<K>> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, fetchInit);\n     try {\n       const data = await res.text();\n       return IPFS_METADATA_PARSERS[type](data) as MetadataValue<K>;\n@@ -106,7 +109,7 @@ export class IpfsMetadata {\n     cid: string,\n   ): Promise<MetadataValue<T>> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, fetchInit);\n     try {\n       const data = await res.text();\n       const entry = Object.entries(IPFS_METADATA_EVENTS).find(\n@@ -129,7 +132,7 @@ export class IpfsMetadata {\n \n   async getRawMetadata(cid: string): Promise<Metadata> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, fetchInit);\n     try {\n       const json = await res.json();\n       return json as Metadata;\n",
+    "diffTruncated": false,
+    "diffHash": "6d418f3c27341524c171b669f0e7a6887b821e51cccc20f3dc458395fadacff3"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "6.0.0",
+      "installedVersion": "6.0.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "typecheck (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 46069,
+        "outputExcerpt": "> @colony/sdk@1.6.0 typecheck\n> tsc --noEmit",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "request-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 40625,
+        "outputExcerpt": "> @colony/sdk@1.6.0 compile-cjs\n> tsc -p tsconfig.build.json --module commonjs --outDir dist/cjs\n\nrequest-behaviour: IPFS requests still send Accept: application/json and still retry on 404",
+        "id": "request-behaviour",
+        "description": "Through the compiled `IpfsMetadata` against a local server, with a stub adapter standing in for the gateway: every IPFS request sends `Accept: application/json`, and a 404 is retried. Deleting the headers from the wrapper defaults typechecks and fails this.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The typecheck and compile scripts the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The IPFS metadata reader the upgrade broke must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the rejected options object with a directive is not a migration of it.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 1950,
+    "installMs": 35359,
+    "contextMs": 0,
+    "agentMs": 390494,
+    "validationMs": 96916,
+    "totalMs": 525105
+  }
+}
