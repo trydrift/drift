@@ -73,6 +73,7 @@ export function buildAgentBrief(plan: RemediationPlan, options: AgentBriefOption
 
   const omitted: AgentOmitted = {
     noLocatedUsage: 0,
+    symbols: [],
     notSearched: 0,
     unaffected: 0,
     byKind: {},
@@ -200,6 +201,12 @@ function countOmission(
   else if (disposition?.reason === 'impact-unresolved') omitted.noLocatedUsage += 1;
   else omitted.notSearched += 1;
   omitted.byKind[change.kind] = (omitted.byKind[change.kind] ?? 0) + 1;
+  for (const symbol of change.symbols) {
+    // The bare name: `default.SizeCalculator` is read in the code as
+    // `SizeCalculator`, and the qualified form only costs budget.
+    const bare = symbol.split('.').pop() ?? symbol;
+    if (bare && !omitted.symbols.includes(bare)) omitted.symbols.push(bare);
+  }
 }
 
 function analysisFinding(

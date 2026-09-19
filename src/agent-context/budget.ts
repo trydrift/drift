@@ -21,8 +21,17 @@ export interface ContextBudget {
   maxTokens: number;
 }
 
-/** The initial brief: a plan an agent can act on, not a report. */
-export const AGENT_BRIEF_BUDGET: ContextBudget = { targetTokens: 1_500, maxTokens: 2_000 };
+/**
+ * The initial brief: a plan an agent can act on, not a report.
+ *
+ * Raised from 1,500/2,000 by exactly what the standing instructions grew when
+ * they started stating Drift's blind spot and the constraints its patch
+ * validation enforces (~260 tokens). The room left for findings is therefore
+ * unchanged; this is fixed overhead, not more content. For scale, the
+ * pull-request body the agent benchmark used to hand an agent measures around
+ * 19,000 tokens.
+ */
+export const AGENT_BRIEF_BUDGET: ContextBudget = { targetTokens: 1_800, maxTokens: 2_300 };
 
 /** One finding in full, on request. */
 export const FINDING_DETAIL_BUDGET: ContextBudget = { targetTokens: 1_500, maxTokens: 2_000 };

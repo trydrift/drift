@@ -312,8 +312,8 @@ describe('agent brief — budget', () => {
     // Find a budget at which the 60-site finding fits only compacted, rather
     // than hard-coding a byte count that shifts with every wording change.
     const brief = buildAgentBrief(plan({ localSites: 60 }));
-    const compacted = Array.from({ length: 80 }, (_, i) => 600 + i * 25)
-      .map((targetTokens) => renderAgentBrief(brief, { budget: { targetTokens, maxTokens: 2000 } }))
+    const compacted = Array.from({ length: 200 }, (_, i) => 600 + i * 10)
+      .map((targetTokens) => renderAgentBrief(brief, { budget: { targetTokens, maxTokens: AGENT_BRIEF_BUDGET.maxTokens } }))
       .find((rendered) => rendered.findings.compacted.includes('bc_local'));
     assert.ok(compacted, 'some budget compacts bc_local');
     assert.match(compacted.text, /\(60 sites in 7 files; get the rest with bc_local\)/);

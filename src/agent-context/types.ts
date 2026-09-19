@@ -168,6 +168,17 @@ export interface AgentOmitted {
   unaffected: number;
   /** Omitted upstream findings by kind, for a reader wondering what kind of thing was left out. */
   byKind: Record<string, number>;
+  /**
+   * The symbols those omitted findings name.
+   *
+   * Localization matches identifiers, so it cannot tie an object literal to
+   * the options interface it satisfies: on lru-cache 7 to 10 the removed
+   * `LimitedBySize`, `SizeCalculator` and `SharedOptions` were all filed here
+   * as "no located usage" while the one call site passed exactly those
+   * options. An agent editing that call recognises the names; a count of
+   * eighteen tells it nothing. Naming them costs a few dozen tokens.
+   */
+  symbols: string[];
   /** Evidence records the plan holds; none are inlined in the brief. */
   evidenceRecords: number;
   /** Plan warnings not restated (skipped transitive/added/removed packages, and similar). */

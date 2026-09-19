@@ -71,9 +71,30 @@ type SectionLevel = 'full' | 'summary' | 'omitted' | 'empty';
  * package's API or changelog — that the first benchmark showed agents doing
  * even with Drift's findings in hand.
  */
+/**
+ * What the brief says about itself.
+ *
+ * The second sentence used to read "Do not independently enumerate the package
+ * API or changelog unless this brief is insufficient or the code contradicts
+ * it." Measured on the ten-case agent suite, that is the sentence that cost
+ * accuracy. Drift compares *exported symbols*, so a name that survived the
+ * upgrade and changed meaning is invisible to it — and an agent told to treat
+ * the findings as its scope stops looking exactly where the analysis is blind.
+ *
+ * On `lru-cache` 7 to 10 the brief's ancestor named the removed default export,
+ * the agent fixed precisely that, and `maxSize` — same name, new meaning, now
+ * throws on every `set` without a companion option — went untouched in two of
+ * three trials. An agent given no analysis at all read the constructor and
+ * caught it every time. The saving was never worth that, so the instruction now
+ * says what Drift knows, says what it cannot know, and asks for the reading it
+ * used to discourage.
+ */
 export const AGENT_BRIEF_INSTRUCTIONS = [
   'Drift has already compared the published versions of these packages and searched this repository for code that uses what changed.',
-  'Use the findings and locations below as your starting scope. Do not independently enumerate the package API or changelog unless this brief is insufficient or the code contradicts it.',
+  'Start from the findings and locations below: the sites are measured, not guessed.',
+  'They are not the whole job. Drift diffs exported symbols, so it cannot see a name that survived the upgrade and changed meaning — a changed default, an option that now needs a companion option, a different return shape. Those compile and break at runtime.',
+  'At each site read the surrounding call, not just the name, and check the package\'s own migration notes or type declarations. Code that contradicts this brief is right.',
+  'Do not weaken what the project checks: no lowered coverage thresholds, relaxed compiler strictness, disabled lint rules, skipped or deleted tests, or suppression directives — Drift compares what the configuration enforced before and after, and a patch that enforces less is rejected. Do not downgrade the upgraded dependency.',
   'Inspect the affected code, make the required changes, and run the checks listed.',
 ].join(' ');
 
@@ -86,6 +107,23 @@ const RETRIEVAL_HINT: Record<DetailRetrieval, string> = {
 const FULL_SITE_REFS = 24;
 /** Omitted ids named in the footer. Beyond this the footer states a count, so its size is bounded too. */
 const MAX_OMITTED_IDS = 20;
+/**
+ * The most symbols the footer will name for findings localization could not
+ * place — and, past it, the point where it names none.
+ *
+ * Those findings are not the same as findings that do not matter: an options
+ * interface is used *structurally*, by passing an object literal that
+ * satisfies it, and no identifier search will ever find that. On lru-cache 7
+ * to 10 the removed `LimitedBySize`, `SizeCalculator` and `SharedOptions` were
+ * all filed as "no located usage" while the repository's one call site passed
+ * exactly those options. An agent editing that call recognises the names.
+ *
+ * It is a list, not a summary, so it stays useful only while it stays short:
+ * a plan with three hundred upstream removals produces a wall of names that
+ * says nothing about this repository and costs budget the located findings
+ * need. Past this many, the count alone is the honest answer.
+ */
+const MAX_OMITTED_SYMBOLS = 40;
 const FULL_MEASURED_SITES = 12;
 const COMPACT_FILES = 3;
 const COMPACT_LINES_PER_FILE = 3;
@@ -467,6 +505,11 @@ function renderFooter(brief: AgentBrief, retrieval: DetailRetrieval, omittedForB
 
   const lines = ['## Not in this brief', ''];
   if (parts.length > 0) lines.push(`- ${parts.join('; ')}${kinds ? ` — by kind: ${kinds}` : ''}.`);
+  if (o.symbols.length > 0 && o.symbols.length <= MAX_OMITTED_SYMBOLS) {
+    lines.push(
+      `- They name: ${o.symbols.join(', ')}. Check whether the code you are editing uses any of these, including structurally — an object literal satisfying a removed options interface is a use that no search finds.`,
+    );
+  }
   if (o.evidenceRecords > 0) lines.push(`- ${o.evidenceRecords} evidence record${o.evidenceRecords === 1 ? '' : 's'}, cited by id above.`);
 
   if (omittedForBudget.length > 0) {

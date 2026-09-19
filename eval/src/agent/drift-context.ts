@@ -1,13 +1,15 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Condition, TrialArtifact } from './schema.ts';
-import { DRIFT_PREAMBLE_HEADER } from './task.ts';
+import { DRIFT_BRIEF_HEADER, DRIFT_PREAMBLE_HEADER } from './task.ts';
 import type { Workspace } from './workspace.ts';
 import {
   GitHubClient,
   LocalGitProvider,
   createLogger,
   loadConfig,
+  buildAgentBrief,
+  renderAgentBrief,
   renderPullRequestBody,
   resolvePlanVerdict,
   runPipeline,
@@ -102,10 +104,21 @@ export async function buildDriftContext(condition: Condition, workspace: Workspa
     }
 
     const plan = ablate(condition, result.plan);
-    const report = renderPullRequestBody(plan, config);
+    // `drift-brief` is the remediation brief the product hands a coding agent.
+    // Every other Drift condition gets the pull-request body, which is written
+    // for a human deciding whether to merge.
+    // `drift-brief` is the product's own agent brief — the thing `drift
+    // analyze --agent` and the MCP server hand a coding agent, budgeted at
+    // 2,000 tokens. Every other Drift condition gets the pull-request body,
+    // which is written for a human deciding whether to merge and runs an order
+    // of magnitude larger.
+    const report =
+      condition === 'drift-brief'
+        ? renderAgentBrief(buildAgentBrief(plan, { config }), { retrieval: 'none' }).text
+        : renderPullRequestBody(plan, config);
     const verdict = String(resolvePlanVerdict(result.plan));
     return {
-      preamble: `${DRIFT_PREAMBLE_HEADER}\n${report.trim()}\n`,
+      preamble: `${condition === 'drift-brief' ? DRIFT_BRIEF_HEADER : DRIFT_PREAMBLE_HEADER}\n${report.trim()}\n`,
       status: 'completed',
       failure: null,
       analysisMs: Date.now() - started,
