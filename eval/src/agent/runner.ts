@@ -426,7 +426,7 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       // `remediation.agent.leanSession` is on by default, so `drift fix` starts
       // Claude Code with these arguments. The baseline gets the CLI's defaults,
       // which is what a developer running the agent by hand gets.
-      ...(condition === 'baseline' ? {} : { sessionArgs: CLAUDE_CODE_LEAN_SESSION_ARGS }),
+      ...(condition === 'baseline' || condition === 'drift-full-tools' ? {} : { sessionArgs: CLAUDE_CODE_LEAN_SESSION_ARGS }),
       env: projectEnv(agentCase, { DRIFT: '1' }),
       onEventLine: (line) => streamLines.push(line),
       onProgress: (message) => options.onProgress?.(`    ${message}`),

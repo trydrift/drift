@@ -1,7 +1,7 @@
 # Held-out run 1: the 46.5% does not replicate
 
-Ten frozen cases, three repetitions, two headline conditions and one ablation:
-90 live sessions, 90 valid trials after a retry, no case excluded. This is the
+Ten frozen cases, three repetitions, two headline conditions and two ablations:
+120 live sessions, 120 valid trials after a retry, no case excluded. This is the
 run the publication gates were waiting for, and it answers the question that
 was actually asked — can Drift save agent tokens without costing accuracy —
 with **no**.
@@ -13,6 +13,7 @@ with **no**.
 | Baseline (agent as it ships) | 30 | **29** (96.7%) | 1,565k | 35.8k |
 | Baseline + lean tools | 30 | **24** (80.0%) | **811k** | 27.7k |
 | Drift (lean tools + Drift's report) | 30 | **28** (93.3%) | 1,580k | 79.8k |
+| Drift's report + full tools | 30 | **25** (83.3%) | 2,763k | 83.3k |
 
 Headline, Drift vs baseline: **+12.4% tokens** (median case-level change; 95%
 CI −84% to +65%) and **−3.3pp accuracy** (95% CI −23pp to +10pp). Cost over the
@@ -43,6 +44,26 @@ uncached input per session (79.8k vs 35.8k), and uncached input is the
 expensive kind. Net against a full-tooled baseline: more tokens, slightly worse
 accuracy, 68% higher dollar cost.
 
+## The fourth condition: the shipped default is the best Drift configuration
+
+Held-out run 1 left one combination unmeasured — the report *with* the tools
+the agent ships with — and it is the one that decides whether
+`remediation.agent.leanSession` should stay on. It is worse on both axes:
+**25/30 at +28.4% tokens**, against the lean configuration's 28/30 at +12.4%.
+
+Ranked on this suite, then, from best accuracy: baseline 29/30 at its own cost,
+Drift-as-shipped 28/30 at +12.4%, report-with-full-tools 25/30 at +28.4%, lean
+alone 24/30 at −42.4%. The default stays as it is; turning the lean session off
+would make the product worse and more expensive at once.
+
+Why giving an agent both the report and every tool goes wrong is visible in the
+failure reasons. With full tools it spends the report *and* searches anyway —
+the ESLint case ran to 22.8M gross input tokens in one trial — and its failures
+spread across every mode the harness distinguishes (3 hidden regressions, 2
+timeouts, 2 prohibited workarounds, a lint failure, an existing test failure).
+The lean configuration's two failures are both the same case, ethereumjs, which
+no condition ever fixed more than once.
+
 ## Why the development set was wrong
 
 Three cases, nine trials per condition, and every one of them a case the lean
@@ -67,8 +88,8 @@ both a real 20% saving and a real 40% penalty; what they exclude is a reliable
 
 ## Provenance
 
-Runs `heldout-1-s1..s5` (baseline, drift) and `heldout-1-lean-s1..s5`
-(baseline-lean), suite `agent-upgrade-v1` frozen at ten cases, Drift
+Runs `heldout-1-s1..s5` (baseline, drift), `heldout-1-lean-s1..s5`
+(baseline-lean) and `heldout-1-fulltools-s1..s5` (drift-full-tools), suite `agent-upgrade-v1` frozen at ten cases, Drift
 fcccc433, Claude Code 2.1.267, claude-sonnet-5 at effort high, three
 repetitions per condition in a counterbalanced order. 25 ablation trials first
 failed on an account session limit (HTTP 429) and were re-run to completion
