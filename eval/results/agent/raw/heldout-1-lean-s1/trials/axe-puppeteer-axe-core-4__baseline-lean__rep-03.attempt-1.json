@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s1/axe-puppeteer-axe-core-4/baseline-lean/3",
+  "runId": "heldout-1-lean-s1",
+  "suite": "agent-upgrade-v1",
+  "caseId": "axe-puppeteer-axe-core-4",
+  "caseHash": "a64be6f485a276a8494fa58725d50a7537368d239a1aa0e8a1d9217bbb319d3e",
+  "condition": "baseline-lean",
+  "repetition": 3,
+  "scheduleIndex": 6,
+  "metadata": {
+    "repository": "https://github.com/dequelabs/axe-puppeteer.git",
+    "baseCommit": "f80627763c57b898f15c44124733b1506a08fed2",
+    "startCommit": "72cf5290ba1965f000b611e5ac5f1ba35f1f3f7d",
+    "startTreeHash": "bed81a6dc14ea3970554038ed90363459cc6d200",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "axe-core",
+      "fromVersion": "3.5.6",
+      "toVersion": "4.13.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-18T18:12:22.007Z",
+    "endedAt": "2026-09-18T18:12:35.459Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptChars": 314
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "provider-error",
+    "exitCode": 1,
+    "terminalReason": "api_error",
+    "resultSubtype": "success",
+    "apiErrorStatus": 429,
+    "numTurns": 1,
+    "durationMs": 1816,
+    "apiDurationMs": 0,
+    "finalMessage": "You've hit your session limit · resets 6:30pm (UTC)",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 0,
+    "uncachedInputTokens": 0,
+    "inputTokens": 0,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "outputTokens": 0,
+    "modelCalls": 1,
+    "byModel": {
+      "<synthetic>": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    "source": "event-ledger",
+    "ledgerGrossInputTokens": 0,
+    "ledgerAgreesWithResult": null,
+    "costUsd": null
+  },
+  "tools": {
+    "toolCalls": 0,
+    "byTool": {},
+    "fileReads": 0,
+    "uniqueFilesRead": 0,
+    "searches": 0,
+    "shellCommands": 0,
+    "edits": 0,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 0,
+    "sourceFiles": 0,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 0,
+    "linesDeleted": 0,
+    "changedFiles": [],
+    "deletedFiles": [],
+    "diff": "",
+    "diffTruncated": false,
+    "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "4.13.0",
+      "installedVersion": "4.13.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 2772,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc\n\n\u001b[96msrc/axePuppeteer.ts\u001b[0m:\u001b[93m104\u001b[0m:\u001b[93m9\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2322: \u001b[0mType '{}' is not assignable to type 'ContextSpec'.\n  Type '{}' is not assignable to type 'string'.\n\n\u001b[7m104\u001b[0m   const ctx: Axe.ElementContext = {}\n\u001b[7m   \u001b[0m \u001b[91m        ~~~\u001b[0m\n\n\u001b[96msrc/axePuppeteer.ts\u001b[0m:\u001b[93m106\u001b[0m:\u001b[93m9\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2339: \u001b[0mProperty 'exclude' does not exist on type 'ContextSpec'.\n  Property 'exclude' does not exist on type 'string'.\n\n\u001b[7m106\u001b[0m     ctx.exclude = excludes\n\u001b[7m   \u001b[0m \u001b[91m        ~~~~~~~\u001b[0m\n\n\u001b[96msrc/axePuppeteer.ts\u001b[0m:\u001b[93m109\u001b[0m:\u001b[93m9\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2339: \u001b[0mProperty 'include' does not exist on type 'ContextSpec'.\n  Property 'include' does not exist on type 'string'.\n\n\u001b[7m109\u001b[0m     ctx.include = includes\n\u001b[7m   \u001b[0m \u001b[91m        ~~~~~~~\u001b[0m\n\n\nFound 3 errors.",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "context-behaviour",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 2355,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc\n\n\u001b[96msrc/axePuppeteer.ts\u001b[0m:\u001b[93m104\u001b[0m:\u001b[93m9\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2322: \u001b[0mType '{}' is not assignable to type 'ContextSpec'.\n  Type '{}' is not assignable to type 'string'.\n\n\u001b[7m104\u001b[0m   const ctx: Axe.ElementContext = {}\n\u001b[7m   \u001b[0m \u001b[91m        ~~~\u001b[0m\n\n\u001b[96msrc/axePuppeteer.ts\u001b[0m:\u001b[93m106\u001b[0m:\u001b[93m9\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2339: \u001b[0mProperty 'exclude' does not exist on type 'ContextSpec'.\n  Property 'exclude' does not exist on type 'string'.\n\n\u001b[7m106\u001b[0m     ctx.exclude = excludes\n\u001b[7m   \u001b[0m \u001b[91m        ~~~~~~~\u001b[0m\n\n\u001b[96msrc/axePuppeteer.ts\u001b[0m:\u001b[93m109\u001b[0m:\u001b[93m9\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2339: \u001b[0mProperty 'include' does not exist on type 'ContextSpec'.\n  Property 'include' does not exist on type 'string'.\n\n\u001b[7m109\u001b[0m     ctx.include = includes\n\u001b[7m   \u001b[0m \u001b[91m        ~~~~~~~\u001b[0m\n\n\nFound 3 errors.",
+        "id": "context-behaviour",
+        "description": "Through the compiled AxePuppeteer against a stub frame: an include and an exclude together both reach the axe run, each reaches it alone, and with neither the context stays null so axe scans the document. Typing the context object `any` to silence the union compiles and fails here.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The class the upgrade broke must still exist; it is the package's entry point.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the union with a directive is not a migration of the context shape.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": [
+      "build_failure",
+      "hidden_regression_failure",
+      "incomplete_fix"
+    ]
+  },
+  "validity": {
+    "valid": false,
+    "infrastructureFailure": "provider_error",
+    "detail": "api error status 429: You've hit your session limit · resets 6:30pm (UTC)"
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 0,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 588,
+    "installMs": 4340,
+    "contextMs": 0,
+    "agentMs": 1816,
+    "validationMs": 6494,
+    "totalMs": 13452
+  }
+}

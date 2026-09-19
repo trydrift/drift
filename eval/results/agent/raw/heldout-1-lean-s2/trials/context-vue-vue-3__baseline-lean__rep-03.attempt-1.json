@@ -1,0 +1,241 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s2/context-vue-vue-3/baseline-lean/3",
+  "runId": "heldout-1-lean-s2",
+  "suite": "agent-upgrade-v1",
+  "caseId": "context-vue-vue-3",
+  "caseHash": "ea31e012c2ea06c3a137d7ebcbb05199011566ceadb7d3c3b42f70d733a45064",
+  "condition": "baseline-lean",
+  "repetition": 3,
+  "scheduleIndex": 6,
+  "metadata": {
+    "repository": "https://github.com/hugo-cardoso/context-vue.git",
+    "baseCommit": "6f47161d447becef4ef549d76b5eab7fc797df36",
+    "startCommit": "ab2d13f0c88870b30d38eea0ac0f5dbb1c35b25e",
+    "startTreeHash": "e6322d61473f9ad4428565b9995f3a228a141e3d",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "vue",
+      "fromVersion": "2.7.16",
+      "toVersion": "3.5.43"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-18T18:11:03.430Z",
+    "endedAt": "2026-09-18T18:11:17.699Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "5b78a7878a968ed12ba4bf206a5bd1b0df74fc02e2d927677cdb2912d8e68e13",
+    "promptHash": "5b78a7878a968ed12ba4bf206a5bd1b0df74fc02e2d927677cdb2912d8e68e13",
+    "promptChars": 310
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "provider-error",
+    "exitCode": 1,
+    "terminalReason": "api_error",
+    "resultSubtype": "success",
+    "apiErrorStatus": 429,
+    "numTurns": 1,
+    "durationMs": 2421,
+    "apiDurationMs": 0,
+    "finalMessage": "You've hit your session limit · resets 6:30pm (UTC)",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 0,
+    "uncachedInputTokens": 0,
+    "inputTokens": 0,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "outputTokens": 0,
+    "modelCalls": 1,
+    "byModel": {
+      "<synthetic>": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    "source": "event-ledger",
+    "ledgerGrossInputTokens": 0,
+    "ledgerAgreesWithResult": null,
+    "costUsd": null
+  },
+  "tools": {
+    "toolCalls": 0,
+    "byTool": {},
+    "fileReads": 0,
+    "uniqueFilesRead": 0,
+    "searches": 0,
+    "shellCommands": 0,
+    "edits": 0,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 0,
+    "sourceFiles": 0,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 0,
+    "linesDeleted": 0,
+    "changedFiles": [],
+    "deletedFiles": [],
+    "diff": "",
+    "diffTruncated": false,
+    "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "3.5.43",
+      "installedVersion": "3.5.43",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "typecheck and build (vue-tsc, vite)",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 4294,
+        "outputExcerpt": "> ctx-api-vue@0.0.0 build\n> vue-tsc --noEmit && vite build\n\nsrc/main.ts(4,5): error TS2351: This expression is not constructable.\n  Type 'typeof import(\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-context-vue-vue-3-rc0dRS/repo/node_modules/vue/dist/vue\")' has no construct signatures.\nsrc/main.ts(6,12): error TS7006: Parameter 'h' implicitly has an 'any' type.",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "ssr-render",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 3840,
+        "outputExcerpt": "> ctx-api-vue@0.0.0 build\n> vue-tsc --noEmit && vite build\n\nsrc/main.ts(4,5): error TS2351: This expression is not constructable.\n  Type 'typeof import(\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-context-vue-vue-3-rc0dRS/repo/node_modules/vue/dist/vue\")' has no construct signatures.\nsrc/main.ts(6,12): error TS7006: Parameter 'h' implicitly has an 'any' type.",
+        "id": "ssr-render",
+        "description": "The app is built for the server with the project's own Vite toolchain and rendered: the provider's dynamic root tag resolves with the classes it was given, and both context consumers render, which is what proves provide/inject came up under vue 3. A migration that rewrites main.ts but leaves the vue 2 SFC plugin in place cannot build this.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The application entry point and its root component must both still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "path-unchanged",
+        "description": "These components are already vue 3 composition API and are not what this upgrade breaks. Rewriting them would be replacing the application rather than migrating its entry point and toolchain.\n",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the removed constructor with a directive is not a migration of the bootstrap.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": [
+      "build_failure",
+      "hidden_regression_failure",
+      "incomplete_fix"
+    ]
+  },
+  "validity": {
+    "valid": false,
+    "infrastructureFailure": "provider_error",
+    "detail": "api error status 429: You've hit your session limit · resets 6:30pm (UTC)"
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 0,
+    "referencePatchFiles": 4
+  },
+  "timing": {
+    "materializeMs": 772,
+    "installMs": 2041,
+    "contextMs": 0,
+    "agentMs": 2422,
+    "validationMs": 8800,
+    "totalMs": 14269
+  }
+}

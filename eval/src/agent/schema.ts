@@ -29,8 +29,21 @@ export const AGENT_CASE_SCHEMA_VERSION = 'drift-agent-case-v1';
 export const AGENT_TRIAL_SCHEMA_VERSION = 'drift-agent-trial-v1';
 export const AGENT_SUMMARY_SCHEMA_VERSION = 1;
 
-/** The two experimental conditions, plus the ablations the runner is built to add later. */
-export const CONDITIONS = ['baseline', 'drift', 'drift-evidence-only', 'drift-localization-only'] as const;
+/**
+ * The two experimental conditions, plus ablations.
+ *
+ * `baseline-lean` is the diagnostic that separates the two things the Drift
+ * condition changes at once: it launches the session with the product's lean
+ * tool set but gives the agent no Drift context at all. Without it, a token
+ * difference cannot be attributed to either the tools or the report.
+ *
+ * `drift-full-tools` is the other half of that separation: Drift's report with
+ * the tools the agent ships with. Held-out run 1 showed the lean tool set
+ * costs accuracy and the report pays it back, so the configuration that gives
+ * the report without taking the tools away is the one neither headline
+ * condition measured.
+ */
+export const CONDITIONS = ['baseline', 'baseline-lean', 'drift', 'drift-full-tools', 'drift-evidence-only', 'drift-localization-only'] as const;
 export type Condition = (typeof CONDITIONS)[number];
 export const conditionSchema = z.enum(CONDITIONS);
 

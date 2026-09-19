@@ -1,0 +1,75 @@
+schemaVersion: drift-agent-case-v1
+id: hosts-lru-cache-10
+title: lru-cache 7.18.3 → 10.4.3 in ineo6/hosts
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/ineo6/hosts.git
+  licence: MIT
+  baseCommit: 631ae2288ed1f2ce3a7a4a4b39d669acffb355f2
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task ineo6__hosts-lru-cache__^10.2.0)
+workspaceDir: ""
+dependency:
+  name: lru-cache
+  fromVersion: 7.18.3
+  toVersion: 10.4.3
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node (declared none); run on the host Node
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm install --ignore-scripts --no-audit --no-fund
+  installTimeoutSeconds: 600
+  checks:
+    - name: compile (tsc)
+      kind: build
+      command: npm run build
+      timeoutSeconds: 600
+  installedVersion: node -p "require('./node_modules/lru-cache/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 14
+  repositorySourceLines: 700
+  failureMode: mixed
+  knownAffectedLocations: 1
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the exact
+    published lru-cache 10.4.3 (manifest and regenerated lockfile) is the case's
+    public start patch. The project has no test script, so the only project
+    check is the TypeScript build, which fails at the start state with one error
+    in the project's own source (`src/dns/base.ts(36,22): TS2351: This
+    expression is not constructable`) — v10 removed the default export.
+
+    The build is not the whole upgrade. The same constructor passes `maxSize`,
+    which in v7 bounded the cache by itself and in v10 is the size-based bound
+    that throws on every `set` unless `sizeCalculation` or a per-entry `size`
+    accompanies it. Repairing only the import therefore compiles and constructs
+    and then throws at the first `this.cache.set(...)`, where `BaseDNS.lookup`'s
+    own try/catch swallows it and returns the hostname unresolved — so the
+    hidden test asserts on how often the underlying lookup runs.
+
+    `npm ci` is not usable here: npm resolves a peer `@babel/core@8` for the
+    project's `@babel/eslint-parser` that it then refuses to find in any lock
+    file it writes itself, so the case installs with `npm install`, pinned by
+    the same committed lockfile.
+
+    The repository has a pre-existing bug on the cache-*hit* path unrelated to
+    this upgrade: `DynamicChoice` has no `doCount` method, so a hit throws and
+    `lookup` returns the hostname. The hidden test is written not to depend on
+    that path's return value, and the agent is not asked to fix it.

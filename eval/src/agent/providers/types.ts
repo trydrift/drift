@@ -19,6 +19,13 @@ export interface AgentRunRequest {
   webTools: 'allowed' | 'disabled';
   maxBudgetUsd: number | null;
   maxTurns: number | null;
+  /**
+   * Extra CLI arguments for this session, supplied by the condition rather
+   * than the harness. The Drift condition passes the product's own lean
+   * session arguments here, so the benchmark launches the agent the way
+   * `drift fix` launches it instead of approximating it.
+   */
+  sessionArgs?: readonly string[];
   env: NodeJS.ProcessEnv;
   /** Receives the raw event stream, line by line, for the audit log. */
   onEventLine?: (line: string) => void;

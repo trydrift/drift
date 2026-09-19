@@ -21,6 +21,7 @@ function prediction(exactVersionPair: SweBumpPrediction['exactVersionPair']): Sw
       : [],
     breakingChanges: [],
     impactSites: [],
+    deterministic: null,
     verdict: 'insufficient-evidence',
     summary: '',
     manifestVersionTo: TASK.versionTo,

@@ -1,0 +1,47 @@
+{
+  "caseId": "axe-puppeteer-axe-core-4",
+  "admitted": true,
+  "steps": [
+    {
+      "step": "shape",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "step": "start-state",
+      "passed": true,
+      "detail": "materialized and installed"
+    },
+    {
+      "step": "broken-state-hidden-tests-fail",
+      "passed": true,
+      "detail": "failing at start: context-behaviour (project checks also fail)"
+    },
+    {
+      "step": "broken-state-dependency-upgraded",
+      "passed": true,
+      "detail": "installed 4.13.0"
+    },
+    {
+      "step": "fixed-state-1",
+      "passed": true,
+      "detail": "reference fix passes every layer"
+    },
+    {
+      "step": "fixed-state-2",
+      "passed": true,
+      "detail": "reference fix passes every layer"
+    },
+    {
+      "step": "deterministic",
+      "passed": true,
+      "detail": "2 identical validation outcomes"
+    }
+  ],
+  "checkedAt": "2026-09-18T15:25:31.867Z",
+  "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4",
+  "failingHiddenTestsAtStart": [
+    "context-behaviour"
+  ],
+  "projectChecksFailAtStart": true
+}

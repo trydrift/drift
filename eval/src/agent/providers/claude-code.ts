@@ -329,7 +329,7 @@ export interface ClaudeCodeProviderOptions {
   spawnImpl?: typeof spawn;
 }
 
-export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns'>, options: ClaudeCodeProviderOptions): {
+export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort' | 'webTools' | 'maxBudgetUsd' | 'maxTurns' | 'sessionArgs'>, options: ClaudeCodeProviderOptions): {
   argv: string[];
   disallowedTools: string[];
   cleanEnvironment: string;
@@ -352,6 +352,7 @@ export function buildClaudeArgs(request: Pick<AgentRunRequest, 'model' | 'effort
     ...(disallowedTools.length > 0 ? ['--disallowedTools', ...disallowedTools] : []),
     ...(request.maxBudgetUsd !== null ? ['--max-budget-usd', String(request.maxBudgetUsd)] : []),
     ...(request.maxTurns !== null ? ['--max-turns', String(request.maxTurns)] : []),
+    ...(request.sessionArgs ?? []),
   ];
   return { argv, disallowedTools, cleanEnvironment: clean };
 }

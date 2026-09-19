@@ -176,6 +176,11 @@ export interface SurfaceChange {
   /** The old declaration kind, set for removals and kind changes. */
   fromKind?: string;
   toKind?: string;
+  /**
+   * The symbol the new version publishes in this one's place, when the two
+   * surfaces establish it (see {@link inferReplacement}).
+   */
+  replacement?: string;
   moduleSystem?: {
     from?: ModuleSystem;
     to?: ModuleSystem;
@@ -3164,12 +3169,112 @@ export function entryPointMoved(
   };
 }
 
+/**
+ * The symbol a removed one was renamed or moved to, when the two published
+ * surfaces say so on their own.
+ *
+ * Drift computed both surfaces to find the removal; until now it threw the new
+ * one away and reported "`x` is no longer exported" with nothing to migrate to.
+ * That left its deterministic tiers dead (a codemod needs a target), left every
+ * brief descriptive, and left agents reading the package's own source to find
+ * the replacement — measured at 5.3% of agent input tokens and a quarter of all
+ * model calls in Drift's agent benchmark.
+ *
+ * Deliberately conservative: only an unambiguous candidate counts, in this
+ * order, and anything with more than one match at a level is dropped rather
+ * than guessed.
+ *
+ * 1. **Same declaration, new name.** The signature text matches once the names
+ *    are removed — `function sync(pattern: string): string[]` becoming
+ *    `function globSync(pattern: string): string[]`.
+ * 2. **The package name merged into it.** `sync` → `globSync` for `glob`,
+ *    `parse` → `yamlParse` for `yaml`: the new name is the old one with the
+ *    package's own name attached, which is what a package does when it stops
+ *    exporting a namespace object and starts exporting flat functions.
+ *
+ * A third rule — "the old name is the tail of exactly one new name" — was
+ * tried and removed: on vue 2 → 3 it read `Vue` as replaced by `CompatVue`,
+ * an internal compatibility symbol, and Drift's codemod tier then rewrote
+ * `new Vue({...})` to `new CompatVue({...})` when the actual migration is
+ * `createApp(App).mount(...)`. A plausible-looking name is not evidence.
+ *
+ * A wrong replacement is worse than none, so a caller must still verify: the
+ * fix Drift applies from it is compiled and tested like any other.
+ */
+export function inferReplacement(
+  removed: SurfaceEntry,
+  added: readonly SurfaceEntry[],
+  packageName?: string,
+): SurfaceEntry | null {
+  if (removed.shapeUnknown || added.length === 0) return null;
+  // A qualified name (`@vue/shared#IfAny`) is not something a consumer can
+  // write in place of the old symbol.
+  const plain = (entry: SurfaceEntry) => /^[A-Za-z_$][\w$]*$/.test(baseName(entry.name)) && !/[#/]/.test(entry.name);
+  const base = baseName(removed.name);
+  if (base.length < 3 || !/^[A-Za-z_$][\w$]*$/.test(base)) return null;
+
+  // Only a *distinctive* declaration can identify a symbol by its shape. An
+  // interface's signature is often just `interface Name`, which normalises to
+  // nothing and made nineteen unrelated winston interfaces all "match" the one
+  // interface the new version added.
+  const bySignature = added.filter(
+    (entry) =>
+      plain(entry) &&
+      entry.kind === removed.kind &&
+      distinctiveShape(removed) &&
+      distinctiveShape(entry) &&
+      normalizeSignature(removed.signature, removed.name) === normalizeSignature(entry.signature, entry.name) &&
+      sameMembers(removed, entry),
+  );
+  if (bySignature.length === 1) return bySignature[0]!;
+
+  const alias = (packageName ?? '').replace(/^@[^/]+\//, '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+  if (alias) {
+    const merged = added.filter((entry) => {
+      if (!plain(entry)) return false;
+      const candidate = baseName(entry.name).toLowerCase();
+      return candidate === `${alias}${base.toLowerCase()}` || candidate === `${base.toLowerCase()}${alias}`;
+    });
+    if (merged.length === 1) return merged[0]!;
+  }
+
+  return null;
+}
+
+/** Whether a declaration says enough about itself to identify the symbol by shape alone. */
+function distinctiveShape(entry: SurfaceEntry): boolean {
+  const signature = entry.signature ?? '';
+  if (signature.includes('(') && signature.replace(/\s+/g, '').length >= 20) return true;
+  return entry.members.length >= 2;
+}
+
+function sameMembers(a: SurfaceEntry, b: SurfaceEntry): boolean {
+  if (a.members.length === 0 && b.members.length === 0) return true;
+  const left = [...a.members].sort().join(',');
+  const right = [...b.members].sort().join(',');
+  return left === right;
+}
+
+function baseName(name: string): string {
+  return name.split('.').pop() ?? name;
+}
+
+/** A declaration's shape with its own name taken out, so two names can be compared by what they declare. */
+function normalizeSignature(signature: string, name: string): string {
+  const base = baseName(name);
+  return signature
+    .replace(new RegExp(`\\b${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), '\u0000')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function diffSurfaces(
   before: SurfaceApi,
   after: SurfaceApi,
-  context: { beforeComplete?: boolean; afterComplete?: boolean } = {},
+  context: { beforeComplete?: boolean; afterComplete?: boolean; packageName?: string } = {},
 ): SurfaceChange[] {
   const changes: SurfaceChange[] = [];
+  const added = [...after.entries()].filter(([key]) => !before.has(key)).map(([, entry]) => entry);
 
   for (const [key, oldEntry] of before) {
     const newEntry = after.get(key);
@@ -3189,6 +3294,7 @@ export function diffSurfaces(
       // still reported — traversal limits never hid those.
       if (context.afterComplete === false && oldEntry.via) continue;
 
+      const replacement = inferReplacement(oldEntry, added, context.packageName);
       changes.push({
         kind: 'export-removed',
         // A shape-unknown symbol going missing is still a real removal —
@@ -3196,9 +3302,10 @@ export function diffSurfaces(
         // but its `kind` was never real, so it is not quoted as one.
         symbol: name,
         detail: oldEntry.shapeUnknown
-          ? `\`${name}\` is no longer exported${origin}.`
-          : `\`${name}\` is no longer exported (was ${withArticle(oldEntry.kind)})${origin}.`,
+          ? `\`${name}\` is no longer exported${origin}.${replacement ? ` The new version exports \`${replacement.name}\` in its place.` : ''}`
+          : `\`${name}\` is no longer exported (was ${withArticle(oldEntry.kind)})${origin}.${replacement ? ` The new version exports \`${replacement.name}\` in its place.` : ''}`,
         before: oldEntry.signature,
+        ...(replacement ? { after: replacement.signature, replacement: replacement.name } : {}),
         ...(oldEntry.shapeUnknown ? {} : { fromKind: oldEntry.kind }),
       });
       continue;

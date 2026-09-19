@@ -1,0 +1,68 @@
+schemaVersion: drift-agent-case-v1
+id: axe-puppeteer-axe-core-4
+title: axe-core 3.5.6 → 4.13.0 in dequelabs/axe-puppeteer
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/dequelabs/axe-puppeteer.git
+  licence: MPL-2.0
+  baseCommit: f80627763c57b898f15c44124733b1506a08fed2
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task dequelabs__axe-puppeteer-axe-core__^4.9.0)
+workspaceDir: ""
+dependency:
+  name: axe-core
+  fromVersion: 3.5.6
+  toVersion: 4.13.0
+  updateClass: major
+  category: library
+  section: dependencies
+environment:
+  runtime: node (declared none); run on the host Node
+  packageManager: npm
+  timezone: UTC
+  locale: C
+commands:
+  install: npm install --ignore-scripts --no-audit --no-fund
+  installTimeoutSeconds: 600
+  checks:
+    - name: compile (tsc)
+      kind: build
+      command: npm run build
+      timeoutSeconds: 600
+  installedVersion: node -p "require('./node_modules/axe-core/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: package-lock.json
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 25
+  repositorySourceLines: 1100
+  failureMode: compile-time
+  knownAffectedLocations: 1
+  migrationGuideAvailable: true
+  multiLocation: false
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the exact
+    published axe-core 4.13.0 (manifest and regenerated lockfile) is the case's
+    public start patch. The project's own mocha suite drives a real Chromium
+    through Puppeteer, which `--ignore-scripts` never downloads, so it is not a
+    check here; the TypeScript build is.
+
+    axe-core 4 turned the analysis context into a union — a bare selector, or an
+    object carrying at least one of `include`/`exclude` — so the project's
+    `const ctx: Axe.ElementContext = {}` followed by conditional assignment
+    fails with three errors in its own source.
+
+    The build is a weak judge of the fix. Typing that object `any`, casting it,
+    or keeping only one of the two branches all compile, and all change which
+    part of the page an accessibility scan covers — a scan that silently widens
+    to the whole document reports the wrong violations and never fails. The
+    hidden test drives the compiled class against a stub frame and reads back
+    the context handed to the axe run.

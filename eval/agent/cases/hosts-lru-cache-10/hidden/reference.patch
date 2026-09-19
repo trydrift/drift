@@ -1,0 +1,22 @@
+diff --git a/src/dns/base.ts b/src/dns/base.ts
+index f5b8af8..8f873b3 100644
+--- a/src/dns/base.ts
++++ b/src/dns/base.ts
+@@ -1,5 +1,4 @@
+-// @ts-ignore
+-import LRU from 'lru-cache';
++import {LRUCache} from 'lru-cache';
+ import {DynamicChoice} from './choice';
+ import {createLogger} from "../log";
+ 
+@@ -33,8 +32,8 @@ export default abstract class BaseDNS {
+   private cache: any;
+ 
+   public constructor(dnsServer: string) {
+-    this.cache = new LRU({
+-      maxSize: cacheSize
++    this.cache = new LRUCache({
++      max: cacheSize
+     });
+ 
+     this.dnsServer = dnsServer;

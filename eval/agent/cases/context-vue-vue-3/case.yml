@@ -1,0 +1,69 @@
+schemaVersion: drift-agent-case-v1
+id: context-vue-vue-3
+title: vue 2.7.16 → 3.5.43 in hugo-cardoso/context-vue
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/hugo-cardoso/context-vue.git
+  licence: MIT
+  baseCommit: 6f47161d447becef4ef549d76b5eab7fc797df36
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task hugo-cardoso__context-vue-vue__^3.4.23)
+workspaceDir: ""
+dependency:
+  name: vue
+  fromVersion: 2.7.16
+  toVersion: 3.5.43
+  updateClass: major
+  category: framework
+  section: dependencies
+environment:
+  runtime: node (declared none); run on the host Node
+  packageManager: yarn
+  timezone: UTC
+  locale: C
+commands:
+  install: yarn install --ignore-scripts
+  installTimeoutSeconds: 600
+  checks:
+    - name: typecheck and build (vue-tsc, vite)
+      kind: build
+      command: npm run build
+      timeoutSeconds: 600
+  installedVersion: node -p "require('./node_modules/vue/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: yarn.lock
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 1800
+metadata:
+  repositoryFiles: 16
+  repositorySourceLines: 400
+  failureMode: mixed
+  knownAffectedLocations: 1
+  migrationGuideAvailable: true
+  multiLocation: true
+  notes: >
+    Real repository at the commit swe-bump-bench recorded; the bump to the exact
+    published vue 3.5.43 (manifest and regenerated yarn lockfile) is the case's
+    public start patch. `npm install` cannot resolve the start state at all —
+    `@vitejs/plugin-vue2` peers on vue 2 — which is why the case installs with
+    yarn, as the project does.
+
+    The components were already written against vue 3's composition API
+    (`<script setup>`, `provide`/`inject`), so the application code needs no
+    migration; `src/main.ts` and the toolchain do. vue 3 removed the
+    `new Vue({ el, render })` constructor, and the Vite plugin that compiles
+    single-file components for vue 2 cannot compile them for vue 3 — so a
+    migration that only rewrites `main.ts` still fails to build.
+
+    This case is also a negative control for successor inference. vue 3.5
+    exports `CompatVue`, a compatibility-build symbol whose name contains the
+    removed one; a rename of `Vue` to `CompatVue` is the shape a
+    name-similarity heuristic proposes, and it neither typechecks nor runs.
+    The intended migration is `createApp(App).mount('#app')`.

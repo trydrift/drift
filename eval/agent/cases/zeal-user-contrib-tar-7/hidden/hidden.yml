@@ -1,0 +1,37 @@
+schemaVersion: drift-agent-case-v1
+caseId: zeal-user-contrib-tar-7
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - tar
+  - extract
+  - strip
+tests:
+  - id: extract-behaviour
+    description: >
+      Through the compiled `extractDocset`, against a real gzipped tarball
+      shaped like a docset: the archive's single top-level directory is
+      stripped, every entry is written, contents survive, and the downloaded
+      archive is removed afterwards. A migration that drops `strip: 1` while
+      chasing a green build unpacks one directory too deep and fails here.
+    files:
+      - extract-behaviour.mjs
+    command: npm run build && node .drift-hidden/extract-behaviour.mjs
+    timeoutSeconds: 300
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The build script the check invokes must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/docsets.mts
+    description: The module that downloads and unpacks docsets must still exist.
+  - kind: pattern-not-added
+    glob: src/docsets.mts
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Silencing the missing default export with a directive is not a migration of the import.
+notes: >
+  tar 7 publishes named exports only (`import { extract } from 'tar'`), and
+  pulls minizlib 3, whose declarations need `@types/node` 22 for
+  `zlib.ZstdCompress`. Both are required for a green build; `strip: 1` is
+  required for a correct one and the build never mentions it.

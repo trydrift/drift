@@ -1,0 +1,37 @@
+diff --git a/src/axePuppeteer.ts b/src/axePuppeteer.ts
+index 6fc2ae4..a54bed6 100644
+--- a/src/axePuppeteer.ts
++++ b/src/axePuppeteer.ts
+@@ -101,15 +101,13 @@ function normalizeContext(
+     return null
+   }
+ 
+-  const ctx: Axe.ElementContext = {}
+-  if (excludes.length) {
+-    ctx.exclude = excludes
+-  }
+   if (includes.length) {
+-    ctx.include = includes
++    return excludes.length
++      ? { include: includes, exclude: excludes }
++      : { include: includes }
+   }
+ 
+-  return ctx
++  return { exclude: excludes }
+ }
+ 
+ export class AxePuppeteer {
+diff --git a/test/usage.test.ts b/test/usage.test.ts
+index c981dde..c327aae 100644
+--- a/test/usage.test.ts
++++ b/test/usage.test.ts
+@@ -34,6 +34,8 @@ async function expectAsyncToNotThrow(fn: () => Promise<any>) {
+ }
+ 
+ describe('AxePuppeteer', function() {
++  this.timeout(10000)
++
+   before(async function(this) {
+     this.timeout(10000)
+ 

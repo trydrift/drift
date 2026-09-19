@@ -1,0 +1,56 @@
+diff --git a/src/ipfs/IpfsMetadata.ts b/src/ipfs/IpfsMetadata.ts
+index 743a177..1f1bc7b 100644
+--- a/src/ipfs/IpfsMetadata.ts
++++ b/src/ipfs/IpfsMetadata.ts
+@@ -19,14 +19,21 @@ import IpfsAdapter from './IpfsAdapter';
+ import CloudflareReadonlyAdapter from './CloudflareReadonlyAdapter';
+ 
+ const fetchRetry = wrapFetch(fetch, {
+-  headers: {
+-    Accept: 'application/json',
+-  },
+   retryOn: [404, 503],
+   retries: 3,
+   retryDelay: 5000,
+ });
+ 
++/**
++ * fetch-retry 6 takes only retry parameters in the wrapper's defaults, so the
++ * request headers that used to live there travel with each request instead.
++ */
++const IPFS_REQUEST_INIT = {
++  headers: {
++    Accept: 'application/json',
++  },
++};
++
+ export const IPFS_METADATA_EVENTS = {
+   [MetadataType.Annotation]: 'Annotation(address,bytes32,string)',
+   [MetadataType.Colony]: 'ColonyMetadata(address,string)',
+@@ -88,7 +95,7 @@ export class IpfsMetadata {
+     cid: string,
+   ): Promise<MetadataValue<K>> {
+     const url = this.adapter.getIpfsUrl(cid);
+-    const res = await fetchRetry(url);
++    const res = await fetchRetry(url, IPFS_REQUEST_INIT);
+     try {
+       const data = await res.text();
+       return IPFS_METADATA_PARSERS[type](data) as MetadataValue<K>;
+@@ -106,7 +113,7 @@ export class IpfsMetadata {
+     cid: string,
+   ): Promise<MetadataValue<T>> {
+     const url = this.adapter.getIpfsUrl(cid);
+-    const res = await fetchRetry(url);
++    const res = await fetchRetry(url, IPFS_REQUEST_INIT);
+     try {
+       const data = await res.text();
+       const entry = Object.entries(IPFS_METADATA_EVENTS).find(
+@@ -129,7 +136,7 @@ export class IpfsMetadata {
+ 
+   async getRawMetadata(cid: string): Promise<Metadata> {
+     const url = this.adapter.getIpfsUrl(cid);
+-    const res = await fetchRetry(url);
++    const res = await fetchRetry(url, IPFS_REQUEST_INIT);
+     try {
+       const json = await res.json();
+       return json as Metadata;

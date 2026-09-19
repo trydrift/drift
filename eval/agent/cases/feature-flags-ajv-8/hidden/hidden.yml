@@ -1,0 +1,44 @@
+schemaVersion: drift-agent-case-v1
+caseId: feature-flags-ajv-8
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - Ajv
+  - JsonValidator
+tests:
+  - id: validation-behaviour
+    description: >
+      Through the compiled `objectMatchesSchema`, against the project's own
+      `toggleSchema`: valid toggle maps are accepted, and a fraction above the
+      schema maximum, a missing required `type`, and a non-numeric fraction are
+      all rejected. A migration that reaches a green build by no longer
+      validating passes the build and fails this.
+    files:
+      - validation-behaviour.mjs
+    command: npm run build && node .drift-hidden/validation-behaviour.mjs
+    timeoutSeconds: 300
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The build script the check invokes must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/main/utils.ts
+      - src/main/schema.ts
+    description: The validator and the schema it enforces must both still exist.
+  - kind: path-unchanged
+    paths:
+      - src/main/schema.ts
+    description: >
+      The schema states what a valid toggle map is. Weakening it — dropping the
+      maximum, dropping `required` — would make the hidden test pass without
+      validating anything, and is not a migration of the ajv API.
+  - kind: pattern-not-added
+    glob: src/main/utils.ts
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Silencing TS2351 with a directive is not a migration of the constructor call.
+notes: >
+  ajv 8 moved the class to a default export (`import Ajv from 'ajv'`), and the
+  type is that same default rather than a namespace member. The schema this
+  project validates needs nothing else: ajv 8's strict mode accepts it
+  unchanged, which was verified before the case was written.

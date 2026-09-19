@@ -169,6 +169,32 @@ export interface FixTask {
    * a tool can do to someone who has just said it got it wrong.
    */
   revision?: RevisionRequest;
+  /**
+   * Drift's own verification failed after earlier edits, and this session is
+   * a fresh, bounded attempt at what still fails.
+   *
+   * Set only by the remediation controller. It replaces a conversation that
+   * would otherwise carry every earlier build log: the next session gets the
+   * grouped failure, the edits already made to the files in scope, and nothing
+   * else from before.
+   */
+  repair?: RepairRequest;
+  /**
+   * Start the agent with only the tools a code fix uses (see
+   * `CLAUDE_CODE_LEAN_SESSION_ARGS`). On unless a caller turns it off.
+   */
+  leanSession?: boolean;
+}
+
+export interface RepairRequest {
+  /** Which repair round this is, starting at 1. */
+  round: number;
+  /** The failing checks, already digested for a prompt. */
+  failures: string;
+  /** Edits already applied to the files in scope, so they are neither redone nor undone blindly. */
+  previousDiff?: string;
+  /** Why Drift discarded the previous session's edits for this work, when it did. */
+  previousRejection?: string;
 }
 
 export interface RevisionRequest {
@@ -192,6 +218,20 @@ export interface FixOutcome {
   handle?: CloudAgentHandle;
   /** Anything the agent flagged as unresolved. Surfaced prominently. */
   warnings?: string[];
+  /**
+   * Files the agent said it needs and was not allowed to edit, with why.
+   *
+   * The agent is told to stop and ask rather than widen its own scope. The
+   * controller decides whether to grant them in a fresh session.
+   */
+  scopeRequests?: ScopeRequest[];
+  /** The provider's session id, when it reports one. For observability only. */
+  sessionId?: string;
+}
+
+export interface ScopeRequest {
+  path: string;
+  reason: string;
 }
 
 export interface CloudAgentHandle {
@@ -296,6 +336,7 @@ export interface FixTaskSemantics {
   context?: readonly AttachedContext[];
   diagnostics?: string;
   revision?: RevisionRequest;
+  repair?: RepairRequest;
 }
 
 export function buildFixTask(task: FixTask): FixTaskSemantics {
@@ -307,7 +348,18 @@ export function buildFixTask(task: FixTask): FixTaskSemantics {
     context: task.context,
     diagnostics: task.diagnostics,
     revision: task.revision,
+    repair: task.repair,
   };
+}
+
+/**
+ * The whole prompt a workspace CLI agent receives: the commit prompt, the
+ * unit's own instructions, and an optional reasoning sentence. One function so
+ * every caller that starts a session — the CLI agent and any harness that
+ * drives a session itself — sends the same text.
+ */
+export function composeAgentPrompt(task: FixTask, thinking = ''): string {
+  return [buildFixPrompt(task), '', '## Your task', '', task.commit.instructions, ...(thinking ? ['', thinking] : [])].join('\n');
 }
 
 /** Compatibility name for commit-scoped agents. */
@@ -348,6 +400,16 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
     lines.push(`- Kind: ${change.kind}`);
     lines.push(`- Confidence: ${change.confidence}`);
     if (change.symbols.length) lines.push(`- Symbols: ${change.symbols.join(', ')}`);
+    // Stated either way. An absent replacement line reads as "go and find
+    // one", which is how an agent ends up reading the package's source for
+    // an answer Drift already had — or inventing one Drift never had.
+    lines.push(
+      change.replacementSymbols?.length
+        ? `- Replacement: ${change.replacementSymbols.join(', ')}`
+        : '- Replacement: none established by the evidence. Do not invent one; if the fix needs one, take it from the installed package\'s own type declarations.',
+    );
+    if (change.before) lines.push('', 'Before:', '```', change.before.slice(0, 800), '```');
+    if (change.after) lines.push('', 'After:', '```', change.after.slice(0, 800), '```');
     lines.push('');
     lines.push(`**Required fix:** ${change.remediation}`);
     lines.push('');
@@ -401,22 +463,78 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
     );
   }
 
+  if (task.repair) {
+    const lines = [
+      `## What still fails (repair round ${task.repair.round})`,
+      '',
+      'Earlier edits for this upgrade have already been applied. Drift then ran',
+      "the project's checks itself, and these failures remain. Fix these, and",
+      'only these. A failure that has nothing to do with the upgrade — an',
+      'environment problem, something that was already broken — is not yours to',
+      'fix: say so and leave it.',
+      '',
+      task.repair.failures.trim(),
+    ];
+    if (task.repair.previousRejection?.trim()) {
+      lines.push(
+        '',
+        'The previous session\'s edits for this were discarded by Drift\'s validation, so the files are as they were before it. Why:',
+        '',
+        '```',
+        task.repair.previousRejection.trim().slice(0, 2000),
+        '```',
+        '',
+        'Make the fix without repeating what was rejected.',
+      );
+    }
+    if (task.repair.previousDiff?.trim()) {
+      lines.push(
+        '',
+        'Edits already applied to the files in scope, for context. They are in the',
+        'files now; build on them rather than redoing them:',
+        '',
+        '```diff',
+        task.repair.previousDiff.trim().slice(0, 12_000),
+        '```',
+      );
+    }
+    sections.push(lines.join('\n'));
+  }
+
+  const upgraded = plan.changes.map((c) => c.name);
+  // The commit's own grant, not the snapshots: a file the unit may create does
+  // not exist yet and has no snapshot, and leaving it off this list would
+  // forbid the edit the unit exists to make.
+  const scope = [...new Set([...(commit.allowedFiles?.length ? commit.allowedFiles : commit.files), ...task.files.map((f) => f.path)])];
+
   sections.push(
     [
       '## Rules',
       '',
-      `0. You may edit ONLY these ${task.files.length} file${task.files.length === 1 ? '' : 's'}, listed above with their`,
-      '   current contents — nothing else, including generated/bundled output,',
-      '   lockfiles, or a file you notice is *also* broken by this upgrade. This',
-      '   is enforced after you finish: an edit to any other file throws out',
-      '   this whole commit\'s work. If the real fix needs a file outside this',
-      '   list, say so and stop rather than making the edit.',
-      `   In scope: ${task.files.map((f) => f.path).join(', ')}`,
+      `0. You may edit ONLY these ${scope.length} file${scope.length === 1 ? '' : 's'} — nothing else, including`,
+      '   generated/bundled output, lockfiles, or a file you notice is *also*',
+      '   broken by this upgrade. This is enforced after you finish: an edit to',
+      '   any other file throws out this whole commit\'s work. If the real fix',
+      '   needs a file outside this list (a new file included), do not edit it:',
+      `   end your reply with one line per file, \`${SCOPE_REQUEST_MARKER} <path> | <why>\`,`,
+      '   and Drift will decide whether to grant it in a new session. A partial',
+      '   migration left for later is not a fix: if finishing it needs a file you',
+      '   cannot edit — a manifest for a package the new version requires, a new',
+      '   configuration file — request it instead of settling for less.',
+      `   In scope: ${scope.join(', ')}`,
       '1. Change ONLY what is required for this specific fix. No refactoring,',
       '   renaming, reformatting, or tidying of code you happen to pass by.',
-      '2. Do NOT change dependency versions in any manifest or lockfile.',
-      '3. Do NOT weaken, skip, or delete tests to make them pass. Update a test',
-      '   to exercise the new API while asserting the same behaviour.',
+      `2. Do NOT change, revert, or downgrade the upgraded dependenc${upgraded.length === 1 ? 'y' : 'ies'}${upgraded.length ? ` (${upgraded.join(', ')})` : ''}.`,
+      '   A companion package that must move with the upgrade (a plugin or',
+      '   peer the new version requires) may be changed only when its manifest',
+      '   is in scope above.',
+      '3. Do NOT weaken, skip, or delete tests to make them pass, lower coverage',
+      '   thresholds, or relax compiler strictness. Update a test to exercise',
+      '   the new API while asserting the same behaviour. Do not make a check',
+      '   pass by checking less either — dropping or downgrading lint rules or',
+      '   rule sets, ignoring files, or excluding tests. Drift measures what the',
+      '   lint, test and compiler configuration enforce before and after the',
+      '   upgrade, and a fix that enforces less is not accepted.',
       '4. If you cannot determine the correct fix for a location, leave it alone',
       '   and add a `TODO(drift):` comment explaining what is unresolved. A',
       '   flagged unknown is useful; a confident guess is not.',
@@ -434,6 +552,9 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
       '   of a fix. A narrow, targeted check on a file you just edited (a single',
       '   test, a syntax check) is fine when you are unsure; a full `npm test`',
       '   or `npm run build` is not.',
+      '8. What changed upstream is stated above. Do not re-derive it from the',
+      "   dependency's changelog, registry metadata, or source; open the installed",
+      '   package only for a detail this prompt does not give you.',
     ].join('\n'),
   );
 
@@ -525,6 +646,23 @@ export const FILE_END = '=== DRIFT END ===';
 
 /** Marker a model uses to hand a decision back to the developer. */
 export const QUESTION_MARKER = '=== DRIFT QUESTION:';
+
+/** Marker a model uses to ask for a file outside its scope instead of editing it. */
+export const SCOPE_REQUEST_MARKER = '=== DRIFT SCOPE REQUEST:';
+
+/** Every well-formed scope request in an agent's output, deduplicated by path. */
+export function parseScopeRequests(output: string): ScopeRequest[] {
+  const requests = new Map<string, ScopeRequest>();
+  for (const raw of output.split(/\r?\n/)) {
+    const index = raw.indexOf(SCOPE_REQUEST_MARKER);
+    if (index < 0) continue;
+    const [path, ...reason] = raw.slice(index + SCOPE_REQUEST_MARKER.length).split('|');
+    const cleaned = path?.trim().replace(/^[`'"]|[`'"]$/g, '');
+    if (!cleaned || requests.has(cleaned)) continue;
+    requests.set(cleaned, { path: cleaned, reason: reason.join('|').trim().slice(0, 300) });
+  }
+  return [...requests.values()];
+}
 
 export interface AgentQuestion {
   text: string;

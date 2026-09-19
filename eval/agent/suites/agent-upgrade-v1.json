@@ -1,27 +1,69 @@
 {
   "suite": "agent-upgrade-v1",
-  "status": "draft",
+  "status": "frozen",
   "description": "The first public suite: real historical dependency upgrades with a known maintainer or benchmark-authored fix and hidden regression tests. Frozen once its cases are admitted; a material change to any case or its validation starts agent-upgrade-v2.",
-  "frozenAt": null,
-  "runsPerCondition": 5,
+  "frozenAt": "2026-09-18T15:49:53.203Z",
+  "runsPerCondition": 3,
   "cases": [
     {
       "id": "aws-least-privilege-winston-3",
-      "caseHash": "2139e9a225088e62a7e1825ce1e3aa60ba88a809c2fc174e8b1007e884758a5b",
-      "admittedAt": "2026-09-16T15:21:06.082Z",
-      "driftCommit": "627bfda24d1e71febfd8838624f3f8ef3dfdb2cf"
+      "caseHash": "9689eb4b771ff85d43e1193bb214c7cce5fc9522bce89b7a470e222f855a171e",
+      "admittedAt": "2026-09-18T15:23:13.986Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
+    },
+    {
+      "id": "axe-puppeteer-axe-core-4",
+      "caseHash": "a64be6f485a276a8494fa58725d50a7537368d239a1aa0e8a1d9217bbb319d3e",
+      "admittedAt": "2026-09-18T15:25:31.867Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
+    },
+    {
+      "id": "colonysdk-fetch-retry-6",
+      "caseHash": "c8b54b6b49b8ce715aaeb68a70166f7e8a67666ed65d351afe4cc3b34e92e32c",
+      "admittedAt": "2026-09-18T15:26:49.665Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
+    },
+    {
+      "id": "context-vue-vue-3",
+      "caseHash": "ea31e012c2ea06c3a137d7ebcbb05199011566ceadb7d3c3b42f70d733a45064",
+      "admittedAt": "2026-09-18T15:29:56.414Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
     },
     {
       "id": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
-      "caseHash": "4626d854d5d459a39a6f70cc08dde6d1390767c2ee9dd8a2a61b0dde399da9fb",
-      "admittedAt": "2026-09-16T15:22:14.655Z",
-      "driftCommit": "627bfda24d1e71febfd8838624f3f8ef3dfdb2cf"
+      "caseHash": "edf1fc5a800ff2408e4816743dd09d2f64ce2abd00fe83ad64e4280b4a4fc3e5",
+      "admittedAt": "2026-09-18T15:31:00.486Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
+    },
+    {
+      "id": "feature-flags-ajv-8",
+      "caseHash": "897109bc1162690238e8a228bf71bcabd8f68824ba1afe0115457227de637f58",
+      "admittedAt": "2026-09-18T15:37:09.190Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
     },
     {
       "id": "gh-aw-firewall-eslint-10",
-      "caseHash": "0c9707a46644dcd83d07aaad0455479f55a3056b01a79d04f74431dc100984b0",
-      "admittedAt": "2026-09-16T11:06:03.092Z",
-      "driftCommit": "b4aed4756b1b0236c10fe75d8dda1e9ec9da1bce"
+      "caseHash": "cd2bab681066e1d48f3372afc16998bd76cbce0484352a9f9fd14a2b84a9a2cd",
+      "admittedAt": "2026-09-18T15:41:29.471Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
+    },
+    {
+      "id": "hosts-lru-cache-10",
+      "caseHash": "14fb877814d0e80891e7dd60792cc5909eb37117463de392ed6eb66fa04403a2",
+      "admittedAt": "2026-09-18T15:43:27.649Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
+    },
+    {
+      "id": "open-balena-vpn-telnet-client-2",
+      "caseHash": "5d33eaad8d691231948e7aaaaf67d52725563b85e09dcd3e179fa644bc107f4b",
+      "admittedAt": "2026-09-18T15:44:13.383Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
+    },
+    {
+      "id": "zeal-user-contrib-tar-7",
+      "caseHash": "14caaf9ce8b6dade9d447fed7e34a85d63d07f02dc224fb57cfce9020f205cdc",
+      "admittedAt": "2026-09-18T15:45:11.837Z",
+      "driftCommit": "bcc0526b9043146c598c8aafdfd946013e42a8b4"
     }
   ],
   "removed": [],
@@ -34,6 +76,23 @@
       ],
       "change": "pattern-not-added rules narrowed from `@ts-ignore|@ts-expect-error|: any|as any` to `@ts-ignore|@ts-expect-error`.",
       "reason": "A live Drift-condition trial (v1-dev-1, winston, repetition 1) produced a migration that passed compile, the project's tests and the hidden behavioural test, and was marked prohibited_workaround only because it typed winston's splat-symbol lookup as `any`. Forbidding `any` outright was a validation error, not a product result. Recorded trials are re-scored against the narrowed rules with `benchmark:agent rescore`, which re-evaluates only the diff-derivable rules and marks the artifact."
+    },
+    {
+      "date": "2026-09-18",
+      "cases": [
+        "aws-least-privilege-winston-3",
+        "axe-puppeteer-axe-core-4",
+        "colonysdk-fetch-retry-6",
+        "context-vue-vue-3",
+        "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+        "feature-flags-ajv-8",
+        "gh-aw-firewall-eslint-10",
+        "hosts-lru-cache-10",
+        "open-balena-vpn-telnet-client-2",
+        "zeal-user-contrib-tar-7"
+      ],
+      "change": "Suite grown from 3 cases to 10 and frozen.",
+      "reason": "The three original cases were the development set the lean-session work was tuned on, and a publication gate of ten cases exists precisely so a headline is not drawn from them. Seven held-out cases were mined from swe-bump-bench and admitted: each fails its project checks and its hidden behavioural test at the start state, and passes both under a benchmark-authored reference fix, deterministically across repeats."
     }
   ]
 }

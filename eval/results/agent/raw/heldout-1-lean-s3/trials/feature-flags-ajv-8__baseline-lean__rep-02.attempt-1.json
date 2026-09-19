@@ -1,0 +1,241 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-lean-s3/feature-flags-ajv-8/baseline-lean/2",
+  "runId": "heldout-1-lean-s3",
+  "suite": "agent-upgrade-v1",
+  "caseId": "feature-flags-ajv-8",
+  "caseHash": "897109bc1162690238e8a228bf71bcabd8f68824ba1afe0115457227de637f58",
+  "condition": "baseline-lean",
+  "repetition": 2,
+  "scheduleIndex": 4,
+  "metadata": {
+    "repository": "https://github.com/creditkarma/feature-flags.git",
+    "baseCommit": "5998c0d70e379e44ac1fd3260e4ff114979c594d",
+    "startCommit": "98845bac638765c2e6afcfbc70ba2e5cb74731fb",
+    "startTreeHash": "98e28f8440c79853d0eb5bedc1c47fc5f43b74f9",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "ajv",
+      "fromVersion": "6.15.0",
+      "toVersion": "8.20.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Bash",
+        "Edit",
+        "Read",
+        "TaskOutput",
+        "TaskStop",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch",
+        "--tools",
+        "Bash",
+        "Read",
+        "Edit",
+        "Write",
+        "TaskOutput",
+        "TaskStop",
+        "--disable-slash-commands"
+      ]
+    },
+    "startedAt": "2026-09-18T18:12:03.158Z",
+    "endedAt": "2026-09-18T18:12:22.474Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "51898d3b7526a2995158a6e92c91190250b695d022f4a6b3f799615c04797aa3",
+    "promptHash": "51898d3b7526a2995158a6e92c91190250b695d022f4a6b3f799615c04797aa3",
+    "promptChars": 310
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "provider-error",
+    "exitCode": 1,
+    "terminalReason": "api_error",
+    "resultSubtype": "success",
+    "apiErrorStatus": 429,
+    "numTurns": 1,
+    "durationMs": 1953,
+    "apiDurationMs": 0,
+    "finalMessage": "You've hit your session limit · resets 6:30pm (UTC)",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 0,
+    "uncachedInputTokens": 0,
+    "inputTokens": 0,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "outputTokens": 0,
+    "modelCalls": 1,
+    "byModel": {
+      "<synthetic>": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    "source": "event-ledger",
+    "ledgerGrossInputTokens": 0,
+    "ledgerAgreesWithResult": null,
+    "costUsd": null
+  },
+  "tools": {
+    "toolCalls": 0,
+    "byTool": {},
+    "fileReads": 0,
+    "uniqueFilesRead": 0,
+    "searches": 0,
+    "shellCommands": 0,
+    "edits": 0,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 0,
+    "sourceFiles": 0,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 0,
+    "linesDeleted": 0,
+    "changedFiles": [],
+    "deletedFiles": [],
+    "diff": "",
+    "diffTruncated": false,
+    "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "8.20.0",
+      "installedVersion": "8.20.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": false,
+        "exitCode": 1,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 6110,
+        "outputExcerpt": "> @creditkarma/feature-flags@1.0.1 prebuild\n> npm run clean && npm run lint\n\n\n> @creditkarma/feature-flags@1.0.1 clean\n> rimraf dist/\n\n\n> @creditkarma/feature-flags@1.0.1 lint\n> tslint --fix './src/**/*.ts'\n\n\n> @creditkarma/feature-flags@1.0.1 build\n> tsc\n\n\u001b[96msrc/main/utils.ts\u001b[0m:\u001b[93m3\u001b[0m:\u001b[93m47\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2351: \u001b[0mThis expression is not constructable.\n  Type 'typeof import(\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-feature-flags-ajv-8-hGRZYV/repo/node_modules/ajv/dist/ajv\")' has no construct signatures.\n\n\u001b[7m3\u001b[0m const JSON_VALIDATOR: JsonValidator.Ajv = new JsonValidator()\n\u001b[7m \u001b[0m \u001b[91m                                              ~~~~~~~~~~~~~\u001b[0m\n\n\nFound 1 error in src/main/utils.ts\u001b[90m:3\u001b[0m",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "validation-behaviour",
+        "passed": false,
+        "exitCode": 1,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 5152,
+        "outputExcerpt": "> @creditkarma/feature-flags@1.0.1 prebuild\n> npm run clean && npm run lint\n\n\n> @creditkarma/feature-flags@1.0.1 clean\n> rimraf dist/\n\n\n> @creditkarma/feature-flags@1.0.1 lint\n> tslint --fix './src/**/*.ts'\n\n\n> @creditkarma/feature-flags@1.0.1 build\n> tsc\n\n\u001b[96msrc/main/utils.ts\u001b[0m:\u001b[93m3\u001b[0m:\u001b[93m47\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2351: \u001b[0mThis expression is not constructable.\n  Type 'typeof import(\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-feature-flags-ajv-8-hGRZYV/repo/node_modules/ajv/dist/ajv\")' has no construct signatures.\n\n\u001b[7m3\u001b[0m const JSON_VALIDATOR: JsonValidator.Ajv = new JsonValidator()\n\u001b[7m \u001b[0m \u001b[91m                                              ~~~~~~~~~~~~~\u001b[0m\n\n\nFound 1 error in src/main/utils.ts\u001b[90m:3\u001b[0m",
+        "id": "validation-behaviour",
+        "description": "Through the compiled `objectMatchesSchema`, against the project's own `toggleSchema`: valid toggle maps are accepted, and a fraction above the schema maximum, a missing required `type`, and a non-numeric fraction are all rejected. A migration that reaches a green build by no longer validating passes the build and fails this.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The validator and the schema it enforces must both still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "path-unchanged",
+        "description": "The schema states what a valid toggle map is. Weakening it — dropping the maximum, dropping `required` — would make the hidden test pass without validating anything, and is not a migration of the ajv API.\n",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing TS2351 with a directive is not a migration of the constructor call.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": [
+      "build_failure",
+      "hidden_regression_failure",
+      "incomplete_fix"
+    ]
+  },
+  "validity": {
+    "valid": false,
+    "infrastructureFailure": "provider_error",
+    "detail": "api error status 429: You've hit your session limit · resets 6:30pm (UTC)"
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 0,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 607,
+    "installMs": 4261,
+    "contextMs": 0,
+    "agentMs": 1954,
+    "validationMs": 12300,
+    "totalMs": 19316
+  }
+}

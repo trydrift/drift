@@ -12,6 +12,7 @@ import {
   type ToolMetrics,
   type Usage,
 } from './schema.ts';
+import { CLAUDE_CODE_LEAN_SESSION_ARGS } from '../../../dist/index.js';
 import { driftRevision, driftVersion, newRunId, setAsideInfrastructureFailure, trialExists, writeRunManifest, writeTrial } from './store.ts';
 import { composePrompt, contextKindFor, renderTask, sha256 } from './task.ts';
 import { patchStatsFrom, validateWorkspace } from './validation.ts';
@@ -421,6 +422,11 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       webTools: options.webTools,
       maxBudgetUsd: options.maxBudgetUsd,
       maxTurns: options.maxTurns,
+      // Every Drift condition launches the session the way the product does:
+      // `remediation.agent.leanSession` is on by default, so `drift fix` starts
+      // Claude Code with these arguments. The baseline gets the CLI's defaults,
+      // which is what a developer running the agent by hand gets.
+      ...(condition === 'baseline' || condition === 'drift-full-tools' ? {} : { sessionArgs: CLAUDE_CODE_LEAN_SESSION_ARGS }),
       env: projectEnv(agentCase, { DRIFT: '1' }),
       onEventLine: (line) => streamLines.push(line),
       onProgress: (message) => options.onProgress?.(`    ${message}`),

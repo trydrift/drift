@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-s1/axe-puppeteer-axe-core-4/baseline/2",
+  "runId": "heldout-1-s1",
+  "suite": "agent-upgrade-v1",
+  "caseId": "axe-puppeteer-axe-core-4",
+  "caseHash": "a64be6f485a276a8494fa58725d50a7537368d239a1aa0e8a1d9217bbb319d3e",
+  "condition": "baseline",
+  "repetition": 2,
+  "scheduleIndex": 8,
+  "metadata": {
+    "repository": "https://github.com/dequelabs/axe-puppeteer.git",
+    "baseCommit": "f80627763c57b898f15c44124733b1506a08fed2",
+    "startCommit": "ddbe5f27dd78186ba6a2f4f9212117a16b65a15b",
+    "startTreeHash": "bed81a6dc14ea3970554038ed90363459cc6d200",
+    "driftCommit": "fcccc433b35851e07888d0212b51531d68496ec0",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "axe-core",
+      "fromVersion": "3.5.6",
+      "toVersion": "4.13.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-18T16:58:26.529Z",
+    "endedAt": "2026-09-18T17:04:42.432Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptChars": 314
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 27,
+    "durationMs": 361292,
+    "apiDurationMs": 117363,
+    "finalMessage": "The repo (node_modules) is gitignored, so the downloaded chromium binary isn't part of the diff — nothing to clean up there.\n\n## Summary\n\naxe-core 4.13.0 tightened the TypeScript types for `ElementContext`/`ContextSpec`: it's now a discriminated union requiring either `include` or `exclude` to be present (not a plain object you can build incrementally with optional properties). The old `normalizeContext` in `src/axePuppeteer.ts` built `const ctx: Axe.ElementContext = {}` and mutated it, which no longer type-checks.\n\nFixed by rewriting `normalizeContext` to construct the object directly in the shape the union expects (`{include, exclude}`, `{include}`, or `{exclude}`) instead of mutating an empty object.\n\nVerified: `tsc` (typecheck/build), `tslint`, and the full mocha suite (25 tests, including real Puppeteer browser runs against axe-core) all pass.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 1430552,
+    "uncachedInputTokens": 37565,
+    "inputTokens": 1017,
+    "cacheReadTokens": 1392987,
+    "cacheCreationTokens": 36548,
+    "outputTokens": 8119,
+    "modelCalls": 23,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 971,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 28
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 46,
+        "cacheReadTokens": 1392987,
+        "cacheCreationTokens": 36548,
+        "outputTokens": 8091
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 1429581,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.5069024
+  },
+  "tools": {
+    "toolCalls": 26,
+    "byTool": {
+      "Bash": 18,
+      "Read": 7,
+      "Edit": 1
+    },
+    "fileReads": 7,
+    "uniqueFilesRead": 7,
+    "searches": 0,
+    "shellCommands": 18,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 4,
+    "linesDeleted": 6,
+    "changedFiles": [
+      "src/axePuppeteer.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/axePuppeteer.ts b/src/axePuppeteer.ts\nindex 6fc2ae4..3378f44 100644\n--- a/src/axePuppeteer.ts\n+++ b/src/axePuppeteer.ts\n@@ -101,15 +101,13 @@ function normalizeContext(\n     return null\n   }\n \n-  const ctx: Axe.ElementContext = {}\n-  if (excludes.length) {\n-    ctx.exclude = excludes\n+  if (includes.length && excludes.length) {\n+    return { include: includes, exclude: excludes }\n   }\n   if (includes.length) {\n-    ctx.include = includes\n+    return { include: includes }\n   }\n-\n-  return ctx\n+  return { exclude: excludes }\n }\n \n export class AxePuppeteer {\n",
+    "diffTruncated": false,
+    "diffHash": "a609508e7c111412029ecc44c4be61867c1aab9578c052cee666f2493db06781"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "4.13.0",
+      "installedVersion": "4.13.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 2254,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "context-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 2381,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc\n\ncontext-behaviour: include and exclude selectors still reach the axe run",
+        "id": "context-behaviour",
+        "description": "Through the compiled AxePuppeteer against a stub frame: an include and an exclude together both reach the axe run, each reaches it alone, and with neither the context stays null so axe scans the document. Typing the context object `any` to silence the union compiles and fails here.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The class the upgrade broke must still exist; it is the package's entry point.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the union with a directive is not a migration of the context shape.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 867,
+    "installMs": 7537,
+    "contextMs": 0,
+    "agentMs": 361292,
+    "validationMs": 5974,
+    "totalMs": 375903
+  }
+}

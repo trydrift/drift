@@ -1,0 +1,36 @@
+schemaVersion: drift-agent-case-v1
+caseId: colonysdk-fetch-retry-6
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - wrapFetch
+  - fetchRetry
+  - headers
+  - retryOn
+tests:
+  - id: request-behaviour
+    description: >
+      Through the compiled `IpfsMetadata` against a local server, with a stub
+      adapter standing in for the gateway: every IPFS request sends
+      `Accept: application/json`, and a 404 is retried. Deleting the headers
+      from the wrapper defaults typechecks and fails this.
+    files:
+      - request-behaviour.mjs
+    command: npm run compile-cjs && node .drift-hidden/request-behaviour.mjs
+    timeoutSeconds: 300
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The typecheck and compile scripts the checks invoke must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/ipfs/IpfsMetadata.ts
+    description: The IPFS metadata reader the upgrade broke must still exist.
+  - kind: pattern-not-added
+    glob: src/ipfs/IpfsMetadata.ts
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Silencing the rejected options object with a directive is not a migration of it.
+notes: >
+  fetch-retry 6's wrapper defaults are `RequestInitRetryParams`: retry
+  parameters only. Request headers travel with each request instead, which is
+  what the reference fix does — the retry configuration stays in the wrapper.

@@ -166,8 +166,11 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
       ),
       dependency: record.dependency,
       workspace: record.workspace,
-      kind,
+      // A removal whose successor the surfaces name is a rename: the fix is
+      // mechanical, which is what unlocks the deterministic tiers.
+      kind: kind === 'removed-export' && finding.replacement ? ('renamed-export' as const) : kind,
       summary: withPublishedName(finding.detail, record.dependency),
+      ...(finding.replacement ? { replacementSymbols: [finding.replacement] } : {}),
       // A computed runtime floor is a real `RuntimeRequirement`, not prose to
       // be re-parsed: the differ read it out of the bytecode and put the two
       // releases in `before`/`after`. Building it here lets

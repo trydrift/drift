@@ -1,0 +1,37 @@
+schemaVersion: drift-agent-case-v1
+caseId: axe-puppeteer-axe-core-4
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - ElementContext
+  - ContextObject
+  - include
+  - exclude
+tests:
+  - id: context-behaviour
+    description: >
+      Through the compiled AxePuppeteer against a stub frame: an include and an
+      exclude together both reach the axe run, each reaches it alone, and with
+      neither the context stays null so axe scans the document. Typing the
+      context object `any` to silence the union compiles and fails here.
+    files:
+      - context-behaviour.mjs
+    command: npm run build && node .drift-hidden/context-behaviour.mjs
+    timeoutSeconds: 300
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The build script the check invokes must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/axePuppeteer.ts
+    description: The class the upgrade broke must still exist; it is the package's entry point.
+  - kind: pattern-not-added
+    glob: src/axePuppeteer.ts
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Silencing the union with a directive is not a migration of the context shape.
+notes: >
+  axe-core 4's `ContextObject` requires at least one of `include`/`exclude`, so
+  an empty object is no longer assignable and the shape has to be decided up
+  front rather than filled in afterwards. `ElementContext` still exists as a
+  synonym for the whole union, which is why annotating with it does not help.

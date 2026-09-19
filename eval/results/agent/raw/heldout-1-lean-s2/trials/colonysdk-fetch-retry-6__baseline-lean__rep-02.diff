@@ -1,0 +1,52 @@
+diff --git a/src/ipfs/IpfsMetadata.ts b/src/ipfs/IpfsMetadata.ts
+index 743a177..ff6c6f9 100644
+--- a/src/ipfs/IpfsMetadata.ts
++++ b/src/ipfs/IpfsMetadata.ts
+@@ -19,14 +19,17 @@ import IpfsAdapter from './IpfsAdapter';
+ import CloudflareReadonlyAdapter from './CloudflareReadonlyAdapter';
+ 
+ const fetchRetry = wrapFetch(fetch, {
+-  headers: {
+-    Accept: 'application/json',
+-  },
+   retryOn: [404, 503],
+   retries: 3,
+   retryDelay: 5000,
+ });
+ 
++const fetchInit = {
++  headers: {
++    Accept: 'application/json',
++  },
++};
++
+ export const IPFS_METADATA_EVENTS = {
+   [MetadataType.Annotation]: 'Annotation(address,bytes32,string)',
+   [MetadataType.Colony]: 'ColonyMetadata(address,string)',
+@@ -88,7 +91,7 @@ export class IpfsMetadata {
+     cid: string,
+   ): Promise<MetadataValue<K>> {
+     const url = this.adapter.getIpfsUrl(cid);
+-    const res = await fetchRetry(url);
++    const res = await fetchRetry(url, fetchInit);
+     try {
+       const data = await res.text();
+       return IPFS_METADATA_PARSERS[type](data) as MetadataValue<K>;
+@@ -106,7 +109,7 @@ export class IpfsMetadata {
+     cid: string,
+   ): Promise<MetadataValue<T>> {
+     const url = this.adapter.getIpfsUrl(cid);
+-    const res = await fetchRetry(url);
++    const res = await fetchRetry(url, fetchInit);
+     try {
+       const data = await res.text();
+       const entry = Object.entries(IPFS_METADATA_EVENTS).find(
+@@ -129,7 +132,7 @@ export class IpfsMetadata {
+ 
+   async getRawMetadata(cid: string): Promise<Metadata> {
+     const url = this.adapter.getIpfsUrl(cid);
+-    const res = await fetchRetry(url);
++    const res = await fetchRetry(url, fetchInit);
+     try {
+       const json = await res.json();
+       return json as Metadata;

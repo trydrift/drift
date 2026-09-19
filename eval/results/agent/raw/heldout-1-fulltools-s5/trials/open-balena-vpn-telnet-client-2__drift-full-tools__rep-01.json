@@ -1,0 +1,265 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-fulltools-s5/open-balena-vpn-telnet-client-2/drift-full-tools/1",
+  "runId": "heldout-1-fulltools-s5",
+  "suite": "agent-upgrade-v1",
+  "caseId": "open-balena-vpn-telnet-client-2",
+  "caseHash": "5d33eaad8d691231948e7aaaaf67d52725563b85e09dcd3e179fa644bc107f4b",
+  "condition": "drift-full-tools",
+  "repetition": 1,
+  "scheduleIndex": 1,
+  "metadata": {
+    "repository": "https://github.com/balena-io/open-balena-vpn.git",
+    "baseCommit": "a9e7155948fa5a57a2d80501b009a2c231c1d1bb",
+    "startCommit": "d1b45bbeab14074cb445d7a965ed40b7027bc56d",
+    "startTreeHash": "a2eded9cba86cff50188c7a30dc18d9086325da7",
+    "driftCommit": "95a9051192668cc0815010a697e782d3f6be586b",
+    "driftTreeDirty": true,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "telnet-client",
+      "fromVersion": "1.4.11",
+      "toVersion": "2.2.14"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-19T03:59:27.306Z",
+    "endedAt": "2026-09-19T04:31:49.193Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "714dafbddfccb6f38078c8153d578340177af5facf792e5f63a579c6bbaabb3e",
+    "promptHash": "d7c820507a429716fb6c97953b4835c635e70bd4aea8c66270bde82445b38522",
+    "promptChars": 6925
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "---\n\nDrift, a dependency-upgrade analysis tool, has already analysed this upgrade. It compared the two\npublished versions of the package, computed what changed in its API, and searched this repository\nfor the code that uses what changed. Its report follows, verbatim. Treat it as evidence to verify\nagainst the code, not as a complete list: it can miss places, and it never edits anything.\n\n## Drift: dependency compatibility fix\n\n`telnet-client` _(npm)_ 1.4.11 → **2.2.14**\n\nDrift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at src/utils/openvpn.ts:28, src/utils/openvpn.ts:141.\n\n| | |\n|---|---|\n| **Risk** | 🟢 low |\n| **Breaking changes** | 1 |\n| **Impact sites** | 2 across 1 file(s) |\n| **Planned commits** | 0 |\n| **Evidence sources** | semver-heuristic (1), type-surface-diff (1) |\n| **Base branch** | `main` |\n\n## ⛔ Why Drift stopped\n\nDrift did not dispatch this automatically. Each reason below is a guardrail\nfrom `.github/drift.yml`:\n\n- The project's own checks failed after this change was applied in the repository root, which static analysis did not predict. See the verification output for what broke.\n\n## ⚠️ Worth checking\n\n- 1 breaking change(s) were identified upstream but no usage was found in this repository. They are listed for awareness and no commit was planned for them.\n\n## Breaking changes\n\n### 55/100 — Fairly confident · `telnet-client` · removed-export\n\n`telnet-client` no longer has a default export (was a class).\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** link-or-import, compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** Every use of `default` from `telnet-client` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `default` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.\n\n**Evidence:**\n- [1 API surface change(s) in telnet-client](https://cdn.jsdelivr.net/npm/telnet-client@2.2.14/lib/index.d.ts)\n\n## Upgrade assessment\n\n### `telnet-client` 1.4.11 → 2.2.14\n\n**Recommendation: Upgrade after review**\n\n**Security**\n\nNo known vulnerabilities were found for the target version.\n\n**Maintenance**\n\n- The repository was last pushed to 9 days ago. ([source](https://github.com/mkozjak/node-telnet-client))\n- 2.2.14 is the latest stable release.\n- The target version was released 38 days ago.\n- The installed version 1.4.11 is 1 major version behind the latest release, 2.2.14. Maintainers rarely backport fixes that far.\n\n<details><summary>What changed upstream</summary>\n\n**Breaking changes**\n\n- `telnet-client` no longer has a default export (was a class). ([source](https://cdn.jsdelivr.net/npm/telnet-client@2.2.14/lib/index.d.ts))\n\n</details>\n\n**Evidence confidence:** 🟡 Medium — The OSV advisory database is the available evidence.\n\n<details><summary>Why Drift concluded this</summary>\n\n- No known vulnerabilities were found for the target version.\n- 1 upstream API breaking change; no usage of the changed parts was located in this repository — review before upgrading.\n- No release notes, changelog, or migration guide was reachable for telnet-client 2.2.14.\n\n</details>\n\n## Commit plan\n\nNo commits planned. Drift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at src/utils/openvpn.ts:28, src/utils/openvpn.ts:141.\n\n<details>\n<summary><b>All 2 impact site(s)</b></summary>\n\n**`src/utils/openvpn.ts`**\n\n- L28 — `TS2694: Namespace '\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-worktrees/36ff9db436da/78848-6a697b88/change-d1b45bb/node_modules/telnet-client/lib/index\"' has no exported member 'd` · 🟢 high\n- L141 — `TS7006: Parameter 'data' implicitly has an 'any' type.` · 🟢 high\n\n</details>\n\n## What Drift checked\n\n| Surface | Dependency | Result |\n|---|---|---|\n| api-surface | `telnet-client` | ✅ checked — A computed diff of the published API surface was produced. |\n| release-notes | `telnet-client` | ⚠️ unavailable — No changelog or release notes could be retrieved. |\n| localization | — | ✅ checked — Searched the files importing each changed dependency; 0 affected location(s). |\n\n<details>\n<summary><b>Evidence Drift used (2 source(s))</b></summary>\n\nEvery finding above traces back to one of these. Open them to check the work.\n\n#### [telnet-client 1.4.11 → 2.2.14 (major)](https://semver.org/#spec-item-8)\n\n`semver-heuristic` · very weak source (weight 0.25)\n\n```\nMajor version bump 1.4.11 → 2.2.14. Semver permits arbitrary breaking changes across a major boundary.\n```\n\n#### [1 API surface change(s) in telnet-client](https://cdn.jsdelivr.net/npm/telnet-client@2.2.14/lib/index.d.ts)\n\n`type-surface-diff` · very strong source (weight 1.00)\n\n```\nDeclaration sources:\n- before: https://cdn.jsdelivr.net/npm/telnet-client@1.4.11/lib/index.d.ts\n- after: https://cdn.jsdelivr.net/npm/telnet-client@2.2.14/lib/index.d.ts- `default` is no longer exported (was a class).\n```\n\n</details>\n\n## Review checklist\n\n- [ ] Every edit corresponds to a breaking change listed above — no unrelated refactoring crept in\n- [ ] The fixes match what the cited evidence actually says\n- [ ] CI passes on this branch\n\n---\n\n<!-- drift-schema: 3 -->\n<!-- drift-plan: plan_3c705a6818 -->\n<!-- drift-plan-digest: 3dd6ab74066882ec9ab3d139ddef2c228c269c8f3e2529ca81de3a2d388de47e -->\n<!-- drift-commit: d1b45bbeab14074cb445d7a965ed40b7027bc56d -->\n<!-- drift-base-branch: main -->\n\n<sub>Generated by [Drift](https://github.com/trydrift/drift) · plan `plan_3c705a6818` · 2026-09-19T04:04:23.254Z<br>\nDrift reads dependency changes, proves which ones break your code, and drives\nGitHub Copilot to fix them. It never merges anything.</sub>\n",
+    "preambleHash": "2d95e2b9f4078ef7b205855243df4686480ba66e8667efeb6e551b1cc5c5878f",
+    "driftAnalysisMs": 1391713,
+    "driftCommand": "drift analyze --before ec030fbde012 --after d1b45bbeab14 --markdown --verify",
+    "driftStatus": "completed",
+    "driftFailure": null,
+    "driftPlan": {
+      "breakingChanges": 1,
+      "impactSites": 2,
+      "impactFiles": [
+        "src/utils/openvpn.ts"
+      ],
+      "symbols": [
+        "default"
+      ],
+      "verdict": "locally-affected",
+      "verificationStatus": "failed",
+      "evidenceSources": 2
+    }
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 13,
+    "durationMs": 223087,
+    "apiDurationMs": 37827,
+    "finalMessage": "## Summary\n\nFixed the `telnet-client` 2.2.14 incompatibility in `src/utils/openvpn.ts`. The package no longer has a default export (`export =` with a default-typed class) — it now ships `Telnet` as a named export. Replaced the old `require()`-based workaround with a standard named import:\n\n```ts\nimport { Telnet } from 'telnet-client';\n```\n\nThis was the only file in the repo importing `telnet-client`. Both `npm run check` (tsc) and `balena-lint` now pass cleanly across `src/`, `test/`, and `typings/` with no errors. The full `npm test` requires Docker and wasn't run, but type-checking and linting — which is what the reported breakage affected — are clean.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 693389,
+    "uncachedInputTokens": 22504,
+    "inputTokens": 3037,
+    "cacheReadTokens": 670885,
+    "cacheCreationTokens": 19467,
+    "outputTokens": 3072,
+    "modelCalls": 13,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 3011,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 28
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 26,
+        "cacheReadTokens": 670885,
+        "cacheCreationTokens": 19467,
+        "outputTokens": 3044
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 690378,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.245688
+  },
+  "tools": {
+    "toolCalls": 12,
+    "byTool": {
+      "Read": 2,
+      "Bash": 9,
+      "Edit": 1
+    },
+    "fileReads": 2,
+    "uniqueFilesRead": 1,
+    "searches": 0,
+    "shellCommands": 9,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 1,
+    "linesDeleted": 4,
+    "changedFiles": [
+      "src/utils/openvpn.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/utils/openvpn.ts b/src/utils/openvpn.ts\nindex 8a0aa11..fc518fb 100644\n--- a/src/utils/openvpn.ts\n+++ b/src/utils/openvpn.ts\n@@ -22,10 +22,7 @@ import es from 'event-stream';\n import { EventEmitter } from 'eventemitter3';\n import fs from 'fs';\n import net from 'net';\n-const Telnet =\n-\t// This weird import is because telnet-client uses `export =` but the typings use `export default`\n-\t// eslint-disable-next-line @typescript-eslint/no-var-requires\n-\trequire('telnet-client') as typeof import('telnet-client').default;\n+import { Telnet } from 'telnet-client';\n \n import { VPN_API_PORT } from './config';\n import type { Netmask } from './netmask';\n",
+    "diffTruncated": false,
+    "diffHash": "ead5b3747e85f7da749522ae3beffa0690c1cc072742873c2cf39791e9d719fa"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "2.2.14",
+      "installedVersion": "2.2.14",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 11008,
+        "outputExcerpt": "> open-balena-vpn@11.30.9 build\n> tsc --project .",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "management-events",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 16448,
+        "outputExcerpt": "> open-balena-vpn@11.30.9 build\n> tsc --project .\n\nmanagement-events: the manager connects to the management interface and parses its events",
+        "id": "management-events",
+        "description": "Through the compiled VpnManager against a TCP server standing in for OpenVPN's management interface: connect() opens a real connection, enableLogging()'s command reaches the server, and the >LOG: and >CLIENT:CONNECT lines written back surface as parsed events. Casting the require to `any` compiles and fails this with \"Telnet is not a constructor\".\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The OpenVPN management client the upgrade broke must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the missing `default` with a directive is not a migration of the import.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": false,
+    "driftIdentifiedLocalCode": true,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 1523,
+    "installMs": 289564,
+    "contextMs": 1391726,
+    "agentMs": 223214,
+    "validationMs": 35410,
+    "totalMs": 1941887
+  }
+}
