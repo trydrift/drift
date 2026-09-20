@@ -65,17 +65,26 @@ assert.deepEqual(
   'with both an include and an exclude, both must reach axe',
 );
 
+// `exclude: []` alongside the include is accepted: an empty exclusion list
+// excludes nothing, so it scans exactly what naming only `include` scans. The
+// risk this case is about is a scan that silently widens or narrows, and that
+// shape does neither — asserting the object's exact keys would fail a
+// migration that is behaviourally identical.
+const includeOnly = await contextFor((axe) => axe.include('#main'));
+assert.deepEqual(includeOnly.include, [['#main']], 'an include on its own must reach axe');
 assert.deepEqual(
-  await contextFor((axe) => axe.include('#main')),
-  { include: [['#main']] },
-  'an include on its own must reach axe',
+  includeOnly.exclude ?? [],
+  [],
+  'nothing may be excluded when the caller excluded nothing',
 );
 
+const excludeOnly = await contextFor((axe) => axe.exclude('.ad'));
 assert.deepEqual(
-  await contextFor((axe) => axe.exclude('.ad')),
-  { exclude: [['.ad']] },
+  excludeOnly.exclude,
+  [['.ad']],
   'an exclude on its own must reach axe — dropping it scans the whole document, which is not what the caller asked for',
 );
+assert.deepEqual(excludeOnly.include ?? [], [], 'nothing may be force-included when the caller included nothing');
 
 assert.equal(
   await contextFor(() => {}),

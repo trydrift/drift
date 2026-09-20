@@ -1,0 +1,12 @@
+diff --git a/src/main/utils.ts b/src/main/utils.ts
+index 27a717c..902fc14 100644
+--- a/src/main/utils.ts
++++ b/src/main/utils.ts
+@@ -1,6 +1,6 @@
+ import * as JsonValidator from 'ajv'
+ 
+-const JSON_VALIDATOR: JsonValidator.Ajv = new JsonValidator()
++const JSON_VALIDATOR: JsonValidator.Ajv = new JsonValidator.Ajv()
+ 
+ export function objectMatchesSchema(schema: object, data: any): boolean {
+     return JSON_VALIDATOR.validate(schema, data) as boolean

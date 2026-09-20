@@ -1,0 +1,25 @@
+diff --git a/src/main/utils.ts b/src/main/utils.ts
+index 27a717c..08ea0c2 100644
+--- a/src/main/utils.ts
++++ b/src/main/utils.ts
+@@ -1,6 +1,6 @@
+-import * as JsonValidator from 'ajv'
++import Ajv from 'ajv'
+ 
+-const JSON_VALIDATOR: JsonValidator.Ajv = new JsonValidator()
++const JSON_VALIDATOR: Ajv = new Ajv()
+ 
+ export function objectMatchesSchema(schema: object, data: any): boolean {
+     return JSON_VALIDATOR.validate(schema, data) as boolean
+diff --git a/tsconfig.json b/tsconfig.json
+index 5522b15..4dd7e6d 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -3,6 +3,7 @@
+       "target": "es6",
+       "module": "commonjs",
+       "moduleResolution": "node",
++      "esModuleInterop": true,
+       "sourceMap": true,
+       "declaration": true,
+       "rootDir": "./src",

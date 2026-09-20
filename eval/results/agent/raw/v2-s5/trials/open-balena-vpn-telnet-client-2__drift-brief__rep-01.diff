@@ -1,0 +1,25 @@
+diff --git a/src/utils/openvpn.ts b/src/utils/openvpn.ts
+index 8a0aa11..0a824ac 100644
+--- a/src/utils/openvpn.ts
++++ b/src/utils/openvpn.ts
+@@ -22,10 +22,7 @@ import es from 'event-stream';
+ import { EventEmitter } from 'eventemitter3';
+ import fs from 'fs';
+ import net from 'net';
+-const Telnet =
+-	// This weird import is because telnet-client uses `export =` but the typings use `export default`
+-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+-	require('telnet-client') as typeof import('telnet-client').default;
++import { Telnet } from 'telnet-client';
+ 
+ import { VPN_API_PORT } from './config';
+ import type { Netmask } from './netmask';
+@@ -138,7 +135,7 @@ export class VpnManager extends EventEmitter implements VpnManagerEvents {
+ 		super();
+ 		this.pidFile = `/var/run/openvpn/server-${this.instanceId}.pid`;
+ 		// proxy `data` events from connector, splitting at newlines
+-		this.connector.on('data', (data) => {
++		this.connector.on('data', (data: Buffer) => {
+ 			const lines = (this.buf + data.toString()).split(/\r?\n/);
+ 			this.buf = lines.pop()!;
+ 			for (const line of lines) {

@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "v2-s5/open-balena-vpn-telnet-client-2/baseline/3",
+  "runId": "v2-s5",
+  "suite": "agent-upgrade-v2",
+  "caseId": "open-balena-vpn-telnet-client-2",
+  "caseHash": "60c13ef3b6939d6636593f3044e35adec3aa72c6b1fcb8b0828292221a8f1b72",
+  "condition": "baseline",
+  "repetition": 3,
+  "scheduleIndex": 9,
+  "metadata": {
+    "repository": "https://github.com/balena-io/open-balena-vpn.git",
+    "baseCommit": "a9e7155948fa5a57a2d80501b009a2c231c1d1bb",
+    "startCommit": "3d5b10f9c10b7249055367e5668b1f491946e5a8",
+    "startTreeHash": "a2eded9cba86cff50188c7a30dc18d9086325da7",
+    "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "telnet-client",
+      "fromVersion": "1.4.11",
+      "toVersion": "2.2.14"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-20T13:09:18.800Z",
+    "endedAt": "2026-09-20T13:14:14.450Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "714dafbddfccb6f38078c8153d578340177af5facf792e5f63a579c6bbaabb3e",
+    "promptHash": "714dafbddfccb6f38078c8153d578340177af5facf792e5f63a579c6bbaabb3e",
+    "promptChars": 320
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 28,
+    "durationMs": 270641,
+    "apiDurationMs": 138277,
+    "finalMessage": "## Summary\n\n`telnet-client` 2.2.14 changed its module shape from `1.4.11`'s `export =` style default export to a named export (`export class Telnet` / `exports.Telnet = Telnet`). The existing code in `src/utils/openvpn.ts` used a `require()` hack cast to `typeof import('telnet-client').default`, which would have compiled fine under the old runtime shape but at runtime with 2.2.14 returns `{ Telnet: class }` instead of the class itself — `new Telnet()` would have thrown `Telnet is not a constructor`.\n\nFixed by switching to the correct named import:\n\n```ts\nimport { Telnet } from 'telnet-client';\n```\n\nThis is a pure named-export change; the `ConnectOptions`/`SendOptions` used (`host`, `port`, `shellPrompt`, `negotiationMandatory`, `ors`, `sendTimeout`) are unchanged in the new typings, so no other call-site changes were needed.\n\nVerified:\n- `npm run check` (tsc, strict) — passes, and confirms the 2 pre-existing type errors on that import line are gone (a stashed-diff comparison showed the only remaining `check:dev` error, in `test/app.ts` re: `openvpn-client` typings, is pre-existing and unrelated).\n- `npm run lint` on the file — clean.\n- `npm run build` — succeeds.\n- `npm run test-unit` — all 13 tests pass (with env vars supplied since there's no `.env` in this sandbox).\n- Manual runtime smoke test instantiating the real `telnet-client@2.2.14` `Telnet` class against a mock OpenVPN-management-style TCP server — confirmed `connect()`, `send()`, and the `data` event (which `VpnManager` relies on for line-buffering) all behave as `openvpn.ts` expects.\n\nRepo is left in a working state with a single, minimal fix.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 1812295,
+    "uncachedInputTokens": 60532,
+    "inputTokens": 1027,
+    "cacheReadTokens": 1751763,
+    "cacheCreationTokens": 59505,
+    "outputTokens": 11659,
+    "modelCalls": 28,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 971,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 20
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 56,
+        "cacheReadTokens": 1751763,
+        "cacheCreationTokens": 59505,
+        "outputTokens": 11639
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 1811324,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.7059456
+  },
+  "tools": {
+    "toolCalls": 27,
+    "byTool": {
+      "Bash": 24,
+      "Read": 2,
+      "Edit": 1
+    },
+    "fileReads": 2,
+    "uniqueFilesRead": 2,
+    "searches": 0,
+    "shellCommands": 24,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 1,
+    "linesDeleted": 4,
+    "changedFiles": [
+      "src/utils/openvpn.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/utils/openvpn.ts b/src/utils/openvpn.ts\nindex 8a0aa11..fc518fb 100644\n--- a/src/utils/openvpn.ts\n+++ b/src/utils/openvpn.ts\n@@ -22,10 +22,7 @@ import es from 'event-stream';\n import { EventEmitter } from 'eventemitter3';\n import fs from 'fs';\n import net from 'net';\n-const Telnet =\n-\t// This weird import is because telnet-client uses `export =` but the typings use `export default`\n-\t// eslint-disable-next-line @typescript-eslint/no-var-requires\n-\trequire('telnet-client') as typeof import('telnet-client').default;\n+import { Telnet } from 'telnet-client';\n \n import { VPN_API_PORT } from './config';\n import type { Netmask } from './netmask';\n",
+    "diffTruncated": false,
+    "diffHash": "ead5b3747e85f7da749522ae3beffa0690c1cc072742873c2cf39791e9d719fa"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "2.2.14",
+      "installedVersion": "2.2.14",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 4824,
+        "outputExcerpt": "> open-balena-vpn@11.30.9 build\n> tsc --project .",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "management-events",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 9181,
+        "outputExcerpt": "> open-balena-vpn@11.30.9 build\n> tsc --project .\n\nmanagement-events: the manager connects to the management interface and parses its events",
+        "id": "management-events",
+        "description": "Through the compiled VpnManager against a TCP server standing in for OpenVPN's management interface: connect() opens a real connection, enableLogging()'s command reaches the server, and the >LOG: and >CLIENT:CONNECT lines written back surface as parsed events. Casting the require to `any` compiles and fails this with \"Telnet is not a constructor\".\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The OpenVPN management client the upgrade broke must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the missing `default` with a directive is not a migration of the import.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 1097,
+    "installMs": 7635,
+    "contextMs": 0,
+    "agentMs": 270642,
+    "validationMs": 15960,
+    "totalMs": 295650
+  }
+}

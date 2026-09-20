@@ -1,0 +1,27 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "v2-s2",
+  "suite": "agent-upgrade-v2",
+  "suiteStatus": "frozen",
+  "createdAt": "2026-09-20T12:49:20.824Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /private/tmp/claude-501/-Users-rudy-Desktop-Developer-Drift/42004005-4c1e-4b3c-80e4-ab9d148a41d5/scratchpad/merge/eval/src/agent/cli.ts run --suite agent-upgrade-v2 --runs 3 --conditions baseline,drift-brief --case colonysdk-fetch-retry-6,context-vue-vue-3 --run-id v2-s2 --retry-infrastructure --notes agent-upgrade-v2 retry after session limit, shard 2",
+  "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 3,
+  "conditions": [
+    "baseline",
+    "drift-brief"
+  ],
+  "caseIds": [
+    "colonysdk-fetch-retry-6",
+    "context-vue-vue-3"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "agent-upgrade-v2 retry after session limit, shard 2"
+}

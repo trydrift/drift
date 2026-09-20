@@ -1,0 +1,282 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "v2-s4/gh-aw-firewall-eslint-10/baseline/3",
+  "runId": "v2-s4",
+  "suite": "agent-upgrade-v2",
+  "caseId": "gh-aw-firewall-eslint-10",
+  "caseHash": "c5c1c19fbeb17f5e896a8ab0580a172b9035e03b31df0ab19fc4461173702da7",
+  "condition": "baseline",
+  "repetition": 3,
+  "scheduleIndex": 9,
+  "metadata": {
+    "repository": "https://github.com/github/gh-aw-firewall.git",
+    "baseCommit": "4aad0e5e358ac8e51351e8f6ba98570bbe5a30da",
+    "startCommit": "c3563d07c30b9e36d8ffd45ef36eedcdf08678c5",
+    "startTreeHash": "664486832d48141e10a558b363205543500ff766",
+    "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "eslint",
+      "fromVersion": "8.57.1",
+      "toVersion": "10.0.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-19T21:40:52.783Z",
+    "endedAt": "2026-09-19T21:41:55.752Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "a1f6a21ab2da590189ad869f5349bab734f2ccfef7c6cb8527e544068f96db7e",
+    "promptHash": "a1f6a21ab2da590189ad869f5349bab734f2ccfef7c6cb8527e544068f96db7e",
+    "promptChars": 313
+  },
+  "context": {
+    "kind": "none",
+    "preamble": "",
+    "preambleHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driftAnalysisMs": null,
+    "driftCommand": null,
+    "driftStatus": "not-applicable",
+    "driftFailure": null,
+    "driftPlan": null
+  },
+  "agent": {
+    "status": "provider-error",
+    "exitCode": 1,
+    "terminalReason": "api_error",
+    "resultSubtype": "success",
+    "apiErrorStatus": 429,
+    "numTurns": 1,
+    "durationMs": 2971,
+    "apiDurationMs": 0,
+    "finalMessage": "You've hit your session limit · resets 12:20am (UTC)",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 0,
+    "uncachedInputTokens": 0,
+    "inputTokens": 0,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "outputTokens": 0,
+    "modelCalls": 1,
+    "byModel": {
+      "<synthetic>": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    "source": "event-ledger",
+    "ledgerGrossInputTokens": 0,
+    "ledgerAgreesWithResult": null,
+    "costUsd": null
+  },
+  "tools": {
+    "toolCalls": 0,
+    "byTool": {},
+    "fileReads": 0,
+    "uniqueFilesRead": 0,
+    "searches": 0,
+    "shellCommands": 0,
+    "edits": 0,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 0,
+    "sourceFiles": 0,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 0,
+    "linesDeleted": 0,
+    "changedFiles": [],
+    "deletedFiles": [],
+    "diff": "",
+    "diffTruncated": false,
+    "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "^10.0.0",
+      "installedVersion": "10.0.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "eslint on src",
+        "passed": false,
+        "exitCode": 2,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 3053,
+        "outputExcerpt": "Oops! Something went wrong! :(\n\nESLint: 10.0.0\n\nESLint couldn't find an eslint.config.(js|mjs|cjs) file.\n\nFrom ESLint v9.0.0, the default configuration file is now eslint.config.js.\nIf you are using a .eslintrc.* file, please follow the migration guide\nto update your configuration file to the new format:\n\nhttps://eslint.org/docs/latest/use/configure/migration-guide\n\nIf you still have problems after following the migration guide, please stop by\nhttps://eslint.org/chat/help to chat with the team.",
+        "kind": "lint"
+      },
+      {
+        "name": "custom rule RuleTester test",
+        "passed": false,
+        "exitCode": 1,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 427,
+        "outputExcerpt": "/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/rule-tester/rule-tester.js:872\n\t\tthrow err;\n\t\t^\n\nConfigError: ESLint configuration in rule-tester is invalid: Config (unnamed): Key \"parserOptions\": This appears to be in eslintrc format rather than flat config format.\n    roughly at RuleTester.run.valid[0] (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/eslint-rules/no-unsafe-execa.test.js:22)\n    roughly at RuleTester.run.valid (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/eslint-rules/no-unsafe-execa.test.js:19)\n    at RuleTester.run (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/eslint-rules/no-unsafe-execa.test.js:18:12)\n    at rethrowConfigError (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/@eslint/config-array/dist/cjs/index.cjs:340:8)\n    at /private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/@eslint/config-array/dist/cjs/index.cjs:1402:5\n    at Array.reduce (<anonymous>)\n    at FlatConfigArray.getConfigWithStatus (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/@eslint/config-array/dist/cjs/index.cjs:1395:43)\n    ... 2 lines matching cause stack trace ...\n    at testValidTemplate (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/rule-tester/rule-tester.js:1370:19)\n    at RuleTester.<anonymous> (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/rule-tester/rule-tester.js:1918:10)\n    at RuleTester.itDefaultHandler (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/rule-tester/rule-tester.js:867:17)\n    at /private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/rule-tester/rule-tester.js:1912:53 {\n  messageTemplate: 'eslintrc-incompat',\n  messageData: { key: 'parserOptions' },\n  index: 5,\n  scenarioType: 'valid',\n  scenarioIndex: 0,\n  [cause]: WrapperError: Key \"parserOptions\": This appears to be in eslintrc format rather than flat config format.\n      at ObjectSchema.validate (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/@eslint/object-schema/dist/cjs/index.cjs:444:11)\n      at /private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/@eslint/object-schema/dist/cjs/index.cjs:387:9\n      ... 6 lines matching cause stack trace ...\n      at runRuleForItem (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/rule-tester/rule-tester.js:1284:13)\n      at testValidTemplate (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/rule-tester/rule-tester.js:1370:19) {\n    messageTemplate: 'eslintrc-incompat',\n    messageData: { key: 'parserOptions' },\n    [cause]: IncompatibleKeyError: This appears to be in eslintrc format rather than flat config format.\n        at Object.validate (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/eslint/lib/config/flat-config-schema.js:546:10)\n        at ObjectSchema.validate (/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-agent-gh-aw-firewall-eslint-10-iTvfau/repo/node_modules/@eslint/object-schema/dist/cjs/index.cjs:442:14)\n        at /private/var/folders/\n… (1332 more characters)",
+        "kind": "test"
+      },
+      {
+        "name": "build (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 5179,
+        "outputExcerpt": "",
+        "kind": "build"
+      },
+      {
+        "name": "unit tests (excluding the root-only docker-manager suite)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 20774,
+        "outputExcerpt": "PASS src/pid-tracker.test.ts (7.455 s)\nPASS src/domain-patterns.test.ts (7.348 s)\nPASS src/squid-config.test.ts (8.188 s)\nPASS src/logs/log-formatter.test.ts\nPASS src/logger.test.ts\nPASS src/logs/log-aggregator.test.ts (9.995 s)\nPASS src/host-iptables.test.ts (10.304 s)\nPASS src/logs/log-discovery.test.ts\nPASS src/ssl-bump.test.ts\nPASS src/logs/stats-formatter.test.ts\nPASS src/logs/log-parser.test.ts\nPASS src/logs/log-streamer.test.ts\nPASS src/commands/logs-summary.test.ts\nPASS src/commands/logs.test.ts\nPASS src/cli-workflow.test.ts\nPASS src/jest-esm-config.test.ts\nPASS src/commands/logs-stats.test.ts\nPASS src/cli.test.ts (12.132 s)\n\nTest Suites: 18 passed, 18 total\nTests:       598 passed, 598 total\nSnapshots:   0 total\nTime:        15.651 s\nRan all test suites.",
+        "kind": "test"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "lint-config-behaviour",
+        "passed": false,
+        "exitCode": 1,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 4546,
+        "outputExcerpt": "lint configuration behaviour: 5 failure(s)\n- eslint produced no JSON report (exit 2): \nOops! Something went wrong! :(\n\nESLint: 10.0.0\n\nESLint couldn't find an eslint.config.(js|mjs|cjs) file.\n\nFrom ESLint v9.0.0, the default configuration file is now eslint.config.js.\nIf you are using a .eslintrc.* file, please follow the migration guide\nto update your configuration file to the new format:\n\nhttps://eslint.org/docs/latest/use/configure/migration-guide\n\nIf you still have problems after following the migration guide, please stop by\nhttps://eslint.org/chat/help to chat with the team.\n\n\n- @typescript-eslint/no-unused-vars did not report an error on unused.ts: []\n- security/detect-child-process did not report an error on child-process.ts: []\n- the project's own no-unsafe-execa rule did not fire on unsafe-execa.ts: []\n- expected 4 fixture files in the report, got 0 (the fixtures directory may be ignored by the configuration)",
+        "id": "lint-config-behaviour",
+        "description": "The linter, run on fixture files placed among the project's own sources, still enforces what the configuration enforced before the upgrade: an unused variable is an error (@typescript-eslint/no-unused-vars), child_process usage is an error (security/detect-child-process), the project's custom no-unsafe-execa rule fires on a template-literal command, and clean code passes. Independent of whether the configuration is an .eslintrc or a flat config.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "file-present",
+        "description": "The custom rule and its RuleTester test must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "path-unchanged",
+        "description": "The rule implementation is not what the upgrade broke; rewriting it is not the migration.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "no-test-deletions",
+        "description": "The project's own tests must not be deleted.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Tests may not be disabled.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": false,
+    "failureReasons": [
+      "existing_test_failure",
+      "hidden_regression_failure",
+      "incomplete_fix",
+      "lint_failure"
+    ]
+  },
+  "validity": {
+    "valid": false,
+    "infrastructureFailure": "provider_error",
+    "detail": "api error status 429: You've hit your session limit · resets 12:20am (UTC)"
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": null,
+    "driftIdentifiedLocalCode": null,
+    "referencePatchFileOverlap": 0,
+    "referencePatchFiles": 10
+  },
+  "timing": {
+    "materializeMs": 3004,
+    "installMs": 9748,
+    "contextMs": 0,
+    "agentMs": 2971,
+    "validationMs": 46990,
+    "totalMs": 62969
+  }
+}

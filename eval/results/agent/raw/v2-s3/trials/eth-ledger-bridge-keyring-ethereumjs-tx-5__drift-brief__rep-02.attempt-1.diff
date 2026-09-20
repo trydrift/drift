@@ -1,0 +1,118 @@
+diff --git a/package.json b/package.json
+index 289a3b7..e8981ac 100644
+--- a/package.json
++++ b/package.json
+@@ -37,14 +37,14 @@
+     "test:watch": "jest --watch"
+   },
+   "dependencies": {
+-    "@ethereumjs/rlp": "^4.0.0",
++    "@ethereumjs/rlp": "^5.0.2",
+     "@ethereumjs/tx": "5.3.0",
+-    "@ethereumjs/util": "^8.0.0",
++    "@ethereumjs/util": "^9.0.3",
+     "@metamask/eth-sig-util": "^7.0.0",
+     "hdkey": "^2.1.0"
+   },
+   "devDependencies": {
+-    "@ethereumjs/common": "^3.1.1",
++    "@ethereumjs/common": "^4.3.0",
+     "@lavamoat/allow-scripts": "^2.5.1",
+     "@ledgerhq/hw-app-eth": "^6.32.0",
+     "@ledgerhq/types-cryptoassets": "^7.6.0",
+diff --git a/src/ledger-keyring.ts b/src/ledger-keyring.ts
+index c875a85..4c7dc38 100644
+--- a/src/ledger-keyring.ts
++++ b/src/ledger-keyring.ts
+@@ -1,5 +1,9 @@
+ import { RLP } from '@ethereumjs/rlp';
+-import { TransactionFactory, TxData, TypedTransaction } from '@ethereumjs/tx';
++import {
++  TransactionFactory,
++  TypedTransaction,
++  TypedTxData,
++} from '@ethereumjs/tx';
+ import * as ethUtil from '@ethereumjs/util';
+ import type { MessageTypes, TypedMessage } from '@metamask/eth-sig-util';
+ import {
+@@ -326,17 +330,17 @@ export class LedgerKeyring extends EventEmitter {
+     // Note also that `getMessageToSign` will return valid RLP for all transaction types, whereas the
+     // `serialize` method will not for any transaction type except legacy. This is because `serialize` includes
+     // empty r, s and v values in the encoded rlp. This is why we use `getMessageToSign` here instead of `serialize`.
+-    const messageToSign = tx.getMessageToSign(false);
++    const messageToSign = tx.getMessageToSign();
+ 
+-    rawTxHex = Buffer.isBuffer(messageToSign)
+-      ? messageToSign.toString('hex')
+-      : Buffer.from(RLP.encode(messageToSign)).toString('hex');
++    rawTxHex = Array.isArray(messageToSign)
++      ? Buffer.from(RLP.encode(messageToSign)).toString('hex')
++      : Buffer.from(messageToSign).toString('hex');
+ 
+     return this.#signTransaction(address, rawTxHex, (payload) => {
+       // Because tx will be immutable, first get a plain javascript object that
+       // represents the transaction. Using txData here as it aligns with the
+       // nomenclature of ethereumjs/tx.
+-      const txData: TxData = tx.toJSON();
++      const txData = tx.toJSON() as TypedTxData;
+       // The fromTxData utility expects a type to support transactions with a type other than 0
+       txData.type = tx.type;
+       // The fromTxData utility expects v,r and s to be hex prefixed
+@@ -597,9 +601,9 @@ export class LedgerKeyring extends EventEmitter {
+ 
+   #addressFromIndex(basePath: string, i: number) {
+     const dkey = this.hdk.derive(`${basePath}/${i}`);
+-    const address = ethUtil
+-      .publicToAddress(dkey.publicKey, true)
+-      .toString('hex');
++    const address = Buffer.from(
++      ethUtil.publicToAddress(dkey.publicKey, true),
++    ).toString('hex');
+     return ethUtil.toChecksumAddress(`0x${address}`);
+   }
+ 
+diff --git a/yarn.lock b/yarn.lock
+index f71caad..ed43754 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -493,7 +493,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@ethereumjs/common@npm:^3.1.1, @ethereumjs/common@npm:^3.2.0":
++"@ethereumjs/common@npm:^3.2.0":
+   version: 3.2.0
+   resolution: "@ethereumjs/common@npm:3.2.0"
+   dependencies:
+@@ -512,7 +512,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@ethereumjs/rlp@npm:^4.0.0, @ethereumjs/rlp@npm:^4.0.1":
++"@ethereumjs/rlp@npm:^4.0.1":
+   version: 4.0.1
+   resolution: "@ethereumjs/rlp@npm:4.0.1"
+   bin:
+@@ -554,7 +554,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@ethereumjs/util@npm:^8.0.0, @ethereumjs/util@npm:^8.1.0":
++"@ethereumjs/util@npm:^8.1.0":
+   version: 8.1.0
+   resolution: "@ethereumjs/util@npm:8.1.0"
+   dependencies:
+@@ -1635,10 +1635,10 @@ __metadata:
+   version: 0.0.0-use.local
+   resolution: "@metamask/eth-ledger-bridge-keyring@workspace:."
+   dependencies:
+-    "@ethereumjs/common": ^3.1.1
+-    "@ethereumjs/rlp": ^4.0.0
++    "@ethereumjs/common": ^4.3.0
++    "@ethereumjs/rlp": ^5.0.2
+     "@ethereumjs/tx": 5.3.0
+-    "@ethereumjs/util": ^8.0.0
++    "@ethereumjs/util": ^9.0.3
+     "@lavamoat/allow-scripts": ^2.5.1
+     "@ledgerhq/hw-app-eth": ^6.32.0
+     "@ledgerhq/types-cryptoassets": ^7.6.0

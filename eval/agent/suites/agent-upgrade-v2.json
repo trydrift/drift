@@ -1,0 +1,80 @@
+{
+  "suite": "agent-upgrade-v2",
+  "status": "frozen",
+  "description": "agent-upgrade-v1 with one hidden assertion corrected. Same ten cases, same repositories and commits; the axe-puppeteer context test now asserts the behaviour it was written to protect rather than the exact keys of the context object.",
+  "frozenAt": "2026-09-19T20:50:36.832Z",
+  "runsPerCondition": 3,
+  "cases": [
+    {
+      "id": "aws-least-privilege-winston-3",
+      "caseHash": "8fd359bd31a13cad5e875347927b89c2d7c9a9b381734767a40bdd5501432e54",
+      "admittedAt": "2026-09-19T20:36:35.979Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "axe-puppeteer-axe-core-4",
+      "caseHash": "ef77cfcb5ef54bdb920dd1b205213eed09fa7c2503b39fa95c36ef45a6660ea9",
+      "admittedAt": "2026-09-19T20:38:07.647Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "colonysdk-fetch-retry-6",
+      "caseHash": "014a2b245f311302679fd410fec9540e7913383d03ee908b3016ea051ac695fa",
+      "admittedAt": "2026-09-19T20:38:55.685Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "context-vue-vue-3",
+      "caseHash": "568b90131acdc4890828ca686c7285fc6a89532d6d8b375196cc5801af98fea4",
+      "admittedAt": "2026-09-19T20:40:55.372Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+      "caseHash": "1132d4827e2cfdab4e4ce701e5f74c1ede37419149b50758208660949b8a8449",
+      "admittedAt": "2026-09-19T20:41:41.447Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "feature-flags-ajv-8",
+      "caseHash": "b9a3348b4b0d7eb8629946220c60be9fe1c18a4b62bad6e6a6f15e5e6ce8edc1",
+      "admittedAt": "2026-09-19T20:44:46.664Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "gh-aw-firewall-eslint-10",
+      "caseHash": "c5c1c19fbeb17f5e896a8ab0580a172b9035e03b31df0ab19fc4461173702da7",
+      "admittedAt": "2026-09-19T20:45:52.216Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "hosts-lru-cache-10",
+      "caseHash": "540f17cbe423a677d079f7cadd8620c9d572d3b40fd3a4bd3aa71c5da903f1c2",
+      "admittedAt": "2026-09-19T20:47:45.755Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "open-balena-vpn-telnet-client-2",
+      "caseHash": "60c13ef3b6939d6636593f3044e35adec3aa72c6b1fcb8b0828292221a8f1b72",
+      "admittedAt": "2026-09-19T20:48:28.165Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    },
+    {
+      "id": "zeal-user-contrib-tar-7",
+      "caseHash": "5d48068f10958e60bc057e6b6c8a2a94a25acd637a63f3b5fe5938f7d3c6db94",
+      "admittedAt": "2026-09-19T20:49:30.304Z",
+      "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723"
+    }
+  ],
+  "removed": [],
+  "changes": [
+    {
+      "date": "2026-09-19",
+      "cases": [
+        "axe-puppeteer-axe-core-4"
+      ],
+      "change": "context-behaviour no longer deep-equals the whole context object; it asserts include and exclude separately, treating an absent list and an empty list as the same.",
+      "reason": "A drift-brief trial returned { include: [[#main]], exclude: [] } where the reference fix returns { include: [[#main]] }. An empty exclusion list excludes nothing, so both scan exactly the same part of the page. The case exists to catch a scan that silently widens or narrows; the old assertion also failed migrations that are behaviourally identical, which is a validation error, not a product result. Corrected before any comparison was drawn from it, and both conditions are re-run from scratch under the corrected suite rather than re-scored."
+    }
+  ]
+}

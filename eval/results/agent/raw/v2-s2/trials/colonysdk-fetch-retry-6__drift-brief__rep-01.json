@@ -1,0 +1,275 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "v2-s2/colonysdk-fetch-retry-6/drift-brief/1",
+  "runId": "v2-s2",
+  "suite": "agent-upgrade-v2",
+  "caseId": "colonysdk-fetch-retry-6",
+  "caseHash": "014a2b245f311302679fd410fec9540e7913383d03ee908b3016ea051ac695fa",
+  "condition": "drift-brief",
+  "repetition": 1,
+  "scheduleIndex": 2,
+  "metadata": {
+    "repository": "https://github.com/JoinColony/colonySDK.git",
+    "baseCommit": "9f492f02a69e325fc4a511d54f09a801ca8d0c4e",
+    "startCommit": "6e77cdb637f6bac5a61a54b09d0d12ed2ba096ca",
+    "startTreeHash": "b1c818029bf97c62ec8055aa991ec27cc2e4133c",
+    "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "fetch-retry",
+      "fromVersion": "5.0.6",
+      "toVersion": "6.0.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-19T20:58:10.746Z",
+    "endedAt": "2026-09-19T21:10:29.870Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "ce11a01be266b3da39e583a682767efdec706f296fa38275972b20b3d521e130",
+    "promptHash": "810aece1de3e9f7f0e4a16989f91d5129c05dfbce728e3d14ec0f9eedea9f8a7",
+    "promptChars": 3233
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "---\n\n# Drift agent brief: fetch-retry 5.0.2 → 6.0.0\n\nDrift has already compared the published versions of these packages and searched this repository for code that uses what changed. Start from the findings and locations below: the sites are measured, not guessed. They are not the whole job. Drift diffs exported symbols, so it cannot see a name that survived the upgrade and changed meaning — a changed default, an option that now needs a companion option, a different return shape. Those compile and break at runtime. At each site read the surrounding call, not just the name, and check the package's own migration notes or type declarations. Code that contradicts this brief is right. Do not weaken what the project checks: no lowered coverage thresholds, relaxed compiler strictness, disabled lint rules, skipped or deleted tests, or suppression directives — Drift compares what the configuration enforced before and after, and a patch that enforces less is rejected. Do not downgrade the upgraded dependency. Inspect the affected code, make the required changes, and run the checks listed.\nOmitted detail exists in Drift's full plan but is not available in this session.\n\nVerdict: This repository is affected.\nVerification: failed — the upgraded tree was installed and this project's checks were run before any fix.\nScope: 1 finding reach this repository; 8 other upstream breaking changes are omitted (see the end).\n\n## Constraints\n\n- Drift blocker: The project's own checks failed after this change was applied in the repository root, which static analysis did not predict. See the verification output for what broke.\n\n## Findings\n\n### [1] measured:npm fetch-retry\nfetch-retry · verification-regression · measured · confidence high\nnpm run typecheck, npm test, npm run build passed before fetch-retry 5.0.2 → 6.0.0 and fail after it, at these locations.\nChange: Fix these errors against the new version. They were measured by running the checks, not predicted.\n- src/ipfs/IpfsMetadata.ts:22 TS2345: Argument of type '{ headers: { Accept: string; }; retryOn: number[]; retries: number; retryDelay: number; }' is not assignable to p…\n\n## Checks\n\n- npm run typecheck: failed after the upgrade, before any fix\n- npm test: failed after the upgrade, before any fix\n- npm run build: failed after the upgrade, before any fix\n\n## Not in this brief\n\n- 8 upstream breaking changes with no located usage in this repository (a search, not proof of safety) — by kind: removed-export 4, signature-change 4.\n- They name: retries, retryDelay, retryOn, fetchBuilder, _fetch, RequestDelayFunction, RequestRetryOnFunction, default. Check whether the code you are editing uses any of these, including structurally — an object literal satisfying a removed options interface is a use that no search finds.\n- 2 evidence records, cited by id above.\n- Omitted detail exists in Drift's full plan but is not available in this session.\n",
+    "preambleHash": "5ffd93823b802a3343a1ba7ce94142640688aff9690b3805e8038dcae461d220",
+    "driftAnalysisMs": 408263,
+    "driftCommand": "drift analyze --before ccfaf95511e8 --after 6e77cdb637f6 --markdown --verify",
+    "driftStatus": "completed",
+    "driftFailure": null,
+    "driftPlan": {
+      "breakingChanges": 8,
+      "impactSites": 1,
+      "impactFiles": [
+        "src/ipfs/IpfsMetadata.ts"
+      ],
+      "symbols": [
+        "RequestDelayFunction",
+        "RequestInitWithRetry.retries",
+        "RequestInitWithRetry.retryDelay",
+        "RequestInitWithRetry.retryOn",
+        "RequestRetryOnFunction",
+        "_fetch",
+        "default",
+        "fetchBuilder",
+        "retries",
+        "retryDelay",
+        "retryOn"
+      ],
+      "verdict": "locally-affected",
+      "verificationStatus": "failed",
+      "evidenceSources": 2
+    }
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 17,
+    "durationMs": 290509,
+    "apiDurationMs": 77696,
+    "finalMessage": "fetch-retry stays at 6.0.0 as required, and only `src/ipfs/IpfsMetadata.ts` needed a change.\n\n## Summary\n\nThe stricter `fetch-retry` 6.0.0 types rejected `headers` in the `wrapFetch` defaults object because the library's `RequestInitRetryParams` (defaults) type only ever supported `retries`/`retryDelay`/`retryOn` — this wasn't just a type tightening, it reflects real behavior: looking at `fetch-retry`'s `index.js`, the `defaults` object passed to `wrapFetch` has only `retries`/`retryDelay`/`retryOn` read off it; any `headers` in defaults was always silently discarded and never sent with requests. It only ever forwards `init` (the second argument passed at call time) straight to the underlying `fetch`.\n\nSince all three call sites (`src/ipfs/IpfsMetadata.ts:94,112,135`) invoked `fetchRetry(url)` with no `init` argument at all, the `Accept: application/json` header was **never actually being sent** even before the upgrade — a pre-existing silent bug that the new stricter types surfaced.\n\nFix: moved `headers` out of the `wrapFetch` defaults into an `IPFS_FETCH_INIT` object and passed it as the second argument at each call site (`fetchRetry(url, IPFS_FETCH_INIT)`), so the `Accept` header is now genuinely sent with every request.\n\nVerified `npm run typecheck`, `npm test` (lint + typecheck), and `npm run build` all pass with exit code 0.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 855792,
+    "uncachedInputTokens": 26788,
+    "inputTokens": 1714,
+    "cacheReadTokens": 829004,
+    "cacheCreationTokens": 25074,
+    "outputTokens": 4768,
+    "modelCalls": 16,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 1682,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 20
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 32,
+        "cacheReadTokens": 829004,
+        "cacheCreationTokens": 25074,
+        "outputTokens": 4748
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 854110,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.3154228
+  },
+  "tools": {
+    "toolCalls": 16,
+    "byTool": {
+      "Read": 2,
+      "Bash": 13,
+      "Edit": 1
+    },
+    "fileReads": 2,
+    "uniqueFilesRead": 1,
+    "searches": 0,
+    "shellCommands": 13,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 9,
+    "linesDeleted": 6,
+    "changedFiles": [
+      "src/ipfs/IpfsMetadata.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/ipfs/IpfsMetadata.ts b/src/ipfs/IpfsMetadata.ts\nindex 743a177..03d3af6 100644\n--- a/src/ipfs/IpfsMetadata.ts\n+++ b/src/ipfs/IpfsMetadata.ts\n@@ -19,14 +19,17 @@ import IpfsAdapter from './IpfsAdapter';\n import CloudflareReadonlyAdapter from './CloudflareReadonlyAdapter';\n \n const fetchRetry = wrapFetch(fetch, {\n-  headers: {\n-    Accept: 'application/json',\n-  },\n   retryOn: [404, 503],\n   retries: 3,\n   retryDelay: 5000,\n });\n \n+const IPFS_FETCH_INIT = {\n+  headers: {\n+    Accept: 'application/json',\n+  },\n+};\n+\n export const IPFS_METADATA_EVENTS = {\n   [MetadataType.Annotation]: 'Annotation(address,bytes32,string)',\n   [MetadataType.Colony]: 'ColonyMetadata(address,string)',\n@@ -88,7 +91,7 @@ export class IpfsMetadata {\n     cid: string,\n   ): Promise<MetadataValue<K>> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, IPFS_FETCH_INIT);\n     try {\n       const data = await res.text();\n       return IPFS_METADATA_PARSERS[type](data) as MetadataValue<K>;\n@@ -106,7 +109,7 @@ export class IpfsMetadata {\n     cid: string,\n   ): Promise<MetadataValue<T>> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, IPFS_FETCH_INIT);\n     try {\n       const data = await res.text();\n       const entry = Object.entries(IPFS_METADATA_EVENTS).find(\n@@ -129,7 +132,7 @@ export class IpfsMetadata {\n \n   async getRawMetadata(cid: string): Promise<Metadata> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, IPFS_FETCH_INIT);\n     try {\n       const json = await res.json();\n       return json as Metadata;\n",
+    "diffTruncated": false,
+    "diffHash": "9d9c7da33c69a6403c64590ea865dd6268275ea55ce7ea072b1544bbcc0100bd"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "6.0.0",
+      "installedVersion": "6.0.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "typecheck (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 11343,
+        "outputExcerpt": "> @colony/sdk@1.6.0 typecheck\n> tsc --noEmit",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "request-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 14069,
+        "outputExcerpt": "> @colony/sdk@1.6.0 compile-cjs\n> tsc -p tsconfig.build.json --module commonjs --outDir dist/cjs\n\nrequest-behaviour: IPFS requests still send Accept: application/json and still retry on 404",
+        "id": "request-behaviour",
+        "description": "Through the compiled `IpfsMetadata` against a local server, with a stub adapter standing in for the gateway: every IPFS request sends `Accept: application/json`, and a 404 is retried. Deleting the headers from the wrapper defaults typechecks and fails this.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The typecheck and compile scripts the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The IPFS metadata reader the upgrade broke must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the rejected options object with a directive is not a migration of it.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": true,
+    "driftIdentifiedLocalCode": true,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 1509,
+    "installMs": 11265,
+    "contextMs": 408266,
+    "agentMs": 290513,
+    "validationMs": 27322,
+    "totalMs": 739124
+  }
+}

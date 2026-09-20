@@ -1,0 +1,356 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "heldout-1-brief-s3/eth-ledger-bridge-keyring-ethereumjs-tx-5/drift-brief/3",
+  "runId": "heldout-1-brief-s3",
+  "suite": "agent-upgrade-v1",
+  "caseId": "eth-ledger-bridge-keyring-ethereumjs-tx-5",
+  "caseHash": "edf1fc5a800ff2408e4816743dd09d2f64ce2abd00fe83ad64e4280b4a4fc3e5",
+  "condition": "drift-brief",
+  "repetition": 3,
+  "scheduleIndex": 5,
+  "metadata": {
+    "repository": "https://github.com/MetaMask/eth-ledger-bridge-keyring.git",
+    "baseCommit": "127eb744ca0ba4de74e9bcdb3a8c997dfccdb644",
+    "startCommit": "05a351f5bc301e33dfb5f6bb332e64678ffd7eb9",
+    "startTreeHash": "0fd33ea7882b6e45ae29183c5e840319fe712f94",
+    "driftCommit": "1c69ec24c38cf40941d39b26d0fddc866d23d723",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "@ethereumjs/tx",
+      "fromVersion": "4.2.0",
+      "toVersion": "5.3.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-19T20:09:00.439Z",
+    "endedAt": "2026-09-19T20:25:17.943Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "75693618a94602f688fe7118d2309615485ca5d4bf8eb0fbb425bdc0eff26c80",
+    "promptHash": "1a1de3d4c818bf1d85056a48b745b92092f5bac400326997832103c13a77ab29",
+    "promptChars": 5572
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "---\n\n# Drift agent brief: @ethereumjs/tx 4.2.0 → 5.3.0\n\nDrift has already compared the published versions of these packages and searched this repository for code that uses what changed. Start from the findings and locations below: the sites are measured, not guessed. They are not the whole job. Drift diffs exported symbols, so it cannot see a name that survived the upgrade and changed meaning — a changed default, an option that now needs a companion option, a different return shape. Those compile and break at runtime. At each site read the surrounding call, not just the name, and check the package's own migration notes or type declarations. Code that contradicts this brief is right. Do not weaken what the project checks: no lowered coverage thresholds, relaxed compiler strictness, disabled lint rules, skipped or deleted tests, or suppression directives — Drift compares what the configuration enforced before and after, and a patch that enforces less is rejected. Do not downgrade the upgraded dependency. Inspect the affected code, make the required changes, and run the checks listed.\nOmitted detail exists in Drift's full plan but is not available in this session.\n\nVerdict: Insufficient evidence to say.\nVerification: failed — the upgraded tree was installed and this project's checks were run before any fix.\nScope: 2 findings reach this repository; 35 other upstream breaking changes are omitted (see the end).\n\n## Constraints\n\n- Protected by drift.yml guardrails, do not edit: .github/workflows/** (1 file with sites below). If a fix needs one, say so instead.\n- Drift blocker: Impact sites fall inside protected paths: .github/workflows/build-lint-test.yml. Drift will not direct an agent to edit these.\n- Drift blocker: 1 finding(s) Drift planned commits for are below the `minConfidence` threshold of `medium`: `@ethereumjs/tx`: Minimum node version is now >=18. The plan is filed for review rather than dispatched.\n- Drift blocker: The project's own checks failed after this change was applied in the repository root, which static analysis did not predict. See the verification output for what broke.\n\n## Findings\n\n### [1] measured:npm @ethereumjs/tx\n@ethereumjs/tx · verification-regression · measured · confidence high\nyarn test, yarn build passed before @ethereumjs/tx 4.2.0 → 5.3.0 and fail after it, at these locations.\nChange: Fix these errors against the new version. They were measured by running the checks, not predicted.\n- src/ledger-keyring.test.ts:71 TS2740: Type 'Common' is missing the following properties from type 'Common': customCrypto, _paramsCache, _activatedEIPsCache, events, and…\n- src/ledger-keyring.test.ts:86 TS2322: Type 'import(\"/private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-worktrees/383ceda6c5f8/9330-9a6294eb/change-05a351f/no…\n- src/ledger-keyring.test.ts:525 TS2345: Argument of type '{ v: string; r: string; s: string; nonce?: string | undefined; gasPrice?: string | undefined; gasLimit?: string |…\n- src/ledger-keyring.test.ts:546 TS2554: Expected 0 arguments, but got 1.\n- src/ledger-keyring.test.ts:573 TS2345: Argument of type '{ v: string; r: string; s: string; type: TransactionType; nonce?: string | undefined; gasPrice?: string | undefin…\n- src/ledger-keyring.test.ts:593 TS2554: Expected 0 arguments, but got 1.\n- src/ledger-keyring.ts:329 TS2554: Expected 0 arguments, but got 1.\n- src/ledger-keyring.ts:339 TS2739: Type 'JsonTx' is missing the following properties from type 'TxData': [TransactionType.Legacy], [TransactionType.AccessListEIP2930]…\n- src/ledger-keyring.ts:341 TS2339: Property 'type' does not exist on type 'TxData'.\n- src/ledger-keyring.ts:343 TS2339: Property 'v' does not exist on type 'TxData'.\n- src/ledger-keyring.ts:344 TS2339: Property 'r' does not exist on type 'TxData'.\n- src/ledger-keyring.ts:345 TS2339: Property 's' does not exist on type 'TxData'.\n- …1 more; get the rest with measured:npm @ethereumjs/tx\n\n## Execution units\n\n1 unit in 1 layer: unit_375192a5e1.\n\n## Checks\n\n- yarn test: failed after the upgrade, before any fix\n- yarn build: failed after the upgrade, before any fix\n\n## What Drift could not establish (none of it is evidence of safety)\n\n- build, typecheck, and test: Fix the measured failures, then run the same checks again before merging.\n\n## Not in this brief\n\n- 35 upstream breaking changes with no located usage in this repository (a search, not proof of safety) — by kind: removed-export 28, signature-change 6, type-change 1.\n- They name: DEFAULT_HARDFORK, _processSignature, Transaction, fromEthersProvider, fromRPCTx, isAccessListBuffer, isAccessList, AccessListBufferItem, AccessListBuffer, TypedTransaction, nonce, gasPrice, gasLimit, to, value, data, v, r, s, type, TxData, TxValuesArray, AccessListEIP2930ValuesArray, FeeMarketEIP1559ValuesArray, maxFeePerDataGas, versionedHashes, AddressLike, BigIntLike, BufferLike, PrefixedHexString, gasPrices. Check whether the code you are editing uses any of these, including structurally — an object literal satisfying a removed options interface is a use that no search finds.\n- 4 evidence records, cited by id above.\n- Left out for size, still locally relevant: bc_fadc453215.\n- Omitted detail exists in Drift's full plan but is not available in this session.\n",
+    "preambleHash": "32e4cf918d271b20bfa14d1941bb72755d233ee4804473905afa263ce52f40d4",
+    "driftAnalysisMs": 142396,
+    "driftCommand": "drift analyze --before 087208a3a078 --after 05a351f5bc30 --markdown --verify",
+    "driftStatus": "completed",
+    "driftFailure": null,
+    "driftPlan": {
+      "breakingChanges": 36,
+      "impactSites": 18,
+      "impactFiles": [
+        ".github/workflows/build-lint-test.yml",
+        "package.json",
+        "src/ledger-keyring.test.ts",
+        "src/ledger-keyring.ts"
+      ],
+      "symbols": [
+        "AccessListBuffer",
+        "AccessListBufferItem",
+        "AccessListEIP2930Transaction.DEFAULT_HARDFORK",
+        "AccessListEIP2930Transaction._processSignature",
+        "AccessListEIP2930ValuesArray",
+        "AddressLike",
+        "BigIntLike",
+        "BufferLike",
+        "DEFAULT_HARDFORK",
+        "FeeMarketEIP1559Transaction.DEFAULT_HARDFORK",
+        "FeeMarketEIP1559Transaction._processSignature",
+        "FeeMarketEIP1559ValuesArray",
+        "JsonRpcTx.maxFeePerDataGas",
+        "JsonRpcTx.versionedHashes",
+        "JsonTx.maxFeePerDataGas",
+        "JsonTx.versionedHashes",
+        "Node.js",
+        "PrefixedHexString",
+        "Transaction",
+        "TransactionFactory.fromEthersProvider",
+        "TransactionFactory.fromRPCTx",
+        "TxData",
+        "TxData.data",
+        "TxData.gasLimit",
+        "TxData.gasPrice",
+        "TxData.nonce",
+        "TxData.r",
+        "TxData.s",
+        "TxData.to",
+        "TxData.type",
+        "TxData.v",
+        "TxData.value",
+        "TxValuesArray",
+        "TypedTransaction",
+        "_processSignature",
+        "fromEthersProvider",
+        "fromRPCTx",
+        "gasLimit",
+        "gasPrice",
+        "gasPrices",
+        "isAccessList",
+        "isAccessListBuffer",
+        "maxFeePerDataGas",
+        "nonce",
+        "r",
+        "s",
+        "v",
+        "versionedHashes"
+      ],
+      "verdict": "insufficient-evidence",
+      "verificationStatus": "failed",
+      "evidenceSources": 4
+    }
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 60,
+    "durationMs": 766615,
+    "apiDurationMs": 460662,
+    "finalMessage": "## Summary\n\nThe upgrade to `@ethereumjs/tx@5.3.0` broke the repo in two related ways:\n\n**1. Duplicate incompatible `Common` class** — `@ethereumjs/tx@5.3.0` requires `@ethereumjs/common@^4.3.0`, but the project's devDependency was still pinned to `^3.1.1`. Two structurally different `Common` classes (with different private fields) got installed, so `Common` instances built in tests weren't assignable to `TxOptions.common`. Fixed by bumping `@ethereumjs/common` to `^4.3.0` in `package.json`, which let yarn dedupe to a single shared install (`node_modules/@ethereumjs/common@4.4.0`).\n\n**2. `@ethereumjs/tx` v5 API changes in `src/ledger-keyring.ts`/`.test.ts`:**\n- `TxData` is no longer the flat per-transaction shape — it's now a lookup map keyed by `TransactionType`. The flat shape moved to `TypedTxData`. Updated the import and the `txData` variable accordingly (with a type assertion where JSON-derived plain `string` fields need to satisfy the now-branded `PrefixedHexString` type).\n- `getMessageToSign(hashMessage: boolean)` lost its parameter — it's now `getMessageToSign()` with no args, always returning the unhashed message.\n- More importantly, a **real runtime behavior change**, not just a type error: legacy transactions still return an array of raw fields (needs `RLP.encode`), but typed (EIP-2718) transactions now return an already-serialized single `Uint8Array` (type byte + RLP payload baked in). The old code's `Buffer.isBuffer(...)` check to distinguish the two cases always returns `false` now since nothing is a Node `Buffer` anymore — it would have silently double-RLP-encoded typed transactions. Replaced with `Array.isArray(...)` to correctly distinguish the two cases.\n- Applied the equivalent fixes to the test file's transaction-construction and hex-encoding helpers.\n\nVerified: `yarn build` (typecheck) passes clean, `yarn lint:eslint` passes clean, and `yarn test` passes all 66 tests with coverage thresholds unchanged (nothing weakened). \n\nOne item intentionally left untouched: the drift brief flagged (as a low-confidence, filed-for-review item) that `@ethereumjs/tx@5.3.0`'s transitive dependencies now require Node ≥18, while this repo's CI matrix (`.github/workflows/build-lint-test.yml`, protected from edits) still tests against Node 16.x. I didn't verify compatibility there — worth a manual check if Node 16 support still matters.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 6231938,
+    "uncachedInputTokens": 113102,
+    "inputTokens": 2654,
+    "cacheReadTokens": 6118836,
+    "cacheCreationTokens": 110448,
+    "outputTokens": 41691,
+    "modelCalls": 60,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 2534,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 29
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 120,
+        "cacheReadTokens": 6118836,
+        "cacheCreationTokens": 110448,
+        "outputTokens": 41662
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 6229404,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 2.0850982
+  },
+  "tools": {
+    "toolCalls": 59,
+    "byTool": {
+      "Bash": 46,
+      "Read": 4,
+      "Edit": 9
+    },
+    "fileReads": 4,
+    "uniqueFilesRead": 4,
+    "searches": 0,
+    "shellCommands": 46,
+    "edits": 9,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads."
+  },
+  "patch": {
+    "files": 4,
+    "sourceFiles": 1,
+    "testFiles": 1,
+    "configFiles": 0,
+    "dependencyFiles": 2,
+    "otherFiles": 0,
+    "linesAdded": 26,
+    "linesDeleted": 17,
+    "changedFiles": [
+      "package.json",
+      "src/ledger-keyring.test.ts",
+      "src/ledger-keyring.ts",
+      "yarn.lock"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/package.json b/package.json\nindex 289a3b7..0359e60 100644\n--- a/package.json\n+++ b/package.json\n@@ -44,7 +44,7 @@\n     \"hdkey\": \"^2.1.0\"\n   },\n   \"devDependencies\": {\n-    \"@ethereumjs/common\": \"^3.1.1\",\n+    \"@ethereumjs/common\": \"^4.3.0\",\n     \"@lavamoat/allow-scripts\": \"^2.5.1\",\n     \"@ledgerhq/hw-app-eth\": \"^6.32.0\",\n     \"@ledgerhq/types-cryptoassets\": \"^7.6.0\",\ndiff --git a/src/ledger-keyring.test.ts b/src/ledger-keyring.test.ts\nindex 82c1801..fcfb654 100644\n--- a/src/ledger-keyring.test.ts\n+++ b/src/ledger-keyring.test.ts\n@@ -1,6 +1,6 @@\n import { Common, Chain, Hardfork } from '@ethereumjs/common';\n import { RLP } from '@ethereumjs/rlp';\n-import { TransactionFactory } from '@ethereumjs/tx';\n+import { TransactionFactory, TypedTxData } from '@ethereumjs/tx';\n import * as ethUtil from '@ethereumjs/util';\n import * as sigUtil from '@metamask/eth-sig-util';\n import EthereumTx from 'ethereumjs-tx';\n@@ -525,7 +525,7 @@ describe('LedgerKeyring', function () {\n           {\n             ...newFakeTx.toJSON(),\n             ...expectedRSV,\n-          },\n+          } as TypedTxData,\n           { freeze: false },\n         );\n \n@@ -543,7 +543,7 @@ describe('LedgerKeyring', function () {\n             expect(params).toStrictEqual({\n               hdPath: \"m/44'/60'/0'/0\",\n               tx: Buffer.from(\n-                RLP.encode(newFakeTx.getMessageToSign(false)),\n+                RLP.encode(newFakeTx.getMessageToSign()),\n               ).toString('hex'),\n             });\n             return expectedRSV;\n@@ -574,7 +574,7 @@ describe('LedgerKeyring', function () {\n             ...fakeTypeTwoTx.toJSON(),\n             type: fakeTypeTwoTx.type,\n             ...expectedRSV,\n-          },\n+          } as TypedTxData,\n           { common: commonEIP1559, freeze: false },\n         );\n         jest\n@@ -590,7 +590,9 @@ describe('LedgerKeyring', function () {\n           .mockImplementation(async (params) => {\n             expect(params).toStrictEqual({\n               hdPath: \"m/44'/60'/0'/0\",\n-              tx: fakeTypeTwoTx.getMessageToSign(false).toString('hex'),\n+              tx: Buffer.from(\n+                fakeTypeTwoTx.getMessageToSign() as Uint8Array,\n+              ).toString('hex'),\n             });\n             return expectedRSV;\n           });\ndiff --git a/src/ledger-keyring.ts b/src/ledger-keyring.ts\nindex c875a85..e7a11fa 100644\n--- a/src/ledger-keyring.ts\n+++ b/src/ledger-keyring.ts\n@@ -1,5 +1,9 @@\n import { RLP } from '@ethereumjs/rlp';\n-import { TransactionFactory, TxData, TypedTransaction } from '@ethereumjs/tx';\n+import {\n+  TransactionFactory,\n+  TypedTransaction,\n+  TypedTxData,\n+} from '@ethereumjs/tx';\n import * as ethUtil from '@ethereumjs/util';\n import type { MessageTypes, TypedMessage } from '@metamask/eth-sig-util';\n import {\n@@ -326,23 +330,26 @@ export class LedgerKeyring extends EventEmitter {\n     // Note also that `getMessageToSign` will return valid RLP for all transaction types, whereas the\n     // `serialize` method will not for any transaction type except legacy. This is because `serialize` includes\n     // empty r, s and v values in the encoded rlp. This is why we use `getMessageToSign` here instead of `serialize`.\n-    const messageToSign = tx.getMessageToSign(false);\n+    const messageToSign = tx.getMessageToSign();\n \n-    rawTxHex = Buffer.isBuffer(messageToSign)\n-      ? messageToSign.toString('hex')\n-      : Buffer.from(RLP.encode(messageToSign)).toString('hex');\n+    // For legacy transactions, `getMessageToSign` returns the raw fields as an\n+    // array, which still needs to be RLP encoded. For typed transactions, it\n+    // returns the already-serialized (type byte + RLP payload) bytes.\n+    rawTxHex = Array.isArray(messageToSign)\n+      ? Buffer.from(RLP.encode(messageToSign)).toString('hex')\n+      : Buffer.from(messageToSign).toString('hex');\n \n     return this.#signTransaction(address, rawTxHex, (payload) => {\n       // Because tx will be immutable, first get a plain javascript object that\n       // represents the transaction. Using txData here as it aligns with the\n       // nomenclature of ethereumjs/tx.\n-      const txData: TxData = tx.toJSON();\n+      const txData = tx.toJSON() as TypedTxData;\n       // The fromTxData utility expects a type to support transactions with a type other than 0\n       txData.type = tx.type;\n       // The fromTxData utility expects v,r and s to be hex prefixed\n-      txData.v = ethUtil.addHexPrefix(payload.v);\n-      txData.r = ethUtil.addHexPrefix(payload.r);\n-      txData.s = ethUtil.addHexPrefix(payload.s);\n+      txData.v = ethUtil.addHexPrefix(payload.v) as `0x${string}`;\n+      txData.r = ethUtil.addHexPrefix(payload.r) as `0x${string}`;\n+      txData.s = ethUtil.addHexPrefix(payload.s) as `0x${string}`;\n       // Adopt the 'common' option from the original transaction and set the\n       // returned object to be frozen if the original is frozen.\n       return TransactionFactory.fromTxData(txData, {\ndiff --git a/yarn.lock b/yarn.lock\nindex f71caad..dff4984 100644\n--- a/yarn.lock\n+++ b/yarn.lock\n@@ -493,7 +493,7 @@ __metadata:\n   languageName: node\n   linkType: hard\n \n-\"@ethereumjs/common@npm:^3.1.1, @ethereumjs/common@npm:^3.2.0\":\n+\"@ethereumjs/common@npm:^3.2.0\":\n   version: 3.2.0\n   resolution: \"@ethereumjs/common@npm:3.2.0\"\n   dependencies:\n@@ -1635,7 +1635,7 @@ __metadata:\n   version: 0.0.0-use.local\n   resolution: \"@metamask/eth-ledger-bridge-keyring@workspace:.\"\n   dependencies:\n-    \"@ethereumjs/common\": ^3.1.1\n+    \"@ethereumjs/common\": ^4.3.0\n     \"@ethereumjs/rlp\": ^4.0.0\n     \"@ethereumjs/tx\": 5.3.0\n     \"@ethereumjs/util\": ^8.0.0\n",
+    "diffTruncated": false,
+    "diffHash": "0de736ed4fdb0dba5771f6a3204ddaf384880aaa715cd2207cd6560aa53f7159"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "5.3.0",
+      "installedVersion": "5.3.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "build (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 13056,
+        "outputExcerpt": "",
+        "kind": "build"
+      },
+      {
+        "name": "jest (with the project's coverage thresholds)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 10178,
+        "outputExcerpt": "PASS src/ledger-iframe-bridge.test.ts\nPASS src/ledger-keyring.test.ts\n-------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------------------------\nFile                     | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                       \n-------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------------------------\nAll files                |   81.84 |    69.76 |   88.73 |   81.93 |                                                                                         \n index.ts                |       0 |      100 |     100 |       0 | 1-3                                                                                     \n ledger-iframe-bridge.ts |   75.86 |    74.41 |      92 |   75.86 | 169,181-186,279,294-302,310-334,354                                                     \n ledger-keyring.ts       |    85.1 |    67.44 |   86.95 |   85.28 | 171,182,210,285-289,372,382,392,404,414,432,441,465,488,499,506,549,561-583,626,647-659 \n-------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------------------------\n\nTest Suites: 2 passed, 2 total\nTests:       66 passed, 66 total\nSnapshots:   0 total\nTime:        7.003 s\nRan all test suites.",
+        "kind": "test"
+      },
+      {
+        "name": "eslint",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 14329,
+        "outputExcerpt": "",
+        "kind": "lint"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "keyring-signing",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 6154,
+        "outputExcerpt": "PASS .drift-hidden/keyring-signing.test.ts\n  LedgerKeyring.signTransaction against the installed @ethereumjs/tx\n    ✓ signs a legacy transaction: device sees the RLP signing payload, result is the exact signed transaction (105 ms)\n    ✓ signs an EIP-1559 transaction: device sees the typed signing payload, result is the exact signed transaction (28 ms)\n    ✓ keeps the transaction frozen when the input was frozen, and mutable otherwise (30 ms)\n\nTest Suites: 1 passed, 1 total\nTests:       3 passed, 3 total\nSnapshots:   0 total\nTime:        3.935 s\nRan all test suites.",
+        "id": "keyring-signing",
+        "description": "Through the keyring's public signTransaction, with the device simulated by a known private key: the bytes handed to the device are the transaction's unsigned signing payload (RLP-encoded field list for a legacy transaction, the typed payload for EIP-1559), the transaction handed back verifies, recovers the key's address, and serializes byte-for-byte to the transaction signed directly with the key, and frozenness is preserved. Independent of the project's own tests, which mock TransactionFactory.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build, test and lint scripts the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "path-unchanged",
+        "description": "Coverage thresholds, the package-manager policy and compiler strictness are not part of this migration.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "no-test-deletions",
+        "description": "The project's own tests must not be deleted.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Tests may be updated to the new API; they may not be disabled.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Suppressing the type errors in the keyring with a directive is not a migration of it (the file's pre-existing ts-expect-error lines on the ethereumjs-tx v1 branch stay). Narrowed on 2026-09-16 from also forbidding any-typing, for the reason recorded on the winston case.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The keyring module and its test suite must still exist.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": true,
+    "driftIdentifiedLocalCode": true,
+    "referencePatchFileOverlap": 4,
+    "referencePatchFiles": 4
+  },
+  "timing": {
+    "materializeMs": 973,
+    "installMs": 18487,
+    "contextMs": 142397,
+    "agentMs": 766624,
+    "validationMs": 48590,
+    "totalMs": 977504
+  }
+}
