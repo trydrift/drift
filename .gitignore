@@ -81,3 +81,11 @@ site/capture-hang-*.json
 # already extracted into the committed trial JSON. Both stay as CI artifacts.
 eval/agent/.cache/
 eval/results/agent/raw/*/trials/*.stream.jsonl.gz
+
+# Raw agent-benchmark trials from research runs. The suites, cases and written
+# analyses are tracked; the per-trial artefacts are large and belong with the
+# branch that produced them (experimental/agent-remediation-research).
+eval/results/agent/raw/heldout-*/
+eval/results/agent/raw/v2-s*/
+eval/results/agent/raw/large-*/
+eval/results/agent/raw/brief-smoke*/
