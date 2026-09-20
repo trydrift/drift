@@ -6,10 +6,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-09-18T07:04:56.504Z",
+  "capturedAt": "2026-09-20T23:05:24.565Z",
   "commit": "ac26a4abaa34c9e5a8a346c2f92bb9fa3e8d5808",
-  "engine": "3612fb09ece2becd",
-  "durationMs": 5832,
+  "engine": "c6a95aaf00b5e737",
+  "durationMs": 9913,
   "packagesChecked": 6,
   "manifests": [
     "requirements-build.txt",
@@ -20,7 +20,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 156,
+      "at": 237,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
@@ -28,7 +28,7 @@
     },
     {
       "type": "progress",
-      "at": 175,
+      "at": 248,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
@@ -36,7 +36,7 @@
     },
     {
       "type": "progress",
-      "at": 178,
+      "at": 250,
       "phase": "Reading manifest",
       "detail": "requirements-build.txt",
       "done": 0,
@@ -44,7 +44,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 178,
+      "at": 251,
       "candidate": {
         "id": "requirements-build.txt#flatbuffers@25.12.19",
         "name": "flatbuffers",
@@ -88,7 +88,7 @@
     },
     {
       "type": "progress",
-      "at": 178,
+      "at": 251,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
@@ -96,7 +96,7 @@
     },
     {
       "type": "progress",
-      "at": 178,
+      "at": 251,
       "phase": "Reading manifest",
       "detail": "Models/MediaPipeLandscape/CoreML/requirements.txt",
       "done": 0,
@@ -104,7 +104,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 178,
+      "at": 252,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0",
         "name": "coremltools",
@@ -148,7 +148,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 178,
+      "at": 252,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -192,7 +192,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 178,
+      "at": 252,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -236,7 +236,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 178,
+      "at": 252,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15",
         "name": "onnx2torch",
@@ -280,7 +280,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 178,
+      "at": 252,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -324,7 +324,7 @@
     },
     {
       "type": "progress",
-      "at": 313,
+      "at": 404,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -332,7 +332,7 @@
     },
     {
       "type": "progress",
-      "at": 313,
+      "at": 404,
       "phase": "Checking registries",
       "detail": "6 direct dependencies",
       "done": 0,
@@ -340,7 +340,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 313,
+      "at": 404,
       "candidate": {
         "id": "requirements-build.txt#flatbuffers@25.12.19",
         "name": "flatbuffers",
@@ -384,7 +384,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 313,
+      "at": 404,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0",
         "name": "coremltools",
@@ -428,7 +428,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 313,
+      "at": 404,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -472,7 +472,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 314,
+      "at": 404,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -516,7 +516,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 314,
+      "at": 404,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15",
         "name": "onnx2torch",
@@ -560,7 +560,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 314,
+      "at": 405,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -604,7 +604,7 @@
     },
     {
       "type": "progress",
-      "at": 360,
+      "at": 533,
       "phase": "Indexing your code",
       "detail": "78 files indexed · 6 direct dependencies to check",
       "done": 0,
@@ -612,166 +612,33 @@
     },
     {
       "type": "candidate-drop",
-      "at": 413,
-      "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15"
+      "at": 573,
+      "id": "requirements-build.txt#flatbuffers@25.12.19"
     },
     {
       "type": "progress",
-      "at": 413,
+      "at": 573,
       "phase": "Up to date",
-      "detail": "onnx2torch@1.5.15",
+      "detail": "flatbuffers@25.12.19",
       "done": 1,
       "total": 6
     },
     {
       "type": "candidate-drop",
-      "at": 414,
-      "id": "requirements-build.txt#flatbuffers@25.12.19"
+      "at": 574,
+      "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx2torch@1.5.15"
     },
     {
       "type": "progress",
-      "at": 414,
+      "at": 574,
       "phase": "Up to date",
-      "detail": "flatbuffers@25.12.19",
+      "detail": "onnx2torch@1.5.15",
       "done": 2,
       "total": 6
     },
     {
-      "type": "candidate-drop",
-      "at": 429,
-      "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0"
-    },
-    {
-      "type": "progress",
-      "at": 429,
-      "phase": "Up to date",
-      "detail": "coremltools@9.0",
-      "done": 3,
-      "total": 6
-    },
-    {
       "type": "candidate-upsert",
-      "at": 491,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
-        "name": "torch",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "2.7.0",
-        "latest": "2.14.0",
-        "selected": "2.14.0",
-        "safeLatest": null,
-        "publishedVersions": [
-          "2.14.0",
-          "2.13.0",
-          "2.12.1",
-          "2.12.0",
-          "2.11.0",
-          "2.10.0",
-          "2.9.1",
-          "2.9.0",
-          "2.8.0",
-          "2.7.1"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 491,
-      "phase": "Outdated",
-      "detail": "torch 2.7.0 → 2.14.0",
-      "done": 4,
-      "total": 6
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 495,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.22.0",
-        "selected": "1.22.0",
-        "safeLatest": null,
-        "publishedVersions": [
-          "1.22.0",
-          "1.21.0",
-          "1.20.1",
-          "1.20.0"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 495,
-      "phase": "Outdated",
-      "detail": "onnx 1.19.1 → 1.22.0",
-      "done": 5,
-      "total": 6
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 540,
+      "at": 597,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -835,15 +702,149 @@
     },
     {
       "type": "progress",
-      "at": 540,
+      "at": 597,
       "phase": "Outdated",
       "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "done": 3,
+      "total": 6
+    },
+    {
+      "type": "candidate-drop",
+      "at": 623,
+      "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#coremltools@9.0"
+    },
+    {
+      "type": "progress",
+      "at": 623,
+      "phase": "Up to date",
+      "detail": "coremltools@9.0",
+      "done": 4,
+      "total": 6
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 640,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "1.19.1",
+        "latest": "1.23.0",
+        "selected": "1.23.0",
+        "safeLatest": null,
+        "publishedVersions": [
+          "1.23.0",
+          "1.22.0",
+          "1.21.0",
+          "1.20.1",
+          "1.20.0"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 640,
+      "phase": "Outdated",
+      "detail": "onnx 1.19.1 → 1.23.0",
+      "done": 5,
+      "total": 6
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 664,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
+        "name": "torch",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "2.7.0",
+        "latest": "2.14.0",
+        "selected": "2.14.0",
+        "safeLatest": null,
+        "publishedVersions": [
+          "2.14.0",
+          "2.13.0",
+          "2.12.1",
+          "2.12.0",
+          "2.11.0",
+          "2.10.0",
+          "2.9.1",
+          "2.9.0",
+          "2.8.0",
+          "2.7.1"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 664,
+      "phase": "Outdated",
+      "detail": "torch 2.7.0 → 2.14.0",
       "done": 6,
       "total": 6
     },
     {
       "type": "progress",
-      "at": 540,
+      "at": 664,
       "phase": "Reading release notes and changelog",
       "detail": "huggingface-hub 0.34.4 → 1.32.0",
       "done": 0,
@@ -851,7 +852,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 540,
+      "at": 664,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -895,7 +896,7 @@
     },
     {
       "type": "progress",
-      "at": 540,
+      "at": 665,
       "phase": "Checking package metadata",
       "detail": "huggingface-hub 0.34.4 → 1.32.0",
       "done": 0,
@@ -903,7 +904,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 540,
+      "at": 665,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -947,15 +948,15 @@
     },
     {
       "type": "progress",
-      "at": 541,
+      "at": 665,
       "phase": "Reading release notes and changelog",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 541,
+      "at": 665,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -999,15 +1000,15 @@
     },
     {
       "type": "progress",
-      "at": 541,
+      "at": 665,
       "phase": "Checking package metadata",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 541,
+      "at": 665,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1051,7 +1052,7 @@
     },
     {
       "type": "progress",
-      "at": 541,
+      "at": 665,
       "phase": "Reading release notes and changelog",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1059,7 +1060,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 541,
+      "at": 665,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1103,7 +1104,7 @@
     },
     {
       "type": "progress",
-      "at": 541,
+      "at": 665,
       "phase": "Checking package metadata",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1111,7 +1112,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 541,
+      "at": 665,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1155,7 +1156,7 @@
     },
     {
       "type": "progress",
-      "at": 542,
+      "at": 666,
       "phase": "Checking repository status",
       "detail": "huggingface-hub 0.34.4 → 1.32.0",
       "done": 0,
@@ -1163,7 +1164,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 542,
+      "at": 666,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1207,15 +1208,15 @@
     },
     {
       "type": "progress",
-      "at": 542,
+      "at": 666,
       "phase": "Checking repository status",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 542,
+      "at": 666,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1259,7 +1260,7 @@
     },
     {
       "type": "progress",
-      "at": 542,
+      "at": 666,
       "phase": "Checking repository status",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1267,7 +1268,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 542,
+      "at": 666,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1311,25 +1312,25 @@
     },
     {
       "type": "progress",
-      "at": 1609,
+      "at": 915,
       "phase": "Comparing the public API surface",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1609,
+      "at": 915,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
+        "current": "0.34.4",
+        "latest": "0.34.4",
+        "selected": "0.34.4",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1363,7 +1364,111 @@
     },
     {
       "type": "progress",
-      "at": 1620,
+      "at": 2419,
+      "phase": "Checking security advisories",
+      "detail": "torch 2.7.0 → 2.14.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
+        "name": "torch",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "2.7.0",
+        "latest": "2.7.0",
+        "selected": "2.7.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2980,
+      "phase": "Checking security advisories",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2980,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "0.34.4",
+        "latest": "0.34.4",
+        "selected": "0.34.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking security advisories",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 3013,
       "phase": "Comparing the public API surface",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1371,7 +1476,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1620,
+      "at": 3013,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1415,15 +1520,15 @@
     },
     {
       "type": "progress",
-      "at": 1722,
+      "at": 3069,
       "phase": "Checking security advisories",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1722,
+      "at": 3069,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1467,111 +1572,7 @@
     },
     {
       "type": "progress",
-      "at": 1722,
-      "phase": "Checking security advisories",
-      "detail": "torch 2.7.0 → 2.14.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1722,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
-        "name": "torch",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "2.7.0",
-        "latest": "2.7.0",
-        "selected": "2.7.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1722,
-      "phase": "Checking security advisories",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1722,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "0.34.4",
-        "selected": "0.34.4",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2191,
+      "at": 3985,
       "phase": "Checking license",
       "detail": "huggingface-hub 0.34.4 → 1.32.0",
       "done": 0,
@@ -1579,7 +1580,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2191,
+      "at": 3985,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
         "name": "huggingface-hub",
@@ -1623,15 +1624,15 @@
     },
     {
       "type": "progress",
-      "at": 2191,
+      "at": 3985,
       "phase": "Checking license",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2191,
+      "at": 3985,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
         "name": "onnx",
@@ -1675,7 +1676,7 @@
     },
     {
       "type": "progress",
-      "at": 2191,
+      "at": 3985,
       "phase": "Checking license",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 0,
@@ -1683,7 +1684,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2191,
+      "at": 3985,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1727,25 +1728,25 @@
     },
     {
       "type": "progress",
-      "at": 2191,
+      "at": 4065,
       "phase": "Reading release notes and changelog",
-      "detail": "onnx 1.19.1 → 1.22.0",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2191,
+      "at": 4065,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
+        "current": "0.34.4",
+        "latest": "0.34.4",
+        "selected": "0.34.4",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1779,25 +1780,25 @@
     },
     {
       "type": "progress",
-      "at": 2191,
+      "at": 4065,
       "phase": "Comparing the public API surface",
-      "detail": "onnx 1.19.1 → 1.22.0 · 6 evidence sources",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0 · 21 evidence sources",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2191,
+      "at": 4065,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
+        "current": "0.34.4",
+        "latest": "0.34.4",
+        "selected": "0.34.4",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1831,15 +1832,1496 @@
     },
     {
       "type": "progress",
-      "at": 2192,
-      "phase": "Reading release notes and changelog",
-      "detail": "torch 2.7.0 → 2.14.0",
+      "at": 4073,
+      "phase": "Searching your code for 137 breaking changes",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0",
       "done": 0,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2192,
+      "at": 4073,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "0.34.4",
+        "latest": "0.34.4",
+        "selected": "0.34.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Searching your code for 137 breaking changes",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 4567,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 4567,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "0.34.4",
+        "latest": "0.34.4",
+        "selected": "0.34.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Weighing what this upgrade is worth",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 4646,
+      "phase": "Checking maintenance signals",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 4646,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "0.34.4",
+        "latest": "0.34.4",
+        "selected": "0.34.4",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Checking maintenance signals",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 4656,
+      "candidate": {
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
+        "name": "huggingface-hub",
+        "ecosystem": "pypi",
+        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
+        "workspace": "Models/MediaPipeLandscape/CoreML",
+        "workspaceName": null,
+        "current": "0.34.4",
+        "latest": "1.32.0",
+        "selected": "1.32.0",
+        "safeLatest": null,
+        "publishedVersions": [
+          "1.32.0",
+          "1.31.0",
+          "1.30.0",
+          "1.29.0",
+          "1.28.0",
+          "1.27.0",
+          "1.26.1",
+          "1.26.0",
+          "1.25.1",
+          "1.25.0",
+          "1.24.0",
+          "1.23.0",
+          "1.22.0",
+          "1.21.0",
+          "1.20.1",
+          "1.20.0",
+          "1.19.0",
+          "1.18.0",
+          "0.34.6"
+        ],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "ready",
+        "phase": null,
+        "risk": "high",
+        "summary": "Migration required. 1 place in this repository uses an API that huggingface-hub changed; 1 runtime declaration in this repository does not satisfy this upgrade's runtime requirement.",
+        "recommendation": "manual-migration-required",
+        "hasCompatibilityEvidence": true,
+        "runtimeCompatibility": "incompatible",
+        "runtimeAnalyses": [
+          {
+            "changeId": "bc_99adb5d4e5",
+            "runtime": "python",
+            "state": "incompatible",
+            "reason": "violates",
+            "siteCount": 1,
+            "declarationCount": 4,
+            "unresolvedCount": 0,
+            "statement": "Upstream requires Python >=3.10.0; this repository declares Python 3.9 in .github/workflows/build-windows.yml."
+          }
+        ],
+        "severity": "affected",
+        "independentActionableFindingCount": 1,
+        "actionableImpactCount": 2,
+        "actionableImpactFiles": 2,
+        "runtimeDeclarationSiteCount": 1,
+        "sourceCoverage": {
+          "localizationRan": true,
+          "localizationComplete": true,
+          "sourceFilesDiscovered": 67,
+          "sourceFilesIndexed": 67,
+          "sourceTruncated": false,
+          "generatedFilesSkipped": 0,
+          "oversizedSourceSkipped": 0,
+          "runtimeConfigsDiscovered": 11,
+          "runtimeConfigsIndexed": 11,
+          "runtimeConfigComplete": true
+        },
+        "surfaceAssessment": {
+          "available": true,
+          "inspection": "succeeded",
+          "tool": "python ast"
+        },
+        "runtimeChanges": [
+          {
+            "id": "bc_99adb5d4e5",
+            "runtime": "python"
+          }
+        ],
+        "dispositions": [
+          {
+            "changeId": "bc_54f2b4495d",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3a4510fc7e",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d1fb4b7432",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b6aa8b7497",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_890fdd7208",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c339002e12",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_18de570d94",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_813cc95cea",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0a711d63ee",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b825034226",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_0640693b61",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_59c7ffd961",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1aec65c7ed",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ac893cb72f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_26d3f1b59c",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3f54270f34",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_72a0e6f242",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_35adfee2c2",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_17f3c22754",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a80674614d",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_069b2a076f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c9e15ffe18",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_eb33fa4ee7",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e92a767c70",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_bc188ae3dd",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_db8ba4a945",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_43e4e62563",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2f7bdde8f2",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6532162384",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b63de0aee5",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8b04ac36fa",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_78217a0b54",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_973ba5be9a",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d77ccfa3c8",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e8cb9a223d",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_85ace4527f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3f4c28a48c",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ad4fd9357b",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e6acdf87e2",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_23f3e7324f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_57f50356a4",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c2b9f5637d",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_51475525e2",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4c10323700",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e2a727d9b3",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2ed9dcf64e",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_be80911b1f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_50ff79ba89",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9da6bf7866",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_05bd6f9df7",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_31e5636c40",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6e0d93818d",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_876f97f09c",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_125a8e87b7",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e39caeed4f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ceaaf822f8",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_eb11b87deb",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_89cf69f96d",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_229f364d63",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_79e5fb0ce5",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_85331685d0",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_2249708c70",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6ca7034cf9",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f0395919f3",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a0a8c03c7e",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c578a2c367",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c8d42a1cf6",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d42ef1f13e",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_85d5114539",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_57b9876d73",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_25eb0f338f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c8f24594f6",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b4283be3ad",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_6c86c93b1b",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d355f17d58",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d9ecbc2310",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_99f5072851",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3fd14f976c",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e05866159c",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_90c13eacdb",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_83f69f7a8e",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e272047cef",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a491411213",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8cfdb32504",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9688be7cd9",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ebad1d5f97",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3beeb21863",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a504e431c4",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_77a064a65c",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_ce4b8530f9",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_442de3fdf9",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_29597ff20b",
+            "state": "actionable",
+            "reason": "high-confidence-impact",
+            "siteCount": 1,
+            "actionableSiteCount": 1,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_e4d0b51c93",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_368f690cdd",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f47d35bd6b",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b392c6e27b",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d6c44b2869",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c7b6a07ad7",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_d43940f1f7",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1811471d75",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_56bacd9b82",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5c11114a92",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_c67b96482d",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_aa8e998b79",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_9585bbb23e",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3ae016dde9",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_076be2f635",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f30e608f0f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7623c80750",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_60ef624a4f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b0abdc9cd6",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_8ec0421cdb",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f94916190b",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_144d9d14f9",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_356fc40f83",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_a38f38934f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_85766a06e4",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_63875f8a35",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_247a7caf53",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_eea6688275",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_248e9c7874",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5e361f32f4",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cb6cd11d6b",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_4c363acc2b",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_fd32c6f4d4",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_1adf7c1f9f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_f002cc75d6",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_3b8a1540b7",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5fb4c38951",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_26b20e2aa2",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_cb2994cf31",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_72c8f7052e",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_40c28ff029",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_b980d67451",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_5306b66a2f",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_7d2b8239a1",
+            "state": "unknown",
+            "reason": "impact-unresolved",
+            "siteCount": 0,
+            "actionableSiteCount": 0,
+            "runtimeState": null
+          },
+          {
+            "changeId": "bc_99adb5d4e5",
+            "state": "actionable",
+            "reason": "runtime-incompatible",
+            "siteCount": 1,
+            "actionableSiteCount": 1,
+            "runtimeState": "incompatible"
+          }
+        ],
+        "breakingCount": 137,
+        "impactCount": 2,
+        "impactFiles": 2,
+        "evidenceCount": 21,
+        "gaps": [],
+        "breaking": [
+          {
+            "kind": "signature-change",
+            "summary": "The signature of `huggingface_hub.file_download.hf_hub_download` changed.",
+            "remediation": "The parameters of `huggingface_hub.file_download.hf_hub_download` changed; its return type did not. Update every call site to pass arguments matching the new list — check argument order, argument count, and whether an options object replaced positional arguments. A call that only reads the result of `huggingface_hub.file_download.hf_hub_download` needs no change beyond its arguments.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 85,
+              "band": "high",
+              "label": "Very confident"
+            },
+            "symbols": [
+              "huggingface_hub.file_download.hf_hub_download",
+              "hf_hub_download",
+              "file_download.hf_hub_download"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "129 API surface change(s) in huggingface-hub",
+                "url": null,
+                "locator": "huggingface-hub 0.34.4 → 1.32.0 (public symbols, best-effort) · computed by python ast"
+              }
+            ],
+            "sites": [
+              {
+                "file": "Models/MediaPipeLandscape/CoreML/GenerateModel.py",
+                "line": 41,
+                "excerpt": "hf_hub_download(",
+                "matchedSymbol": "hf_hub_download",
+                "confidence": "high"
+              }
+            ]
+          },
+          {
+            "kind": "runtime-requirement",
+            "summary": "Minimum python version is now >=3.10.0",
+            "remediation": "Minimum python version is now >=3.10.0. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+            "confidence": "low",
+            "runtime": {
+              "kind": "minimum-runtime",
+              "runtime": "python",
+              "requirement": ">=3.10.0",
+              "sourceText": "requires Python >=3.10.0"
+            },
+            "overall": {
+              "score": 40,
+              "band": "low",
+              "label": "Not very confident"
+            },
+            "symbols": [
+              "Python"
+            ],
+            "evidence": [
+              {
+                "source": "registry-metadata",
+                "title": "huggingface-hub@1.32.0 requires Python >=3.10.0",
+                "url": "https://github.com/huggingface/huggingface_hub",
+                "locator": null
+              }
+            ],
+            "sites": [
+              {
+                "file": ".github/workflows/build-windows.yml",
+                "line": 115,
+                "excerpt": "python-version: '3.9'",
+                "matchedSymbol": "python",
+                "confidence": "high",
+                "runtimeVerdict": "incompatible"
+              }
+            ]
+          },
+          {
+            "kind": "removed-export",
+            "summary": "`huggingface_hub.cli.BaseHuggingfaceCLICommand` is no longer exported (was a class).",
+            "remediation": "Every use of `huggingface_hub.cli.BaseHuggingfaceCLICommand` from `huggingface-hub` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `huggingface_hub.cli.BaseHuggingfaceCLICommand` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "huggingface_hub.cli.BaseHuggingfaceCLICommand",
+              "BaseHuggingfaceCLICommand",
+              "cli.BaseHuggingfaceCLICommand"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "129 API surface change(s) in huggingface-hub",
+                "url": null,
+                "locator": "huggingface-hub 0.34.4 → 1.32.0 (public symbols, best-effort) · computed by python ast"
+              }
+            ],
+            "sites": []
+          },
+          {
+            "kind": "removed-export",
+            "summary": "`huggingface_hub.cli.auth.AuthCommands` is no longer exported (was a class).",
+            "remediation": "Every use of `huggingface_hub.cli.auth.AuthCommands` from `huggingface-hub` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `huggingface_hub.cli.auth.AuthCommands` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "huggingface_hub.cli.auth.AuthCommands",
+              "AuthCommands",
+              "auth.AuthCommands"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "129 API surface change(s) in huggingface-hub",
+                "url": null,
+                "locator": "huggingface-hub 0.34.4 → 1.32.0 (public symbols, best-effort) · computed by python ast"
+              }
+            ],
+            "sites": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "progress",
+      "at": 4656,
+      "phase": "Needs your attention",
+      "detail": "huggingface-hub 0.34.4 → 1.32.0 · affects your code · 2 actionable sites in 2 files — not deeply verified",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "type": "progress",
+      "at": 5626,
+      "phase": "Reading release notes and changelog",
+      "detail": "torch 2.7.0 → 2.14.0",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 5626,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1883,15 +3365,15 @@
     },
     {
       "type": "progress",
-      "at": 2192,
+      "at": 5626,
       "phase": "Comparing the public API surface",
       "detail": "torch 2.7.0 → 2.14.0 · 10 evidence sources",
-      "done": 0,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2192,
+      "at": 5626,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -1935,67 +3417,15 @@
     },
     {
       "type": "progress",
-      "at": 2219,
-      "phase": "Searching your code for 30 breaking changes",
-      "detail": "onnx 1.19.1 → 1.22.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2219,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Searching your code for 30 breaking changes",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2219,
+      "at": 5657,
       "phase": "Searching your code for 977 breaking changes",
       "detail": "torch 2.7.0 → 2.14.0",
-      "done": 0,
+      "done": 1,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 2219,
+      "at": 5657,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -2039,557 +3469,7 @@
     },
     {
       "type": "progress",
-      "at": 3096,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "onnx 1.19.1 → 1.22.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3096,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3142,
-      "phase": "Checking maintenance signals",
-      "detail": "onnx 1.19.1 → 1.22.0",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3142,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.19.1",
-        "selected": "1.19.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3143,
-      "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
-        "name": "onnx",
-        "ecosystem": "pypi",
-        "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
-        "workspace": "Models/MediaPipeLandscape/CoreML",
-        "workspaceName": null,
-        "current": "1.19.1",
-        "latest": "1.22.0",
-        "selected": "1.22.0",
-        "safeLatest": null,
-        "publishedVersions": [
-          "1.22.0",
-          "1.21.0",
-          "1.20.1",
-          "1.20.0"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "ready",
-        "phase": null,
-        "risk": "medium",
-        "summary": "Migration required. 1 runtime declaration in this repository does not satisfy this upgrade's runtime requirement; fixes 8 known vulnerabilities.",
-        "recommendation": "manual-migration-required",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": "incompatible",
-        "runtimeAnalyses": [
-          {
-            "changeId": "bc_414c7270c3",
-            "runtime": "python",
-            "state": "incompatible",
-            "reason": "violates",
-            "siteCount": 1,
-            "declarationCount": 4,
-            "unresolvedCount": 0,
-            "statement": "Upstream requires Python >=3.10; this repository declares Python 3.9 in .github/workflows/build-windows.yml."
-          }
-        ],
-        "severity": "affected",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 1,
-        "actionableImpactFiles": 1,
-        "runtimeDeclarationSiteCount": 1,
-        "sourceCoverage": {
-          "localizationRan": true,
-          "localizationComplete": true,
-          "sourceFilesDiscovered": 67,
-          "sourceFilesIndexed": 67,
-          "sourceTruncated": false,
-          "generatedFilesSkipped": 0,
-          "oversizedSourceSkipped": 0,
-          "runtimeConfigsDiscovered": 11,
-          "runtimeConfigsIndexed": 11,
-          "runtimeConfigComplete": true
-        },
-        "surfaceAssessment": {
-          "available": true,
-          "inspection": "succeeded",
-          "tool": "python ast"
-        },
-        "runtimeChanges": [
-          {
-            "id": "bc_414c7270c3",
-            "runtime": "python"
-          }
-        ],
-        "dispositions": [
-          {
-            "changeId": "bc_c880419e51",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_38aba89a54",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9770615f5b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6a8dcb3d89",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e08fc2c8f2",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6c9791b0f3",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_02479df46b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1f8208b338",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1cd212a74a",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fac29c6d37",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_57bc3e5082",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_3e7e40fe67",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5e1c7a79ca",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d5f19fbd6d",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ffb6bc5474",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_98fa75b27c",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ca67b967c8",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f092304b53",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_191b5a259f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e7764b31c4",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_7323b46d95",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fbb55389ef",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b78a68a98f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1bb344684f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_24c93712ba",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1709da3085",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1735e85f53",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c879329bab",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ca565473ae",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_414c7270c3",
-            "state": "actionable",
-            "reason": "runtime-incompatible",
-            "siteCount": 1,
-            "actionableSiteCount": 1,
-            "runtimeState": "incompatible"
-          }
-        ],
-        "breakingCount": 30,
-        "impactCount": 1,
-        "impactFiles": 1,
-        "evidenceCount": 6,
-        "gaps": [],
-        "breaking": [
-          {
-            "kind": "runtime-requirement",
-            "summary": "Minimum python version is now >=3.10",
-            "remediation": "Minimum python version is now >=3.10. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
-            "confidence": "low",
-            "runtime": {
-              "kind": "minimum-runtime",
-              "runtime": "python",
-              "requirement": ">=3.10",
-              "sourceText": "requires Python >=3.10"
-            },
-            "overall": {
-              "score": 40,
-              "band": "low",
-              "label": "Not very confident"
-            },
-            "symbols": [
-              "Python"
-            ],
-            "evidence": [
-              {
-                "source": "registry-metadata",
-                "title": "onnx@1.22.0 requires Python >=3.10",
-                "url": null,
-                "locator": null
-              }
-            ],
-            "sites": [
-              {
-                "file": ".github/workflows/build-windows.yml",
-                "line": 115,
-                "excerpt": "python-version: '3.9'",
-                "matchedSymbol": "python",
-                "confidence": "high",
-                "runtimeVerdict": "incompatible"
-              }
-            ]
-          },
-          {
-            "kind": "removed-export",
-            "summary": "`onnx.helper.float32_to_bfloat16` is no longer exported (was a function).",
-            "remediation": "Every use of `onnx.helper.float32_to_bfloat16` from `onnx` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `onnx.helper.float32_to_bfloat16` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "onnx.helper.float32_to_bfloat16",
-              "float32_to_bfloat16",
-              "helper.float32_to_bfloat16"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "29 API surface change(s) in onnx",
-                "url": null,
-                "locator": "onnx 1.19.1 → 1.22.0 (public symbols, best-effort) · computed by python ast"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "removed-export",
-            "summary": "`onnx.helper.float32_to_float8e4m3` is no longer exported (was a function).",
-            "remediation": "Every use of `onnx.helper.float32_to_float8e4m3` from `onnx` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `onnx.helper.float32_to_float8e4m3` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "onnx.helper.float32_to_float8e4m3",
-              "float32_to_float8e4m3",
-              "helper.float32_to_float8e4m3"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "29 API surface change(s) in onnx",
-                "url": null,
-                "locator": "onnx 1.19.1 → 1.22.0 (public symbols, best-effort) · computed by python ast"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "removed-export",
-            "summary": "`onnx.helper.float32_to_float8e5m2` is no longer exported (was a function).",
-            "remediation": "Every use of `onnx.helper.float32_to_float8e5m2` from `onnx` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `onnx.helper.float32_to_float8e5m2` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "onnx.helper.float32_to_float8e5m2",
-              "float32_to_float8e5m2",
-              "helper.float32_to_float8e5m2"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "29 API surface change(s) in onnx",
-                "url": null,
-                "locator": "onnx 1.19.1 → 1.22.0 (public symbols, best-effort) · computed by python ast"
-              }
-            ],
-            "sites": []
-          }
-        ]
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3143,
-      "phase": "Needs your attention",
-      "detail": "onnx 1.19.1 → 1.22.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
-      "done": 1,
-      "total": 3
-    },
-    {
-      "type": "progress",
-      "at": 3612,
+      "at": 6224,
       "phase": "Weighing what this upgrade is worth",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 1,
@@ -2597,7 +3477,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3612,
+      "at": 6224,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -2641,7 +3521,7 @@
     },
     {
       "type": "progress",
-      "at": 3661,
+      "at": 6282,
       "phase": "Checking maintenance signals",
       "detail": "torch 2.7.0 → 2.14.0",
       "done": 1,
@@ -2649,7 +3529,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3661,
+      "at": 6282,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -2693,7 +3573,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3738,
+      "at": 6372,
       "candidate": {
         "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#torch@2.7.0",
         "name": "torch",
@@ -10713,7 +11593,7 @@
     },
     {
       "type": "progress",
-      "at": 3738,
+      "at": 6373,
       "phase": "Needs your attention",
       "detail": "torch 2.7.0 → 2.14.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
       "done": 2,
@@ -10721,25 +11601,25 @@
     },
     {
       "type": "progress",
-      "at": 5118,
+      "at": 8549,
       "phase": "Comparing the public API surface",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5118,
+      "at": 8549,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "0.34.4",
-        "selected": "0.34.4",
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10773,25 +11653,25 @@
     },
     {
       "type": "progress",
-      "at": 5122,
+      "at": 8552,
       "phase": "Reading release notes and changelog",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5122,
+      "at": 8552,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "0.34.4",
-        "selected": "0.34.4",
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10825,25 +11705,25 @@
     },
     {
       "type": "progress",
-      "at": 5122,
+      "at": 8552,
       "phase": "Comparing the public API surface",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0 · 21 evidence sources",
+      "detail": "onnx 1.19.1 → 1.23.0 · 7 evidence sources",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5122,
+      "at": 8552,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "0.34.4",
-        "selected": "0.34.4",
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10877,25 +11757,25 @@
     },
     {
       "type": "progress",
-      "at": 5128,
-      "phase": "Searching your code for 137 breaking changes",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "at": 8554,
+      "phase": "Searching your code for 39 breaking changes",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5128,
+      "at": 8554,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "0.34.4",
-        "selected": "0.34.4",
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10903,7 +11783,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Searching your code for 137 breaking changes",
+        "phase": "Searching your code for 39 breaking changes",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -10929,25 +11809,25 @@
     },
     {
       "type": "progress",
-      "at": 5779,
+      "at": 9842,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5779,
+      "at": 9842,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "0.34.4",
-        "selected": "0.34.4",
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -10981,25 +11861,25 @@
     },
     {
       "type": "progress",
-      "at": 5823,
+      "at": 9910,
       "phase": "Checking maintenance signals",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0",
+      "detail": "onnx 1.19.1 → 1.23.0",
       "done": 2,
       "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 5823,
+      "at": 9910,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "0.34.4",
-        "selected": "0.34.4",
+        "current": "1.19.1",
+        "latest": "1.19.1",
+        "selected": "1.19.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -11033,38 +11913,24 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 5831,
+      "at": 9912,
       "candidate": {
-        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#huggingface-hub@0.34.4",
-        "name": "huggingface-hub",
+        "id": "Models/MediaPipeLandscape/CoreML/requirements.txt#onnx@1.19.1",
+        "name": "onnx",
         "ecosystem": "pypi",
         "manifestPath": "Models/MediaPipeLandscape/CoreML/requirements.txt",
         "workspace": "Models/MediaPipeLandscape/CoreML",
         "workspaceName": null,
-        "current": "0.34.4",
-        "latest": "1.32.0",
-        "selected": "1.32.0",
+        "current": "1.19.1",
+        "latest": "1.23.0",
+        "selected": "1.23.0",
         "safeLatest": null,
         "publishedVersions": [
-          "1.32.0",
-          "1.31.0",
-          "1.30.0",
-          "1.29.0",
-          "1.28.0",
-          "1.27.0",
-          "1.26.1",
-          "1.26.0",
-          "1.25.1",
-          "1.25.0",
-          "1.24.0",
           "1.23.0",
           "1.22.0",
           "1.21.0",
           "1.20.1",
-          "1.20.0",
-          "1.19.0",
-          "1.18.0",
-          "0.34.6"
+          "1.20.0"
         ],
         "provenance": {
           "kind": "runtime",
@@ -11072,27 +11938,27 @@
         },
         "status": "ready",
         "phase": null,
-        "risk": "high",
-        "summary": "Migration required. 1 place in this repository uses an API that huggingface-hub changed; 1 runtime declaration in this repository does not satisfy this upgrade's runtime requirement.",
+        "risk": "medium",
+        "summary": "Migration required. 1 runtime declaration in this repository does not satisfy this upgrade's runtime requirement; fixes 8 known vulnerabilities.",
         "recommendation": "manual-migration-required",
         "hasCompatibilityEvidence": true,
         "runtimeCompatibility": "incompatible",
         "runtimeAnalyses": [
           {
-            "changeId": "bc_99adb5d4e5",
+            "changeId": "bc_414c7270c3",
             "runtime": "python",
             "state": "incompatible",
             "reason": "violates",
             "siteCount": 1,
             "declarationCount": 4,
             "unresolvedCount": 0,
-            "statement": "Upstream requires Python >=3.10.0; this repository declares Python 3.9 in .github/workflows/build-windows.yml."
+            "statement": "Upstream requires Python >=3.10; this repository declares Python 3.9 in .github/workflows/build-windows.yml."
           }
         ],
         "severity": "affected",
-        "independentActionableFindingCount": 1,
-        "actionableImpactCount": 2,
-        "actionableImpactFiles": 2,
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 1,
+        "actionableImpactFiles": 1,
         "runtimeDeclarationSiteCount": 1,
         "sourceCoverage": {
           "localizationRan": true,
@@ -11113,13 +11979,13 @@
         },
         "runtimeChanges": [
           {
-            "id": "bc_99adb5d4e5",
+            "id": "bc_414c7270c3",
             "runtime": "python"
           }
         ],
         "dispositions": [
           {
-            "changeId": "bc_54f2b4495d",
+            "changeId": "bc_c880419e51",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11127,7 +11993,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_3a4510fc7e",
+            "changeId": "bc_38aba89a54",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11135,7 +12001,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_d1fb4b7432",
+            "changeId": "bc_9770615f5b",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11143,7 +12009,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_b6aa8b7497",
+            "changeId": "bc_6a8dcb3d89",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11151,7 +12017,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_890fdd7208",
+            "changeId": "bc_e08fc2c8f2",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11159,7 +12025,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_c339002e12",
+            "changeId": "bc_6c9791b0f3",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11167,7 +12033,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_18de570d94",
+            "changeId": "bc_02479df46b",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11175,7 +12041,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_813cc95cea",
+            "changeId": "bc_1f8208b338",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11183,7 +12049,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_0a711d63ee",
+            "changeId": "bc_1cd212a74a",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11191,7 +12057,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_b825034226",
+            "changeId": "bc_fac29c6d37",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11199,7 +12065,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_0640693b61",
+            "changeId": "bc_57bc3e5082",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11207,7 +12073,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_59c7ffd961",
+            "changeId": "bc_3e7e40fe67",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11215,7 +12081,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_1aec65c7ed",
+            "changeId": "bc_5e1c7a79ca",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11223,7 +12089,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_ac893cb72f",
+            "changeId": "bc_d5f19fbd6d",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11231,7 +12097,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_26d3f1b59c",
+            "changeId": "bc_ffb6bc5474",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11239,7 +12105,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_3f54270f34",
+            "changeId": "bc_98fa75b27c",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11247,7 +12113,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_72a0e6f242",
+            "changeId": "bc_ca67b967c8",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11255,7 +12121,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_35adfee2c2",
+            "changeId": "bc_f092304b53",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11263,7 +12129,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_17f3c22754",
+            "changeId": "bc_191b5a259f",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11271,7 +12137,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_a80674614d",
+            "changeId": "bc_d3d1681cfa",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11279,7 +12145,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_069b2a076f",
+            "changeId": "bc_bf22a2969d",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11287,7 +12153,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_c9e15ffe18",
+            "changeId": "bc_d7f90134e7",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11295,7 +12161,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_eb33fa4ee7",
+            "changeId": "bc_1dd57958f6",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11303,7 +12169,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_e92a767c70",
+            "changeId": "bc_e7764b31c4",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11311,7 +12177,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_bc188ae3dd",
+            "changeId": "bc_7323b46d95",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11319,7 +12185,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_db8ba4a945",
+            "changeId": "bc_fbb55389ef",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11327,7 +12193,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_43e4e62563",
+            "changeId": "bc_b78a68a98f",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11335,7 +12201,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_2f7bdde8f2",
+            "changeId": "bc_1bb344684f",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11343,7 +12209,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_6532162384",
+            "changeId": "bc_24c93712ba",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11351,7 +12217,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_b63de0aee5",
+            "changeId": "bc_1709da3085",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11359,7 +12225,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_8b04ac36fa",
+            "changeId": "bc_1735e85f53",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11367,7 +12233,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_78217a0b54",
+            "changeId": "bc_c879329bab",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11375,7 +12241,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_973ba5be9a",
+            "changeId": "bc_ca565473ae",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11383,7 +12249,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_d77ccfa3c8",
+            "changeId": "bc_8e93ae238c",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11391,7 +12257,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_e8cb9a223d",
+            "changeId": "bc_8d1809eb87",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11399,7 +12265,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_85ace4527f",
+            "changeId": "bc_e51899b9ea",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11407,7 +12273,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_3f4c28a48c",
+            "changeId": "bc_f8882c3539",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11415,7 +12281,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_ad4fd9357b",
+            "changeId": "bc_9f1aa56db5",
             "state": "unknown",
             "reason": "impact-unresolved",
             "siteCount": 0,
@@ -11423,791 +12289,7 @@
             "runtimeState": null
           },
           {
-            "changeId": "bc_e6acdf87e2",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_23f3e7324f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_57f50356a4",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c2b9f5637d",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_51475525e2",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4c10323700",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e2a727d9b3",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_2ed9dcf64e",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_be80911b1f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_50ff79ba89",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9da6bf7866",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_05bd6f9df7",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_31e5636c40",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6e0d93818d",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_876f97f09c",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_125a8e87b7",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e39caeed4f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ceaaf822f8",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_eb11b87deb",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_89cf69f96d",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_229f364d63",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_79e5fb0ce5",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_85331685d0",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_2249708c70",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6ca7034cf9",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f0395919f3",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a0a8c03c7e",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c578a2c367",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c8d42a1cf6",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d42ef1f13e",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_85d5114539",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_57b9876d73",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_25eb0f338f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c8f24594f6",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b4283be3ad",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_6c86c93b1b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d355f17d58",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d9ecbc2310",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_99f5072851",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_3fd14f976c",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e05866159c",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_90c13eacdb",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_83f69f7a8e",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e272047cef",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a491411213",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8cfdb32504",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9688be7cd9",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ebad1d5f97",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_3beeb21863",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a504e431c4",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_77a064a65c",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ce4b8530f9",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_442de3fdf9",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_29597ff20b",
-            "state": "actionable",
-            "reason": "high-confidence-impact",
-            "siteCount": 1,
-            "actionableSiteCount": 1,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_e4d0b51c93",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_368f690cdd",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f47d35bd6b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b392c6e27b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d6c44b2869",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c7b6a07ad7",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_d43940f1f7",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1811471d75",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_56bacd9b82",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5c11114a92",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_c67b96482d",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_aa8e998b79",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_9585bbb23e",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_3ae016dde9",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_076be2f635",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f30e608f0f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_7623c80750",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_60ef624a4f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b0abdc9cd6",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_8ec0421cdb",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f94916190b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_144d9d14f9",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_356fc40f83",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_a38f38934f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_85766a06e4",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_63875f8a35",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_247a7caf53",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_eea6688275",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_248e9c7874",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5e361f32f4",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_cb6cd11d6b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4c363acc2b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fd32c6f4d4",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1adf7c1f9f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f002cc75d6",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_3b8a1540b7",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5fb4c38951",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_26b20e2aa2",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_cb2994cf31",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_72c8f7052e",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_40c28ff029",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b980d67451",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5306b66a2f",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_7d2b8239a1",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_99adb5d4e5",
+            "changeId": "bc_414c7270c3",
             "state": "actionable",
             "reason": "runtime-incompatible",
             "siteCount": 1,
@@ -12215,56 +12297,22 @@
             "runtimeState": "incompatible"
           }
         ],
-        "breakingCount": 137,
-        "impactCount": 2,
-        "impactFiles": 2,
-        "evidenceCount": 21,
+        "breakingCount": 39,
+        "impactCount": 1,
+        "impactFiles": 1,
+        "evidenceCount": 7,
         "gaps": [],
         "breaking": [
           {
-            "kind": "signature-change",
-            "summary": "The signature of `huggingface_hub.file_download.hf_hub_download` changed.",
-            "remediation": "The parameters of `huggingface_hub.file_download.hf_hub_download` changed; its return type did not. Update every call site to pass arguments matching the new list — check argument order, argument count, and whether an options object replaced positional arguments. A call that only reads the result of `huggingface_hub.file_download.hf_hub_download` needs no change beyond its arguments.",
-            "confidence": "high",
-            "runtime": null,
-            "overall": {
-              "score": 85,
-              "band": "high",
-              "label": "Very confident"
-            },
-            "symbols": [
-              "huggingface_hub.file_download.hf_hub_download",
-              "hf_hub_download",
-              "file_download.hf_hub_download"
-            ],
-            "evidence": [
-              {
-                "source": "type-surface-diff",
-                "title": "129 API surface change(s) in huggingface-hub",
-                "url": null,
-                "locator": "huggingface-hub 0.34.4 → 1.32.0 (public symbols, best-effort) · computed by python ast"
-              }
-            ],
-            "sites": [
-              {
-                "file": "Models/MediaPipeLandscape/CoreML/GenerateModel.py",
-                "line": 41,
-                "excerpt": "hf_hub_download(",
-                "matchedSymbol": "hf_hub_download",
-                "confidence": "high"
-              }
-            ]
-          },
-          {
             "kind": "runtime-requirement",
-            "summary": "Minimum python version is now >=3.10.0",
-            "remediation": "Minimum python version is now >=3.10.0. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+            "summary": "Minimum python version is now >=3.10",
+            "remediation": "Minimum python version is now >=3.10. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
             "confidence": "low",
             "runtime": {
               "kind": "minimum-runtime",
               "runtime": "python",
-              "requirement": ">=3.10.0",
-              "sourceText": "requires Python >=3.10.0"
+              "requirement": ">=3.10",
+              "sourceText": "requires Python >=3.10"
             },
             "overall": {
               "score": 40,
@@ -12277,8 +12325,8 @@
             "evidence": [
               {
                 "source": "registry-metadata",
-                "title": "huggingface-hub@1.32.0 requires Python >=3.10.0",
-                "url": "https://github.com/huggingface/huggingface_hub",
+                "title": "onnx@1.23.0 requires Python >=3.10",
+                "url": null,
                 "locator": null
               }
             ],
@@ -12295,8 +12343,8 @@
           },
           {
             "kind": "removed-export",
-            "summary": "`huggingface_hub.cli.BaseHuggingfaceCLICommand` is no longer exported (was a class).",
-            "remediation": "Every use of `huggingface_hub.cli.BaseHuggingfaceCLICommand` from `huggingface-hub` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `huggingface_hub.cli.BaseHuggingfaceCLICommand` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+            "summary": "`onnx.helper.float32_to_bfloat16` is no longer exported (was a function).",
+            "remediation": "Every use of `onnx.helper.float32_to_bfloat16` from `onnx` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `onnx.helper.float32_to_bfloat16` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
             "confidence": "high",
             "runtime": null,
             "overall": {
@@ -12305,24 +12353,24 @@
               "label": "Fairly confident"
             },
             "symbols": [
-              "huggingface_hub.cli.BaseHuggingfaceCLICommand",
-              "BaseHuggingfaceCLICommand",
-              "cli.BaseHuggingfaceCLICommand"
+              "onnx.helper.float32_to_bfloat16",
+              "float32_to_bfloat16",
+              "helper.float32_to_bfloat16"
             ],
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "129 API surface change(s) in huggingface-hub",
+                "title": "38 API surface change(s) in onnx",
                 "url": null,
-                "locator": "huggingface-hub 0.34.4 → 1.32.0 (public symbols, best-effort) · computed by python ast"
+                "locator": "onnx 1.19.1 → 1.23.0 (public symbols, best-effort) · computed by python ast"
               }
             ],
             "sites": []
           },
           {
             "kind": "removed-export",
-            "summary": "`huggingface_hub.cli.auth.AuthCommands` is no longer exported (was a class).",
-            "remediation": "Every use of `huggingface_hub.cli.auth.AuthCommands` from `huggingface-hub` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `huggingface_hub.cli.auth.AuthCommands` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+            "summary": "`onnx.helper.float32_to_float8e4m3` is no longer exported (was a function).",
+            "remediation": "Every use of `onnx.helper.float32_to_float8e4m3` from `onnx` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `onnx.helper.float32_to_float8e4m3` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
             "confidence": "high",
             "runtime": null,
             "overall": {
@@ -12331,16 +12379,42 @@
               "label": "Fairly confident"
             },
             "symbols": [
-              "huggingface_hub.cli.auth.AuthCommands",
-              "AuthCommands",
-              "auth.AuthCommands"
+              "onnx.helper.float32_to_float8e4m3",
+              "float32_to_float8e4m3",
+              "helper.float32_to_float8e4m3"
             ],
             "evidence": [
               {
                 "source": "type-surface-diff",
-                "title": "129 API surface change(s) in huggingface-hub",
+                "title": "38 API surface change(s) in onnx",
                 "url": null,
-                "locator": "huggingface-hub 0.34.4 → 1.32.0 (public symbols, best-effort) · computed by python ast"
+                "locator": "onnx 1.19.1 → 1.23.0 (public symbols, best-effort) · computed by python ast"
+              }
+            ],
+            "sites": []
+          },
+          {
+            "kind": "removed-export",
+            "summary": "`onnx.helper.float32_to_float8e5m2` is no longer exported (was a function).",
+            "remediation": "Every use of `onnx.helper.float32_to_float8e5m2` from `onnx` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `onnx.helper.float32_to_float8e5m2` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+            "confidence": "high",
+            "runtime": null,
+            "overall": {
+              "score": 55,
+              "band": "medium",
+              "label": "Fairly confident"
+            },
+            "symbols": [
+              "onnx.helper.float32_to_float8e5m2",
+              "float32_to_float8e5m2",
+              "helper.float32_to_float8e5m2"
+            ],
+            "evidence": [
+              {
+                "source": "type-surface-diff",
+                "title": "38 API surface change(s) in onnx",
+                "url": null,
+                "locator": "onnx 1.19.1 → 1.23.0 (public symbols, best-effort) · computed by python ast"
               }
             ],
             "sites": []
@@ -12350,9 +12424,9 @@
     },
     {
       "type": "progress",
-      "at": 5831,
+      "at": 9912,
       "phase": "Needs your attention",
-      "detail": "huggingface-hub 0.34.4 → 1.32.0 · affects your code · 2 actionable sites in 2 files — not deeply verified",
+      "detail": "onnx 1.19.1 → 1.23.0 · affects your code · 1 actionable site in 1 file — not deeply verified",
       "done": 3,
       "total": 3
     }
@@ -21695,10 +21769,11 @@
       "workspace": "Models/MediaPipeLandscape/CoreML",
       "workspaceName": null,
       "current": "1.19.1",
-      "latest": "1.22.0",
-      "selected": "1.22.0",
+      "latest": "1.23.0",
+      "selected": "1.23.0",
       "safeLatest": null,
       "publishedVersions": [
+        "1.23.0",
         "1.22.0",
         "1.21.0",
         "1.20.1",
@@ -21909,6 +21984,38 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_d3d1681cfa",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_bf22a2969d",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_d7f90134e7",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_1dd57958f6",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_e7764b31c4",
           "state": "unknown",
           "reason": "impact-unresolved",
@@ -21989,6 +22096,46 @@
           "runtimeState": null
         },
         {
+          "changeId": "bc_8e93ae238c",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_8d1809eb87",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_e51899b9ea",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_f8882c3539",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
+          "changeId": "bc_9f1aa56db5",
+          "state": "unknown",
+          "reason": "impact-unresolved",
+          "siteCount": 0,
+          "actionableSiteCount": 0,
+          "runtimeState": null
+        },
+        {
           "changeId": "bc_414c7270c3",
           "state": "actionable",
           "reason": "runtime-incompatible",
@@ -21997,10 +22144,10 @@
           "runtimeState": "incompatible"
         }
       ],
-      "breakingCount": 30,
+      "breakingCount": 39,
       "impactCount": 1,
       "impactFiles": 1,
-      "evidenceCount": 6,
+      "evidenceCount": 7,
       "gaps": [],
       "breaking": [
         {
@@ -22025,7 +22172,7 @@
           "evidence": [
             {
               "source": "registry-metadata",
-              "title": "onnx@1.22.0 requires Python >=3.10",
+              "title": "onnx@1.23.0 requires Python >=3.10",
               "url": null,
               "locator": null
             }
@@ -22060,9 +22207,9 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "29 API surface change(s) in onnx",
+              "title": "38 API surface change(s) in onnx",
               "url": null,
-              "locator": "onnx 1.19.1 → 1.22.0 (public symbols, best-effort) · computed by python ast"
+              "locator": "onnx 1.19.1 → 1.23.0 (public symbols, best-effort) · computed by python ast"
             }
           ],
           "sites": []
@@ -22086,9 +22233,9 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "29 API surface change(s) in onnx",
+              "title": "38 API surface change(s) in onnx",
               "url": null,
-              "locator": "onnx 1.19.1 → 1.22.0 (public symbols, best-effort) · computed by python ast"
+              "locator": "onnx 1.19.1 → 1.23.0 (public symbols, best-effort) · computed by python ast"
             }
           ],
           "sites": []
@@ -22112,9 +22259,9 @@
           "evidence": [
             {
               "source": "type-surface-diff",
-              "title": "29 API surface change(s) in onnx",
+              "title": "38 API surface change(s) in onnx",
               "url": null,
-              "locator": "onnx 1.19.1 → 1.22.0 (public symbols, best-effort) · computed by python ast"
+              "locator": "onnx 1.19.1 → 1.23.0 (public symbols, best-effort) · computed by python ast"
             }
           ],
           "sites": []
