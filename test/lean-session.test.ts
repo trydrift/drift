@@ -47,15 +47,17 @@ const claudeSpec = CLI_AGENT_SPECS.find((spec) => spec.id === 'claude')!;
 describe('lean Claude Code sessions', () => {
   test('the lean profile is the six tools agents used and no skills', () => {
     assert.deepEqual([...CLAUDE_CODE_LEAN_SESSION_ARGS], ['--tools', 'Bash', 'Read', 'Edit', 'Write', 'TaskOutput', 'TaskStop', '--disable-slash-commands']);
-    assert.equal(DriftConfigSchema.parse({}).remediation.agent.leanSession, true);
+    // Off by default: the profile is cheaper and measurably worse, so a
+    // caller opts in rather than out. See eval/reports/agent/final-verdict.md.
+    assert.equal(DriftConfigSchema.parse({}).remediation.agent.leanSession, false);
   });
 
-  test('a fix session is started with the lean profile when the CLI supports --tools', async () => {
+  test('a fix session opting in is started with the lean profile when the CLI supports --tools', async () => {
     clearFlagSupportCache();
     const fake = await fakeClaude('  --tools <tools...>\n  --effort <level>\n');
     try {
       const agent = new CliFixAgent({ ...claudeSpec, command: fake.command }, 30_000);
-      await agent.run(task(), ctx);
+      await agent.run(task({ leanSession: true }), ctx);
       const argv = await fake.argv();
       const at = argv.indexOf('--tools');
       assert.ok(at >= 0);
@@ -65,15 +67,15 @@ describe('lean Claude Code sessions', () => {
     }
   });
 
-  test('turned off, or on a CLI without --tools, the session starts as before', async () => {
+  test('left alone, or on a CLI without --tools, the session starts as before', async () => {
     clearFlagSupportCache();
     const modern = await fakeClaude('  --tools <tools...>\n');
     const old = await fakeClaude('  --model <model>\n');
     try {
-      await new CliFixAgent({ ...claudeSpec, command: modern.command }, 30_000).run(task({ leanSession: false }), ctx);
+      await new CliFixAgent({ ...claudeSpec, command: modern.command }, 30_000).run(task(), ctx);
       assert.equal((await modern.argv()).includes('--tools'), false);
       clearFlagSupportCache();
-      await new CliFixAgent({ ...claudeSpec, command: old.command }, 30_000).run(task(), ctx);
+      await new CliFixAgent({ ...claudeSpec, command: old.command }, 30_000).run(task({ leanSession: true }), ctx);
       assert.equal((await old.argv()).includes('--tools'), false);
       assert.equal((await old.argv()).includes('--disable-slash-commands'), false);
     } finally {

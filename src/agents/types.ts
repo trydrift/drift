@@ -181,7 +181,11 @@ export interface FixTask {
   repair?: RepairRequest;
   /**
    * Start the agent with only the tools a code fix uses (see
-   * `CLAUDE_CODE_LEAN_SESSION_ARGS`). On unless a caller turns it off.
+   * `CLAUDE_CODE_LEAN_SESSION_ARGS`).
+   *
+   * Opt-in: a lean session is measurably cheaper and measurably worse (80.0%
+   * of ten real upgrades fixed correctly, against 96.8% with the agent's own
+   * tool set), so nothing turns it on for a caller.
    */
   leanSession?: boolean;
 }

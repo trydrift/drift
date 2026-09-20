@@ -405,7 +405,9 @@ export class CliFixAgent implements FixAgent {
    * before it has read the task at all.
    */
   private async lean(task: FixTask, command: string): Promise<readonly string[]> {
-    if (task.leanSession === false || !this.spec.leanArgs) return [];
+    // Opt-in, matching `remediation.agent.leanSession`'s default: the tool set
+    // a session is cheapest with is not the one it succeeds most with.
+    if (task.leanSession !== true || !this.spec.leanArgs) return [];
     const gated = this.spec.leanArgsFlag;
     return !gated || (await supportsFlag(command, gated)) ? this.spec.leanArgs : [];
   }
