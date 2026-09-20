@@ -1,0 +1,344 @@
+diff --git a/package.json b/package.json
+index 827633e..4906d2d 100644
+--- a/package.json
++++ b/package.json
+@@ -55,7 +55,7 @@
+   "peerDependencies": {
+     "react": ">= 16.9.0",
+     "react-dom": ">= 16.9.0",
+-    "react-router-dom": "^5.0.1"
++    "react-router-dom": ">= 6.4.0"
+   },
+   "devDependencies": {
+     "@babel/core": "^7.11.1",
+@@ -84,7 +84,6 @@
+     "@types/react": "^16.14.26",
+     "@types/react-dom": "^16.9.0",
+     "@types/react-modal": "^3.6.0",
+-    "@types/react-router-dom": "^5.0.1",
+     "@types/resize-observer-browser": "^0.1.6",
+     "@typescript-eslint/eslint-plugin": "^5.14.0",
+     "@typescript-eslint/parser": "^5.14.0",
+diff --git a/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx b/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx
+index 60bdd26..6a31da1 100644
+--- a/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx
++++ b/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx
+@@ -1,46 +1,41 @@
+ import React from 'react';
+-import { NavLink, Switch, Route, withRouter, RouteComponentProps } from 'react-router-dom';
++import { NavLink, Routes, Route, useResolvedPath } from 'react-router-dom';
+ import TabNav from '../TabNav';
+ 
+-class ExampleBase extends React.Component<RouteComponentProps> {
+-	render () {
+-		return (
+-			<div>
+-				<TabNav>
+-					<NavLink
+-						exact={true}
+-						to={`${this.props.match.url}/`}
+-						activeClassName="active"
+-					>
+-						NavLink A
+-					</NavLink>
+-					<NavLink
+-						to={`${this.props.match.url}/page-b`}
+-						activeClassName="active"
+-					>
+-						NavLink B
+-					</NavLink>
+-			   </TabNav>
+-			   <div style={{padding: '30px'}}>
+-				   <Switch>
+-						<Route
+-							exact={true}
+-							path={`${this.props.match.url}/`}
+-							render={(props) => <div>Content A</div>}
+-						/>
+-						<Route
+-							exact={true}
+-							path={`${this.props.match.url}/page-b`}
+-							render={(props) => <div>Content B</div>}
+-						/>
+-					</Switch>
+-				</div>
+-		   </div>
+-		);
+-	}
+-}
++const TabNavReactRouterExample = () => {
++	const { pathname: baseUrl } = useResolvedPath('');
+ 
+-// in our exporting of the component, we wrap it in withRouter(), giving it access to the props that we need for the Routes
+-const TabNavReactRouterExample = withRouter(ExampleBase);
++	return (
++		<div>
++			<TabNav>
++				<NavLink
++					end
++					to={`${baseUrl}/`}
++					className={({ isActive }) => (isActive ? 'active' : '')}
++				>
++					NavLink A
++				</NavLink>
++				<NavLink
++					to={`${baseUrl}/page-b`}
++					className={({ isActive }) => (isActive ? 'active' : '')}
++				>
++					NavLink B
++				</NavLink>
++		   </TabNav>
++		   <div style={{padding: '30px'}}>
++			   <Routes>
++					<Route
++						path={`${baseUrl}/`}
++						element={<div>Content A</div>}
++					/>
++					<Route
++						path={`${baseUrl}/page-b`}
++						element={<div>Content B</div>}
++					/>
++				</Routes>
++			</div>
++	   </div>
++	);
++};
+ 
+ export default TabNavReactRouterExample;
+diff --git a/src/components/menus/TertiaryNav/TertiaryNav.test.tsx b/src/components/menus/TertiaryNav/TertiaryNav.test.tsx
+index 615a03b..640edbf 100644
+--- a/src/components/menus/TertiaryNav/TertiaryNav.test.tsx
++++ b/src/components/menus/TertiaryNav/TertiaryNav.test.tsx
+@@ -1,15 +1,14 @@
+ import * as React from 'react';
+-import { shallow } from 'enzyme';
++import { mount } from 'enzyme';
++import { MemoryRouter } from 'react-router-dom';
+ import { TertiaryNav } from './TertiaryNav';
+ 
+ describe('TertiaryNav', () => {
+ 	it('renders without crashing', () => {
+-		shallow(
+-			<TertiaryNav
+-				match={{} as any}
+-				history={{} as any}
+-				location={{} as any}
+-			/>
++		mount(
++			<MemoryRouter>
++				<TertiaryNav />
++			</MemoryRouter>
+ 		);
+ 	});
+ });
+diff --git a/src/components/menus/TertiaryNav/TertiaryNav.tsx b/src/components/menus/TertiaryNav/TertiaryNav.tsx
+index df9b58f..4b16f08 100644
+--- a/src/components/menus/TertiaryNav/TertiaryNav.tsx
++++ b/src/components/menus/TertiaryNav/TertiaryNav.tsx
+@@ -1,58 +1,53 @@
+ // eslint-disable-next-line max-classes-per-file
+ import * as React from 'react';
+ import classnames from 'classnames';
+-import { Switch, Route, NavLink, RouteComponentProps, withRouter, Redirect } from 'react-router-dom';
++import { Routes, Route, NavLink, Navigate, useResolvedPath } from 'react-router-dom';
+ import styles from './TertiaryNav.scss';
+ import IReactComponentProps from '../../../common/structures/IReactComponentProps';
+ import { FunctionGeneric } from '../../../common/structures/Generics';
+ 
+-// There is a known issue in TypeScript, which doesn't allow decorators to change the signature of the classes
+-// they are decorating. Due to this, if you are using @withRouter decorator in your code,
+-// you will see a bunch of errors from TypeScript.
+-// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/24077#issuecomment-455487092
+-@(withRouter as any)
+-export class TertiaryNav extends React.Component<IReactComponentProps & RouteComponentProps> {
+-	render() {
+-		/**
+-		 * Store first route so we can automatically redirect to it.
+-		 */
+-		let firstRoute: React.ReactElement | undefined;
++export const TertiaryNav = (props: IReactComponentProps) => {
++	const { pathname: baseUrl } = useResolvedPath('');
+ 
+-		const tertiaryNavRoutes = React.Children.map(this.props.children, (child: any) => {
+-			const propsWithoutChildren = { ...child.props };
+-			delete propsWithoutChildren.children;
++	/**
++	 * Store first route so we can automatically redirect to it.
++	 */
++	let firstRoute: React.ReactElement | undefined;
+ 
+-			if (typeof firstRoute === 'undefined') {
+-				firstRoute = child;
+-			}
++	const tertiaryNavRoutes = React.Children.map(props.children, (child: any) => {
++		const propsWithoutChildren = { ...child.props };
++		delete propsWithoutChildren.children;
++		const { path, component: Component, render } = propsWithoutChildren;
+ 
+-			return <Route {...propsWithoutChildren} path={`${this.props.match.url}${propsWithoutChildren.path}`} />;
+-		});
++		if (typeof firstRoute === 'undefined') {
++			firstRoute = child;
++		}
+ 
+ 		return (
+-			<div
+-				className={classnames(styles.TertiaryNavContainer, this.props.className)}
+-				id={this.props.id}
+-				style={this.props.style}
+-			>
+-				<ul className={classnames(styles.TertiaryNav)}>{this.props.children}</ul>
+-				{/* globally scoping TertiaryContent so overflow can be hijacked
+-				to make Drawer components work with overflowing content */}
+-				<div className={classnames(styles.TertiaryContent, 'TertiaryContent')}>
+-					<Switch>
+-						{tertiaryNavRoutes}
+-						{firstRoute! && (
+-							<Redirect
+-								from={`${this.props.match.url}`}
+-								to={`${this.props.match.url}${firstRoute!.props.path}`}
+-							/>
+-						)}
+-					</Switch>
+-				</div>
+-			</div>
++			<Route
++				{...propsWithoutChildren}
++				path={`${baseUrl}${path}`}
++				element={render ? render({}) : Component ? <Component /> : null}
++			/>
+ 		);
+-	}
+-}
++	});
++
++	return (
++		<div className={classnames(styles.TertiaryNavContainer, props.className)} id={props.id} style={props.style}>
++			<ul className={classnames(styles.TertiaryNav)}>{props.children}</ul>
++			{/* globally scoping TertiaryContent so overflow can be hijacked
++			to make Drawer components work with overflowing content */}
++			<div className={classnames(styles.TertiaryContent, 'TertiaryContent')}>
++				<Routes>
++					{tertiaryNavRoutes}
++					{firstRoute! && (
++						<Route path={baseUrl} element={<Navigate to={`${baseUrl}${firstRoute!.props.path}`} replace />} />
++					)}
++				</Routes>
++			</div>
++		</div>
++	);
++};
+ 
+ interface ITertiaryNavItemProps extends IReactComponentProps {
+ 	path: string;
+@@ -60,27 +55,22 @@ interface ITertiaryNavItemProps extends IReactComponentProps {
+ 	variant?: 'error';
+ }
+ 
+-// There is a known issue in TypeScript, which doesn't allow decorators to change the signature of the classes
+-// they are decorating. Due to this, if you are using @withRouter decorator in your code,
+-// you will see a bunch of errors from TypeScript.
+-// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/24077#issuecomment-455487092
+-@(withRouter as any)
+-export class TertiaryNavItem extends React.Component<ITertiaryNavItemProps & RouteComponentProps> {
+-	render() {
+-		return (
+-			<li
+-				className={classnames(styles.TertiaryNavItem, this.props.className, {
+-					[styles.TertiaryNavItem__Error]: this.props.variant === 'error',
+-				})}
++export const TertiaryNavItem = (props: ITertiaryNavItemProps) => {
++	const { pathname: baseUrl } = useResolvedPath('');
++
++	return (
++		<li
++			className={classnames(styles.TertiaryNavItem, props.className, {
++				[styles.TertiaryNavItem__Error]: props.variant === 'error',
++			})}
++		>
++			<NavLink
++				end
++				to={`${baseUrl}${props.path}`}
++				className={({ isActive }) => classnames({ [styles.TertiaryNavItem__Active]: isActive })}
+ 			>
+-				<NavLink
+-					exact
+-					to={`${this.props.match.url}${this.props.path}`}
+-					activeClassName={styles.TertiaryNavItem__Active}
+-				>
+-					{this.props.children}
+-				</NavLink>
+-			</li>
+-		);
+-	}
+-}
++				{props.children}
++			</NavLink>
++		</li>
++	);
++};
+diff --git a/src/components/modules/VerticalNav/VerticalNav.tsx b/src/components/modules/VerticalNav/VerticalNav.tsx
+index 49c0377..880045a 100644
+--- a/src/components/modules/VerticalNav/VerticalNav.tsx
++++ b/src/components/modules/VerticalNav/VerticalNav.tsx
+@@ -71,13 +71,14 @@ export const VerticalNavItem = (props: IProps) => {
+ 		return renderWrapper(
+ 			<NavLink
+ 				to={routeTo || ''}
+-				exact={false}
+ 				aria-label={tooltip || undefined}
+-				activeClassName={navLinkActiveClassName || '__Active'}
+-				className={classnames(navLinkClass, additionalNavLinkClass, {
+-					__Active: navLinkActive,
+-					__FadeIn: fadeIn,
+-				})}
++				className={({ isActive }) =>
++					classnames(navLinkClass, additionalNavLinkClass, {
++						[navLinkActiveClassName || '__Active']: isActive,
++						__Active: navLinkActive,
++						__FadeIn: fadeIn,
++					})
++				}
+ 			>
+ 				{children}
+ 			</NavLink>,
+diff --git a/yarn.lock b/yarn.lock
+index 9d5fcc3..147e8dc 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -3229,11 +3229,6 @@
+   resolved "https://registry.yarnpkg.com/@types/highlight.js/-/highlight.js-9.12.4.tgz#8c3496bd1b50cc04aeefd691140aa571d4dbfa34"
+   integrity sha512-t2szdkwmg2JJyuCM20e8kR2X59WCE5Zkl4bzm1u1Oukjm79zpbiAv+QjnwLnuuV0WHEcX2NgUItu0pAMKuOPww==
+ 
+-"@types/history@^4.7.11":
+-  version "4.7.11"
+-  resolved "https://registry.yarnpkg.com/@types/history/-/history-4.7.11.tgz#56588b17ae8f50c53983a524fc3cc47437969d64"
+-  integrity sha512-qjDJRrmvBMiTx+jyLxvLfJU7UznFuokDv4f3WRuriHKERccVpFU+8XMQUAbDzoiJCsmexxRExQeMwwCdamSKDA==
+-
+ "@types/html-minifier-terser@^6.0.0":
+   version "6.1.0"
+   resolved "https://registry.yarnpkg.com/@types/html-minifier-terser/-/html-minifier-terser-6.1.0.tgz#4fc33a00c1d0c16987b1a20cf92d20614c55ac35"
+@@ -3439,23 +3434,6 @@
+   dependencies:
+     "@types/react" "*"
+ 
+-"@types/react-router-dom@^5.0.1":
+-  version "5.3.3"
+-  resolved "https://registry.yarnpkg.com/@types/react-router-dom/-/react-router-dom-5.3.3.tgz#e9d6b4a66fcdbd651a5f106c2656a30088cc1e83"
+-  integrity sha512-kpqnYK4wcdm5UaWI3fLcELopqLrHgLqNsdpHauzlQktfkHL3npOSwtj1Uz9oKBAzs7lFtVkV8j83voAz2D8fhw==
+-  dependencies:
+-    "@types/history" "^4.7.11"
+-    "@types/react" "*"
+-    "@types/react-router" "*"
+-
+-"@types/react-router@*":
+-  version "5.1.20"
+-  resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-5.1.20.tgz#88eccaa122a82405ef3efbcaaa5dcdd9f021387c"
+-  integrity sha512-jGjmu/ZqS7FjSH6owMcD5qpq19+1RS9DeVRqfl1FeBMxTDQAGwlMWOcs52NDoXaNKyG3d1cYQFMs9rCrb88o9Q==
+-  dependencies:
+-    "@types/history" "^4.7.11"
+-    "@types/react" "*"
+-
+ "@types/react@*", "@types/react@>=16", "@types/react@^16", "@types/react@^16.14.26", "@types/react@^17":
+   version "16.14.50"
+   resolved "https://registry.yarnpkg.com/@types/react/-/react-16.14.50.tgz#ec9c30f2f0c7d9aa748949536d88e3439526a25d"

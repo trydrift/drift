@@ -1,0 +1,17 @@
+{
+  "suite": "agent-upgrade-large-v1",
+  "status": "frozen",
+  "description": "Large upgrades: cases whose migration spans many call sites and several files. agent-upgrade-v1/v2 have a median of two impact sites, which is where a localization tool has least to offer; this suite exists to test the claim it is actually for.",
+  "frozenAt": "2026-09-20T14:43:43.654Z",
+  "runsPerCondition": 3,
+  "cases": [
+    {
+      "id": "local-components-react-router-6",
+      "caseHash": "758d1c51a19ca6353b2b99127e2f3d39cfeee034107274b70f9b5a0d6cee7000",
+      "admittedAt": "2026-09-20T14:40:56.203Z",
+      "driftCommit": "fa755334f556b54c97a7eb52f2c1e7fe8d90f0b7"
+    }
+  ],
+  "removed": [],
+  "changes": []
+}

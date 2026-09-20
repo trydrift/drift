@@ -1,0 +1,45 @@
+schemaVersion: drift-agent-case-v1
+caseId: local-components-react-router-6
+referencePatch: reference.patch
+referencePatchOrigin: benchmark-author
+expectedSymbols:
+  - NavLink
+  - activeClassName
+  - exact
+  - Switch
+  - withRouter
+  - RouteComponentProps
+tests:
+  - id: nav-behaviour
+    description: >
+      The real navigation components rendered inside a real router: exactly one
+      item carries the active class at a given location, it is the item matching
+      that location, the other does not, and routed content follows the
+      location. A migration that drops `activeClassName` to satisfy the compiler
+      passes the typecheck with zero errors and fails this.
+    files:
+      - nav-behaviour.test.tsx
+    command: npx tsc --noEmit --skipLibCheck && npx jest --roots ./.drift-hidden
+    timeoutSeconds: 900
+forbidden:
+  - kind: manifest-scripts-unchanged
+    manifestPath: package.json
+    description: The scripts the checks invoke must not be rewritten.
+  - kind: file-present
+    paths:
+      - src/components/modules/VerticalNav/VerticalNav.tsx
+      - src/components/menus/TertiaryNav/TertiaryNav.tsx
+    description: The navigation components the upgrade broke must still exist; they are the package's exports.
+  - kind: no-test-deletions
+    globs:
+      - "src/**/*.test.tsx"
+    description: The project's own tests must not be deleted.
+  - kind: pattern-not-added
+    glob: src/components/modules/VerticalNav/VerticalNav.tsx
+    pattern: "@ts-ignore|@ts-expect-error"
+    description: Silencing the removed props with a directive is not a migration of them.
+notes: >
+  v6's `NavLink` decides the active class through a `className` callback that
+  receives `{ isActive }`, and `end` is the opt-in exact match that `exact`
+  used to be. The class components keep their shape through the `withRouter`
+  shim the migration guide describes; `match.url` becomes `useResolvedPath('')`.

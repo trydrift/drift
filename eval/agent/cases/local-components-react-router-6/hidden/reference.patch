@@ -1,0 +1,226 @@
+diff --git a/src/common/helpers/withRouter.tsx b/src/common/helpers/withRouter.tsx
+new file mode 100644
+index 0000000..8a87f8d
+--- /dev/null
++++ b/src/common/helpers/withRouter.tsx
+@@ -0,0 +1,40 @@
++import * as React from 'react';
++import { useLocation, useNavigate, useParams, useResolvedPath } from 'react-router-dom';
++
++/**
++ * The router props a class component used to get from react-router-dom 5.
++ *
++ * v6 removed `withRouter` and exposes the same information through hooks, which
++ * class components cannot call. This is the shim the v6 migration guide
++ * describes: a function wrapper that reads the hooks and passes them down, so
++ * the class components keep their shape and only their plumbing moves.
++ *
++ * `match.url` is the resolved path of the route the component is rendered
++ * under, which is what `useResolvedPath('')` returns.
++ */
++export interface RouteComponentProps {
++	location: ReturnType<typeof useLocation>;
++	navigate: ReturnType<typeof useNavigate>;
++	params: ReturnType<typeof useParams>;
++	match: { url: string; params: ReturnType<typeof useParams> };
++}
++
++export function withRouter<P extends RouteComponentProps>(
++	Component: React.ComponentType<P>
++): React.FC<Omit<P, keyof RouteComponentProps>> {
++	return function WithRouter(props) {
++		const location = useLocation();
++		const navigate = useNavigate();
++		const params = useParams();
++		const resolved = useResolvedPath('');
++		return (
++			<Component
++				{...(props as P)}
++				location={location}
++				navigate={navigate}
++				params={params}
++				match={{ url: resolved.pathname, params }}
++			/>
++		);
++	};
++}
+diff --git a/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx b/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx
+index 60bdd26..ed54574 100644
+--- a/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx
++++ b/src/components/menus/TabNav/examples/TabNavReactRouterExample.tsx
+@@ -1,5 +1,6 @@
+ import React from 'react';
+-import { NavLink, Switch, Route, withRouter, RouteComponentProps } from 'react-router-dom';
++import { NavLink, Routes, Route } from 'react-router-dom';
++import { withRouter, RouteComponentProps } from '../../../../common/helpers/withRouter';
+ import TabNav from '../TabNav';
+ 
+ class ExampleBase extends React.Component<RouteComponentProps> {
+@@ -8,32 +9,24 @@ class ExampleBase extends React.Component<RouteComponentProps> {
+ 			<div>
+ 				<TabNav>
+ 					<NavLink
+-						exact={true}
++						end
+ 						to={`${this.props.match.url}/`}
+-						activeClassName="active"
++						className={({ isActive }) => (isActive ? 'active' : undefined)}
+ 					>
+ 						NavLink A
+ 					</NavLink>
+ 					<NavLink
+ 						to={`${this.props.match.url}/page-b`}
+-						activeClassName="active"
++						className={({ isActive }) => (isActive ? 'active' : undefined)}
+ 					>
+ 						NavLink B
+ 					</NavLink>
+ 			   </TabNav>
+ 			   <div style={{padding: '30px'}}>
+-				   <Switch>
+-						<Route
+-							exact={true}
+-							path={`${this.props.match.url}/`}
+-							render={(props) => <div>Content A</div>}
+-						/>
+-						<Route
+-							exact={true}
+-							path={`${this.props.match.url}/page-b`}
+-							render={(props) => <div>Content B</div>}
+-						/>
+-					</Switch>
++				   <Routes>
++						<Route index element={<div>Content A</div>} />
++						<Route path="page-b" element={<div>Content B</div>} />
++					</Routes>
+ 				</div>
+ 		   </div>
+ 		);
+diff --git a/src/components/menus/TertiaryNav/TertiaryNav.test.tsx b/src/components/menus/TertiaryNav/TertiaryNav.test.tsx
+index 615a03b..07ba581 100644
+--- a/src/components/menus/TertiaryNav/TertiaryNav.test.tsx
++++ b/src/components/menus/TertiaryNav/TertiaryNav.test.tsx
+@@ -1,15 +1,23 @@
+ import * as React from 'react';
+-import { shallow } from 'enzyme';
++import { render } from '@testing-library/react';
++import { MemoryRouter } from 'react-router-dom';
+ import { TertiaryNav } from './TertiaryNav';
+ 
+ describe('TertiaryNav', () => {
+ 	it('renders without crashing', () => {
+-		shallow(
+-			<TertiaryNav
+-				match={{} as any}
+-				history={{} as any}
+-				location={{} as any}
+-			/>
++		// react-router-dom 6 reads the router from context through hooks, so the
++		// component has to be rendered inside one rather than handed a `match`.
++		render(
++			<MemoryRouter initialEntries={['/']}>
++				{/* The decorator supplies these at runtime; TypeScript still sees
++				    the undecorated class, as it did before the upgrade. */}
++				<TertiaryNav
++					match={{ url: '/', params: {} } as any}
++					navigate={(() => undefined) as any}
++					params={{} as any}
++					location={{} as any}
++				/>
++			</MemoryRouter>
+ 		);
+ 	});
+ });
+diff --git a/src/components/menus/TertiaryNav/TertiaryNav.tsx b/src/components/menus/TertiaryNav/TertiaryNav.tsx
+index df9b58f..49fc1ea 100644
+--- a/src/components/menus/TertiaryNav/TertiaryNav.tsx
++++ b/src/components/menus/TertiaryNav/TertiaryNav.tsx
+@@ -1,7 +1,8 @@
+ // eslint-disable-next-line max-classes-per-file
+ import * as React from 'react';
+ import classnames from 'classnames';
+-import { Switch, Route, NavLink, RouteComponentProps, withRouter, Redirect } from 'react-router-dom';
++import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
++import { withRouter, RouteComponentProps } from '../../../common/helpers/withRouter';
+ import styles from './TertiaryNav.scss';
+ import IReactComponentProps from '../../../common/structures/IReactComponentProps';
+ import { FunctionGeneric } from '../../../common/structures/Generics';
+@@ -26,7 +27,16 @@ export class TertiaryNav extends React.Component<IReactComponentProps & RouteCom
+ 				firstRoute = child;
+ 			}
+ 
+-			return <Route {...propsWithoutChildren} path={`${this.props.match.url}${propsWithoutChildren.path}`} />;
++			// v6 resolves a child route's path against its parent, so the
++			// parent's url is no longer prefixed by hand, and what a route
++			// renders is an `element` rather than `component`/`render`.
++			return (
++				<Route
++					{...propsWithoutChildren}
++					path={propsWithoutChildren.path}
++					element={propsWithoutChildren.element ?? propsWithoutChildren.children}
++				/>
++			);
+ 		});
+ 
+ 		return (
+@@ -39,15 +49,15 @@ export class TertiaryNav extends React.Component<IReactComponentProps & RouteCom
+ 				{/* globally scoping TertiaryContent so overflow can be hijacked
+ 				to make Drawer components work with overflowing content */}
+ 				<div className={classnames(styles.TertiaryContent, 'TertiaryContent')}>
+-					<Switch>
++					<Routes>
+ 						{tertiaryNavRoutes}
+ 						{firstRoute! && (
+-							<Redirect
+-								from={`${this.props.match.url}`}
+-								to={`${this.props.match.url}${firstRoute!.props.path}`}
++							<Route
++								index
++								element={<Navigate replace to={`.${firstRoute!.props.path}`} />}
+ 							/>
+ 						)}
+-					</Switch>
++					</Routes>
+ 				</div>
+ 			</div>
+ 		);
+@@ -74,9 +84,9 @@ export class TertiaryNavItem extends React.Component<ITertiaryNavItemProps & Rou
+ 				})}
+ 			>
+ 				<NavLink
+-					exact
++					end
+ 					to={`${this.props.match.url}${this.props.path}`}
+-					activeClassName={styles.TertiaryNavItem__Active}
++					className={({ isActive }) => (isActive ? styles.TertiaryNavItem__Active : undefined)}
+ 				>
+ 					{this.props.children}
+ 				</NavLink>
+diff --git a/src/components/modules/VerticalNav/VerticalNav.tsx b/src/components/modules/VerticalNav/VerticalNav.tsx
+index 49c0377..c6a3efa 100644
+--- a/src/components/modules/VerticalNav/VerticalNav.tsx
++++ b/src/components/modules/VerticalNav/VerticalNav.tsx
+@@ -71,13 +71,17 @@ export const VerticalNavItem = (props: IProps) => {
+ 		return renderWrapper(
+ 			<NavLink
+ 				to={routeTo || ''}
+-				exact={false}
+ 				aria-label={tooltip || undefined}
+-				activeClassName={navLinkActiveClassName || '__Active'}
+-				className={classnames(navLinkClass, additionalNavLinkClass, {
+-					__Active: navLinkActive,
+-					__FadeIn: fadeIn,
+-				})}
++				// react-router-dom 6 removed `activeClassName` and `exact`. The
++				// active class is now decided by a `className` callback, and
++				// `exact={false}` is the default (`end` opts into exact).
++				className={({ isActive }) =>
++					classnames(navLinkClass, additionalNavLinkClass, {
++						[navLinkActiveClassName || '__Active']: isActive,
++						__Active: navLinkActive,
++						__FadeIn: fadeIn,
++					})
++				}
+ 			>
+ 				{children}
+ 			</NavLink>,

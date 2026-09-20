@@ -1,0 +1,78 @@
+schemaVersion: drift-agent-case-v1
+id: local-components-react-router-6
+title: react-router-dom 5.3.4 → 6.30.6 in getflywheel/local-components
+provenance: mined
+role: held-out
+ecosystem: npm
+source:
+  kind: git
+  repository: https://github.com/getflywheel/local-components.git
+  licence: MIT
+  baseCommit: c22d6a83084ea43b22e356e38fcaee2a91d169d9
+  startCommit: null
+  startPatch: start.patch
+  fixCommit: null
+  reference: https://github.com/xeol-io/swe-bump-bench (task getflywheel__local-components-react-router-dom__^6.22.3)
+workspaceDir: ""
+dependency:
+  name: react-router-dom
+  fromVersion: 5.3.4
+  toVersion: 6.30.6
+  updateClass: major
+  category: framework
+  section: dependencies
+environment:
+  runtime: node (declared none); run on the host Node
+  packageManager: yarn
+  timezone: UTC
+  locale: C
+commands:
+  install: yarn install --frozen-lockfile --ignore-scripts
+  installTimeoutSeconds: 900
+  checks:
+    - name: typecheck (tsc)
+      kind: typecheck
+      command: npx tsc --noEmit --skipLibCheck
+      timeoutSeconds: 600
+    - name: unit tests (jest)
+      kind: test
+      command: npx jest --silent
+      timeoutSeconds: 900
+  installedVersion: node -p "require('./node_modules/react-router-dom/package.json').version"
+integrity:
+  manifestPath: package.json
+  lockfilePath: yarn.lock
+networkPolicy: registry-and-provider
+agent:
+  timeoutSeconds: 2700
+metadata:
+  repositoryFiles: 253
+  repositorySourceLines: 20000
+  failureMode: mixed
+  knownAffectedLocations: 15
+  migrationGuideAvailable: true
+  multiLocation: true
+  notes: >
+    The large upgrade the rest of the suite does not have. Its median case has
+    two impact sites, which is where a localization tool has least to offer;
+    this one fails with fifteen errors across three files, and the migration
+    touches a fourth (a `withRouter` shim the v6 guide describes, since the
+    components are classes and v6 exposes the router through hooks).
+
+    react-router-dom 6 removed `Switch`, `Redirect`, `withRouter` and
+    `RouteComponentProps`, made `<Route>` take an `element`, resolves a child
+    route's path against its parent rather than by hand-prefixing `match.url`,
+    and replaced `NavLink`'s `exact`/`activeClassName` with `end` and a
+    `className` callback.
+
+    `--skipLibCheck` is the project's own posture (its `@types/jsdom` does not
+    parse against its TypeScript), and without it the typecheck fails at the
+    start state for a reason that has nothing to do with this upgrade. The
+    project's 154 jest tests pass before and after, including under the broken
+    start state, so they are a regression guard here rather than the thing that
+    catches the upgrade.
+
+    Every compile error can be made to go away by deleting the prop that will
+    not typecheck. Dropping `activeClassName` compiles with zero errors and
+    silently stops highlighting the navigation item for the current page, which
+    is what the hidden test is for.

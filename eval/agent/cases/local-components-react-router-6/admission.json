@@ -1,0 +1,42 @@
+{
+  "caseId": "local-components-react-router-6",
+  "admitted": true,
+  "steps": [
+    {
+      "step": "shape",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "step": "start-state",
+      "passed": true,
+      "detail": "materialized and installed"
+    },
+    {
+      "step": "broken-state-hidden-tests-fail",
+      "passed": true,
+      "detail": "failing at start: nav-behaviour (project checks also fail)"
+    },
+    {
+      "step": "broken-state-dependency-upgraded",
+      "passed": true,
+      "detail": "installed 6.30.6"
+    },
+    {
+      "step": "fixed-state-1",
+      "passed": true,
+      "detail": "reference fix passes every layer"
+    },
+    {
+      "step": "deterministic",
+      "passed": true,
+      "detail": "1 identical validation outcomes"
+    }
+  ],
+  "checkedAt": "2026-09-20T14:40:56.203Z",
+  "driftCommit": "fa755334f556b54c97a7eb52f2c1e7fe8d90f0b7",
+  "failingHiddenTestsAtStart": [
+    "nav-behaviour"
+  ],
+  "projectChecksFailAtStart": true
+}
