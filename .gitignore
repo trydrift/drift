@@ -1,4 +1,9 @@
+# Without the trailing slash as well: `node_modules/` matches only a
+# directory, so a symlinked node_modules (a worktree borrowing another
+# checkout's install) slipped past it and was committed as a link to an
+# absolute path on one developer's machine.
 node_modules/
+node_modules
 dist/
 # action/ is intentionally NOT ignored: GitHub Actions does not run npm
 # install for node20 actions, so the bundled entrypoint must be committed.

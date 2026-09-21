@@ -12,7 +12,7 @@ import {
   type ToolMetrics,
   type Usage,
 } from './schema.ts';
-import { CLAUDE_CODE_LEAN_SESSION_ARGS } from '../../../dist/index.js';
+import { CLAUDE_CODE_LEAN_SESSION_ARGS } from './lean-args.ts';
 import { driftRevision, driftVersion, newRunId, setAsideInfrastructureFailure, trialExists, writeRunManifest, writeTrial } from './store.ts';
 import { composePrompt, contextKindFor, renderTask, sha256 } from './task.ts';
 import { patchStatsFrom, validateWorkspace } from './validation.ts';
@@ -422,13 +422,13 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
       webTools: options.webTools,
       maxBudgetUsd: options.maxBudgetUsd,
       maxTurns: options.maxTurns,
-      // Every Drift condition launches the session the way the product does:
-      // `remediation.agent.leanSession` is on by default, so `drift fix` starts
-      // Claude Code with these arguments. The baseline gets the CLI's defaults,
-      // which is what a developer running the agent by hand gets.
-      ...(condition === 'baseline' || condition === 'drift-full-tools' || condition === 'drift-brief'
-        ? {}
-        : { sessionArgs: CLAUDE_CODE_LEAN_SESSION_ARGS }),
+      // Every condition launches with the CLI's own defaults, which is how the
+      // product launches an agent. The one exception is the ablation that
+      // exists to measure the lean tool set: the product used to offer it as
+      // `remediation.agent.leanSession`, and it was removed because it traded
+      // correctness for tokens. Runs recorded before that removal launched the
+      // `drift` condition lean too; their argv is on every trial.
+      ...(condition === 'baseline-lean' ? { sessionArgs: CLAUDE_CODE_LEAN_SESSION_ARGS } : {}),
       env: projectEnv(agentCase, { DRIFT: '1' }),
       onEventLine: (line) => streamLines.push(line),
       onProgress: (message) => options.onProgress?.(`    ${message}`),

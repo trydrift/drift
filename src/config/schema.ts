@@ -271,21 +271,6 @@ export const DriftConfigSchema = z.object({
           model: z.string().optional(),
           effort: AGENT_EFFORT.optional(),
           fast: z.boolean().default(false),
-          /**
-           * Start the agent with only the tools a code fix uses — for Claude
-           * Code, Bash, Read, Edit and Write (plus background-task control),
-           * without skills or slash commands. Its fixed per-call context drops
-           * from about 41.5k to 12.6k tokens, which is a large saving.
-           *
-           * **Off by default, because the saving is paid for in fixes that do
-           * not work.** Over 30 trials on ten real upgrades a lean session
-           * finished 80.0% of them correctly against 96.8% for the agent's own
-           * tool set: the tools three development cases never needed are tools
-           * ten cases do. Turn it on only where a cheaper, less reliable fix is
-           * the trade you want. `eval/reports/agent/final-verdict.md` has the
-           * measurement.
-           */
-          leanSession: z.boolean().default(false),
           timeoutSeconds: z.number().int().min(30).max(24 * 60 * 60).default(600),
         })
         .prefault({}),

@@ -245,7 +245,6 @@ export type {
 export { runChecks } from './verification/checks.js';
 export type { CheckOutcome } from './verification/checks.js';
 export { composeAgentPrompt, parseScopeRequests, SCOPE_REQUEST_MARKER } from './agents/types.js';
-export { CLAUDE_CODE_LEAN_SESSION_ARGS, CLAUDE_CODE_LEAN_TOOLS } from './agents/cli.js';
 export { awaitTerminalCloudTask, reconcileCloudTask } from './remediation/cloud-lifecycle.js';
 export type { CloudTaskReconciliation } from './remediation/cloud-lifecycle.js';
 export type { CloudFixAgent, CloudTaskStatus } from './agents/types.js';
