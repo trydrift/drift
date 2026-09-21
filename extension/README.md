@@ -87,7 +87,7 @@ In the editor:
 - the file header shows the change count and offers **Keep file** / **Undo file** / the native side-by-side diff;
 - `Alt+D` jumps to the next unresolved change.
 
-In the panel, the change list groups files by planned commit, shows `+`/`−` per file, and opens the real diff editor on click. **Keep & commit** on a group commits exactly the files the plan named for it — one commit per concern, so `git revert` and `git bisect` stay meaningful. **Undo** restores the file through the workspace API, so it lands in your normal undo stack too.
+In the panel, the change list groups files by fix, shows `+`/`−` per file, and opens the real diff editor on click. **Fix with AI** fixes exactly what you pressed it on — the whole upgrade, one package's upgrade, or one concern — and the agent may change any file that fix needs except a protected one; a file whose change breaks a rule (a protected path, a weakened test or configuration, a downgraded dependency) is reverted and the rest kept. **Keep & commit** on a group commits exactly the files that fix changed and you kept. **Undo** restores the file through the workspace API, so it lands in your normal undo stack too.
 
 Drift commits automatically once you keep a group. Shipping is a separate, explicit step — **Push branch**, or **Drift: Push the Fix Branch and Open a Pull Request**. It pushes the branch, then raises the pull request: directly through the GitHub CLI if you have one installed and signed in, and otherwise by opening GitHub's own pull request page for the branch. Drift never force-pushes and never merges.
 

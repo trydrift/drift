@@ -152,14 +152,18 @@ export function registerAgentTools(server: McpServer, session: AgentPlanSession 
     {
       title: 'Plan the fix for a dependency upgrade',
       description:
-        'Start here when asked to make a dependency upgrade work. Returns a short plan (under 2,000 tokens) for the ' +
+        'Start here when asked to make a dependency upgrade work. Returns a short plan (under 2,300 tokens) for the ' +
         'dependency change already in this checkout — a bumped manifest, committed or not: the findings that reach ' +
         'this repository with file:line locations, what to change, protected paths, the checks to run, and what Drift ' +
-        'could not establish. Upstream changes with no located usage are counted, not listed.\n\n' +
-        'Drift has already compared the published versions and searched this repository, so use the plan as your ' +
-        'starting scope rather than reading the package changelog or API yourself. Every id in it resolves with ' +
-        'get_finding or get_evidence. By default Drift also installs the change in a scratch worktree and runs this ' +
-        "project's checks, which adds a minute or more and turns predicted locations into measured compiler errors. " +
+        'could not establish. Upstream changes with no located usage are counted, and named when there are few.\n\n' +
+        'Drift has already compared the published versions and searched this repository: start from the plan, which ' +
+        'saves you that search. It is not the whole job. Drift compares exported symbols, so it cannot see a name that ' +
+        'survived the upgrade and changed meaning — a changed default, an option that now needs a companion option — ' +
+        "and its search can miss call sites; read the code around each site, and the package's migration notes where " +
+        'the plan is thin. Fix what this upgrade broke and only that, then run verify_upgrade until the checks pass. ' +
+        'Every id in the plan resolves with get_finding or get_evidence. By default Drift also installs the change in ' +
+        "a scratch worktree and runs this project's checks, which adds a minute or more and turns predicted locations " +
+        'into measured compiler errors. ' +
         'The plan is computed once and reused on later calls, so your own manifest edits do not replace it.',
       inputSchema: {
         directory: directoryArg,

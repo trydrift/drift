@@ -25,7 +25,9 @@ The human report did not get smaller. The agent got a different renderer.
 
 **What goes in.** An upstream breaking change is a finding in the brief when its disposition is `actionable` (a high-confidence located site, or a runtime requirement this repository was shown to violate) or `review-only` (located, but not confidently enough to act on), or when a planned commit unit addresses it. Measured regressions (compiler or test errors the project's own checks reported after the upgrade was installed) are always included, first, with the compiler's message on each line.
 
-**What is counted instead.** Every other upstream change is left out and counted by reason: *no located usage* (the search finished and found nothing, which is not proof of safety), *not searched* (localization did not run or did not finish), and *unaffected*. The counts are broken down by kind. Evidence records are cited by id, never inlined.
+**What is counted instead.** Every other upstream change is left out and counted by reason: *no located usage* (the search finished and found nothing, which is not proof of safety), *not searched* (localization did not run or did not finish), and *unaffected*. The counts are broken down by kind, and while there are at most 40 of them the symbols they name are listed too: localization matches identifiers, so it cannot tie an object literal to the options interface it satisfies, and an agent editing that call recognises a removed `SizeCalculator` or `SharedOptions` by name where it would learn nothing from a count. Evidence records are cited by id, never inlined.
+
+**What the brief says about itself.** It opens by telling the agent to start from the findings and not to stop there: Drift compares exported symbols, so it cannot see a name that survived the upgrade and changed meaning, and its search can miss call sites. It asks the agent to read the code around each site and the package's migration notes, states the constraints Drift's patch validation enforces (no weakened tests, coverage, strictness or lint configuration; no downgraded dependency), and to run the checks. An earlier version told the agent *not* to read the package's changelog or API unless the brief fell short, and measured on real upgrades that made agents miss exactly what the analysis cannot see.
 
 **What is never dropped for size.** Protected paths, Drift's blockers, a summary of every gap, and the omission counts are reserved before any finding is placed. A blocker that only restates a listed gap is not repeated.
 
@@ -37,7 +39,7 @@ The human report did not get smaller. The agent got a different renderer.
 
 ## The budget
 
-`renderAgentBrief(brief)` in [`src/agent-context/render.ts`](../src/agent-context/render.ts) fills to a target of 1,500 estimated tokens and never exceeds 2,000.
+`renderAgentBrief(brief)` in [`src/agent-context/render.ts`](../src/agent-context/render.ts) fills to a target of 1,800 estimated tokens and never exceeds 2,300. (The standing instructions above take about 350 of those; the room left for findings is what it was when the ceiling was 2,000.)
 
 Drift ships no tokenizer and cannot know which model is reading, so the estimate is deliberately pessimistic: one token per three UTF-8 bytes. The ceiling is enforced in bytes.
 

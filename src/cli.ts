@@ -35,7 +35,7 @@ import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { runFix } from './remediation/cli-runner.js';
 import { availableChecks } from './verification/checks.js';
 import { AgentBudgetExceededError, agentBriefView, buildAgentBrief, evidenceDetail, findingDetail, renderAgentBrief, UnknownAgentIdError } from './agent-context/index.js';
-import { runAgentUpgradeFix } from './remediation/worktree-runner.js';
+import { runAgentUpgradeFix, wholeUpgradeUnit } from './remediation/worktree-runner.js';
 import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from './agents/compat.js';
 import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from './agents/registry.js';
 import { resolveAgentSelection, type AgentSelection } from './agents/selection.js';
@@ -338,9 +338,9 @@ Options:
                               the report: only findings that reach this
                               repository, with file:line locations, the
                               checks to run and what is uncertain, under
-                              2,000 tokens. Other upstream changes are
-                              counted, not listed. With --json, the same
-                              selection as fields
+                              2,300 tokens. Other upstream changes are
+                              counted, and named when there are few. With
+                              --json, the same selection as fields
   --finding <id>              One finding from the plan in full (any id the
                               brief or the plan names), bounded
   --evidence <id>             The evidence for a finding id, or one evidence
@@ -2389,11 +2389,6 @@ async function fixPlanAndOpenPR(args: {
             unresolvedAgentWork = true;
             unresolvedAgentCount = Math.max(1, fix.needsAgent.length);
           }
-        } else if (isCloudFixAgent(agent) && fix.needsAgent.length === 0) {
-          // A cloud agent is handed planned commits; with none planned there is
-          // nothing to hand it, so say so rather than dispatch an empty task.
-          logger.warn(`${agent.label} works from planned commits and Drift planned none for this upgrade. Use a local agent to fix it.`);
-          unresolvedAgentWork = true;
         } else if (isCloudFixAgent(agent)) {
           if (!pushedBranch && !fix.pushed) {
             // Cloud agents work from a remote branch. If every commit needed an
@@ -2591,12 +2586,14 @@ async function dispatchRemainingToCloudAgent(options: {
   config: DriftConfig;
   logger: Logger;
 }): Promise<{ ok: boolean; error?: string }> {
-  if (options.commits.length === 0) return { ok: true };
-  const agentPlan = planForCommits(options.plan, options.commits);
+  // With no planned commit the whole plan goes: its measured failures are the
+  // task, and the cloud prompt says so. Only an upgrade with neither is empty.
+  if (options.commits.length === 0 && options.plan.verification?.status !== 'failed') return { ok: true };
+  const agentPlan = options.commits.length > 0 ? planForCommits(options.plan, options.commits) : options.plan;
   const result = await options.agent.run(
     {
       plan: agentPlan,
-      commit: agentPlan.commits[0]!,
+      commit: agentPlan.commits[0] ?? wholeUpgradeUnit(agentPlan),
       workspaceRoot: options.repo.workspace ?? '',
       files: [],
       customInstructions: options.config.remediation.customInstructions,

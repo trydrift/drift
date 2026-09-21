@@ -275,7 +275,7 @@ test('analyze documents the agent brief and its detail flags', async () => {
   for (const flag of ['--agent', '--finding <id>', '--evidence <id>', '--offset <n>']) {
     assert.match(out, new RegExp(flag.replace(/[<>]/g, '.')), `analyze documents ${flag}`);
   }
-  assert.match(out, /under\s+2,000 tokens/);
+  assert.match(out, /under\s+2,300 tokens/);
 });
 
 test('fix refuses the agent print flags instead of ignoring them', async () => {

@@ -100,16 +100,16 @@ The VS Code extension is a second front end over the same analysis and
 remediation-priority code (`analyzeRepository`, `src/codemod/`, `src/fixplan/`,
 `src/remediation/`). It adds no analysis of its own; everything below either
 drives the shared pipeline or renders its output. Its `fix.ts` applies the
-same codemod → fix-plan → agent tiering as the CLI's `cli-runner.ts`,
-per commit unit, before falling back to whichever coding agent the developer
-has selected.
+same tiering as the CLI: Drift's codemods and validated fix plans first, then
+one agent session for what the developer chose — the whole upgrade, one
+package's upgrade, or one concern — with whichever coding agent is selected.
 
 ```
 extension/src/
 ├── extension.ts          Activation, commands, wiring
 ├── analyze.ts            Picks a commit range, then calls analyzeRepository
 ├── upgrades.ts           Scans every detected registry and runs 1–5 per package
-├── fix.ts                Branch, per-commit agent run, scoped commit
+├── fix.ts                Branch, deterministic units, one agent session per fix, review
 ├── severity.ts           Repo-relative verdict. No imports — see below
 ├── labels.ts             Composer setting names. No imports
 ├── diff.ts               LCS line diff → hunks, for review
@@ -558,9 +558,18 @@ One commit per concern, ordered in three tiers:
 Later tests can't pass until the toolchain matches, and a reviewer should read
 the boring diffs first so their attention lands where it's needed.
 
-Each commit's instructions are **scoped to its own files**. Without that scoping
-the agent fixes everything it notices in one pass and the commit boundaries
-collapse.
+The plan is how Drift *describes* the work — for a reviewer, for its own
+deterministic tiers, and as suggested commits for a cloud agent. It is not a
+boundary on the agent that does the work. Agent fixes used to be confined to
+each unit's files, and measured on ten real upgrades against the same agent
+with no Drift around it, that pipeline fixed none of them where the plain agent
+fixed nearly all: migrations need files no unit named (a bundler config, a
+companion package's manifest entry), and a measured failure with no located
+site produced no unit at all. So an agent now runs one session for what was
+chosen and may change any file that fix needs except a protected one; what it
+is asked to fix is what the developer chose, stated in the prompt. Its result is
+validated file by file (`validateUpgradeFix`) and only the files that break a
+rule are reverted.
 
 Risk is driven by what Drift is asking to *change* in the repository, not how
 alarming the upstream release sounds. The UI calls this **repo risk** on purpose:
@@ -595,8 +604,13 @@ Each commit is then resolved in a fixed priority order, coded in
    resolves nine, and the tenth falls through to step 3 on its own.
 3. **A selected coding agent**, for everything neither of the above resolved —
    including the residual call sites of a partially covering fix plan. Local
-   runner agents edit an isolated worktree one commit unit at a time; cloud
-   agents receive a whole-plan task and are reconciled after completion.
+   runner agents run one session over the upgrade in an isolated worktree,
+   verify it with the project's own checks, and have their result validated
+   file by file; cloud agents receive a whole-plan task, with the plan's
+   commits as suggested structure, and are reconciled after completion. A
+   measured check failure with no planned commit is dispatched too: it is the
+   most direct evidence of breakage there is, and on six of ten real upgrades
+   it was the only evidence.
 
 Community recipes are deliberately not a step here. They used to be one; a
 match's diff was scope-checked and committed. Scope checking answers "did it

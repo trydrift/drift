@@ -10,7 +10,7 @@ import { applyDeterministicRemediation } from '../github/local-commit.js';
 import { planForCommits } from '../remediation/partition.js';
 import type { FixAgent } from '../agents/types.js';
 import { execCommand } from '../util/exec.js';
-import { runAgentUpgradeFix, runWorktreeRemediation } from '../remediation/worktree-runner.js';
+import { runAgentUpgradeFix, runWorktreeRemediation, wholeUpgradeUnit } from '../remediation/worktree-runner.js';
 
 /**
  * Dispatch: decide what to do with a plan, and do it.
@@ -113,8 +113,11 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     exec: options.exec,
   });
   const remaining = plan.commits.filter((commit) => !committedIds.has(commit.id));
+  // No planned commit but a failing measured check is agent work, not
+  // "resolved": the whole plan goes, and its measured failures are the task.
+  const measuredOnly = plan.commits.length === 0 && plan.verification?.status === 'failed';
 
-  if (remaining.length === 0) {
+  if (remaining.length === 0 && !measuredOnly) {
     logger.info(`Resolved all ${plan.commits.length} commit(s) deterministically; no agent was dispatched.`);
     await postCheckRun(
       options,
@@ -154,11 +157,11 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     });
   }
 
-  const agentPlan = planForCommits(plan, remaining);
+  const agentPlan = measuredOnly ? plan : planForCommits(plan, remaining);
   const result = await agent.run(
     {
       plan: agentPlan,
-      commit: agentPlan.commits[0]!,
+      commit: agentPlan.commits[0] ?? wholeUpgradeUnit(agentPlan),
       workspaceRoot: repo.workspace ?? '',
       files: [],
       customInstructions: config.remediation.customInstructions,
@@ -181,7 +184,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     return { ...fallback, status: 'failed', message: result.message };
   }
 
-  await postCheckRun(options, 'neutral', `${agent.label} is fixing ${agentPlan.breakingChanges.length} breaking change(s)`);
+  await postCheckRun(options, 'neutral', `${agent.label} is fixing the upgrade`);
 
   const task = result.handle;
   logger.info(`Dispatched to ${agent.label}: task ${task?.id ?? 'unknown'} on ${plan.branchName}`);

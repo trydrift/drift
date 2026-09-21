@@ -1136,7 +1136,7 @@ mid-session.
 | `drift.agent.preferred` | `auto` | Which agent, or best available |
 | `drift.agent.copilotModelFamily` | — | Pin an in-editor Copilot model family |
 | `drift.agent.ollamaHost` / `ollamaModel` | `localhost:11434`, `qwen2.5-coder` | Local model |
-| `drift.agent.timeoutSeconds` | `600` | Per commit unit |
+| `drift.agent.timeoutSeconds` | `600` | Per agent session |
 | `drift.analysis.runOnStartup` | `true` | Analyse on open, and scan when the panel first opens |
 | `drift.analysis.includePatch` / `includeTransitive` | `false` | Widen `/recent` analysis |
 | `drift.analysis.includeDev` | `true` | Also analyse dev, optional, and peer dependencies. Read only until `dependencyScope` is set explicitly — see below |

@@ -205,3 +205,26 @@ describe('what the agent is told', () => {
     assert.doesNotMatch(prompt, /head start/);
   });
 });
+
+describe('the cloud agent prompt (Copilot), for the Action and the CLI', () => {
+  test('with nothing planned but failing checks, the measured failures are the task', async () => {
+    const { buildTaskPrompt } = await import('../dist/dispatch/copilot.js');
+    const prompt = buildTaskPrompt(
+      plan({ branchName: 'drift/x', baseBranch: 'main', warnings: [], changes: [{ name: 'lru-cache', from: '7.18.3', to: '10.4.3', ecosystem: 'npm', bump: 'major' }] }),
+      DriftConfigSchema.parse({}),
+    );
+    assert.match(prompt, /What the project's own checks report/);
+    assert.match(prompt, /TS2351: This expression is not constructable/);
+    assert.match(prompt, /Drift planned no commits/);
+    assert.match(prompt, /Fix what this upgrade broke, and only that/);
+  });
+
+  test('protects node_modules, .git and .env, and leaves lockfiles to move with a companion package', async () => {
+    const { buildTaskPrompt } = await import('../dist/dispatch/copilot.js');
+    const prompt = buildTaskPrompt(plan({ branchName: 'drift/x', baseBranch: 'main', warnings: [] }), DriftConfigSchema.parse({}));
+    const rule = prompt.split('\n').find((line) => line.includes('Do not modify files matching'))!;
+    assert.match(rule, /node_modules\/\*\*/);
+    assert.match(rule, /\.github\/workflows\/\*\*/);
+    assert.doesNotMatch(rule, /\*\.lock/);
+  });
+});

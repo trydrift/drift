@@ -81,8 +81,15 @@ describe('MCP agent tools — planning', () => {
       assert.ok(tool, name);
       assert.ok((tool.description ?? '').length > 120, `${name} describes itself`);
     }
-    assert.match(tools.find((t) => t.name === 'plan_upgrade')!.description!, /under 2,000 tokens/);
-    assert.match(tools.find((t) => t.name === 'plan_upgrade')!.description!, /rather than reading the package changelog or API yourself/);
+    const planDescription = tools.find((t) => t.name === 'plan_upgrade')!.description!;
+    assert.match(planDescription, /under 2,300 tokens/);
+    // The plan is a head start, not a boundary. The description used to tell
+    // agents not to read the package changelog or API themselves, and measured
+    // on real upgrades that is what made them miss what Drift cannot see.
+    assert.match(planDescription, /It is not the whole job/);
+    assert.match(planDescription, /cannot see a name that\s+survived the upgrade and changed meaning/);
+    assert.match(planDescription, /run verify_upgrade until the checks pass/);
+    assert.doesNotMatch(planDescription, /rather than reading the package changelog/);
   });
 
   test('the server tells the client which tool answers which question, briefly', async () => {

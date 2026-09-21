@@ -1,6 +1,7 @@
 import type { RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
+import { upgradeFixProtectedPaths } from '../remediation/worktree-runner.js';
 
 /**
  * GitHub Copilot coding agent dispatch.
@@ -248,6 +249,37 @@ export function buildTaskPrompt(plan: RemediationPlan, config: DriftConfig): str
     ].join('\n'),
   );
 
+  sections.push(
+    [
+      // The same framing every Drift fix path uses. Confining an agent to the
+      // lines Drift found fixed none of ten real upgrades a plain agent fixed
+      // nearly all of; the findings earn their place by saving the search.
+      "Drift has already analysed this upgrade. What it found is below: use it as a head",
+      'start, not as the whole job. Drift compares exported symbols, so it cannot see a',
+      'name that survived the upgrade and changed meaning — a changed default, an option',
+      'that now needs a companion option, a different return shape — and its search can',
+      'miss call sites. Investigate beyond what it lists, and follow the compiler and the',
+      'tests wherever they lead. Fix what this upgrade broke, and only that.',
+    ].join('\n'),
+  );
+
+  const measured = plan.verification?.diagnostics?.trim();
+  if (measured) {
+    sections.push(
+      [
+        "## What the project's own checks report",
+        '',
+        'Drift installed the upgrade and ran the project\'s checks before handing this over.',
+        'This is measured, not predicted: where it disagrees with the findings below,',
+        'believe this.',
+        '',
+        '```',
+        measured.slice(0, 12_000),
+        '```',
+      ].join('\n'),
+    );
+  }
+
   sections.push(renderPromptFindings(plan));
   sections.push(renderPromptCommitPlan(plan));
   sections.push(renderPromptRules(plan, config));
@@ -308,13 +340,24 @@ function renderPromptFindings(plan: RemediationPlan): string {
 }
 
 function renderPromptCommitPlan(plan: RemediationPlan): string {
+  if (plan.commits.length === 0) {
+    return [
+      '## Commits',
+      '',
+      "Drift planned no commits: its search found no call site of the changed APIs, but",
+      "the project's checks above say the upgrade breaks it. Fix what they report, in",
+      'one commit.',
+    ].join('\n');
+  }
+
   const lines: string[] = [
-    '## Commit plan — follow this exactly',
+    '## Suggested commits',
     '',
-    'Make these commits by execution layer. Commits in the same layer are independent;',
-    'a later layer must wait for every dependency listed on its units. Each one addresses',
-    'a single concern so a human can review, approve, or revert it independently.',
-    '**Do not squash them, do not reorder dependency edges, and do not combine unrelated edits into one commit.**',
+    'Structure your work as these commits where it fits, by execution layer: commits in',
+    'the same layer are independent, and a later layer waits for the ones it depends on.',
+    'Each addresses one concern so a human can review or revert it on its own. The files',
+    'listed are where Drift found the concern, not a limit — if the fix needs another',
+    'file, change it in the commit it belongs to.',
     '',
   ];
 
@@ -343,7 +386,7 @@ function renderPromptCommitPlan(plan: RemediationPlan): string {
     lines.push(commit.body);
     lines.push('```');
     lines.push('');
-    lines.push(`Files this commit may touch: ${commit.allowedFiles.map((f) => `\`${f}\``).join(', ')}`);
+    lines.push(`Where Drift found this concern: ${commit.allowedFiles.map((f) => `\`${f}\``).join(', ')}`);
     lines.push('');
     lines.push(commit.instructions);
     lines.push('');
@@ -355,7 +398,7 @@ function renderPromptCommitPlan(plan: RemediationPlan): string {
 function renderPromptRules(plan: RemediationPlan, config: DriftConfig): string {
   const rules: string[] = [
     'Change only what is required to make this repository work with the new dependency version. No refactoring, renaming, reformatting, or tidying of code you happen to pass by.',
-    'Do not modify dependency versions in any manifest or lockfile. The upgrade is the input to this task, not part of it.',
+    'Do not change, revert, or downgrade the upgraded dependencies: the upgrade is the input to this task, not part of it. A companion package the new version requires — a plugin that must match the new major, a types package its declarations need — may move with it, lockfile included.',
     'Verify each fix against the evidence quoted above and against the installed version of the package in this repository. If the evidence does not name a replacement API, look it up in the installed package rather than inventing one.',
     'If you cannot determine the correct fix for a location, leave the code as it is, add a clearly-marked `TODO(drift):` comment explaining what is unresolved, and say so in the pull request description. A flagged unknown is useful; a confident guess is not.',
     'Run the repository’s existing tests and build after each commit where that is possible.',
@@ -367,7 +410,9 @@ function renderPromptRules(plan: RemediationPlan, config: DriftConfig): string {
     );
   }
 
-  const protectedPaths = config.guardrails.protectedPaths;
+  // Lockfiles excluded, since a companion package moves one; node_modules,
+  // .git and .env included whatever a repository configures.
+  const protectedPaths = upgradeFixProtectedPaths(config.guardrails.protectedPaths);
   if (protectedPaths.length > 0) {
     rules.push(
       `Do not modify files matching any of these patterns: ${protectedPaths.map((p) => `\`${p}\``).join(', ')}.`,

@@ -90,7 +90,7 @@ drift outdated
 claude mcp add drift -- npx -y @usedrift/cli mcp
 ```
 
-An agent fixing an upgrade calls `plan_upgrade` and gets a short plan (under 2,000 tokens) with only the findings that reach your code, then pulls a finding or its evidence by id when it needs more (`get_finding`, `get_evidence`), and runs your checks with `verify_upgrade`. The full report stays for people. See [the agent interface](docs/agent-interface.md); `drift analyze --agent` prints the same plan without MCP.
+An agent fixing an upgrade calls `plan_upgrade` and gets a short plan (under 2,300 tokens) with only the findings that reach your code, then pulls a finding or its evidence by id when it needs more (`get_finding`, `get_evidence`), and runs your checks with `verify_upgrade`. The full report stays for people. See [the agent interface](docs/agent-interface.md); `drift analyze --agent` prints the same plan without MCP.
 
 **VS Code** — install *Drift — Safe Dependency Upgrades* (`drift.usedrift`) · [docs](extension/README.md)
 

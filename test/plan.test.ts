@@ -696,8 +696,14 @@ describe('rendered output', () => {
     const prompt = buildTaskPrompt(plan, DEFAULT_CONFIG);
 
     assert.match(prompt, /do not weaken, skip, or delete tests/i);
-    assert.match(prompt, /do not modify dependency versions/i);
-    assert.match(prompt, /do not squash them/i);
+    assert.match(prompt, /do not change, revert, or downgrade the upgraded dependencies/i);
+    // A companion package the new major requires may move with it; forbidding
+    // every manifest and lockfile edit made those migrations impossible.
+    assert.match(prompt, /companion package/i);
+    // The plan's commits structure the work; they do not fence it.
+    assert.match(prompt, /Suggested commits/);
+    assert.match(prompt, /not a limit/);
+    assert.match(prompt, /use it as a head\s+start, not as the whole job/i);
     assert.match(prompt, /TODO\(drift\)/);
     assert.match(prompt, /do not merge/i);
   });
