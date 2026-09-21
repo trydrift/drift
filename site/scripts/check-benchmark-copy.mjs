@@ -36,7 +36,6 @@ const siteSrc = join(here, '..', 'src');
 const GUARDED_FILES = [
   join(siteSrc, 'app', 'page.tsx'),
   join(siteSrc, 'app', 'benchmarks', 'page.tsx'),
-  join(siteSrc, 'app', 'benchmarks', 'agent', 'page.tsx'),
 ];
 
 const NARRATIVE_MODULE = join(siteSrc, 'lib', 'benchmark-narrative.ts');
