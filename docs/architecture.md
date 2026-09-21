@@ -103,6 +103,13 @@ drives the shared pipeline or renders its output. Its `fix.ts` applies the
 same tiering as the CLI: Drift's codemods and validated fix plans first, then
 one agent session for what the developer chose — the whole upgrade, one
 package's upgrade, or one concern — with whichever coding agent is selected.
+An agent that can run commands is given the task a developer would give it
+(`renderUpgradeAgentPrompt` in `src/agents/types.ts`): the upgrade, the focus
+the developer chose, and the rules Drift enforces afterwards. It does not get
+Drift's findings. Measured on ten real upgrades, findings in the prompt made
+the agent fix the listed items and stop. An agent that edits files in one
+reply and cannot run anything (Copilot through the editor, Ollama) gets the
+findings and the files they name, because that is all it can use.
 
 ```
 extension/src/
