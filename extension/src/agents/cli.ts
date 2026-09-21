@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 import type { SessionEffort, TaskActivityInput } from '../session.js';
 import {
-  buildFixPrompt,
+  composeAgentPrompt,
   type AgentAvailability,
   type AgentContext,
   type AgentModel,
@@ -338,14 +338,7 @@ export class CliFixAgent implements FixAgent {
     // Effort changes how hard this agent thinks about the task — never which
     // parts of it to attempt. Every impact site above is still in scope.
     const thinking = await this.thinking(task, command);
-    const prompt = [
-      buildFixPrompt(task),
-      '',
-      '## Your task',
-      '',
-      task.commit.instructions,
-      ...(thinking ? ['', thinking] : []),
-    ].join('\n');
+    const prompt = composeAgentPrompt(task, thinking);
 
     const args = [...this.spec.buildArgs(prompt), ...(await this.selection(task, command))];
     ctx.report(`$ ${displayCommand(command, args)}\n# cwd: ${task.workspaceRoot}`);

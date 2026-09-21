@@ -114,7 +114,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
   });
   const remaining = plan.commits.filter((commit) => !committedIds.has(commit.id));
   // No planned commit but a failing measured check is agent work, not
-  // "resolved": the whole plan goes, and its measured failures are the task.
+  // "resolved": the whole upgrade goes to the agent.
   const measuredOnly = plan.commits.length === 0 && plan.verification?.status === 'failed';
 
   if (remaining.length === 0 && !measuredOnly) {

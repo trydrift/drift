@@ -332,7 +332,8 @@ export interface AgentUpgradeFixResult {
  *
  *   - it runs whenever the upgrade needs work, including when Drift planned no
  *     unit, with the project's own failing output as the measured evidence;
- *   - Drift's findings are a head start in the prompt, not a boundary on it;
+ *   - the prompt is the plain task a developer would give the agent, not
+ *     Drift's findings, which anchored it on the listed items;
  *   - the agent verifies its own work with the project's checks, since
  *     nothing here re-runs them;
  *   - each changed file is validated on its own, and only the ones that break
@@ -434,7 +435,7 @@ export function upgradeFixProtectedPaths(configured: readonly string[]): string[
 export { UPGRADE_UNIT_ID } from '../agents/types.js';
 
 /**
- * Every planned unit folded into one, so the prompt carries every finding.
+ * Every planned unit folded into one: the whole upgrade as a single task.
  * `layer` places it after any deterministic units a surface still runs first.
  */
 export function wholeUpgradeUnit(plan: RemediationPlan, layer = 0): CommitUnit {
@@ -451,7 +452,7 @@ export function wholeUpgradeUnit(plan: RemediationPlan, layer = 0): CommitUnit {
     breakingChangeIds,
     files,
     allowedFiles: files,
-    instructions: 'Make this repository work with the upgraded dependencies. The findings above are a starting point; the job is the whole upgrade.',
+    instructions: 'Make this repository work with the upgraded dependencies.',
     dependsOn: [],
     dependencyReasons: [],
     executionLayer: layer,

@@ -22,8 +22,9 @@ const execFile = promisify(execFileCb);
  * CLI and the extension actually do when a developer asks Drift to fix an
  * upgrade with a local agent, which is `runAgentUpgradeFix`: one session over
  * the whole repository, prompted with `composeAgentPrompt` in upgrade mode
- * (Drift's findings and the project's measured failures as a head start),
- * then each changed file validated on its own by `validateUpgradeFix` and only
+ * (the plain task plus the rules Drift enforces; see
+ * `renderUpgradeAgentPrompt`), then each changed file validated on its own by
+ * `validateUpgradeFix` and only
  * the ones that break a rule reverted. It replaced `runAgentCommitsInWorktree`,
  * the unit-by-unit pipeline, after this condition measured that one fixing
  * none of ten upgrades a plain agent fixed nearly all of.

@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runAgentUpgradeFix, upgradeProtectedPaths } from '../dist/remediation/worktree-runner.js';
-import { renderCommitAgentPrompt } from '../dist/agents/types.js';
+import { buildEditFixPrompt, composeAgentPrompt, renderCommitAgentPrompt } from '../dist/agents/types.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
 
 /**
@@ -184,45 +184,59 @@ describe('what the agent is told', () => {
     ({
       plan: plan(),
       commit: { id: 'u', order: 1, message: 'm', body: '', breakingChangeIds: [], files: ['src/a.ts'], allowedFiles: ['src/a.ts'], instructions: 'fix', dependsOn: [], dependencyReasons: [], executionLayer: 0, expectedChecks: [], invalidationTriggers: [] },
-      files: [],
+      files: [{ path: 'src/a.ts', content: '' }],
       ...(mode ? { mode, protectedPaths: ['.github/workflows/**'] } : {}),
     }) as never;
 
-  test('for an upgrade: findings are a head start, any needed file may change, and the agent verifies its own work', () => {
+  test('for an upgrade: the plain task a raw agent gets, plus the rules Drift enforces', () => {
     const prompt = renderCommitAgentPrompt(task('upgrade'));
-    assert.match(prompt, /head start, not as the whole job/);
-    assert.match(prompt, /Investigate beyond what it\s+lists/);
-    assert.match(prompt, /Edit whatever the migration needs/);
-    assert.match(prompt, /Verify your work with the project's own build/);
+    assert.match(prompt, /Update this repository so that it works correctly with the new version/);
+    assert.match(prompt, /Run the appropriate tests\/build\/typecheck/);
+    assert.match(prompt, /Do not make a check pass by checking less/);
     assert.match(prompt, /\.github\/workflows\/\*\*/);
+    // Drift's findings anchored the agent: it fixed the listed item and
+    // stopped. The benchmark measured that; so they are not in the prompt.
+    assert.doesNotMatch(prompt, /Required fix/);
     assert.doesNotMatch(prompt, /You may edit ONLY/);
-    assert.doesNotMatch(prompt, /Do not run the full test suite/);
   });
 
   test('for a planned unit the scoped prompt is unchanged', () => {
     const prompt = renderCommitAgentPrompt(task());
     assert.match(prompt, /You may edit ONLY these 1 file/);
-    assert.doesNotMatch(prompt, /head start/);
+    assert.doesNotMatch(prompt, /Find and fix all relevant incompatibilities/);
+  });
+
+  test('an agent that cannot run anything keeps the findings, which are all it has to work from', () => {
+    const prompt = buildEditFixPrompt(task('upgrade'));
+    assert.match(prompt, /You may edit ONLY these 1 file/);
+    assert.doesNotMatch(prompt, /Run the appropriate tests/);
+  });
+
+  test('an upgrade session is not handed a unit\'s own instructions on top of the task', () => {
+    const prompt = composeAgentPrompt(task('upgrade'));
+    assert.doesNotMatch(prompt, /## Your task/);
+    assert.match(composeAgentPrompt(task()), /## Your task\n\nfix/);
   });
 });
 
 describe('the cloud agent prompt (Copilot), for the Action and the CLI', () => {
-  test('with nothing planned but failing checks, the measured failures are the task', async () => {
+  test('is the same task a local Fix with AI session gets, plus where to hand it back', async () => {
     const { buildTaskPrompt } = await import('../dist/dispatch/copilot.js');
     const prompt = buildTaskPrompt(
       plan({ branchName: 'drift/x', baseBranch: 'main', warnings: [], changes: [{ name: 'lru-cache', from: '7.18.3', to: '10.4.3', ecosystem: 'npm', bump: 'major' }] }),
       DriftConfigSchema.parse({}),
     );
-    assert.match(prompt, /What the project's own checks report/);
-    assert.match(prompt, /TS2351: This expression is not constructable/);
-    assert.match(prompt, /Drift planned no commits/);
-    assert.match(prompt, /Fix what this upgrade broke, and only that/);
+    assert.match(prompt, /lru-cache from 7\.18\.3 to 10\.4\.3 has been upgraded/);
+    assert.match(prompt, /Find and fix all relevant incompatibilities/);
+    assert.match(prompt, /Fix only what upgrading lru-cache broke/);
+    assert.match(prompt, /branch `drift\/x`/);
+    assert.match(prompt, /Do not merge the pull request/);
   });
 
   test('protects node_modules, .git and .env, and leaves lockfiles to move with a companion package', async () => {
     const { buildTaskPrompt } = await import('../dist/dispatch/copilot.js');
     const prompt = buildTaskPrompt(plan({ branchName: 'drift/x', baseBranch: 'main', warnings: [] }), DriftConfigSchema.parse({}));
-    const rule = prompt.split('\n').find((line) => line.includes('Do not modify files matching'))!;
+    const rule = prompt.slice(prompt.indexOf('Do not edit '), prompt.indexOf('Drift reverts'));
     assert.match(rule, /node_modules\/\*\*/);
     assert.match(rule, /\.github\/workflows\/\*\*/);
     assert.doesNotMatch(rule, /\*\.lock/);

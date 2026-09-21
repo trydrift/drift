@@ -1,6 +1,6 @@
 import {
   buildEditProtocolInstructions,
-  buildFixPrompt,
+  buildEditFixPrompt,
   parseFileBlocks,
   parseQuestion,
   saysNoChanges,
@@ -100,7 +100,7 @@ export class OllamaAgent implements FixAgent {
     ctx.report(`Asking ${model} to fix ${task.files.length} file(s)…`);
 
     let prompt = [
-      buildFixPrompt(task),
+      buildEditFixPrompt(task),
       '',
       buildEditProtocolInstructions(task.files),
       '',

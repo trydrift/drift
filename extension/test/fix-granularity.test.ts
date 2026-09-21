@@ -61,8 +61,8 @@ describe('fixing everything, or one package', () => {
   test('a package chosen on its own is asked to fix only what that package broke', () => {
     const whole = foldForWholeUpgrade(plan([unit(1, 'c1')], [{ name: 'ajv', from: '6.15.0', to: '8.20.0' }]));
     const prompt = renderCommitAgentPrompt({ plan: whole, commit: whole.commits.at(-1)!, files: [], mode: 'upgrade' } as never);
-    assert.match(prompt, /What upgrading ajv broke in this repository — and only that/);
-    assert.match(prompt, /Leave those alone; they\s+are not this task/);
+    assert.match(prompt, /Fix only what upgrading ajv broke/);
+    assert.match(prompt, /Failures from other dependency changes, or\s+that were there before this upgrade, are not this task/);
   });
 });
 
@@ -70,9 +70,11 @@ describe('fixing one concern', () => {
   test('is asked to fix only that concern, and may reach another file only where that fix needs it', () => {
     const concern = unit(2, 'c2');
     const prompt = renderCommitAgentPrompt({ plan: plan([unit(1, 'c1'), concern]), commit: concern, files: [], mode: 'upgrade' } as never);
-    assert.match(prompt, /Only this: fix: concern 2\./);
-    assert.match(prompt, /Leave every other concern/);
-    assert.match(prompt, /change another\s+file only where this fix needs it/);
+    assert.match(prompt, /Fix only this problem, which the developer chose to fix on its own/);
+    assert.match(prompt, /- bc2 changed\n  at src\/f2\.ts:1/);
+    assert.doesNotMatch(prompt, /bc1 changed/, 'not the other concern');
+    assert.doesNotMatch(prompt, /Find and fix all relevant incompatibilities/);
+    assert.match(prompt, /change another file only where\s+this fix needs it/);
     assert.doesNotMatch(prompt, /You may edit ONLY/);
   });
 });

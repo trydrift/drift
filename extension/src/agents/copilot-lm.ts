@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import {
   buildEditProtocolInstructions,
-  buildFixPrompt,
+  buildEditFixPrompt,
   parseFileBlocks,
   parseQuestion,
   saysNoChanges,
@@ -103,7 +103,7 @@ export class LanguageModelAgent implements FixAgent {
     ctx.report(`Asking ${model.name} to fix ${task.commit.files.length} file(s)…`);
 
     const messages = [
-      vscode.LanguageModelChatMessage.User(buildFixPrompt(task)),
+      vscode.LanguageModelChatMessage.User(buildEditFixPrompt(task)),
       vscode.LanguageModelChatMessage.User(buildEditProtocolInstructions(task.files)),
       vscode.LanguageModelChatMessage.User(renderFiles(task)),
     ];

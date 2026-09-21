@@ -695,22 +695,19 @@ describe('rendered output', () => {
   test('the agent prompt forbids the predictable failure modes', () => {
     const prompt = buildTaskPrompt(plan, DEFAULT_CONFIG);
 
-    assert.match(prompt, /do not weaken, skip, or delete tests/i);
-    assert.match(prompt, /do not change, revert, or downgrade the upgraded dependencies/i);
+    assert.match(prompt, /skipped or deleted tests/i);
+    assert.match(prompt, /do not revert or downgrade the dependency/i);
     // A companion package the new major requires may move with it; forbidding
     // every manifest and lockfile edit made those migrations impossible.
     assert.match(prompt, /companion package/i);
-    // The plan's commits structure the work; they do not fence it.
-    assert.match(prompt, /Suggested commits/);
-    assert.match(prompt, /not a limit/);
-    assert.match(prompt, /use it as a head\s+start, not as the whole job/i);
-    assert.match(prompt, /TODO\(drift\)/);
     assert.match(prompt, /do not merge/i);
   });
 
-  test('the agent prompt carries the evidence, not just conclusions', () => {
+  test('the agent prompt is the task, not Drift\'s findings', () => {
+    // Findings in the prompt anchored the agent on the listed item; measured
+    // on ten real upgrades, the plain task fixed more of them.
     const prompt = buildTaskPrompt(plan, DEFAULT_CONFIG);
-    assert.ok(prompt.includes('createClient'));
-    assert.ok(prompt.includes('src/a.ts:1'), 'the agent gets exact locations');
+    assert.ok(!prompt.includes('src/a.ts:1'));
+    assert.match(prompt, /Find and fix all relevant incompatibilities/);
   });
 });

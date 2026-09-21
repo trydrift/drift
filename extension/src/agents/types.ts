@@ -16,6 +16,8 @@ export type {
 
 export {
   buildEditProtocolInstructions,
+  buildEditFixPrompt,
+  composeAgentPrompt,
   buildFixPrompt,
   FILE_BEGIN,
   FILE_END,

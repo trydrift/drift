@@ -1,7 +1,8 @@
 import type { RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
-import { upgradeFixProtectedPaths } from '../remediation/worktree-runner.js';
+import { upgradeFixProtectedPaths, wholeUpgradeUnit } from '../remediation/worktree-runner.js';
+import { renderUpgradeAgentPrompt } from '../agents/types.js';
 
 /**
  * GitHub Copilot coding agent dispatch.
@@ -223,209 +224,27 @@ export async function awaitTerminalState(options: {
  *     "fixing" unrelated code it noticed, and inventing replacement APIs.
  */
 export function buildTaskPrompt(plan: RemediationPlan, config: DriftConfig): string {
-  const sections: string[] = [];
-
-  sections.push(
-    [
-      '# Dependency compatibility fix',
-      '',
-      'A dependency in this repository was upgraded and the upgrade contains breaking',
-      'changes. Your job is to update this repository’s code so it works with the new',
-      'version. The dependency versions themselves are already updated — do not change',
-      'them back, and do not change them further.',
-      '',
-      `You are working on branch \`${plan.branchName}\`, which is already checked out at`,
-      `the commit containing the dependency update.`,
-    ].join('\n'),
-  );
-
-  sections.push(
-    [
-      '## Dependency changes',
-      '',
-      ...plan.changes.map(
-        (c) => `- \`${c.name}\` (${c.ecosystem}): ${c.from ?? '—'} → ${c.to ?? '—'} [${c.bump}]`,
-      ),
-    ].join('\n'),
-  );
-
-  sections.push(
-    [
-      // The same framing every Drift fix path uses. Confining an agent to the
-      // lines Drift found fixed none of ten real upgrades a plain agent fixed
-      // nearly all of; the findings earn their place by saving the search.
-      "Drift has already analysed this upgrade. What it found is below: use it as a head",
-      'start, not as the whole job. Drift compares exported symbols, so it cannot see a',
-      'name that survived the upgrade and changed meaning — a changed default, an option',
-      'that now needs a companion option, a different return shape — and its search can',
-      'miss call sites. Investigate beyond what it lists, and follow the compiler and the',
-      'tests wherever they lead. Fix what this upgrade broke, and only that.',
-    ].join('\n'),
-  );
-
-  const measured = plan.verification?.diagnostics?.trim();
-  if (measured) {
-    sections.push(
-      [
-        "## What the project's own checks report",
-        '',
-        'Drift installed the upgrade and ran the project\'s checks before handing this over.',
-        'This is measured, not predicted: where it disagrees with the findings below,',
-        'believe this.',
-        '',
-        '```',
-        measured.slice(0, 12_000),
-        '```',
-      ].join('\n'),
-    );
-  }
-
-  sections.push(renderPromptFindings(plan));
-  sections.push(renderPromptCommitPlan(plan));
-  sections.push(renderPromptRules(plan, config));
-
-  if (config.remediation.customInstructions.trim()) {
-    sections.push(
-      ['## Repository-specific instructions', '', config.remediation.customInstructions.trim()].join('\n'),
-    );
-  }
-
-  sections.push(renderPromptCompletion(plan));
-
-  return sections.join('\n\n');
-}
-
-function renderPromptFindings(plan: RemediationPlan): string {
-  const evidenceById = new Map(plan.evidence.map((e) => [e.id, e]));
-  const lines: string[] = ['## What broke, and why we know'];
-  lines.push('');
-  lines.push(
-    'Each finding below was derived from upstream evidence, quoted so you can verify it',
-    'rather than relying on recollection of this package’s API.',
-  );
-  lines.push('');
-
-  for (const change of plan.breakingChanges) {
-    const sites = plan.impactSites.filter((s) => s.breakingChangeId === change.id);
-    if (sites.length === 0) continue;
-
-    lines.push(`### ${change.summary}`);
-    lines.push('');
-    lines.push(`- Dependency: \`${change.dependency}\``);
-    lines.push(`- Kind: ${change.kind}`);
-    lines.push(`- Confidence: ${change.confidence}`);
-    if (change.symbols.length) {
-      lines.push(`- Affected symbols: ${change.symbols.map((s) => `\`${s}\``).join(', ')}`);
-    }
-    lines.push('');
-    lines.push(`**Required fix:** ${change.remediation}`);
-    lines.push('');
-
-    for (const id of change.citations) {
-      const evidence = evidenceById.get(id);
-      if (!evidence) continue;
-      lines.push(`<details><summary>Evidence: ${evidence.title}</summary>`);
-      lines.push('');
-      lines.push('```');
-      lines.push(truncate(evidence.content, 1500));
-      lines.push('```');
-      if (evidence.url) lines.push(`Source: ${evidence.url}`);
-      lines.push('');
-      lines.push('</details>');
-      lines.push('');
-    }
-  }
-
-  return lines.join('\n').trim();
-}
-
-function renderPromptCommitPlan(plan: RemediationPlan): string {
-  if (plan.commits.length === 0) {
-    return [
-      '## Commits',
-      '',
-      "Drift planned no commits: its search found no call site of the changed APIs, but",
-      "the project's checks above say the upgrade breaks it. Fix what they report, in",
-      'one commit.',
-    ].join('\n');
-  }
-
-  const lines: string[] = [
-    '## Suggested commits',
+  // The same task a local Fix with AI session gets — see
+  // `renderUpgradeAgentPrompt` for why it is the plain task and not Drift's
+  // findings — plus what only a cloud agent needs: where it is working, and
+  // how to hand the result back.
+  const body = renderUpgradeAgentPrompt({
+    plan,
+    commit: wholeUpgradeUnit(plan),
+    files: [],
+    customInstructions: config.remediation.customInstructions,
+    mode: 'upgrade',
+    protectedPaths: upgradeFixProtectedPaths(config.guardrails.protectedPaths),
+  });
+  return [
+    '# Dependency upgrade fix',
     '',
-    'Structure your work as these commits where it fits, by execution layer: commits in',
-    'the same layer are independent, and a later layer waits for the ones it depends on.',
-    'Each addresses one concern so a human can review or revert it on its own. The files',
-    'listed are where Drift found the concern, not a limit — if the fix needs another',
-    'file, change it in the commit it belongs to.',
+    `You are working on branch \`${plan.branchName}\`, which is already checked out at the commit containing the dependency update.`,
     '',
-  ];
-
-  for (const commit of plan.commits) {
-    lines.push(`---`);
-    lines.push('');
-    lines.push(`### Commit ${commit.order}: \`${commit.message}\``);
-    lines.push('');
-    lines.push(`- Unit id: \`${commit.id}\``);
-    lines.push(`- Execution layer: ${commit.executionLayer}`);
-    if (commit.dependsOn.length > 0) {
-      lines.push(`- Depends on: ${commit.dependsOn.map((id) => `\`${id}\``).join(', ')}`);
-      lines.push(
-        `- Dependency reasons: ${commit.dependencyReasons
-          .map((edge) => `${edge.reason} (${edge.evidence.slice(0, 3).join('; ')})`)
-          .join('; ')}`,
-      );
-    }
-    if (commit.expectedChecks.length > 0) {
-      lines.push(`- Expected checks: ${commit.expectedChecks.map((check) => check.kind).join(', ')}`);
-    }
-    lines.push('');
-    lines.push('Commit message body:');
-    lines.push('');
-    lines.push('```');
-    lines.push(commit.body);
-    lines.push('```');
-    lines.push('');
-    lines.push(`Where Drift found this concern: ${commit.allowedFiles.map((f) => `\`${f}\``).join(', ')}`);
-    lines.push('');
-    lines.push(commit.instructions);
-    lines.push('');
-  }
-
-  return lines.join('\n').trim();
-}
-
-function renderPromptRules(plan: RemediationPlan, config: DriftConfig): string {
-  const rules: string[] = [
-    'Change only what is required to make this repository work with the new dependency version. No refactoring, renaming, reformatting, or tidying of code you happen to pass by.',
-    'Do not change, revert, or downgrade the upgraded dependencies: the upgrade is the input to this task, not part of it. A companion package the new version requires — a plugin that must match the new major, a types package its declarations need — may move with it, lockfile included.',
-    'Verify each fix against the evidence quoted above and against the installed version of the package in this repository. If the evidence does not name a replacement API, look it up in the installed package rather than inventing one.',
-    'If you cannot determine the correct fix for a location, leave the code as it is, add a clearly-marked `TODO(drift):` comment explaining what is unresolved, and say so in the pull request description. A flagged unknown is useful; a confident guess is not.',
-    'Run the repository’s existing tests and build after each commit where that is possible.',
-  ];
-
-  if (config.guardrails.forbidTestWeakening) {
-    rules.push(
-      'Do not weaken, skip, or delete tests to make them pass. If a test fails because the API changed, update the test to exercise the new API while asserting the same behaviour. If a test fails for a reason you cannot resolve that way, leave it failing and explain why.',
-    );
-  }
-
-  // Lockfiles excluded, since a companion package moves one; node_modules,
-  // .git and .env included whatever a repository configures.
-  const protectedPaths = upgradeFixProtectedPaths(config.guardrails.protectedPaths);
-  if (protectedPaths.length > 0) {
-    rules.push(
-      `Do not modify files matching any of these patterns: ${protectedPaths.map((p) => `\`${p}\``).join(', ')}.`,
-    );
-  }
-
-  if (plan.warnings.length > 0) {
-    rules.push(
-      `Drift flagged the following for human attention; be conservative around them: ${plan.warnings.join(' ')}`,
-    );
-  }
-
-  return ['## Rules', '', ...rules.map((r, i) => `${i + 1}. ${r}`)].join('\n');
+    body,
+    '',
+    renderPromptCompletion(plan),
+  ].join('\n');
 }
 
 function renderPromptCompletion(plan: RemediationPlan): string {
@@ -435,7 +254,6 @@ function renderPromptCompletion(plan: RemediationPlan): string {
     'Open a pull request into `' + plan.baseBranch + '`. In the description, include:',
     '',
     '- A short summary of what changed and why.',
-    '- One line per commit, mapping it to the breaking change it addresses.',
     '- **Anything you could not fix, or fixed with low confidence.** This is the most',
     '  important part of the description: the reviewer needs to know where to look.',
     '- Any place where you had to choose between plausible interpretations, and which',
@@ -479,6 +297,3 @@ async function safeText(response: Response): Promise<string> {
   }
 }
 
-function truncate(text: string, max: number): string {
-  return text.length <= max ? text : `${text.slice(0, max)}\n…(truncated)`;
-}

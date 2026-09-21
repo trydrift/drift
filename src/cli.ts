@@ -2371,8 +2371,8 @@ async function fixPlanAndOpenPR(args: {
           logger.warn(`${selection.provider} was selected, but that provider is not available in this CLI runtime.`);
           unresolvedAgentWork = true;
         } else if (agent.capabilities.execution === 'workspace') {
-          // One session over the whole upgrade, with Drift's findings as a head
-          // start and every changed file validated on its own. The
+          // One session over the whole upgrade, given the plain task, with
+          // every changed file validated on its own. The
           // unit-by-unit runner this replaced fixed none of ten real upgrades
           // a plain agent fixed nearly all of; see `runAgentUpgradeFix`.
           const agentRun = await runAgentUpgradeFix({ plan, config: agentConfig, worktree: fix.worktree, agent, logger });
@@ -2586,8 +2586,8 @@ async function dispatchRemainingToCloudAgent(options: {
   config: DriftConfig;
   logger: Logger;
 }): Promise<{ ok: boolean; error?: string }> {
-  // With no planned commit the whole plan goes: its measured failures are the
-  // task, and the cloud prompt says so. Only an upgrade with neither is empty.
+  // With no planned commit but a failing check, the whole upgrade goes to the
+  // agent. Only an upgrade with neither is empty.
   if (options.commits.length === 0 && options.plan.verification?.status !== 'failed') return { ok: true };
   const agentPlan = options.commits.length > 0 ? planForCommits(options.plan, options.commits) : options.plan;
   const result = await options.agent.run(
