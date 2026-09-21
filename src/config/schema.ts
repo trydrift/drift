@@ -271,7 +271,14 @@ export const DriftConfigSchema = z.object({
           model: z.string().optional(),
           effort: AGENT_EFFORT.optional(),
           fast: z.boolean().default(false),
-          timeoutSeconds: z.number().int().min(30).max(24 * 60 * 60).default(600),
+          /**
+           * How long one agent session may run. A fix is one session for the
+           * whole of what was chosen, where it used to be one per planned unit,
+           * each with this limit; and measured on ten real upgrades an agent
+           * with no Drift around it took 3 to 30 minutes, the larger ones
+           * 15 to 30. Ten minutes stopped those mid-fix.
+           */
+          timeoutSeconds: z.number().int().min(30).max(24 * 60 * 60).default(1800),
         })
         .prefault({}),
       /** Extra repo-specific guidance appended to every agent task. */

@@ -35,7 +35,7 @@ let cache: { at: number; key: string; agents: DiscoveredAgent[] } | null = null;
 
 export function buildAgents(ctx: RegistryContext): FixAgent[] {
   const config = vscode.workspace.getConfiguration('drift');
-  const timeoutMs = Math.max(30, config.get<number>('agent.timeoutSeconds', 600)) * 1000;
+  const timeoutMs = Math.max(30, config.get<number>('agent.timeoutSeconds', 1800)) * 1000;
 
   // A model picked in the composer outranks the one in settings. The setting is
   // the default for a subscription; the composer is what the developer chose

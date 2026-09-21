@@ -508,9 +508,9 @@
         },
         "drift.agent.timeoutSeconds": {
           "type": "number",
-          "default": 600,
+          "default": 1800,
           "minimum": 30,
-          "description": "How long to let an agent work on a single commit before giving up.",
+          "description": "How long to let one Fix with AI session run before giving up. One session fixes what you chose — the whole upgrade, a package, or one concern — so larger upgrades need longer.",
           "order": 5
         },
         "drift.analysis.runOnStartup": {

@@ -62,9 +62,11 @@ inputs:
 
   agent-timeout-seconds:
     description: >-
-      Timeout for local runner agents installed on the GitHub runner. Drift
-      does not install agents for you; the workflow must install and
-      authenticate the selected CLI before this Action runs.
+      Timeout, in seconds, for one Fix with AI session by a local runner agent
+      installed on the GitHub runner. Default 1800 (30 minutes): one session
+      fixes the whole upgrade. Drift does not install agents for you; the
+      workflow must install and authenticate the selected CLI before this
+      Action runs.
     required: false
 
   mode:
