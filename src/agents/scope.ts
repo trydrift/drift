@@ -170,6 +170,96 @@ export async function validateAgentWorktree(
   return { ok: reasons.length === 0, changed, patch, reasons: [...new Set(reasons)], warnings: [...new Set(warnings)] };
 }
 
+export interface UpgradeFixOffender {
+  path: string;
+  oldPath?: string;
+  reasons: string[];
+}
+
+export interface UpgradeFixValidation {
+  changed: ChangedPath[];
+  /** Files whose own change breaks a rule. Revert these; keep the rest. */
+  offenders: UpgradeFixOffender[];
+  warnings: string[];
+}
+
+/**
+ * Validate a whole-upgrade fix one file at a time.
+ *
+ * `validateAgentWorktree` judges a commit unit as a whole and rejects it as a
+ * whole, which is right when the unit is a handful of lines Drift planned and
+ * wrong for an agent fixing an entire upgrade: measured on ten real upgrades,
+ * an agent that also touched a CI workflow had every correct source edit it
+ * made thrown away with it. So each changed file is checked against its own
+ * diff — protected paths, secrets, symlinks, submodules, weakened tests and
+ * configuration, a reverted or downgraded dependency — and only the files
+ * that break a rule are returned, for the caller to revert. There is no file
+ * list to stay inside: the job is the upgrade, and scope is what the rules
+ * above forbid rather than what Drift happened to localize.
+ */
+export async function validateUpgradeFix(options: {
+  root: string;
+  baselineRef: string;
+  protectedPaths?: readonly string[];
+  upgradedDependencies?: readonly string[];
+}): Promise<UpgradeFixValidation> {
+  const changed = await changedPaths(options.root);
+  const sections = patchSections(await diff(options.root, options.baselineRef));
+  const protectedPaths = options.protectedPaths ?? DEFAULT_PROTECTED_PATHS;
+  const offenders: UpgradeFixOffender[] = [];
+  const warnings: string[] = [];
+
+  for (const entry of changed) {
+    const reasons: string[] = [];
+    for (const path of [entry.oldPath, entry.path].filter((p): p is string => Boolean(p))) {
+      const normalized = normalizePlanPath(path);
+      if (!normalized) reasons.push(`Agent produced an invalid path: ${path}.`);
+      else if (matchesAny(protectedPaths, normalized)) reasons.push(`Agent changed protected path ${normalized}.`);
+    }
+    const symlink = await symlinkProblem(options.root, entry.path);
+    if (symlink) reasons.push(symlink);
+    if (await isSubmoduleChange(options.root, entry.path)) {
+      reasons.push(`Agent changed submodule ${entry.path} without explicit authorization.`);
+    }
+
+    const filePatch = sections.get(entry.path) ?? '';
+    reasons.push(...secretFindings(filePatch, await untrackedContents(options.root, [entry])));
+    const weakening = testWeakeningFindings(filePatch, [entry]);
+    reasons.push(...weakening.errors);
+    warnings.push(...weakening.warnings);
+    reasons.push(...workaroundFindings(filePatch, [entry]));
+    if (options.upgradedDependencies?.length) reasons.push(...upgradedDependencyFindings(filePatch, options.upgradedDependencies));
+
+    if (reasons.length > 0) {
+      offenders.push({ path: entry.path, ...(entry.oldPath ? { oldPath: entry.oldPath } : {}), reasons: [...new Set(reasons)] });
+    }
+  }
+
+  return { changed, offenders, warnings: [...new Set(warnings)] };
+}
+
+/** A combined patch split into one full section per file, headers kept, keyed by the file's new path. */
+function patchSections(patch: string): Map<string, string> {
+  const sections = new Map<string, string>();
+  let path: string | null = null;
+  let lines: string[] = [];
+  const flush = () => {
+    if (path) sections.set(path, lines.join('\n'));
+  };
+  for (const line of patch.split('\n')) {
+    if (line.startsWith('diff --git a/')) {
+      flush();
+      const at = line.lastIndexOf(' b/');
+      path = at >= 0 ? line.slice(at + 3) : line.slice('diff --git a/'.length);
+      lines = [line];
+      continue;
+    }
+    if (path) lines.push(line);
+  }
+  flush();
+  return sections;
+}
+
 export async function changedPaths(root: string): Promise<ChangedPath[]> {
   const out = await git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
   const tokens = out.split('\0').filter(Boolean);

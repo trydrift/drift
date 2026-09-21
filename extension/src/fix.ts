@@ -10,6 +10,40 @@ import { WORKING_TREE } from '../../src/repo/local-git.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
 import { validateAgentWorktree, type ChangedPath } from './scope.js';
+import { changedPaths as worktreeChanges, isProtectedPath, validateUpgradeFix, type UpgradeFixOffender } from '../../src/agents/scope.js';
+import { UPGRADE_UNIT_ID, upgradeFixProtectedPaths, wholeUpgradeUnit } from '../../src/remediation/worktree-runner.js';
+
+/**
+ * A unit an agent fixes (not one Drift's codemods or a validated fix plan
+ * already solve). Every such unit — the whole upgrade, or one concern chosen
+ * on its own — may edit any file its fix needs except a protected one, and is
+ * validated file by file. What it is asked to fix is what the developer
+ * chose; which files it may touch to do that is not narrowed further, because
+ * confining an agent to the lines Drift found is what fixed none of ten real
+ * upgrades a plain agent fixed nearly all of.
+ */
+function isAgentUnit(commit: CommitUnit): boolean {
+  return !commit.codemod && !commit.fixPlan;
+}
+
+/**
+ * The plan as a whole-upgrade fix runs it: any deterministic units first, then
+ * one agent unit carrying every finding. Idempotent, so a caller that already
+ * folded the plan to draw its progress rows hands the same units on.
+ */
+export function foldForWholeUpgrade(plan: RemediationPlan): RemediationPlan {
+  if (plan.commits.some((commit) => commit.id === UPGRADE_UNIT_ID)) return plan;
+  const deterministic = plan.commits.filter((commit) => !isAgentUnit(commit));
+  const layer = Math.max(-1, ...deterministic.map((commit) => commit.executionLayer)) + 1;
+  const order = Math.max(0, ...deterministic.map((commit) => commit.order)) + 1;
+  return { ...plan, commits: [...deterministic, { ...wholeUpgradeUnit(plan, layer), order }] };
+}
+
+/** Whether the project's own typecheck ran and reported errors. */
+export function typecheckFailed(diagnostics: string | undefined): boolean {
+  return diagnostics !== undefined && diagnostics.trim() !== '' && !diagnostics.includes(CLEAN_TYPECHECK_MARKER);
+}
+import { DEFAULT_CONFIG } from '../../src/config/schema.js';
 import type { DriftState } from './state.js';
 import {
   readEffort,
@@ -197,9 +231,18 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   const guard = await ensureCleanTree(git, options.ask);
   if (!guard.ok) return fail(guard.message);
 
+  // Fixing the whole upgrade is one agent session over the repository, after
+  // any deterministic units the planner already solved; a single concern
+  // chosen from the panel or a quick fix is that concern alone. Either way
+  // there is work when Drift planned a unit, or when the project's own checks
+  // measured a failure — a failure with no localized site planned no unit at
+  // all, and was never attempted, on six of ten real upgrades.
+  const measuredFailure = plan.verification?.status === 'failed' || typecheckFailed(options.diagnostics);
   const commits = options.onlyCommit
     ? plan.commits.filter((c) => c.order === options.onlyCommit)
-    : plan.commits;
+    : plan.commits.length > 0 || measuredFailure
+      ? foldForWholeUpgrade(plan).commits
+      : [];
 
   if (commits.length === 0) {
     if (guard.stashed) await git.stashPop().catch(() => undefined);
@@ -304,10 +347,13 @@ async function runFixOnBranch(args: {
   const openCommit = async (commit: CommitUnit): Promise<{ path: string; content: string }[]> => {
     const files = scopeFiles(commit);
     options.onCommitStart?.(commit);
+    const agentUnit = isAgentUnit(commit);
     options.onActivity?.(commit, {
       kind: 'status',
-      title: 'Scope files',
-      detail: `${files.length} planned file${files.length === 1 ? '' : 's'}`,
+      title: agentUnit ? 'Starting points' : 'Scope files',
+      detail: agentUnit
+        ? `${files.length} file${files.length === 1 ? '' : 's'} Drift found; the agent may change any file this fix needs`
+        : `${files.length} planned file${files.length === 1 ? '' : 's'}`,
       output: files.join('\n'),
     });
 
@@ -545,7 +591,7 @@ async function runFixOnBranch(args: {
 
       if (!entry) continue;
       if (entry.edits.length > 0) {
-        await applyEdits(root, entry.edits, scopeFiles(entry.commit));
+        await applyEdits(root, entry.edits, editScope(entry.commit, entry.edits));
       }
       const stop = await closeCommit(entry.commit, entry.outcome, entry.before);
       if (stop) return stop;
@@ -583,7 +629,7 @@ async function runFixOnBranch(args: {
     // both arbitrary and different on every run.
     for (const entry of outcomes) {
       if (entry.edits.length > 0) {
-        await applyEdits(root, entry.edits, scopeFiles(entry.commit));
+        await applyEdits(root, entry.edits, editScope(entry.commit, entry.edits));
       }
       const stop = await closeCommit(entry.commit, entry.outcome, entry.before);
       if (stop) return stop;
@@ -828,6 +874,32 @@ async function runBatchInWorktrees(args: {
         });
 
         if (outcome.status !== 'applied') return { commit, outcome, before, edits: [] };
+
+        // A whole-upgrade fix is judged one file at a time: only the files
+        // that break a rule are reverted in the worktree, and every other edit
+        // goes on to review. Rejecting the lot, as a planned unit is, threw
+        // away correct source edits for a stray workflow change.
+        if (isAgentUnit(commit)) {
+          const judged = await validateUpgradeFix({
+            root: path,
+            baselineRef: base,
+            protectedPaths: upgradeFixProtectedPaths(DEFAULT_CONFIG.guardrails.protectedPaths),
+            upgradedDependencies: args.plan.changes.map((change) => change.name),
+          });
+          for (const offender of judged.offenders) {
+            await revertInWorktree(path, base, offender);
+            args.onActivity?.(commit, { kind: 'status', title: 'Reverted', detail: `${offender.path}: ${offender.reasons.join(' ')}` });
+          }
+          for (const warning of judged.warnings) {
+            args.onActivity?.(commit, { kind: 'status', title: 'Review warning', detail: warning });
+          }
+          return {
+            commit,
+            outcome: { ...outcome, warnings: [...(outcome.warnings ?? []), ...judged.warnings] },
+            before,
+            edits: await editsFromWorktree(path, await worktreeChanges(path)),
+          };
+        }
 
         const validation = await validateAgentWorktree({
           root: path,
@@ -1137,6 +1209,9 @@ async function applyOneCommit(args: {
     fast: args.fast,
     diagnostics: args.diagnostics,
     ...(args.revision ? { revision: args.revision } : {}),
+    ...(isAgentUnit(commit)
+      ? { mode: 'upgrade' as const, protectedPaths: upgradeFixProtectedPaths(DEFAULT_CONFIG.guardrails.protectedPaths) }
+      : {}),
   };
 
   try {
@@ -1164,7 +1239,7 @@ async function applyOneCommit(args: {
     // every change is a normal, undoable editor edit rather than a surprise
     // mutation behind the user's back.
     if (!args.deferEdits && edits.length > 0) {
-      await applyEdits(root, edits, scopeFiles(commit));
+      await applyEdits(root, edits, editScope(commit, edits));
       return { outcome, edits: [] };
     }
 
@@ -1301,6 +1376,29 @@ async function applyEdits(
     void vscode.window.showWarningMessage(
       `Drift ignored edits to ${rejected.length} file(s) outside this commit's scope: ${rejected.slice(0, 3).join(', ')}`,
     );
+  }
+}
+
+/**
+ * The paths an edit for this unit may land on. A deterministic unit keeps to
+ * the files it names. An agent unit may change any file its fix needs except a
+ * protected one; a worktree's edits reaching here were already judged file by
+ * file, and an in-editor agent's edits are held to the same rule before they
+ * are written.
+ */
+function editScope(commit: CommitUnit, edits: readonly { path: string }[]): string[] {
+  if (!isAgentUnit(commit)) return scopeFiles(commit);
+  const protectedPaths = upgradeFixProtectedPaths(DEFAULT_CONFIG.guardrails.protectedPaths);
+  return edits
+    .map((edit) => edit.path.replace(/^\.\//, '').replace(/\\/g, '/'))
+    .filter((path) => !isProtectedPath(path, protectedPaths));
+}
+
+/** Put one file in a worktree back as it was at `base`, or remove it if it did not exist. */
+async function revertInWorktree(root: string, base: string, offender: UpgradeFixOffender): Promise<void> {
+  const git = new Git(root);
+  for (const path of [offender.path, offender.oldPath].filter((p): p is string => Boolean(p))) {
+    await git.restorePath(base, path);
   }
 }
 

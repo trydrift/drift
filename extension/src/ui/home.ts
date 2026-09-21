@@ -16,7 +16,7 @@ import { loadWorkspaceConfig, runAnalysis, resolveScanChoices } from '../analyze
 import { deepVerify, type AnalysisOptions } from '../../../src/analysis.js';
 import { describeVerification } from '../../../src/verification/apply.js';
 import { envWithShellPath } from '../shell-path.js';
-import { clearedByCompiler, runFix, type FixResult } from '../fix.js';
+import { clearedByCompiler, foldForWholeUpgrade, runFix, typecheckFailed, type FixResult } from '../fix.js';
 import type { CandidateStateChange, DriftState, RepoRoot } from '../state.js';
 import type { NestedProject } from '../../../src/detect/nested.js';
 import {
@@ -3326,21 +3326,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    if (plan.commits.length === 0 || plan.impactSites.length === 0) {
-      // "Upgrading is all that is needed" is a compatibility claim, and a
-      // runtime requirement Drift could not resolve produces exactly this
-      // shape -- no commits, no sites -- without having established it.
-      const runtimeUnresolved = (plan.rationale ?? []).some(
-        (entry) =>
-          entry.assessment.runtimeCompatibility === 'unknown' ||
-          entry.assessment.runtimeCompatibility === 'partial',
-      );
-      const hasReview = (plan.dispositions ?? []).some((d) => d.state === 'review-only' || d.state === 'unknown');
-      this.session.say(
-        runtimeUnresolved || hasReview
-          ? 'There is nothing for an agent to edit, but this upgrade carries a runtime requirement Drift could not check against this repository. Confirm the runtime version you build and deploy on before upgrading.'
-          : 'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
-      );
+    // No planned unit and no localized site is not the same as nothing to fix.
+    // A static search that found no call site says nothing about what the
+    // compiler will say once the new version is installed, and on six of ten
+    // real upgrades benchmarked with nothing planned, the build was broken.
+    // So "nothing to edit" is only said here when there is also no typecheck
+    // that could measure it; otherwise the upgrade is installed and measured
+    // below, and the answer comes from the compiler.
+    const nothingPredicted = plan.commits.length === 0 || plan.impactSites.length === 0;
+    const canMeasure = (await availableChecks(ctx.root, memberDirsOf(plan)[0] ?? '')).some((check) => check.kind === 'typecheck');
+    if (nothingPredicted && !canMeasure) {
+      this.session.say(nothingToEditMessage(plan, false));
       return;
     }
 
@@ -3396,7 +3392,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // rather than predicted: what the project's own compiler says is broken now
     // that the versions have moved. Gathered here, grouped, and handed to the
     // agent alongside Drift's analysis rather than left for a human to read.
-    const diagnostics = upgraded
+    const diagnostics = upgraded || nothingPredicted
       ? await this.gatherDiagnostics(ctx.root, plan)
       : undefined;
 
@@ -3428,8 +3424,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
     }
 
-    if (plan.commits.length === 0) {
+    if (plan.commits.length === 0 && !typecheckFailed(diagnostics)) {
       this.state.set({ kind: 'findings', plan, at: Date.now() });
+      if (nothingPredicted) {
+        this.session.say(nothingToEditMessage(plan, diagnostics !== undefined));
+        return;
+      }
       this.session.say(
         clearedCount > 0
           ? // Says which stage got it wrong, rather than only that something
@@ -3471,12 +3471,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       : '';
     const committing =
       commitMode === 'auto'
-        ? 'Each concern is committed as soon as it is finished.'
+        ? 'The fix is committed as soon as it is finished.'
         : 'Nothing is committed until you keep it.';
+    // One agent session for what was chosen — these packages' upgrade — with
+    // Drift's findings as its starting points, drawn as the rows it will run.
+    const work = foldForWholeUpgrade(plan);
+    const sites = (plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0);
     const tasks = this.session.tasks(
-      `${this.agentLabel()} is fixing ${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0)} site${(plan.dispositions ?? []).reduce((count, disposition) => count + disposition.actionableSites.length, 0) === 1 ? '' : 's'}`,
-      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${evidence}`,
-      buildTaskGroups(plan),
+      sites > 0
+        ? `${this.agentLabel()} is fixing the upgrade, starting from ${sites} site${sites === 1 ? '' : 's'} Drift found`
+        : `${this.agentLabel()} is fixing what the typecheck reports`,
+      `One session for ${namesOf(plan.changes.map((change) => change.name))}${files > 0 ? `, starting from ${files} file${files === 1 ? '' : 's'}` : ''}, ${landing}. It may change any file the upgrade needs except protected ones, and only what this upgrade broke. ${committing}${evidence}`,
+      buildTaskGroups(work),
     );
 
     // A fix is the most specific thing this panel does, so it takes the title
@@ -3497,7 +3503,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     await this.run(async (token) => {
       result = await runFix({
         state: this.state,
-        plan,
+        plan: work,
         review: this.review,
         permission: this.session.permission,
         branchMode,
@@ -3515,7 +3521,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         onActivity: (commit, activity) => tasks.activity(`c${commit.order}`, activity),
         // Agent chatter belongs against the concern it is about, not in a
         // separate log the developer has to correlate by hand.
-        onLog: (message) => tasks.note(activeGroupId(plan, this.state), message.slice(0, 120)),
+        onLog: (message) => tasks.note(activeGroupId(work, this.state), message.slice(0, 120)),
         progress: { report: () => undefined },
         token,
         ...(options.revision ? { revision: options.revision } : {}),
@@ -6282,6 +6288,28 @@ function toChoice(entry: DiscoveredAgent): AgentChoice {
  * one task per breaking change per file, naming the line — which is the level at
  * which a developer can check the claim rather than take it on faith.
  */
+/**
+ * What to say when nothing needs editing, and on what authority. Measured
+ * means the project's typecheck passed against the upgraded version; without
+ * that, "upgrading is all that is needed" is only as good as a static search,
+ * and says so.
+ */
+function nothingToEditMessage(plan: RemediationPlan, measured: boolean): string {
+  // "Upgrading is all that is needed" is a compatibility claim, and a runtime
+  // requirement Drift could not resolve produces exactly this shape -- no
+  // commits, no sites -- without having established it.
+  const runtimeUnresolved = (plan.rationale ?? []).some(
+    (entry) =>
+      entry.assessment.runtimeCompatibility === 'unknown' ||
+      entry.assessment.runtimeCompatibility === 'partial',
+  );
+  const hasReview = (plan.dispositions ?? []).some((d) => d.state === 'review-only' || d.state === 'unknown');
+  if (runtimeUnresolved || hasReview) return 'There is nothing for an agent to edit, but this upgrade carries a runtime requirement Drift could not check against this repository. Confirm the runtime version you build and deploy on before upgrading.';
+  return measured
+    ? 'Your typecheck passes against the upgraded version, and no code in this repository uses the APIs that changed. Upgrading is all that is needed.'
+    : 'Drift found no code in this repository that uses the APIs that changed, and this project has no typecheck Drift can run to confirm it. There is nothing for an agent to edit from the analysis alone.';
+}
+
 function buildTaskGroups(plan: RemediationPlan): TaskGroup[] {
   const changeById = new Map(plan.breakingChanges.map((change) => [change.id, change]));
 

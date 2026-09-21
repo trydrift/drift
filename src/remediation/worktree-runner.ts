@@ -2,8 +2,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
-import type { FixAgent, FileSnapshot } from '../agents/types.js';
-import { changedPaths, validateAgentWorktree } from '../agents/scope.js';
+import { UPGRADE_UNIT_ID, type FixAgent, type FileSnapshot } from '../agents/types.js';
+import { changedPaths, DEFAULT_PROTECTED_PATHS, validateAgentWorktree, validateUpgradeFix, type UpgradeFixOffender } from '../agents/scope.js';
 import type { Logger } from '../util/logger.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { applyBuiltinCodemod, applyCommitFixPlan } from './apply.js';
@@ -293,6 +293,184 @@ export async function runAgentCommitsInWorktree(options: WorktreeAgentRunOptions
   }
 
   return { resolved, unresolved, committed };
+}
+
+export interface AgentUpgradeFixOptions {
+  plan: RemediationPlan;
+  config: DriftConfig;
+  worktree: string;
+  agent: FixAgent;
+  logger: Logger;
+  exec?: Exec;
+}
+
+export interface AgentUpgradeFixResult {
+  /** `committed`: the kept edits are one commit on the worktree. */
+  status: 'committed' | 'no-changes' | 'failed';
+  message: string;
+  /** Files whose own change broke a rule, reverted before committing. */
+  reverted: UpgradeFixOffender[];
+  /** Files kept. */
+  kept: string[];
+  warnings: string[];
+}
+
+/**
+ * Fix an upgrade with one agent session over the whole repository.
+ *
+ * `runAgentCommitsInWorktree` hands an agent one planned unit at a time, may
+ * edit only the files that unit names, and discards the unit whole if any
+ * rule trips. Measured on ten real upgrades against the same agent with no
+ * Drift at all, that pipeline fixed none of them and the plain agent fixed
+ * nearly all: six upgrades were never attempted because a measured failure
+ * with no localized site produces no unit; two had every edit accepted and
+ * still did not build, because the rest of the migration was in files no unit
+ * could touch; two lost correct source edits because the same session also
+ * touched a CI workflow.
+ *
+ * So this is the path a workspace agent takes for an upgrade:
+ *
+ *   - it runs whenever the upgrade needs work, including when Drift planned no
+ *     unit, with the project's own failing output as the measured evidence;
+ *   - Drift's findings are a head start in the prompt, not a boundary on it;
+ *   - the agent verifies its own work with the project's checks, since
+ *     nothing here re-runs them;
+ *   - each changed file is validated on its own, and only the ones that break
+ *     a rule — a protected path, a weakened test or configuration, a
+ *     downgraded dependency, a secret — are reverted. The rest is kept.
+ *
+ * The result is never less than an unconstrained agent would have produced,
+ * minus exactly the edits Drift can name a reason to refuse.
+ */
+export async function runAgentUpgradeFix(options: AgentUpgradeFixOptions): Promise<AgentUpgradeFixResult> {
+  const exec = options.exec ?? execCommand;
+  const { plan, config, worktree, agent } = options;
+
+  if (agent.capabilities.execution !== 'workspace') {
+    return { status: 'failed', message: `${agent.label} is a cloud agent and cannot run in a local worktree.`, reverted: [], kept: [], warnings: [] };
+  }
+
+  // Both lists, not the configured one alone: passing any list replaces the
+  // validator's defaults, and those are the paths no fix may touch whatever a
+  // repository configures — `node_modules`, `.git`, `.env`. An agent in the
+  // benchmark's development runs once made its checks pass by editing
+  // `node_modules/logform` directly.
+  const protectedPaths = upgradeFixProtectedPaths(config.guardrails.protectedPaths);
+  const baseline = await currentHead(worktree, exec);
+  const commit = wholeUpgradeUnit(plan);
+  options.logger.info(`Running ${agent.label} on the whole upgrade.`);
+
+  const result = await agent.run(
+    {
+      plan,
+      commit,
+      workspaceRoot: worktree,
+      files: [],
+      customInstructions: config.remediation.customInstructions,
+      model: config.remediation.agent.model ?? config.remediation.model,
+      effort: config.remediation.agent.effort,
+      fast: config.remediation.agent.fast,
+      diagnostics: plan.verification?.diagnostics,
+      mode: 'upgrade',
+      protectedPaths,
+    },
+    { report: (message) => options.logger.info(message), signal: new AbortController().signal },
+  );
+
+  // A session that ended badly — a timeout, a crash — can still have left a
+  // correct partial migration behind, and an agent with no Drift around it
+  // keeps whatever it wrote. So its edits are validated and kept on the same
+  // terms as a clean finish, and the failure is reported alongside them.
+  const validation = await validateUpgradeFix({
+    root: worktree,
+    baselineRef: baseline,
+    protectedPaths,
+    upgradedDependencies: plan.changes.map((change) => change.name),
+  });
+  for (const offender of validation.offenders) {
+    await revertFile(worktree, baseline, offender, exec);
+    options.logger.warn(`Reverted ${offender.path}: ${offender.reasons.join(' ')}`);
+  }
+
+  const kept = (await changedPaths(worktree)).map((entry) => entry.path);
+  for (const warning of validation.warnings) options.logger.warn(warning);
+  const note = result.status === 'failed' ? `${agent.label} did not finish cleanly: ${result.message}` : result.message;
+
+  if (kept.length === 0) {
+    return { status: result.status === 'failed' ? 'failed' : 'no-changes', message: note, reverted: validation.offenders, kept, warnings: validation.warnings };
+  }
+
+  const add = await exec('git', ['add', '-A'], { cwd: worktree });
+  const committed = add.code === 0 && (await exec('git', ['commit', '-m', upgradeCommitMessage(plan)], { cwd: worktree })).code === 0;
+  if (!committed) {
+    return { status: 'failed', message: `Could not commit ${agent.label}'s edits. ${note}`, reverted: validation.offenders, kept, warnings: validation.warnings };
+  }
+  return { status: 'committed', message: note, reverted: validation.offenders, kept, warnings: validation.warnings };
+}
+
+/**
+ * The guardrail paths, minus lockfiles. A migration that moves a companion
+ * package — a bundler plugin that must match the new major, a types package
+ * the new release's declarations need — changes the lockfile with the
+ * manifest, and refusing that leaves the manifest and the lockfile
+ * disagreeing. Reverting or downgrading the upgraded dependency itself is
+ * still refused, by the manifest check.
+ */
+export function upgradeProtectedPaths(paths: readonly string[]): string[] {
+  return paths.filter((pattern) => !/(^|\/|\*)(\*\.lock|[\w-]*lock[\w.-]*\.(json|yaml|yml)|yarn\.lock)$/i.test(pattern));
+}
+
+/**
+ * The paths a whole-upgrade fix may never keep an edit to: the validator's own
+ * defaults (`node_modules`, `.git`, `.env`, workflows) together with the
+ * repository's configured guardrails — both, because passing any list to the
+ * validator replaces its defaults — minus lockfiles, which a migration moves
+ * with its manifest. Shared by every surface that runs a whole-upgrade fix.
+ */
+export function upgradeFixProtectedPaths(configured: readonly string[]): string[] {
+  return [...new Set(upgradeProtectedPaths([...DEFAULT_PROTECTED_PATHS, ...configured]))];
+}
+
+export { UPGRADE_UNIT_ID } from '../agents/types.js';
+
+/**
+ * Every planned unit folded into one, so the prompt carries every finding.
+ * `layer` places it after any deterministic units a surface still runs first.
+ */
+export function wholeUpgradeUnit(plan: RemediationPlan, layer = 0): CommitUnit {
+  const breakingChangeIds = [...new Set([
+    ...plan.commits.flatMap((commit) => commit.breakingChangeIds),
+    ...plan.impactSites.map((site) => site.breakingChangeId),
+  ])];
+  const files = [...new Set(plan.impactSites.map((site) => site.file))];
+  return {
+    id: UPGRADE_UNIT_ID,
+    order: 1,
+    message: upgradeCommitMessage(plan),
+    body: '',
+    breakingChangeIds,
+    files,
+    allowedFiles: files,
+    instructions: 'Make this repository work with the upgraded dependencies. The findings above are a starting point; the job is the whole upgrade.',
+    dependsOn: [],
+    dependencyReasons: [],
+    executionLayer: layer,
+    expectedChecks: [],
+    invalidationTriggers: [],
+  };
+}
+
+function upgradeCommitMessage(plan: RemediationPlan): string {
+  const moved = plan.changes.filter((change) => change.to).map((change) => `${change.name} ${change.to}`);
+  return `fix(deps): migrate to ${moved.join(', ') || 'the upgraded dependencies'}`;
+}
+
+async function revertFile(worktree: string, baseline: string, offender: UpgradeFixOffender, exec: Exec): Promise<void> {
+  for (const path of [offender.path, offender.oldPath].filter((p): p is string => Boolean(p))) {
+    const existed = (await exec('git', ['cat-file', '-e', `${baseline}:${path}`], { cwd: worktree })).code === 0;
+    if (existed) await exec('git', ['checkout', baseline, '--', path], { cwd: worktree });
+    else await exec('git', ['rm', '-rf', '--cached', '--ignore-unmatch', '--', path], { cwd: worktree }).then(() => exec('rm', ['-rf', '--', path], { cwd: worktree }));
+  }
 }
 
 export function assessmentOf(commit: CommitUnit): FixPlanAssessment {

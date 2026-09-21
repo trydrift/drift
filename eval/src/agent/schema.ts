@@ -43,7 +43,7 @@ export const AGENT_SUMMARY_SCHEMA_VERSION = 1;
  * the report without taking the tools away is the one neither headline
  * condition measured.
  */
-export const CONDITIONS = ['baseline', 'baseline-lean', 'drift', 'drift-full-tools', 'drift-brief', 'drift-evidence-only', 'drift-localization-only'] as const;
+export const CONDITIONS = ['baseline', 'baseline-lean', 'drift', 'drift-full-tools', 'drift-brief', 'drift-fix', 'drift-evidence-only', 'drift-localization-only'] as const;
 export type Condition = (typeof CONDITIONS)[number];
 export const conditionSchema = z.enum(CONDITIONS);
 

@@ -271,9 +271,13 @@ describe('agent provider registry architecture', () => {
 
       assert.equal(result.status, 'dispatched');
       assert.equal(result.taskId, undefined);
-      assert.equal(agent.task?.commit.id, 'commit_acme');
+      // One session over the whole upgrade, carrying every planned unit's
+      // findings, rather than a session per unit confined to its files.
+      assert.equal(agent.task?.mode, 'upgrade');
+      assert.equal(agent.task?.commit.id, 'upgrade');
+      assert.deepEqual(agent.task?.commit.breakingChangeIds, plan('drift/acme-workspace').commits[0]!.breakingChangeIds);
       assert.ok(github.calls.includes('createPullRequest'));
-      assert.match(result.message, /Acme Workspace resolved 1 commit/);
+      assert.match(result.message, /Acme Workspace fixed the upgrade/);
     });
   });
 

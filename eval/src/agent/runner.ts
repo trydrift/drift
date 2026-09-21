@@ -13,6 +13,7 @@ import {
   type Usage,
 } from './schema.ts';
 import { CLAUDE_CODE_LEAN_SESSION_ARGS } from './lean-args.ts';
+import { runDriftFix } from './drift-fix.ts';
 import { driftRevision, driftVersion, newRunId, setAsideInfrastructureFailure, trialExists, writeRunManifest, writeTrial } from './store.ts';
 import { composePrompt, contextKindFor, renderTask, sha256 } from './task.ts';
 import { patchStatsFrom, validateWorkspace } from './validation.ts';
@@ -412,8 +413,32 @@ export async function runTrial(options: TrialOptions): Promise<{ artifact: Trial
     // 4. The agent.
     const prompt = composePrompt(task, context.preamble);
     const t3 = Date.now();
-    options.onProgress?.('  agent session');
-    const agent = await options.provider.run({
+    options.onProgress?.(condition === 'drift-fix' ? "  drift fix (the product's own agent pipeline)" : '  agent session');
+    const sessionRequest = {
+      model: options.model,
+      effort: options.effort,
+      timeoutMs: agentCase.agent.timeoutSeconds * 1000,
+      webTools: options.webTools,
+      maxBudgetUsd: options.maxBudgetUsd,
+      maxTurns: options.maxTurns,
+      env: projectEnv(agentCase, { DRIFT: '1' }),
+      onEventLine: (line: string) => streamLines.push(line),
+      onProgress: (message: string) => options.onProgress?.(`    ${message}`),
+    };
+    // `drift-fix` does not send `prompt` at all: Drift's own pipeline decides
+    // the sessions and what each one is told. See drift-fix.ts.
+    const agent = condition === 'drift-fix'
+      ? (
+          await runDriftFix({
+            plan: driftContext?.rawPlan ?? emptyPlan(),
+            workspace: workspace.repo,
+            provider: options.provider,
+            session: sessionRequest,
+            model: options.model,
+            effort: options.effort,
+          })
+        ).agent
+      : await options.provider.run({
       prompt,
       cwd: workspace.repo,
       model: options.model,
@@ -555,4 +580,13 @@ function symbolMatches(driftSymbol: string, expected: string): boolean {
   const a = driftSymbol.toLowerCase();
   const b = expected.toLowerCase();
   return a === b || a.endsWith(`.${b}`) || a.endsWith(`#${b}`) || a.endsWith(`:${b}`) || a.endsWith(`/${b}`);
+}
+
+/**
+ * What `drift fix` does when the analysis produced no plan: nothing. Recorded
+ * as a run with no agent sessions rather than skipped, because a tool that
+ * finds nothing to fix in a broken upgrade has not fixed it.
+ */
+function emptyPlan(): Parameters<typeof runDriftFix>[0]['plan'] {
+  return { commits: [], breakingChanges: [], impactSites: [], evidence: [], changes: [] } as never;
 }

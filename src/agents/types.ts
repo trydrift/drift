@@ -179,6 +179,14 @@ export interface FixTask {
    * else from before.
    */
   repair?: RepairRequest;
+  /**
+   * `upgrade`: one session for the whole upgrade, with the repository as its
+   * scope and Drift's findings as a head start rather than a boundary. See
+   * `runAgentUpgradeFix`. Absent means the commit-scoped unit prompt.
+   */
+  mode?: 'unit' | 'upgrade';
+  /** In `upgrade` mode, the paths the agent must not edit, named in the prompt. */
+  protectedPaths?: readonly string[];
 }
 
 export interface RepairRequest {
@@ -332,7 +340,15 @@ export interface FixTaskSemantics {
   diagnostics?: string;
   revision?: RevisionRequest;
   repair?: RepairRequest;
+  mode?: 'unit' | 'upgrade';
+  protectedPaths?: readonly string[];
 }
+
+/**
+ * The id of the unit a whole-upgrade fix runs. Any other unit in upgrade mode
+ * is one concern the developer chose to fix on its own.
+ */
+export const UPGRADE_UNIT_ID = 'upgrade';
 
 export function buildFixTask(task: FixTask): FixTaskSemantics {
   return {
@@ -344,6 +360,8 @@ export function buildFixTask(task: FixTask): FixTaskSemantics {
     diagnostics: task.diagnostics,
     revision: task.revision,
     repair: task.repair,
+    mode: task.mode,
+    protectedPaths: task.protectedPaths,
   };
 }
 
@@ -376,6 +394,7 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
 
   const sections: string[] = [];
 
+  const upgradeMode = task.mode === 'upgrade';
   sections.push(
     [
       'You are fixing code that a dependency upgrade broke.',
@@ -386,6 +405,42 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
       `Dependencies that moved: ${plan.changes
         .map((c) => `${c.name} ${c.from ?? '—'} → ${c.to ?? '—'}`)
         .join(', ')}`,
+      ...(upgradeMode
+        ? [
+            '',
+            // Measured on ten real upgrades: an agent confined to the lines
+            // Drift found fixed none of them, and the same agent working the
+            // whole upgrade fixed nearly all. The findings earn their place by
+            // saving the search, never by limiting it.
+            "Drift has already analysed this upgrade. What it found is below: use it as a",
+            'head start, not as the whole job. Drift compares exported symbols, so it',
+            'cannot see a name that survived the upgrade and changed meaning — a changed',
+            'default, an option that now needs a companion option, a different return',
+            'shape — and its search can miss call sites. Investigate beyond what it',
+            'lists: read the code around each site, and follow the compiler and the tests',
+            'wherever they lead.',
+            '',
+            // What the developer clicked decides what gets fixed. Files are free
+            // (confining an agent to the lines Drift found is what failed); the
+            // job is not.
+            '## What to fix',
+            '',
+            ...(commit.id === UPGRADE_UNIT_ID
+              ? [
+                  `What upgrading ${plan.changes.map((c) => c.name).join(', ') || 'these dependencies'} broke in this repository — and only that.`,
+                  "The project's checks may also report failures from other dependency changes",
+                  'or from problems that were there before this upgrade. Leave those alone; they',
+                  'are not this task.',
+                ]
+              : [
+                  `Only this: ${commit.message}.`,
+                  'It is one of the concerns Drift found in this upgrade, and the developer chose',
+                  'to fix it on its own. Leave every other concern — including failures the',
+                  "project's checks report that this fix does not cause — and change another",
+                  'file only where this fix needs it.',
+                ]),
+          ]
+        : []),
     ].join('\n'),
   );
 
@@ -502,56 +557,83 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
   // forbid the edit the unit exists to make.
   const scope = [...new Set([...(commit.allowedFiles?.length ? commit.allowedFiles : commit.files), ...task.files.map((f) => f.path)])];
 
-  sections.push(
-    [
-      '## Rules',
-      '',
-      `0. You may edit ONLY these ${scope.length} file${scope.length === 1 ? '' : 's'} — nothing else, including`,
-      '   generated/bundled output, lockfiles, or a file you notice is *also*',
-      '   broken by this upgrade. This is enforced after you finish: an edit to',
-      '   any other file throws out this whole commit\'s work. If the real fix',
-      '   needs a file outside this list (a new file included), do not edit it:',
-      `   end your reply with one line per file, \`${SCOPE_REQUEST_MARKER} <path> | <why>\`,`,
-      '   and Drift will decide whether to grant it in a new session. A partial',
-      '   migration left for later is not a fix: if finishing it needs a file you',
-      '   cannot edit — a manifest for a package the new version requires, a new',
-      '   configuration file — request it instead of settling for less.',
-      `   In scope: ${scope.join(', ')}`,
-      '1. Change ONLY what is required for this specific fix. No refactoring,',
-      '   renaming, reformatting, or tidying of code you happen to pass by.',
-      `2. Do NOT change, revert, or downgrade the upgraded dependenc${upgraded.length === 1 ? 'y' : 'ies'}${upgraded.length ? ` (${upgraded.join(', ')})` : ''}.`,
-      '   A companion package that must move with the upgrade (a plugin or',
-      '   peer the new version requires) may be changed only when its manifest',
-      '   is in scope above.',
-      '3. Do NOT weaken, skip, or delete tests to make them pass, lower coverage',
-      '   thresholds, or relax compiler strictness. Update a test to exercise',
-      '   the new API while asserting the same behaviour. Do not make a check',
-      '   pass by checking less either — dropping or downgrading lint rules or',
-      '   rule sets, ignoring files, or excluding tests. Drift measures what the',
-      '   lint, test and compiler configuration enforce before and after the',
-      '   upgrade, and a fix that enforces less is not accepted.',
-      '4. If you cannot determine the correct fix for a location, leave it alone',
-      '   and add a `TODO(drift):` comment explaining what is unresolved. A',
-      '   flagged unknown is useful; a confident guess is not.',
-      '5. Do not invent APIs. If the evidence names no replacement, say so.',
-      '6. If a decision genuinely needs the developer — two valid migrations, a',
-      '   behaviour change only they can rule on — ask instead of guessing. Emit',
-      `   \`${QUESTION_MARKER} <your question> | <option> | <option>\` as the first`,
-      '   line of your reply, output nothing else, and stop. You will be asked',
-      '   again with the answer. Use this sparingly; a question that the evidence',
-      '   already answers wastes the developer\'s attention.',
-      '7. Drift runs this repository\'s own build, typecheck, and test commands',
-      '   itself once every commit in this run has landed. Do not run the full',
-      '   test suite, a full build, or other broad verification yourself — it',
-      '   duplicates what is about to run anyway and this is the slowest part',
-      '   of a fix. A narrow, targeted check on a file you just edited (a single',
-      '   test, a syntax check) is fine when you are unsure; a full `npm test`',
-      '   or `npm run build` is not.',
-      '8. What changed upstream is stated above. Do not re-derive it from the',
-      "   dependency's changelog, registry metadata, or source; open the installed",
-      '   package only for a detail this prompt does not give you.',
-    ].join('\n'),
-  );
+  if (upgradeMode) {
+    const protectedList = [...(task.protectedPaths ?? [])];
+    sections.push(
+      [
+        '## Rules',
+        '',
+        '1. Edit whatever the migration needs — source, tests, configuration,',
+        '   manifests, a companion package the new version requires. There is no',
+        '   file list; the job is the upgrade.',
+        ...(protectedList.length
+          ? [`2. Do NOT edit these protected paths: ${protectedList.join(', ')}.`, '   Drift reverts any edit to them, whatever else it contains.']
+          : ['2. Do NOT edit CI workflows or deployment configuration.']),
+        `3. Do NOT change, revert, or downgrade the upgraded dependenc${upgraded.length === 1 ? 'y' : 'ies'}${upgraded.length ? ` (${upgraded.join(', ')})` : ''}.`,
+        '4. Do NOT weaken, skip, or delete tests to make them pass, lower coverage',
+        '   thresholds, relax compiler strictness, disable lint rules, or add',
+        '   suppression directives. Update a test to exercise the new API while',
+        '   asserting the same behaviour. Drift compares what the configuration',
+        '   enforced before and after, and reverts any file that enforces less.',
+        "5. Verify your work with the project's own build, typecheck and test",
+        '   commands before you finish, and keep going until they pass or you can',
+        '   say exactly what is left and why. Nothing else checks it for you.',
+        '6. Change only what the upgrade requires. Pre-existing failures that have',
+        '   nothing to do with it are out of scope; say so and leave them.',
+      ].join('\n'),
+    );
+  } else {
+    sections.push(
+      [
+        '## Rules',
+        '',
+        `0. You may edit ONLY these ${scope.length} file${scope.length === 1 ? '' : 's'} — nothing else, including`,
+        '   generated/bundled output, lockfiles, or a file you notice is *also*',
+        '   broken by this upgrade. This is enforced after you finish: an edit to',
+        '   any other file throws out this whole commit\'s work. If the real fix',
+        '   needs a file outside this list (a new file included), do not edit it:',
+        `   end your reply with one line per file, \`${SCOPE_REQUEST_MARKER} <path> | <why>\`,`,
+        '   and Drift will decide whether to grant it in a new session. A partial',
+        '   migration left for later is not a fix: if finishing it needs a file you',
+        '   cannot edit — a manifest for a package the new version requires, a new',
+        '   configuration file — request it instead of settling for less.',
+        `   In scope: ${scope.join(', ')}`,
+        '1. Change ONLY what is required for this specific fix. No refactoring,',
+        '   renaming, reformatting, or tidying of code you happen to pass by.',
+        `2. Do NOT change, revert, or downgrade the upgraded dependenc${upgraded.length === 1 ? 'y' : 'ies'}${upgraded.length ? ` (${upgraded.join(', ')})` : ''}.`,
+        '   A companion package that must move with the upgrade (a plugin or',
+        '   peer the new version requires) may be changed only when its manifest',
+        '   is in scope above.',
+        '3. Do NOT weaken, skip, or delete tests to make them pass, lower coverage',
+        '   thresholds, or relax compiler strictness. Update a test to exercise',
+        '   the new API while asserting the same behaviour. Do not make a check',
+        '   pass by checking less either — dropping or downgrading lint rules or',
+        '   rule sets, ignoring files, or excluding tests. Drift measures what the',
+        '   lint, test and compiler configuration enforce before and after the',
+        '   upgrade, and a fix that enforces less is not accepted.',
+        '4. If you cannot determine the correct fix for a location, leave it alone',
+        '   and add a `TODO(drift):` comment explaining what is unresolved. A',
+        '   flagged unknown is useful; a confident guess is not.',
+        '5. Do not invent APIs. If the evidence names no replacement, say so.',
+        '6. If a decision genuinely needs the developer — two valid migrations, a',
+        '   behaviour change only they can rule on — ask instead of guessing. Emit',
+        `   \`${QUESTION_MARKER} <your question> | <option> | <option>\` as the first`,
+        '   line of your reply, output nothing else, and stop. You will be asked',
+        '   again with the answer. Use this sparingly; a question that the evidence',
+        '   already answers wastes the developer\'s attention.',
+        '7. Drift runs this repository\'s own build, typecheck, and test commands',
+        '   itself once every commit in this run has landed. Do not run the full',
+        '   test suite, a full build, or other broad verification yourself — it',
+        '   duplicates what is about to run anyway and this is the slowest part',
+        '   of a fix. A narrow, targeted check on a file you just edited (a single',
+        '   test, a syntax check) is fine when you are unsure; a full `npm test`',
+        '   or `npm run build` is not.',
+        '8. What changed upstream is stated above. Do not re-derive it from the',
+        "   dependency's changelog, registry metadata, or source; open the installed",
+        '   package only for a detail this prompt does not give you.',
+      ].join('\n'),
+    );
+  }
 
   if (task.customInstructions?.trim()) {
     sections.push(`## Repository conventions\n\n${task.customInstructions.trim()}`);
@@ -562,7 +644,7 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
       '## Context the developer attached',
       '',
       'Reference material. Read it to match this codebase, but do NOT edit any of',
-      'it — the files in scope for this commit are listed above and nowhere else.',
+      upgradeMode ? 'it.' : 'it — the files in scope for this commit are listed above and nowhere else.',
       '',
     ];
 

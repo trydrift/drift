@@ -473,6 +473,21 @@ export class Git {
    * so the developer's own branch would become unusable while a fix ran, and a
    * crashed run would leave it that way.
    */
+  /**
+   * Put one path back as it was at `ref`, or remove it if it did not exist
+   * there. Used to revert a single file an agent should not have changed while
+   * keeping every other edit it made.
+   */
+  async restorePath(ref: string, path: string): Promise<void> {
+    const existed = (await this.execAllowingFailure(['cat-file', '-t', `${ref}:${path}`])).trim() !== '';
+    if (existed) {
+      await this.exec(['checkout', ref, '--', path]);
+      return;
+    }
+    await this.execAllowingFailure(['rm', '-r', '-f', '--cached', '--ignore-unmatch', '--', path]);
+    await rm(join(this.cwd, path), { recursive: true, force: true });
+  }
+
   async addWorktree(path: string, ref: string): Promise<void> {
     await this.exec(['worktree', 'add', '--detach', '--quiet', path, ref]);
   }

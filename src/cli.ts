@@ -35,7 +35,7 @@ import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { runFix } from './remediation/cli-runner.js';
 import { availableChecks } from './verification/checks.js';
 import { AgentBudgetExceededError, agentBriefView, buildAgentBrief, evidenceDetail, findingDetail, renderAgentBrief, UnknownAgentIdError } from './agent-context/index.js';
-import { runAgentCommitsInWorktree } from './remediation/worktree-runner.js';
+import { runAgentUpgradeFix } from './remediation/worktree-runner.js';
 import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from './agents/compat.js';
 import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from './agents/registry.js';
 import { resolveAgentSelection, type AgentSelection } from './agents/selection.js';
@@ -2238,7 +2238,10 @@ async function fixCommand(flags: Flags): Promise<number> {
     dryRun: true,
     workspace,
   });
-  if (!result.plan || result.plan.commits.length === 0) {
+  // A measured failure is work even when static analysis localized nothing:
+  // the project's own checks broke, and they say where. Stopping here is what
+  // left six of ten real upgrades untouched when this was benchmarked.
+  if (!result.plan || (result.plan.commits.length === 0 && result.plan.verification?.status !== 'failed')) {
     console.log(`\n${result.summary}\n`);
     return 0;
   }
@@ -2332,7 +2335,12 @@ async function fixPlanAndOpenPR(args: {
       for (const document of fix.documents) console.log(`\n${document}\n`);
     }
 
-    if (fix.needsAgent.length > 0) {
+    // The same reason as above: with the checks measured failing and no
+    // deterministic fix having landed, an agent is owed the upgrade even when
+    // Drift planned no unit for it.
+    const measuredFailureUnfixed =
+      plan.verification?.status === 'failed' && fix.builtinResolved + fix.fixPlanResolved === 0;
+    if (fix.needsAgent.length > 0 || measuredFailureUnfixed) {
       const copilotToken =
         (typeof flags['copilot-token'] === 'string' ? flags['copilot-token'] : undefined) ??
         process.env.DRIFT_COPILOT_TOKEN;
@@ -2363,28 +2371,29 @@ async function fixPlanAndOpenPR(args: {
           logger.warn(`${selection.provider} was selected, but that provider is not available in this CLI runtime.`);
           unresolvedAgentWork = true;
         } else if (agent.capabilities.execution === 'workspace') {
-          const agentRun = await runAgentCommitsInWorktree({
-            repo,
-            plan,
-            config: agentConfig,
-            worktree: fix.worktree,
-            commits: fix.needsAgent,
-            agent,
-            logger,
-          });
-          unresolvedAgentCount = agentRun.unresolved.length;
-          if (agentRun.committed) {
+          // One session over the whole upgrade, with Drift's findings as a head
+          // start and every changed file validated on its own. The
+          // unit-by-unit runner this replaced fixed none of ten real upgrades
+          // a plain agent fixed nearly all of; see `runAgentUpgradeFix`.
+          const agentRun = await runAgentUpgradeFix({ plan, config: agentConfig, worktree: fix.worktree, agent, logger });
+          for (const offender of agentRun.reverted) {
+            logger.warn(`Reverted ${offender.path}: ${offender.reasons.join(' ')}`);
+          }
+          if (agentRun.status === 'committed') {
             fix.pushed = true;
+            unresolvedAgentCount = 0;
             await pushWorktreeHead();
-          }
-          if (agentRun.unresolved.length > 0) {
-            for (const failure of agentRun.unresolved) {
-              logger.warn(`Commit ${failure.commit.order} remains unresolved: ${failure.message}`);
-            }
-            unresolvedAgentWork = true;
+            logger.info(`${agent.label} fixed the upgrade across ${agentRun.kept.length} file(s).`);
           } else {
-            logger.info(`Resolved ${agentRun.resolved.length} commit(s) with ${agent.label}.`);
+            logger.warn(`${agent.label} left the upgrade unresolved: ${agentRun.message}`);
+            unresolvedAgentWork = true;
+            unresolvedAgentCount = Math.max(1, fix.needsAgent.length);
           }
+        } else if (isCloudFixAgent(agent) && fix.needsAgent.length === 0) {
+          // A cloud agent is handed planned commits; with none planned there is
+          // nothing to hand it, so say so rather than dispatch an empty task.
+          logger.warn(`${agent.label} works from planned commits and Drift planned none for this upgrade. Use a local agent to fix it.`);
+          unresolvedAgentWork = true;
         } else if (isCloudFixAgent(agent)) {
           if (!pushedBranch && !fix.pushed) {
             // Cloud agents work from a remote branch. If every commit needed an
