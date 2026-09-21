@@ -172,23 +172,3 @@ const output = {
 
 await writeFile(target, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
 process.stderr.write(`[sync-benchmarks] wrote ${datasets.length} dataset(s)\n`);
-
-/*
- * The paired agent benchmark's canonical summary, copied verbatim.
- *
- * `eval/results/agent/latest.json` is the one machine-readable result the
- * `/benchmarks/agent` page and the homepage proof block read. It carries its
- * own publication gates, computed by the benchmark, and the site renders the
- * quantitative sections only when they pass — so a copy of an ineligible
- * result is harmless, and a missing file becomes an explicit "no result".
- */
-const agentSource = join(resultsRoot, 'agent', 'latest.json');
-const agentTarget = join(here, '..', 'src', 'data', 'benchmarks', 'agent.json');
-if (existsSync(agentSource)) {
-  const summary = JSON.parse(await readFile(agentSource, 'utf8'));
-  await writeFile(agentTarget, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
-  process.stderr.write(`[sync-benchmarks] agent benchmark: ${summary.suite}, gates ${summary.publication?.eligible ? 'pass' : 'not met'}\n`);
-} else {
-  await writeFile(agentTarget, `${JSON.stringify({ status: 'no-result' }, null, 2)}\n`, 'utf8');
-  process.stderr.write('[sync-benchmarks] agent benchmark: no result\n');
-}

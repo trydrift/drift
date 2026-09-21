@@ -71,11 +71,6 @@ Recall against consumer-impact corpora (BUMP, SWE-Bump, TimeMachine) is reported
 ### Does it help the agent?
 
 Detection accuracy is one question. The one the product is actually for is whether Drift's research and localization, handed to a coding agent *before* it starts, let the same agent fix a real dependency upgrade with fewer input tokens and more often. That is measured by a paired benchmark with hidden compatibility tests, and only a result that passes its publication gates is quoted below. The first development run handed the agent Drift's full human report and did not help; the bounded [agent interface](docs/agent-interface.md) that replaced it is being measured on the same cases.
-
-<!-- agent-benchmark:begin -->
-**Agent benchmark.** A paired benchmark — the same coding agent, task, model and starting repositories, with and without Drift's analysis — is implemented in [`eval/agent/`](eval/agent/README.md). The latest run (3 case(s), 3 run(s) per condition, suite `agent-upgrade-v1`) does not yet meet the publication gates (minimum-cases, minimum-paired-cases, minimum-valid-trials, frozen-suite), so no headline figure is published from it. The methodology page is at [trydrift.github.io/drift/benchmarks/agent](https://trydrift.github.io/drift/benchmarks/agent/).
-<!-- agent-benchmark:end -->
-
 ## What Drift will not tell you
 
 - **That an upgrade is safe, without evidence.** When the API surface cannot be computed, the verdict is `insufficient-evidence`, not "clean".

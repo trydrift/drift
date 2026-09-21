@@ -23,8 +23,10 @@ validation, hidden tests staged only now
 This directory holds the cases and the suites. The harness is
 [`eval/src/agent/`](../src/agent/); results are under
 [`eval/results/agent/`](../results/agent/) and the report under
-[`eval/reports/agent/`](../reports/agent/). The public methodology page is
-[trydrift.github.io/drift/benchmarks/agent](https://trydrift.github.io/drift/benchmarks/agent/).
+[`eval/reports/agent/`](../reports/agent/). The benchmark is internal and
+publishes nothing — no page, no README figure — and `benchmark:agent:verify`
+fails the build if one appears. What it found is in
+[`eval/reports/agent/final-verdict.md`](../reports/agent/final-verdict.md).
 
 ---
 

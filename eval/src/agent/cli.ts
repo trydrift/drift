@@ -190,7 +190,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   if (command === 'verify') {
     const findings = await verifyPublicClaims(root);
     if (findings.length === 0) {
-      log('verify: every public agent-benchmark claim matches eval/results/agent/latest.json');
+      log('verify: no public surface publishes the agent benchmark');
       return 0;
     }
     for (const finding of findings) console.error(`${finding.file}: ${finding.problem}`);

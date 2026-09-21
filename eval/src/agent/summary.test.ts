@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildSummary, evaluateGates, writeSummary, type AgentBenchmarkSummary } from './summary.ts';
@@ -190,30 +190,37 @@ describe('report generation', () => {
   });
 });
 
-describe('stale public metric detection', () => {
-  test('a README block that does not match latest.json, and an ungated claim, are reported', async () => {
-    const { root, runIds } = await scaffold({ cases: 2, runs: 1 });
-    const summary = await buildSummary({ runIds, root, now: new Date('2026-09-17T00:00:00.000Z') });
-    await writeSummary(summary, root);
-    await mkdir(join(root, 'site', 'src', 'data', 'benchmarks'), { recursive: true });
-    await writeFile(join(root, 'site', 'src', 'data', 'benchmarks', 'agent.json'), JSON.stringify(summary), 'utf8');
-
-    await writeFile(join(root, 'README.md'), `# x\n\n${renderReadmeBlock(summary)}\n`, 'utf8');
+describe('the agent benchmark publishes nothing', () => {
+  test('a clean repository passes, and each way of publishing it is caught', async () => {
+    const { root } = await scaffold({ cases: 1, runs: 1 });
+    await writeFile(join(root, 'README.md'), '# x\n\nDrift analyses dependency upgrades.\n', 'utf8');
     assert.deepEqual(await verifyPublicClaims(root), []);
 
-    await writeFile(join(root, 'README.md'), `# x\n\n${README_BLOCK_BEGIN}\n**67% fewer agent input tokens**\n${README_BLOCK_END}\n`, 'utf8');
-    const findings = await verifyPublicClaims(root);
-    assert.equal(findings.length, 1);
-    assert.match(findings[0]!.problem, /differs from what latest\.json generates/);
+    // The README block the benchmark used to generate.
+    await writeFile(join(root, 'README.md'), `# x\n\n${README_BLOCK_BEGIN}\nNo result yet.\n${README_BLOCK_END}\n`, 'utf8');
+    assert.ok((await verifyPublicClaims(root)).some((f) => f.file === 'README.md' && /agent-benchmark block/.test(f.problem)));
+    await writeFile(join(root, 'README.md'), '# x\n', 'utf8');
 
-    await writeFile(join(root, 'README.md'), `# x\n\n${renderReadmeBlock(summary)}\n\nDrift gives 66.8% fewer agent input tokens.\n`, 'utf8');
-    const ungated = await verifyPublicClaims(root);
-    assert.ok(ungated.some((f) => /quantitative claim without a publishable result/.test(f.problem)));
+    // A figure in prose, with no block at all.
+    await writeFile(join(root, 'README.md'), '# x\n\nDrift gives 66.8% fewer agent input tokens.\n', 'utf8');
+    assert.ok((await verifyPublicClaims(root)).some((f) => /states an agent-benchmark figure/.test(f.problem)));
+    await writeFile(join(root, 'README.md'), '# x\n', 'utf8');
 
-    await writeFile(join(root, 'site', 'src', 'data', 'benchmarks', 'agent.json'), JSON.stringify({ ...summary, caseCount: 99 }), 'utf8');
-    await writeFile(join(root, 'README.md'), `# x\n\n${renderReadmeBlock(summary)}\n`, 'utf8');
-    const siteStale = await verifyPublicClaims(root);
-    assert.ok(siteStale.some((f) => f.file.endsWith('agent.json')));
+    // The site's copy of the summary, and the page that rendered it.
+    await mkdir(join(root, 'site', 'src', 'data', 'benchmarks'), { recursive: true });
+    await writeFile(join(root, 'site', 'src', 'data', 'benchmarks', 'agent.json'), '{"status":"no-result"}', 'utf8');
+    assert.ok((await verifyPublicClaims(root)).some((f) => f.file.endsWith('agent.json')));
+    await rm(join(root, 'site', 'src', 'data', 'benchmarks', 'agent.json'));
+
+    await mkdir(join(root, 'site', 'src', 'app', 'benchmarks', 'agent'), { recursive: true });
+    await writeFile(join(root, 'site', 'src', 'app', 'benchmarks', 'agent', 'page.tsx'), 'export default () => null;', 'utf8');
+    assert.ok((await verifyPublicClaims(root)).some((f) => f.file.endsWith('page.tsx')));
+    await rm(join(root, 'site', 'src', 'app', 'benchmarks', 'agent', 'page.tsx'));
+
+    // The homepage card, which was built to show "N% fewer" once gates passed.
+    await mkdir(join(root, 'site', 'src', 'app'), { recursive: true });
+    await writeFile(join(root, 'site', 'src', 'app', 'page.tsx'), '<p>42% fewer input tokens</p>', 'utf8');
+    assert.ok((await verifyPublicClaims(root)).some((f) => f.file === 'site/src/app/page.tsx'));
   });
 });
 

@@ -1,23 +1,25 @@
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { README_BLOCK_BEGIN, README_BLOCK_END, renderReadmeBlock } from './report.ts';
-import { readLatestSummary, type AgentBenchmarkSummary } from './summary.ts';
+import { README_BLOCK_BEGIN, README_BLOCK_END } from './report.ts';
 
 /**
- * Stale-metric detection.
+ * The agent benchmark is internal, and this is what keeps it so.
  *
- * Public surfaces may only carry numbers that the canonical summary produced,
- * and only while the summary still says they are publishable:
+ * It used to feed a README block, a `/benchmarks/agent` page and a homepage
+ * card built to show "N% fewer agent input tokens" the moment its publication
+ * gates passed. Held-out runs then showed that no Drift configuration beats an
+ * unaided agent on both tokens and correctness (`eval/reports/agent/
+ * final-verdict.md`), so every one of those surfaces was removed. A teaser for
+ * a result that is not coming is worse than no mention at all.
  *
- *   - the README's fenced block must equal what `renderReadmeBlock` produces
- *     from `latest.json` right now;
- *   - the site's copy of the summary must equal `latest.json` byte for byte;
- *   - when the gates are not met, none of the guarded documents may contain a
- *     percentage that looks like a benchmark claim next to the words "agent
- *     input tokens" or "successful remediations".
+ * This fails the build if any of them comes back:
  *
- * Runs in CI. A stale README after a re-aggregation fails the build rather
- * than quoting a number the evidence no longer supports.
+ *   - README.md carries an agent-benchmark block;
+ *   - the site carries a copy of the summary, or a page to render one;
+ *   - a public document states a percentage that reads as an agent-benchmark
+ *     claim — fewer input tokens, or remediations that rose.
+ *
+ * Runs in CI. The harness, cases and reports stay; only publishing is gone.
  */
 
 export interface VerifyFinding {
@@ -25,64 +27,41 @@ export interface VerifyFinding {
   problem: string;
 }
 
-export async function verifyPublicClaims(root = process.cwd(), summary?: AgentBenchmarkSummary | null): Promise<VerifyFinding[]> {
+/** Documents a reader sees. Any agent-benchmark figure in one of these is a public claim. */
+const PUBLIC_DOCUMENTS = [
+  'README.md',
+  'docs/overview.md',
+  'docs/research.md',
+  'eval/agent/README.md',
+  'site/src/app/page.tsx',
+];
+
+const CLAIM = /\d+(?:\.\d+)?%\s*(?:fewer|less)\s+(?:agent\s+)?input tokens|successful (?:dependency )?remediations?\s+(?:increased|rose|from)\s+\d+/i;
+
+export async function verifyPublicClaims(root = process.cwd()): Promise<VerifyFinding[]> {
   const findings: VerifyFinding[] = [];
-  const latest = summary === undefined ? await readLatestSummary(root) : summary;
 
-  // README block.
-  const readmePath = join(root, 'README.md');
-  const readme = await readFile(readmePath, 'utf8').catch(() => null);
-  if (readme === null) findings.push({ file: 'README.md', problem: 'missing' });
-  else {
-    const begin = readme.indexOf(README_BLOCK_BEGIN);
-    const end = readme.indexOf(README_BLOCK_END);
-    if (begin < 0 || end < 0 || end < begin) {
-      findings.push({ file: 'README.md', problem: `no ${README_BLOCK_BEGIN} … ${README_BLOCK_END} block; run \`npm run benchmark:agent:report\`` });
-    } else {
-      const actual = readme.slice(begin, end + README_BLOCK_END.length);
-      const expected = renderReadmeBlock(latest);
-      if (actual !== expected) findings.push({ file: 'README.md', problem: 'the agent-benchmark block differs from what latest.json generates; run `npm run benchmark:agent:report`' });
+  const readme = await readFile(join(root, 'README.md'), 'utf8').catch(() => null);
+  if (readme !== null && (readme.includes(README_BLOCK_BEGIN) || readme.includes(README_BLOCK_END))) {
+    findings.push({ file: 'README.md', problem: 'carries an agent-benchmark block; the agent benchmark is internal and publishes nothing' });
+  }
+
+  for (const surface of ['site/src/data/benchmarks/agent.json', 'site/src/app/benchmarks/agent/page.tsx']) {
+    if (await exists(join(root, surface))) {
+      findings.push({ file: surface, problem: 'publishes the agent benchmark; it is internal and publishes nothing' });
     }
   }
 
-  // Site copy.
-  const sitePath = join(root, 'site', 'src', 'data', 'benchmarks', 'agent.json');
-  const siteCopy = await readFile(sitePath, 'utf8').catch(() => null);
-  const latestRaw = await readFile(join(root, 'eval', 'results', 'agent', 'latest.json'), 'utf8').catch(() => null);
-  if (siteCopy === null) findings.push({ file: 'site/src/data/benchmarks/agent.json', problem: 'missing; run `npm run sync` in site/' });
-  else if (latestRaw === null) {
-    if (!/"status":\s*"no-result"/.test(siteCopy)) findings.push({ file: 'site/src/data/benchmarks/agent.json', problem: 'carries a result but eval/results/agent/latest.json does not exist' });
-  } else if (normalize(siteCopy) !== normalize(latestRaw)) {
-    findings.push({ file: 'site/src/data/benchmarks/agent.json', problem: 'differs from eval/results/agent/latest.json; run `npm run sync` in site/' });
-  }
-
-  // Ungated claims in prose.
-  if (!latest || !latest.publication.eligible) {
-    const guarded = ['README.md', 'docs/overview.md', 'docs/research.md', 'eval/agent/README.md'];
-    const claim = /\d+(?:\.\d+)?%\s*(?:fewer|less)\s+(?:agent\s+)?input tokens|successful (?:dependency )?remediations?\s+(?:increased|rose|from)\s+\d+/i;
-    for (const file of guarded) {
-      const text = await readFile(join(root, file), 'utf8').catch(() => null);
-      if (text === null) continue;
-      const stripped = readmeWithoutBlock(text);
-      const match = claim.exec(stripped);
-      if (match) findings.push({ file, problem: `quantitative claim without a publishable result: "${match[0]}"` });
-    }
+  for (const file of PUBLIC_DOCUMENTS) {
+    const text = await readFile(join(root, file), 'utf8').catch(() => null);
+    if (text === null) continue;
+    const match = CLAIM.exec(text);
+    if (match) findings.push({ file, problem: `states an agent-benchmark figure: "${match[0]}"` });
   }
 
   return findings;
 }
 
-function readmeWithoutBlock(text: string): string {
-  const begin = text.indexOf(README_BLOCK_BEGIN);
-  const end = text.indexOf(README_BLOCK_END);
-  if (begin < 0 || end < 0) return text;
-  return text.slice(0, begin) + text.slice(end + README_BLOCK_END.length);
-}
-
-function normalize(json: string): string {
-  try {
-    return JSON.stringify(JSON.parse(json));
-  } catch {
-    return json;
-  }
+async function exists(path: string): Promise<boolean> {
+  return access(path).then(() => true, () => false);
 }

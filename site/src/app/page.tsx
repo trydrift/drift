@@ -12,7 +12,6 @@ import { loadRecordings } from "@/lib/load";
 import { totalsOf, type Recording } from "@/lib/recordings";
 import { loadBenchmarks } from "@/lib/benchmarks";
 import { buildNarrative } from "@/lib/benchmark-narrative";
-import { int, loadAgentBenchmark, pct, publishable, ratePct } from "@/lib/agent-benchmark";
 import {
   MAVEN_BREAKING_CHANGE_STUDY,
 } from "@/lib/external-citations";
@@ -37,7 +36,6 @@ export default function Home() {
   const recordings = loadRecordings();
   const proof = summarizeRecordings(recordings);
   const narrative = buildNarrative(loadBenchmarks());
-  const agent = publishable(loadAgentBenchmark());
   const unaffectedShare = 100 - MAVEN_BREAKING_CHANGE_STUDY.clientBreakRateValue;
 
   return (
@@ -343,62 +341,6 @@ export default function Home() {
                   Read the method and every miss →
                 </p>
               </Link>
-              {/*
-                The paired agent benchmark: the same coding agent with and
-                without Drift's report. Rendered only when the result's own
-                publication gates pass; until then the block below links to the
-                method and shows no number, because a number without enough
-                cases behind it is worse than none.
-              */}
-              {agent ? (
-                <Link
-                  href="/benchmarks/agent/"
-                  className="group mt-3 block overflow-hidden rounded-lg border border-border bg-surface/75 px-5 py-4 transition-colors hover:bg-surface-hover"
-                >
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Measured on real dependency upgrades</p>
-                  <div className="mt-2 grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-mono text-3xl text-landing tabular">{pct(agent.efficiency.medianInputTokenReductionPct)} fewer</p>
-                      <p className="mt-1 text-[13px] leading-snug text-muted">agent input tokens</p>
-                    </div>
-                    <div>
-                      <p className="font-mono text-3xl text-landing tabular">
-                        {ratePct(agent.effectiveness.baselineSuccessRate)} → {ratePct(agent.effectiveness.driftSuccessRate)}
-                      </p>
-                      <p className="mt-1 text-[13px] leading-snug text-muted">successful fixes</p>
-                    </div>
-                  </div>
-                  <dl className="mt-3 grid grid-cols-2 gap-4 text-[12px] text-muted">
-                    <div>
-                      <dt className="text-faint">Without Drift</dt>
-                      <dd>{int(agent.efficiency.medianBaselineInputTokens)} median input tokens · {ratePct(agent.effectiveness.baselineSuccessRate)} success</dd>
-                    </div>
-                    <div>
-                      <dt className="text-faint">With Drift</dt>
-                      <dd>{int(agent.efficiency.medianDriftInputTokens)} median input tokens · {ratePct(agent.effectiveness.driftSuccessRate)} success</dd>
-                    </div>
-                  </dl>
-                  <p className="mt-3 text-[12px] text-muted">
-                    {agent.caseCount} dependency upgrades · {agent.runsPerCondition} runs per condition · same model, same task, same starting repositories.
-                  </p>
-                  <p className="mt-2.5 text-[11px] uppercase tracking-[0.14em] text-faint group-hover:text-brand-text">
-                    See methodology →
-                  </p>
-                </Link>
-              ) : (
-                <Link
-                  href="/benchmarks/agent/"
-                  className="group mt-3 block overflow-hidden rounded-lg border border-dashed border-border bg-surface/50 px-5 py-4 transition-colors hover:bg-surface-hover"
-                >
-                  <p className="text-[13px] leading-snug text-muted">
-                    Does Drift help a coding agent fix real dependency upgrades with fewer input tokens, and more often? A paired benchmark
-                    with hidden compatibility tests measures exactly that. No figure is shown until a run passes its publication gates.
-                  </p>
-                  <p className="mt-2.5 text-[11px] uppercase tracking-[0.14em] text-faint group-hover:text-brand-text">
-                    Read the method →
-                  </p>
-                </Link>
-              )}
             </div>
           </div>
         </section>
