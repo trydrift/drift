@@ -61,8 +61,8 @@ describe('fixing everything, or one package', () => {
   test('a package chosen on its own is asked to fix only what that package broke', () => {
     const whole = foldForWholeUpgrade(plan([unit(1, 'c1')], [{ name: 'ajv', from: '6.15.0', to: '8.20.0' }]));
     const prompt = renderCommitAgentPrompt({ plan: whole, commit: whole.commits.at(-1)!, files: [], mode: 'upgrade' } as never);
-    assert.match(prompt, /Fix only what upgrading ajv broke/);
-    assert.match(prompt, /Failures from other dependency changes, or\s+that were there before this upgrade, are not this task/);
+    assert.match(prompt, /The dependency ajv from 6\.15\.0 to 8\.20\.0 has been upgraded/);
+    assert.doesNotMatch(prompt, /lru-cache/);
   });
 });
 

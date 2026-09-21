@@ -228,7 +228,7 @@ describe('the cloud agent prompt (Copilot), for the Action and the CLI', () => {
     );
     assert.match(prompt, /lru-cache from 7\.18\.3 to 10\.4\.3 has been upgraded/);
     assert.match(prompt, /Find and fix all relevant incompatibilities/);
-    assert.match(prompt, /Fix only what upgrading lru-cache broke/);
+    assert.doesNotMatch(prompt, /before this upgrade/);
     assert.match(prompt, /branch `drift\/x`/);
     assert.match(prompt, /Do not merge the pull request/);
   });

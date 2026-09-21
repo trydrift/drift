@@ -438,13 +438,12 @@ export function renderUpgradeAgentPrompt(task: FixTaskSemantics): string {
       '',
     );
   } else {
-    lines.push(
-      'Find and fix all relevant incompatibilities.',
-      '',
-      `Fix only what upgrading ${names.join(', ') || 'these dependencies'} broke. Failures from other dependency changes, or`,
-      'that were there before this upgrade, are not this task.',
-      '',
-    );
+    // Word for word what a raw agent is told. The upgrade line above names only
+    // the packages the developer chose, which is the whole of the focus: an
+    // added "fix only what this upgrade broke, not what was broken before"
+    // made agents confirm lru-cache's `maxSize` crash on the old version and
+    // leave it, where a raw agent fixed it every time.
+    lines.push('Find and fix all relevant incompatibilities.', '');
   }
 
   const protectedList = [...(task.protectedPaths ?? [])];
