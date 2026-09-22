@@ -2241,12 +2241,22 @@ async function fixCommand(flags: Flags): Promise<number> {
     githubToken: token || undefined,
     dryRun: true,
     workspace,
+    // `fix` takes every `analyze` option, `--verify` included. Without it a
+    // broken build Drift matched no call site to is invisible here, and the
+    // measured-failure path below never fires.
+    verify: { enabled: Boolean(flags.verify) && config.verify.enabled },
   });
   // A measured failure is work even when static analysis localized nothing:
   // the project's own checks broke, and they say where. Stopping here is what
   // left six of ten real upgrades untouched when this was benchmarked.
   if (!result.plan || (result.plan.commits.length === 0 && result.plan.verification?.status !== 'failed')) {
     console.log(`\n${result.summary}\n`);
+    if (result.plan && result.plan.breakingChanges.length > 0 && !result.plan.verification) {
+      console.log(
+        'Run `drift fix --verify` to run this project\'s own checks against the upgrade: ' +
+          'a failing check goes to the agent even when Drift matched no call site.\n',
+      );
+    }
     return 0;
   }
 

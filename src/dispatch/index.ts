@@ -57,13 +57,24 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
   // established, not ruled out. That case falls through to the same
   // canDispatch/requestApproval logic below, which already treats blockers as
   // reason to ask a human rather than to report success.
-  if (plan.commits.length === 0 && plan.blockers.length === 0) {
+  //
+  // A failing measured check is not that either: it is the project saying it
+  // broke, and it goes to an agent below whatever localization matched.
+  if (plan.commits.length === 0 && plan.blockers.length === 0 && plan.verification?.status !== 'failed') {
+    // With no breaking change found there is nothing to say but that. With
+    // breaking changes Drift could not match to any code here, "no code uses
+    // them" would be a claim Drift never established — its own verdict for
+    // that case is "could not establish whether this repository is affected".
+    const unmatched = plan.breakingChanges.length;
     logger.info('No affected code found; nothing to dispatch.');
-    await postCheckRun(options, 'success', 'No action needed');
+    await postCheckRun(options, unmatched ? 'neutral' : 'success', unmatched ? 'Review before upgrading' : 'No action needed');
     return {
       status: 'skipped',
       planId: plan.id,
-      message: 'Dependency changed, but no code in this repository uses the affected APIs.',
+      message: unmatched
+        ? `Drift found ${unmatched} breaking change(s) upstream and matched none of them to code in this repository. ` +
+          'That does not establish that none affects it. Nothing was dispatched.'
+        : 'Dependency changed, and Drift found no breaking change affecting this repository.',
     };
   }
 

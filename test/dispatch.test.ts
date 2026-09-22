@@ -334,3 +334,45 @@ describe('Copilot dispatch: the Agent Tasks request body', () => {
     assert.equal(body.create_pull_request, false);
   });
 });
+
+describe('dispatch: nothing matched is not the same as nothing affected', () => {
+  const emptyPlan = (breakingChanges: unknown[], verification?: unknown) =>
+    ({
+      ...buildPlan({
+        repo,
+        config: DriftConfigSchema.parse({ mode: 'auto' }),
+        changes: [],
+        evidence,
+        breakingChanges: breakingChanges as never,
+        impactSites: [],
+      }),
+      blockers: [],
+      ...(verification ? { verification } : {}),
+    }) as never;
+
+  test('with breaking changes matched to no code, it says so and does not report success', async () => {
+    const github = fakeGithub();
+    const result = await dispatch({ repo, plan: emptyPlan([removedBreaking()]), config: DriftConfigSchema.parse({ mode: 'auto' }), github: github as never, logger });
+    assert.equal(result.status, 'skipped');
+    assert.match(result.message, /matched none of them to code/);
+    assert.match(result.message, /does not establish that none affects it/);
+    assert.doesNotMatch(result.message, /no code in this repository uses/);
+  });
+
+  test('with no breaking change at all, there is nothing to do', async () => {
+    const result = await dispatch({ repo, plan: emptyPlan([]), config: DriftConfigSchema.parse({ mode: 'auto' }), github: fakeGithub() as never, logger });
+    assert.equal(result.status, 'skipped');
+    assert.match(result.message, /found no breaking change/);
+  });
+
+  test('a failing measured check is never skipped as nothing to do', async () => {
+    const result = await dispatch({
+      repo,
+      plan: emptyPlan([removedBreaking()], { status: 'failed', diagnostics: [] }),
+      config: DriftConfigSchema.parse({ mode: 'auto' }),
+      github: fakeGithub() as never,
+      logger,
+    });
+    assert.notEqual(result.status, 'skipped');
+  });
+});
