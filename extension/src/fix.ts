@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
@@ -788,7 +790,7 @@ interface BatchOutcome {
  *
  * Worktrees are torn down on every path out, including cancellation and a
  * throwing agent. Leaving one behind would leave a stale entry in
- * `git worktree list` and a directory inside `.git` that nothing cleans up.
+ * `git worktree list` and a directory that nothing cleans up.
  */
 async function runBatchInWorktrees(args: {
   git: Git;
@@ -822,7 +824,9 @@ async function runBatchInWorktrees(args: {
 }): Promise<BatchOutcome[]> {
   const { git, batch, root, base } = args;
 
-  const home = join(await git.gitDir(), 'drift-worktrees');
+  // Outside `.git/`, keyed by the repository: Claude Code refuses to edit a
+  // path with a `.git` segment, and Jest ignores one.
+  const home = join(tmpdir(), 'drift-worktrees', createHash('sha256').update(await git.gitDir()).digest('hex').slice(0, 12), 'editor');
   await git.pruneWorktrees();
 
   const trees: { commit: CommitUnit; path: string; before: { path: string; content: string }[] }[] = [];
