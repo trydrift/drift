@@ -1,5 +1,10 @@
 # Can Drift make a coding agent more accurate and cheaper? No.
 
+> **Scope.** Every configuration below pastes Drift's report or brief in front
+> of a raw agent. The product's own Fix with AI was measured separately, after
+> it was rebuilt, and reaches parity with the raw agent (29/30 against 25/30):
+> see [`fix-with-ai.md`](fix-with-ai.md).
+
 276 live agent sessions, 216 valid trials, eleven real repositories, five
 configurations, two suite versions. The target was a configuration that beats
 an unaided agent on **both** success rate and input tokens. Nothing reached it,

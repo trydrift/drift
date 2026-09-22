@@ -2150,9 +2150,13 @@ async function resolveManagerForWrite(
  * itself. Like \`pr\`, this never merges and never force-pushes.
  */
 async function fixCommand(flags: Flags): Promise<number> {
-  // `fix` accepts every `analyze` option, but these three only change what
+  // `fix` accepts every `analyze` option, but these only change what
   // `analyze` prints. Accepting them here would read well and do nothing.
-  const printOnly = ['agent', 'finding', 'evidence', 'offset'].filter((key) => flags[key] !== undefined);
+  // `--agent` is both: bare, it is `analyze`'s brief switch; with a value it
+  // is `fix`'s own agent provider, so only the bare form is refused.
+  const printOnly = ['agent', 'finding', 'evidence', 'offset'].filter((key) =>
+    key === 'agent' ? flags.agent === true : flags[key] !== undefined,
+  );
   if (printOnly.length > 0) {
     return refuse(
       [`\`fix\` does not take ${printOnly.map((key) => `\`--${key}\``).join(', ')}: ${printOnly.length === 1 ? 'it only changes' : 'they only change'} what \`analyze\` prints.`],
