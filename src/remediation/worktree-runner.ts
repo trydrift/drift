@@ -1,5 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { isAbsolute, join } from 'node:path';
 import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import { UPGRADE_UNIT_ID, type FixAgent, type FileSnapshot } from '../agents/types.js';
@@ -145,7 +147,18 @@ export async function createRemediationWorktree(options: WorktreeRunOptions): Pr
   const exec = options.exec ?? execCommand;
   const common = await exec('git', ['rev-parse', '--git-common-dir'], { cwd: options.workspace });
   const gitDir = common.stdout.trim() || '.git';
-  const dir = join(options.workspace, gitDir, 'drift-worktrees', options.plan.branchName.replace(/[^\w.-]+/g, '-'));
+  const commonDir = isAbsolute(gitDir) ? gitDir : join(options.workspace, gitDir);
+  // In the temp directory, keyed by the repository, never under `.git/`, as
+  // `src/repo/worktree.ts` does for verification: Claude Code refuses to edit
+  // any path with a `.git` segment, so a fix agent working there could change
+  // nothing, and Jest ignores such paths, so its tests found none.
+  const dir = join(
+    tmpdir(),
+    'drift-worktrees',
+    createHash('sha256').update(commonDir).digest('hex').slice(0, 12),
+    'fix',
+    options.plan.branchName.replace(/[^\w.-]+/g, '-'),
+  );
 
   await exec('git', ['worktree', 'remove', '--force', dir], { cwd: options.workspace });
 

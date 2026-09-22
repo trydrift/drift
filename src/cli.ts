@@ -2286,7 +2286,9 @@ async function fixPlanAndOpenPR(args: {
   logger.info(
     planOnly
       ? `Reviewing fix plans for ${plan.commits.length} commit(s) — nothing will be applied`
-      : `Fixing ${plan.commits.length} commit(s) on \`${plan.branchName}\` in an isolated worktree`,
+      : plan.commits.length
+        ? `Fixing ${plan.commits.length} commit(s) on \`${plan.branchName}\` in an isolated worktree`
+        : `Fixing what the project's checks report on \`${plan.branchName}\` in an isolated worktree`,
   );
 
   const fix = await runFix({
