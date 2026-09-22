@@ -59,4 +59,4 @@ Drift reverted no file in any of the 60 Fix with AI trials of `fwa2` and `fwa3`.
   leave it. Any sentence added to this prompt needs measuring first.
 
 Trials (run ids `fwa2-s1`…`s5`, `fwa3-s1`…`s5`) are kept off main, like the
-other research runs, and are not yet on a branch.
+other research runs, on `experimental/agent-remediation-research`.
