@@ -1,0 +1,275 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "fwa2-s2/colonysdk-fetch-retry-6/drift-fix/1",
+  "runId": "fwa2-s2",
+  "suite": "agent-upgrade-v2",
+  "caseId": "colonysdk-fetch-retry-6",
+  "caseHash": "014a2b245f311302679fd410fec9540e7913383d03ee908b3016ea051ac695fa",
+  "condition": "drift-fix",
+  "repetition": 1,
+  "scheduleIndex": 2,
+  "metadata": {
+    "repository": "https://github.com/JoinColony/colonySDK.git",
+    "baseCommit": "9f492f02a69e325fc4a511d54f09a801ca8d0c4e",
+    "startCommit": "3469bbd1091c3a09dc79ced938f11b93a058e08b",
+    "startTreeHash": "b1c818029bf97c62ec8055aa991ec27cc2e4133c",
+    "driftCommit": "d4d845bb1cc7b0d2a549c6cd449bee8318ef5480",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "fetch-retry",
+      "fromVersion": "5.0.6",
+      "toVersion": "6.0.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-21T20:39:30.581Z",
+    "endedAt": "2026-09-21T20:48:32.611Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "ce11a01be266b3da39e583a682767efdec706f296fa38275972b20b3d521e130",
+    "promptHash": "3935b142dd8e795cda10380ee8b032e23d32e02879d5554df42aeaf39af89c00",
+    "promptChars": 21737
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "---\n\nDrift, a dependency-upgrade analysis tool, has already analysed this upgrade. It compared the two\npublished versions of the package, computed what changed in its API, and searched this repository\nfor the code that uses what changed. Its report follows, verbatim. Treat it as evidence to verify\nagainst the code, not as a complete list: it can miss places, and it never edits anything.\n\n## Drift: dependency compatibility fix\n\n`fetch-retry` _(npm)_ 5.0.2 → **6.0.0**\n\nDrift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at src/ipfs/IpfsMetadata.ts:22.\n\n| | |\n|---|---|\n| **Risk** | 🟢 low |\n| **Breaking changes** | 8 |\n| **Impact sites** | 1 across 1 file(s) |\n| **Planned commits** | 0 |\n| **Evidence sources** | semver-heuristic (1), type-surface-diff (1) |\n| **Base branch** | `main` |\n\n## ⛔ Why Drift stopped\n\nDrift did not dispatch this automatically. Each reason below is a guardrail\nfrom `.github/drift.yml`:\n\n- The project's own checks failed after this change was applied in the repository root, which static analysis did not predict. See the verification output for what broke.\n\n## ⚠️ Worth checking\n\n- 8 breaking change(s) were identified upstream but no usage was found in this repository. They are listed for awareness and no commit was planned for them.\n\n## Breaking changes\n\n### 55/100 — Fairly confident · `fetch-retry` · removed-export\n\n`RequestInitWithRetry.retries` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `RequestInitWithRetry.retries`, `retries`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `RequestInitWithRetry.retries` no longer exists in `fetch-retry`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n### 55/100 — Fairly confident · `fetch-retry` · removed-export\n\n`RequestInitWithRetry.retryDelay` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `RequestInitWithRetry.retryDelay`, `retryDelay`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `RequestInitWithRetry.retryDelay` no longer exists in `fetch-retry`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n### 55/100 — Fairly confident · `fetch-retry` · removed-export\n\n`RequestInitWithRetry.retryOn` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `RequestInitWithRetry.retryOn`, `retryOn`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `RequestInitWithRetry.retryOn` no longer exists in `fetch-retry`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n### 55/100 — Fairly confident · `fetch-retry` · signature-change\n\nThe signature of `fetchBuilder` changed.\n\n```diff\n- function fetchBuilder(fetch: typeof _fetch, defaults?: object): ((input: RequestInfo, init?: RequestInitWithRetry) => Promise<Response>);\n+ function fetchBuilder<F extends FetchLibrary>( fetch: F, defaults?: RequestInitRetryParams<F>, ): (input: Parameters<F>[0], init?: RequestInitWithRetry<F>) => ReturnType<F>;\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `fetchBuilder`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** Both the parameters and the return type of `fetchBuilder` changed. Update every call site's arguments to match the new parameter list, then separately check what each call site does with the result: a statically typed caller will have a mismatched return type caught by its own compiler, a dynamically typed one will not.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n### 55/100 — Fairly confident · `fetch-retry` · removed-export\n\n`_fetch` is no longer exported (was a variable).\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** link-or-import, compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `_fetch`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** Every use of `_fetch` from `fetch-retry` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `_fetch` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n### 55/100 — Fairly confident · `fetch-retry` · signature-change\n\nThe signature of `RequestDelayFunction` changed.\n\n```diff\n- type RequestDelayFunction = (( attempt: number, error: Error | null, response: Response | null ) => number);\n+ export type RequestDelayFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<ReturnType<F>> | null, ) => number; | export type RequestDelayFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<ReturnType<F>> | null, ) => \n…(truncated)\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `RequestDelayFunction`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The signature of `RequestDelayFunction` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n### 55/100 — Fairly confident · `fetch-retry` · signature-change\n\nThe signature of `RequestRetryOnFunction` changed.\n\n```diff\n- type RequestRetryOnFunction = (( attempt: number, error: Error | null, response: Response | null ) => boolean | Promise<boolean>);\n+ export type RequestRetryOnFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<ReturnType<F>> | null, ) => boolean | Promise<boolean>; | export type RequestRetryOnFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<Retu\n…(truncated)\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `RequestRetryOnFunction`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The signature of `RequestRetryOnFunction` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n### 55/100 — Fairly confident · `fetch-retry` · signature-change\n\nThe signature of the default export of `fetch-retry` changed.\n\n```diff\n- function default(fetch: typeof _fetch, defaults?: object): ((input: RequestInfo, init?: RequestInitWithRetry) => Promise<Response>);\n+ function default<F extends FetchLibrary>( fetch: F, defaults?: RequestInitRetryParams<F>, ): (input: Parameters<F>[0], init?: RequestInitWithRetry<F>) => ReturnType<F>;\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** Both the parameters and the return type of `default` changed. Update every call site's arguments to match the new parameter list, then separately check what each call site does with the result: a statically typed caller will have a mismatched return type caught by its own compiler, a dynamically typed one will not.\n\n**Evidence:**\n- [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n## Upgrade assessment\n\n### `fetch-retry` 5.0.2 → 6.0.0\n\n**Recommendation: Upgrade after review**\n\n**Security**\n\nNo known vulnerabilities were found for the target version.\n\n**Maintenance**\n\n- The repository was last pushed to about 2 years ago. ([source](https://github.com/jonbern/fetch-retry))\n- 6.0.0 is the latest stable release.\n- The target version was released about 3 years ago.\n- The installed version 5.0.2 is 1 major version behind the latest release, 6.0.0. Maintainers rarely backport fixes that far.\n\n<details><summary>What changed upstream</summary>\n\n**Breaking changes**\n\n- `RequestInitWithRetry.retries` was removed. ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n- `RequestInitWithRetry.retryDelay` was removed. ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n- `RequestInitWithRetry.retryOn` was removed. ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n- The signature of `fetchBuilder` changed. ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n- `_fetch` is no longer exported (was a variable). ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n- The signature of `RequestDelayFunction` changed. ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n- The signature of `RequestRetryOnFunction` changed. ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n- The signature of the default export of `fetch-retry` changed. ([source](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts))\n\n</details>\n\n**Evidence confidence:** 🟢 High — Release notes and changelog and the OSV advisory database agree.\n\n<details><summary>Why Drift concluded this</summary>\n\n- No known vulnerabilities were found for the target version.\n- 8 upstream API breaking changes; no usage of the changed parts was located in this repository — review before upgrading.\n- Drift read 5 sets of release notes ([Permissive wrapping, fix global pollution and export types release notes](https://github.com/jonbern/fetch-retry/releases/tag/6.0.0), [Type definition of the defaults parameter release notes](https://github.com/jonbern/fetch-retry/releases/tag/5.0.6), [Fix type definition to support URL instance release notes](https://github.com/jonbern/fetch-retry/releases/tag/5.0.5), [Adds example on how to use with Node.js fetch and fixes failing tests release notes](https://github.com/jonbern/fetch-retry/releases/tag/5.0.4), [Security updates: minimist release notes](https://github.com/jonbern/fetch-retry/releases/tag/5.0.3)) for fetch-retry 6.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.\n\n</details>\n\n## Commit plan\n\nNo commits planned. Drift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at src/ipfs/IpfsMetadata.ts:22.\n\n<details>\n<summary><b>All 1 impact site(s)</b></summary>\n\n**`src/ipfs/IpfsMetadata.ts`**\n\n- L22 — `TS2345: Argument of type '{ headers: { Accept: string; }; retryOn: number[]; retries: number; retryDelay: number; }' is not assignable to parameter of type 'RequestInitRetryParams<(input: RequestInfo ` · 🟢 high\n\n</details>\n\n## What Drift checked\n\n| Surface | Dependency | Result |\n|---|---|---|\n| api-surface | `fetch-retry` | ✅ checked — A computed diff of the published API surface was produced. |\n| release-notes | `fetch-retry` | ✅ checked — 5 release note or changelog section(s) retrieved. |\n| localization | — | ✅ checked — Searched the files importing each changed dependency; 0 affected location(s). |\n\n<details>\n<summary><b>Evidence Drift used (2 source(s))</b></summary>\n\nEvery finding above traces back to one of these. Open them to check the work.\n\n#### [fetch-retry 5.0.2 → 6.0.0 (major)](https://semver.org/#spec-item-8)\n\n`semver-heuristic` · very weak source (weight 0.25)\n\n```\nMajor version bump 5.0.2 → 6.0.0. Semver permits arbitrary breaking changes across a major boundary.\n```\n\n#### [8 API surface change(s) in fetch-retry](https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts)\n\n`type-surface-diff` · very strong source (weight 1.00)\n\n```\nDeclaration sources:\n- before: https://cdn.jsdelivr.net/npm/fetch-retry@5.0.2/index.d.ts\n- after: https://cdn.jsdelivr.net/npm/fetch-retry@6.0.0/index.d.ts- `RequestInitWithRetry.retries` was removed.\n- `RequestInitWithRetry.retryDelay` was removed.\n- `RequestInitWithRetry.retryOn` was removed.\n- The signature of `fetchBuilder` changed.\n    before: function fetchBuilder(fetch: typeof _fetch, defaults?: object): ((input: RequestInfo, init?: RequestInitWithRetry) => Promise<Response>);\n    after:  function fetchBuilder<F extends FetchLibrary>( fetch: F, defaults?: RequestInitRetryParams<F>, ): (input: Parameters<F>[0], init?: RequestInitWithRetry<F>) => ReturnType<F>;\n- `_fetch` is no longer exported (was a variable).\n- The signature of `RequestDelayFunction` changed.\n    before: type RequestDelayFunction = (( attempt: number, error: Error | null, response: Response | null ) => number);\n    after:  export type RequestDelayFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<ReturnType<F>> | null, ) => number; | export type RequestDelayFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<ReturnType<F>> | null, ) => number;\n- The signature of `RequestRetryOnFunction` changed.\n    before: type RequestRetryOnFunction = (( attempt: number, error: Error | null, response: Response | null ) => boolean | Promise<boolean>);\n    after:  export type RequestRetryOnFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<ReturnType<F>> | null, ) => boolean | Promise<boolean>; | export type RequestRetryOnFunction<F extends FetchLibrary> = ( attempt: number, error: Error | null, response: Awaited<ReturnType<F>> | null, ) => boolean | Promise<boolean>;\n- The signature of `default` changed.\n    before: function default(fetch: typeof _fetch, defaults?: object): ((input: RequestInfo, init?: RequestInitWithRetry) => Promise<Response>);\n    after:  function default<F extends \n…(truncated)\n```\n\n</details>\n\n## Review checklist\n\n- [ ] Every edit corresponds to a breaking change listed above — no unrelated refactoring crept in\n- [ ] The fixes match what the cited evidence actually says\n- [ ] CI passes on this branch\n\n---\n\n<!-- drift-schema: 3 -->\n<!-- drift-plan: plan_d49b2faaae -->\n<!-- drift-plan-digest: c45f4a5ac9465d11ee6f083435ce2c585f2080e4e77379af560b5305a0ffae9c -->\n<!-- drift-commit: 3469bbd1091c3a09dc79ced938f11b93a058e08b -->\n<!-- drift-base-branch: main -->\n\n<sub>Generated by [Drift](https://github.com/trydrift/drift) · plan `plan_d49b2faaae` · 2026-09-21T20:39:40.482Z<br>\nDrift reads dependency changes, proves which ones break your code, and drives\nGitHub Copilot to fix them. It never merges anything.</sub>\n",
+    "preambleHash": "b1ad522d89d173b07919ad9939447184f6016bb051e13bd4deca8eed86ed5fa0",
+    "driftAnalysisMs": 127540,
+    "driftCommand": "drift analyze --before 5b541f31623a --after 3469bbd1091c --markdown --verify",
+    "driftStatus": "completed",
+    "driftFailure": null,
+    "driftPlan": {
+      "breakingChanges": 8,
+      "impactSites": 1,
+      "impactFiles": [
+        "src/ipfs/IpfsMetadata.ts"
+      ],
+      "symbols": [
+        "RequestDelayFunction",
+        "RequestInitWithRetry.retries",
+        "RequestInitWithRetry.retryDelay",
+        "RequestInitWithRetry.retryOn",
+        "RequestRetryOnFunction",
+        "_fetch",
+        "default",
+        "fetchBuilder",
+        "retries",
+        "retryDelay",
+        "retryOn"
+      ],
+      "verdict": "locally-affected",
+      "verificationStatus": "failed",
+      "evidenceSources": 2
+    }
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 29,
+    "durationMs": 380078,
+    "apiDurationMs": 158777,
+    "finalMessage": "drift-fix: 0 unit(s) planned, 0 deterministic (not run here); one whole-upgrade session\noutcome failed: kept 1 file(s), reverted 0\n\n## Summary\n\n`fetch-retry` 6.0.0 tightened its TypeScript types: the `defaults` param of `fetchBuilder` went from an untyped `object` (5.0.2) to a strict `RequestInitRetryParams<F>` generic that only allows `retries`/`retryDelay`/`retryOn`. The only consumer, `src/ipfs/IpfsMetadata.ts`, was passing `headers` inside that defaults object, which failed to typecheck under 6.0.0 (`TS2345: Object literal may only specify known properties, and 'headers' does not exist...`).\n\nI verified via a clean checkout of the pre-upgrade commit that this was a **new** failure introduced by the upgrade (it typechecked fine on 5.0.2, `defaults?: object`).\n\nFix: moved the `headers: { Accept: 'application/json' }` out of the `wrapFetch` defaults (where it was never actually applied by fetch-retry's implementation in either version — it only reads `retries`/`retryDelay`/`retryOn` off `defaults`) and into a `FETCH_INIT` object passed as the per-call `init` argument at all three `fetchRetry(url)` call sites. This satisfies the new stricter types (per-call `init` is typed as `Parameters<F>[1] & RequestInitRetryParams<F>`, which includes `headers`) and, as a side benefit, actually causes the `Accept` header to be sent on requests now.\n\nVerified: `tsc --noEmit`, `eslint`, and the full build (`compile-cjs`, `compile-esm`, `compile-types`) all pass cleanly. No thresholds, lint rules, or tests were touched.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 1591676,
+    "uncachedInputTokens": 34060,
+    "inputTokens": 1180,
+    "cacheReadTokens": 1557616,
+    "cacheCreationTokens": 32880,
+    "outputTokens": 11900,
+    "modelCalls": 27,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 1126,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 19
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 54,
+        "cacheReadTokens": 1557616,
+        "cacheCreationTokens": 32880,
+        "outputTokens": 11881
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 1590550,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.5631822
+  },
+  "tools": {
+    "toolCalls": 28,
+    "byTool": {
+      "Bash": 26,
+      "Read": 1,
+      "Edit": 1
+    },
+    "fileReads": 1,
+    "uniqueFilesRead": 1,
+    "searches": 0,
+    "shellCommands": 26,
+    "edits": 1,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads. (summed over 1 session(s))"
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 9,
+    "linesDeleted": 6,
+    "changedFiles": [
+      "src/ipfs/IpfsMetadata.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/ipfs/IpfsMetadata.ts b/src/ipfs/IpfsMetadata.ts\nindex 743a177..818c57d 100644\n--- a/src/ipfs/IpfsMetadata.ts\n+++ b/src/ipfs/IpfsMetadata.ts\n@@ -19,14 +19,17 @@ import IpfsAdapter from './IpfsAdapter';\n import CloudflareReadonlyAdapter from './CloudflareReadonlyAdapter';\n \n const fetchRetry = wrapFetch(fetch, {\n-  headers: {\n-    Accept: 'application/json',\n-  },\n   retryOn: [404, 503],\n   retries: 3,\n   retryDelay: 5000,\n });\n \n+const FETCH_INIT = {\n+  headers: {\n+    Accept: 'application/json',\n+  },\n+};\n+\n export const IPFS_METADATA_EVENTS = {\n   [MetadataType.Annotation]: 'Annotation(address,bytes32,string)',\n   [MetadataType.Colony]: 'ColonyMetadata(address,string)',\n@@ -88,7 +91,7 @@ export class IpfsMetadata {\n     cid: string,\n   ): Promise<MetadataValue<K>> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, FETCH_INIT);\n     try {\n       const data = await res.text();\n       return IPFS_METADATA_PARSERS[type](data) as MetadataValue<K>;\n@@ -106,7 +109,7 @@ export class IpfsMetadata {\n     cid: string,\n   ): Promise<MetadataValue<T>> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, FETCH_INIT);\n     try {\n       const data = await res.text();\n       const entry = Object.entries(IPFS_METADATA_EVENTS).find(\n@@ -129,7 +132,7 @@ export class IpfsMetadata {\n \n   async getRawMetadata(cid: string): Promise<Metadata> {\n     const url = this.adapter.getIpfsUrl(cid);\n-    const res = await fetchRetry(url);\n+    const res = await fetchRetry(url, FETCH_INIT);\n     try {\n       const json = await res.json();\n       return json as Metadata;\n",
+    "diffTruncated": false,
+    "diffHash": "ca61ca17f8eb7a8ea2b8ae0f7d0ed515e9dee691992d24802ff8ef4273e82671"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "6.0.0",
+      "installedVersion": "6.0.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "typecheck (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 8784,
+        "outputExcerpt": "> @colony/sdk@1.6.0 typecheck\n> tsc --noEmit",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "request-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 14235,
+        "outputExcerpt": "> @colony/sdk@1.6.0 compile-cjs\n> tsc -p tsconfig.build.json --module commonjs --outDir dist/cjs\n\nrequest-behaviour: IPFS requests still send Accept: application/json and still retry on 404",
+        "id": "request-behaviour",
+        "description": "Through the compiled `IpfsMetadata` against a local server, with a stub adapter standing in for the gateway: every IPFS request sends `Accept: application/json`, and a 404 is retried. Deleting the headers from the wrapper defaults typechecks and fails this.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The typecheck and compile scripts the checks invoke must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The IPFS metadata reader the upgrade broke must still exist.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the rejected options object with a directive is not a migration of it.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": true,
+    "driftIdentifiedLocalCode": true,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 990,
+    "installMs": 7449,
+    "contextMs": 127541,
+    "agentMs": 381061,
+    "validationMs": 24764,
+    "totalMs": 542030
+  }
+}

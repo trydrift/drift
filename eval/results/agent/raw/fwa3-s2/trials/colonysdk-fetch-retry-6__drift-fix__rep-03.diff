@@ -1,0 +1,28 @@
+diff --git a/src/ipfs/IpfsMetadata.ts b/src/ipfs/IpfsMetadata.ts
+index 743a177..0ec4de3 100644
+--- a/src/ipfs/IpfsMetadata.ts
++++ b/src/ipfs/IpfsMetadata.ts
+@@ -18,15 +18,19 @@ import {
+ import IpfsAdapter from './IpfsAdapter';
+ import CloudflareReadonlyAdapter from './CloudflareReadonlyAdapter';
+ 
+-const fetchRetry = wrapFetch(fetch, {
+-  headers: {
+-    Accept: 'application/json',
+-  },
++const fetchWithRetry = wrapFetch(fetch, {
+   retryOn: [404, 503],
+   retries: 3,
+   retryDelay: 5000,
+ });
+ 
++const fetchRetry = (url: string) =>
++  fetchWithRetry(url, {
++    headers: {
++      Accept: 'application/json',
++    },
++  });
++
+ export const IPFS_METADATA_EVENTS = {
+   [MetadataType.Annotation]: 'Annotation(address,bytes32,string)',
+   [MetadataType.Colony]: 'ColonyMetadata(address,string)',

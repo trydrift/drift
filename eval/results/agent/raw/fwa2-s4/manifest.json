@@ -1,0 +1,27 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "fwa2-s4",
+  "suite": "agent-upgrade-v2",
+  "suiteStatus": "frozen",
+  "createdAt": "2026-09-21T20:31:22.422Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift-fwa/eval/src/agent/cli.ts run --suite agent-upgrade-v2 --runs 3 --conditions baseline,drift-fix --case gh-aw-firewall-eslint-10,hosts-lru-cache-10 --run-id fwa2-s4 --retry-infrastructure",
+  "driftCommit": "d4d845bb1cc7b0d2a549c6cd449bee8318ef5480",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 3,
+  "conditions": [
+    "baseline",
+    "drift-fix"
+  ],
+  "caseIds": [
+    "gh-aw-firewall-eslint-10",
+    "hosts-lru-cache-10"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": ""
+}

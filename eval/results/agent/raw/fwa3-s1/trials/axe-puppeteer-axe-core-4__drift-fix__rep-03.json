@@ -1,0 +1,298 @@
+{
+  "schemaVersion": "drift-agent-trial-v1",
+  "trialId": "fwa3-s1/axe-puppeteer-axe-core-4/drift-fix/3",
+  "runId": "fwa3-s1",
+  "suite": "agent-upgrade-v2",
+  "caseId": "axe-puppeteer-axe-core-4",
+  "caseHash": "ef77cfcb5ef54bdb920dd1b205213eed09fa7c2503b39fa95c36ef45a6660ea9",
+  "condition": "drift-fix",
+  "repetition": 3,
+  "scheduleIndex": 6,
+  "metadata": {
+    "repository": "https://github.com/dequelabs/axe-puppeteer.git",
+    "baseCommit": "f80627763c57b898f15c44124733b1506a08fed2",
+    "startCommit": "e751eda92fea180579106bb900c44b22b24ddede",
+    "startTreeHash": "bed81a6dc14ea3970554038ed90363459cc6d200",
+    "driftCommit": "3e656fbe1284dd6ec4f5e8de17feab002d3b9eee",
+    "driftTreeDirty": false,
+    "driftVersion": "0.1.11",
+    "dependency": {
+      "name": "axe-core",
+      "fromVersion": "3.5.6",
+      "toVersion": "4.13.0"
+    },
+    "provider": "claude-code",
+    "agentCliVersion": "2.1.267",
+    "requestedModel": "claude-sonnet-5",
+    "confirmedModel": "claude-sonnet-5",
+    "requestedEffort": "high",
+    "os": "darwin 25.6.0 x64",
+    "node": "v24.20.0",
+    "networkPolicy": "registry-and-provider; web tools disabled",
+    "agentConfiguration": {
+      "permissionMode": "bypassPermissions",
+      "disallowedTools": [
+        "WebFetch",
+        "WebSearch"
+      ],
+      "cleanEnvironment": "safe-mode",
+      "tools": [
+        "Task",
+        "Artifact",
+        "Bash",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "Edit",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "Monitor",
+        "NotebookEdit",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskOutput",
+        "TaskStop",
+        "ToolSearch",
+        "Write"
+      ],
+      "mcpServers": [],
+      "argv": [
+        "claude",
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--model",
+        "claude-sonnet-5",
+        "--effort",
+        "high",
+        "--disallowedTools",
+        "WebFetch",
+        "WebSearch"
+      ]
+    },
+    "startedAt": "2026-09-22T01:34:59.657Z",
+    "endedAt": "2026-09-22T01:54:36.294Z",
+    "timeoutSeconds": 1800,
+    "budget": {
+      "maxBudgetUsd": null,
+      "maxTurns": null
+    },
+    "taskHash": "2fc325920a474c8d646ba6afc3ce69155c23a860025cdb141d49947f36c4e5cf",
+    "promptHash": "af14f159456d0bb56c2bb59913c804df181d18fbb74881fa035a9eecc68bf6c9",
+    "promptChars": 37930
+  },
+  "context": {
+    "kind": "drift",
+    "preamble": "---\n\nDrift, a dependency-upgrade analysis tool, has already analysed this upgrade. It compared the two\npublished versions of the package, computed what changed in its API, and searched this repository\nfor the code that uses what changed. Its report follows, verbatim. Treat it as evidence to verify\nagainst the code, not as a complete list: it can miss places, and it never edits anything.\n\n## Drift: dependency compatibility fix\n\n`axe-core` _(npm)_ 3.5.3 → **4.13.0**\n\nDrift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at src/axePuppeteer.ts:104, src/axePuppeteer.ts:106, src/axePuppeteer.ts:109.\n\n| | |\n|---|---|\n| **Risk** | 🟢 low |\n| **Breaking changes** | 15 |\n| **Impact sites** | 3 across 1 file(s) |\n| **Planned commits** | 0 |\n| **Evidence sources** | semver-heuristic (1), type-surface-diff (1), github-release (3), changelog (2) |\n| **Base branch** | `main` |\n\n## ⛔ Why Drift stopped\n\nDrift did not dispatch this automatically. Each reason below is a guardrail\nfrom `.github/drift.yml`:\n\n- The project's own checks failed after this change was applied in the repository root, which static analysis did not predict. See the verification output for what broke.\n\n## ⚠️ Worth checking\n\n- 15 breaking change(s) were identified upstream but no usage was found in this repository. They are listed for awareness and no commit was planned for them.\n\n## Breaking changes\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.run` changed.\n\n```diff\n- function default.run(context?: ElementContext): Promise<AxeResults>; | function default.run(options: RunOptions): Promise<AxeResults>; | function default.run(callback: (error: Error, results: AxeResults) => void): void; | function default.run(context: ElementContext, callback: RunCallback): void; | \n…(truncated)\n+ function default.run<T = AxeResults>(context?: ElementContext): Promise<T>; | function default.run<T = AxeResults>(options: RunOptions): Promise<T>; | function default.run<T = AxeResults>( callback: (error: Error, results: T) => void ): void; | function default.run<T = AxeResults>( context: ElementC\n…(truncated)\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.run`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The return type of `default.run` changed; its parameters did not, so no call site needs its arguments touched. What changed is what a caller gets back. In a statically typed language, a call site that assigns or passes the result on will fail to compile and point you straight at the fix; nothing here needs a source change beyond letting the type checker find those. In a dynamically typed one (plain JavaScript, Python, Ruby), nothing will catch this automatically — search for call sites that store, destructure, or pass along the result of `default.run` and check each one against the new type by hand.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.getRules` changed.\n\n```diff\n- function default.getRules(tags?: string[]): RuleMetadata[];\n+ function default.getRules( tags?: string[] ): (Omit<RuleMetadata, 'enabled'> & { enabled: boolean })[];\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.getRules`, `getRules`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The return type of `default.getRules` changed; its parameters did not, so no call site needs its arguments touched. What changed is what a caller gets back. In a statically typed language, a call site that assigns or passes the result on will fail to compile and point you straight at the fix; nothing here needs a source change beyond letting the type checker find those. In a dynamically typed one (plain JavaScript, Python, Ruby), nothing will catch this automatically — search for call sites that store, destructure, or pass along the result of `default.getRules` and check each one against the new type by hand.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.ImpactValue` changed.\n\n```diff\n- type default.ImpactValue = 'minor' | 'moderate' | 'serious' | 'critical';\n+ type default.ImpactValue = 'minor' | 'moderate' | 'serious' | 'critical' | null;\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.ImpactValue`, `ImpactValue`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The signature of `default.ImpactValue` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.TagValue` changed.\n\n```diff\n- type default.TagValue = 'wcag2a' | 'wcag2aa' | 'section508' | 'best-practice';\n+ type default.TagValue = string;\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.TagValue`, `TagValue`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The signature of `default.TagValue` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.ReporterVersion` changed.\n\n```diff\n- type default.ReporterVersion = 'v1' | 'v2' | 'raw' | 'raw-env' | 'no-passes';\n+ type default.ReporterVersion = 'v1' | 'v2' | 'raw' | 'rawEnv' | 'no-passes';\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.ReporterVersion`, `ReporterVersion`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The signature of `default.ReporterVersion` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.ContextObject` changed.\n\n```diff\n- type default.ContextObject = { include?: string[] | string[][]; exclude?: string[] | string[][]; }\n+ type default.ContextObject = | { include: ContextProp; exclude?: ContextProp; }\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.ContextObject`, `ContextObject`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The signature of `default.ContextObject` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.RunCallback` changed.\n\n```diff\n- type default.RunCallback = (error: Error, results: AxeResults) => void;\n+ type default.RunCallback<T = AxeResults> = (error: Error, results: T) => void;\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.RunCallback`, `RunCallback`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The parameters of `default.RunCallback` changed; its return type did not. Update every call site to pass arguments matching the new list — check argument order, argument count, and whether an options object replaced positional arguments. A call that only reads the result of `default.RunCallback` needs no change beyond its arguments.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · signature-change\n\nThe signature of `axe-core.ElementContext` changed.\n\n```diff\n- type default.ElementContext = Node | string | ContextObject;\n+ type default.ElementContext = ContextSpec;\n```\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** symbol · **Detectable at:** compile-time, static-semantic · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.ElementContext`, `ElementContext`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The signature of `default.ElementContext` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · removed-export\n\n`default.RunOptions.restoreScroll` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.RunOptions.restoreScroll`, `restoreScroll`, `RunOptions.restoreScroll`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `default.RunOptions.restoreScroll` no longer exists in `axe-core`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · removed-export\n\n`default.CheckLocale.pass` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.CheckLocale.pass`, `CheckLocale.pass`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `default.CheckLocale.pass` no longer exists in `axe-core`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · removed-export\n\n`default.CheckLocale.fail` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.CheckLocale.fail`, `fail`, `CheckLocale.fail`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `default.CheckLocale.fail` no longer exists in `axe-core`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · removed-export\n\n`default.CheckLocale.incomplete` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.CheckLocale.incomplete`, `incomplete`, `CheckLocale.incomplete`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `default.CheckLocale.incomplete` no longer exists in `axe-core`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · removed-export\n\n`default.Spec.brand` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.Spec.brand`, `brand`, `Spec.brand`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `default.Spec.brand` no longer exists in `axe-core`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · removed-export\n\n`default.Spec.application` was removed.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** api-shape · **Scope:** symbol · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.Spec.application`, `application`, `Spec.application`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** The member `default.Spec.application` no longer exists in `axe-core`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n### 55/100 — Fairly confident · `axe-core` · required-field-added\n\n`default.Check.options` is now required; it was previously optional.\n\n**Verdict:** Breaking change detected upstream — Drift could not establish whether this repository is affected; review before upgrading.\n\n**Nature:** type-contract · **Scope:** type · **Detectable at:** compile-time · **Reached via:** direct\n\n| Dimension | Confidence | Why |\n|---|---|---|\n| Upstream — did this change happen? | 🟢 high (0.90) | Strongest evidence class is a computed diff of the shipped artifact. |\n| Local impact — does it reach this repo? | ⚪ none (0.00) | Drift searched the files that import this dependency and found no usage of the affected symbols. |\n| Verification — did anything run? | ⚪ none (0.00) | No checks were run against this finding, so nothing confirms the change was understood correctly. |\n\n**Automatic execution:** not eligible — no local impact was established.\n\n**Symbols:** `default.Check.options`, `Check.options`\n\n**Found in this repo:** no usages found in the files that import this dependency — no fix planned\n\n**Fix:** `default.Check.options` is now required. Supply an explicit value at every construction site. Choose the value that preserves the previous default behaviour; if the previous default is not documented, leave a TODO and flag it in the PR description rather than guessing.\n\n**Evidence:**\n- [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n## Upgrade assessment\n\n### `axe-core` 3.5.3 → 4.13.0\n\n**Recommendation: Upgrade after review**\n\n**Security**\n\nNo known vulnerabilities were found for the target version.\n\n**Maintenance**\n\n- The repository was last pushed to today. ([source](https://github.com/dequelabs/axe-core))\n- 4.13.0 is the latest stable release.\n- The target version was released 47 days ago.\n- The installed version 3.5.3 is 1 major version behind the latest release, 4.13.0. Maintainers rarely backport fixes that far.\n\n<details><summary>What changed upstream</summary>\n\n**Breaking changes**\n\n- The signature of `axe-core.run` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The signature of `axe-core.getRules` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The signature of `axe-core.ImpactValue` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The signature of `axe-core.TagValue` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The signature of `axe-core.ReporterVersion` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The signature of `axe-core.ContextObject` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The signature of `axe-core.RunCallback` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The signature of `axe-core.ElementContext` changed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- `default.RunOptions.restoreScroll` was removed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- `default.CheckLocale.pass` was removed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- `default.CheckLocale.fail` was removed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- `default.CheckLocale.incomplete` was removed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- `default.Spec.brand` was removed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- `default.Spec.application` was removed. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- `default.Check.options` is now required; it was previously optional. ([source](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts))\n- The `landmark-complementary-is-top-level` rule is deprecated, as ARIA no longer requires this ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.12.0))\n- **aria-required-attr:** aria-valuenow is no longer required for spinbutton ([#3552](https://github.com/dequelabs/axe-core/issues/3552)) ([a22cf56](https://github.com/dequelabs/axe-core/commit/a22cf564be1f3e73fc21bff59ba895d34755f889)) ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.5.0))\n\n**Improvements**\n\n- Tags that indicate which success criteria a rule tests violations for have been changed for several rules. In some cases new success criteria tags were added, and in others criteria tags were removed. ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.5.0))\n- The following rules were deprecated in axe-core 3.x, and are removed in 4.0: ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.0.0))\n- aria-dpub-role-fallback ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.0.0))\n- checkboxgroup ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.0.0))\n- layout-table ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.0.0))\n- video-description ([source](https://github.com/dequelabs/axe-core/releases/tag/v4.0.0))\n\n**Unrelated changes**\n\n- 15 further changes were read and judged not to concern this repository.\n\n</details>\n\n**Evidence confidence:** 🟢 High — Release notes and changelog and the OSV advisory database agree.\n\n<details><summary>Why Drift concluded this</summary>\n\n- No known vulnerabilities were found for the target version.\n- 15 upstream API breaking changes; no usage of the changed parts was located in this repository — review before upgrading.\n\n</details>\n\n## Commit plan\n\nNo commits planned. Drift confirmed this repository is affected: the project's own checks passed before this change and failed after it, at src/axePuppeteer.ts:104, src/axePuppeteer.ts:106, src/axePuppeteer.ts:109.\n\n<details>\n<summary><b>All 3 impact site(s)</b></summary>\n\n**`src/axePuppeteer.ts`**\n\n- L104 — `TS2322: Type '{}' is not assignable to type 'ContextSpec'.` · 🟢 high\n- L106 — `TS2339: Property 'exclude' does not exist on type 'ContextSpec'.` · 🟢 high\n- L109 — `TS2339: Property 'include' does not exist on type 'ContextSpec'.` · 🟢 high\n\n</details>\n\n## What Drift checked\n\n| Surface | Dependency | Result |\n|---|---|---|\n| api-surface | `axe-core` | ✅ checked — A computed diff of the published API surface was produced. |\n| release-notes | `axe-core` | ✅ checked — 26 release note or changelog section(s) retrieved. |\n| localization | — | ✅ checked — Searched the files importing each changed dependency; 0 affected location(s). |\n\n<details>\n<summary><b>Evidence Drift used (7 source(s))</b></summary>\n\nEvery finding above traces back to one of these. Open them to check the work.\n\n#### [axe-core 3.5.3 → 4.13.0 (major)](https://semver.org/#spec-item-8)\n\n`semver-heuristic` · very weak source (weight 0.25)\n\n```\nMajor version bump 3.5.3 → 4.13.0. Semver permits arbitrary breaking changes across a major boundary.\n```\n\n#### [15 API surface change(s) in axe-core](https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts)\n\n`type-surface-diff` · very strong source (weight 1.00)\n\n```\nDeclaration sources:\n- before: https://cdn.jsdelivr.net/npm/axe-core@3.5.3/axe.d.ts\n- after: https://cdn.jsdelivr.net/npm/axe-core@4.13.0/axe.d.ts- The signature of `default.run` changed.\n    before: function default.run(context?: ElementContext): Promise<AxeResults>; | function default.run(options: RunOptions): Promise<AxeResults>; | function default.run(callback: (error: Error, results: AxeResults) => void): void; | function default.run(context: ElementContext, callback: RunCallback): void; | function default.run(options: RunOptions, callback: RunCallback): void; | function default.run( context: ElementContext, options: RunOptions ): Promise<AxeResults>; | function default.run( context: ElementContext, options: RunOptions, callback: RunCallback ): void;\n    after:  function default.run<T = AxeResults>(context?: ElementContext): Promise<T>; | function default.run<T = AxeResults>(options: RunOptions): Promise<T>; | function default.run<T = AxeResults>( callback: (error: Error, results: T) => void ): void; | function default.run<T = AxeResults>( context: ElementContext, callback: RunCallback<T> ): void; | function default.run<T = AxeResults>( options: RunOptions, callback: RunCallback<T> ): void; | function default.run<T = AxeResults>( context: ElementContext, options: RunOptions ): Promise<T>; | function default.run<T = AxeResults>( context: ElementContext, options: RunOptions, callback: RunCallback<T> ): void;\n- The signature of `default.getRules` changed.\n    before: function default.getRules(tags?: string[]): RuleMetadata[];\n    after:  function default.getRules( tags?: string[] ): (Omit<RuleMetadata, 'enabled'> & { enabled: boolean })[];\n- The signature of `default.ImpactValue` changed.\n    before: type default.ImpactValue = 'minor' | 'moderate' | 'serious' | 'critical';\n    after:  type default.ImpactValue = 'minor' | 'moderate' | 'serious' | 'critical' | null;\n- The signature of `default.TagValue` changed.\n    before: type default.TagValue = 'wcag2a' | 'wcag2a\n…(truncated)\n```\n\n#### [axe-core Release 4.12.0 release notes](https://github.com/dequelabs/axe-core/releases/tag/v4.12.0)\n\n`github-release` · strong source (weight 0.70)\n\n```\n2. The `landmark-complementary-is-top-level` rule is deprecated, as ARIA no longer requires this\n```\n\n#### [axe-core Release 4.5.0 release notes](https://github.com/dequelabs/axe-core/releases/tag/v4.5.0)\n\n`github-release` · strong source (weight 0.70)\n\n```\nTags that indicate which success criteria a rule tests violations for have been changed for several rules. In some cases new success criteria tags were added, and in others criteria tags were removed.\n\n- **aria-required-attr:** aria-valuenow is no longer required for spinbutton ([#3552](https://github.com/dequelabs/axe-core/issues/3552)) ([a22cf56](https://github.com/dequelabs/axe-core/commit/a22cf564be1f3e73fc21bff59ba895d34755f889))\n```\n\n#### [axe-core Release 4.0.0 release notes](https://github.com/dequelabs/axe-core/releases/tag/v4.0.0)\n\n`github-release` · strong source (weight 0.70)\n\n```\n### Breaking Changes\n\nThe following rules were deprecated in axe-core 3.x, and are removed in 4.0:\n\n- aria-dpub-role-fallback\n\n- checkboxgroup\n\n- layout-table\n\n- radiogroup\n\n- video-description\n\nThe following checks were deprecated in axe-core 3.x, and are removed in 4.0:\n\n- aria/implicit-role-fallback\n\n- forms/fieldset\n\n- forms/group-labelledby\n\n- media/description\n\n- tables/has-caption\n\n- tables/has-summary\n\n- tables/has-th\n```\n\n#### [axe-core CHANGELOG § 4.5.0](https://github.com/dequelabs/axe-core/blob/master/CHANGELOG.md#L465)\n\n`changelog` · moderate source (weight 0.65)\n\n```\n#### Deprecations\n\n- Deprecate Internet Explorer support ([#3644](https://github.com/dequelabs/axe-core/issues/3644)) ([11f5163](https://github.com/dequelabs/axe-core/commit/11f51632491e265136c0284cd219225627a7415f))\n\n- Deprecate sri-history.json file ([#3646](https://github.com/dequelabs/axe-core/issues/3646)) ([6f6a89e](https://github.com/dequelabs/axe-core/commit/6f6a89e13d56acdda5dbcc74d1f2d7ba2190f0a6))\n\n- Deprecate and replace dom.isVisible, utils.isHidden, and dom.isHiddenWithCss ([#3351](https://github.com/dequelabs/axe-core/issues/3351)) ([1ae2ac0](https://github.com/dequelabs/axe-core/commit/1ae2ac045d1f709d1695fa76886e13604d415229))\n\n- Deprecate only-dlitems-evaluate & only-listitems-evaluate methods ([#3724](https://github.com/dequelabs/axe-core/issues/3724)) ([322e9ed](https://github.com/dequelabs/axe-core/commit/322e9edff389d407021d94a7dadf9b80e1c935de))\n\n- Deprecate presentation-role-conflict-matchess ([#3638](https://github.com/dequelabs/axe-core/issues/3638)) ([0f02a15](https://github.com/dequelabs/axe-core/commit/0f02a1530b91dd38cbc620e358e403f5250cba4c))\n\n- Deprecate is-visible-matches, use is-visible-on-screen-matches ([#3679](https://github.com/dequelabs/axe-core/issues/3679)) ([738dd8f](https://github.com/dequelabs/axe-core/commit/738dd8f38f241c061773b44dba3194281749eb15))\n\n- Deprecate not-html-matches, use :not(html) instead ([#3540](https://github.com/dequelabs/axe-core/issues/3540)) ([e0010d9](https://github.com/dequelabs/axe-core/commit/e0010d9f2c4f80b41dcd1e1821de269dd5a63dac))\n\n- **aria-required-attr:** aria-valuenow is no longer required for spinbutton ([#3552](https://github.com/dequelabs/axe-core/issues/3552)) ([a22cf56](https://github.com/dequelabs/axe-core/commit/a22cf564be1f3e73fc21bff59ba895d34755f889))\n```\n\n#### [axe-core CHANGELOG § 4.0.0](https://github.com/dequelabs/axe-core/blob/master/CHANGELOG.md#L922)\n\n`changelog` · moderate source (weight 0.65)\n\n```\n### Breaking Changes\n\nThe following rules were deprecated in axe-core 3.x, and are removed in 4.0:\n\n- aria-dpub-role-fallback\n\n- checkboxgroup\n\n- layout-table\n\n- radiogroup\n\n- video-description\n\nThe following checks were deprecated in axe-core 3.x, and are removed in 4.0:\n\n- aria/implicit-role-fallback\n\n- forms/fieldset\n\n- forms/group-labelledby\n\n- media/description\n\n- tables/has-caption\n\n- tables/has-summary\n\n- tables/has-th\n```\n\n</details>\n\n## Review checklist\n\n- [ ] Every edit corresponds to a breaking change listed above — no unrelated refactoring crept in\n- [ ] The fixes match what the cited evidence actually says\n- [ ] CI passes on this branch\n\n---\n\n<!-- drift-schema: 3 -->\n<!-- drift-plan: plan_22b495f67d -->\n<!-- drift-plan-digest: 12fe72205d4d4d9d5abdf320485bb580db91217a788e566f6a16aa4bcc3aa4c8 -->\n<!-- drift-commit: e751eda92fea180579106bb900c44b22b24ddede -->\n<!-- drift-base-branch: main -->\n\n<sub>Generated by [Drift](https://github.com/trydrift/drift) · plan `plan_22b495f67d` · 2026-09-22T01:35:09.130Z<br>\nDrift reads dependency changes, proves which ones break your code, and drives\nGitHub Copilot to fix them. It never merges anything.</sub>\n",
+    "preambleHash": "8b145b49de084b492de412ec4d4459b12657402358e82454cf45297ee17ed7d7",
+    "driftAnalysisMs": 962846,
+    "driftCommand": "drift analyze --before 9e6688016cc2 --after e751eda92fea --markdown --verify",
+    "driftStatus": "completed",
+    "driftFailure": null,
+    "driftPlan": {
+      "breakingChanges": 15,
+      "impactSites": 3,
+      "impactFiles": [
+        "src/axePuppeteer.ts"
+      ],
+      "symbols": [
+        "Check.options",
+        "CheckLocale.fail",
+        "CheckLocale.incomplete",
+        "CheckLocale.pass",
+        "ContextObject",
+        "ElementContext",
+        "ImpactValue",
+        "ReporterVersion",
+        "RunCallback",
+        "RunOptions.restoreScroll",
+        "Spec.application",
+        "Spec.brand",
+        "TagValue",
+        "application",
+        "brand",
+        "default.Check.options",
+        "default.CheckLocale.fail",
+        "default.CheckLocale.incomplete",
+        "default.CheckLocale.pass",
+        "default.ContextObject",
+        "default.ElementContext",
+        "default.ImpactValue",
+        "default.ReporterVersion",
+        "default.RunCallback",
+        "default.RunOptions.restoreScroll",
+        "default.Spec.application",
+        "default.Spec.brand",
+        "default.TagValue",
+        "default.getRules",
+        "default.run",
+        "fail",
+        "getRules",
+        "incomplete",
+        "restoreScroll"
+      ],
+      "verdict": "locally-affected",
+      "verificationStatus": "failed",
+      "evidenceSources": 7
+    }
+  },
+  "agent": {
+    "status": "completed",
+    "exitCode": 0,
+    "terminalReason": "completed",
+    "resultSubtype": "success",
+    "apiErrorStatus": null,
+    "numTurns": 25,
+    "durationMs": 193912,
+    "apiDurationMs": 66598,
+    "finalMessage": "drift-fix: 0 unit(s) planned, 0 deterministic (not run here); one whole-upgrade session\noutcome committed: kept 1 file(s), reverted 0\n\n## Summary\n\naxe-core 4.13.0 tightened the `ElementContext`/`ContextSpec` type: it's now a union requiring `include` or `exclude` to be present (no longer allows an empty `{}` with both optional), which broke `normalizeContext` in `src/axePuppeteer.ts` (3 TS errors).\n\nFixed by rewriting `normalizeContext` to return a properly-shaped object in each branch (include+exclude, include-only, or exclude-only) instead of building up a loosely-typed empty object — same runtime behavior, now type-correct.\n\nVerified:\n- `npm run build` (tsc) — clean\n- `npm run lint` (tslint) — clean\n- `npm test` — 25/25 passing (had to point `PUPPETEER_EXECUTABLE_PATH` at the system Chrome since the sandboxed environment's bundled Chromium wasn't downloaded — a local environment quirk, not a code issue)\n\nNo other incompatibilities found; no companion types package was needed since axe-core ships its own `.d.ts`.",
+    "permissionDenials": 0
+  },
+  "usage": {
+    "grossInputTokens": 1299098,
+    "uncachedInputTokens": 23173,
+    "inputTokens": 1145,
+    "cacheReadTokens": 1275925,
+    "cacheCreationTokens": 22028,
+    "outputTokens": 5913,
+    "modelCalls": 25,
+    "byModel": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 1095,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": 0,
+        "outputTokens": 28
+      },
+      "claude-sonnet-5": {
+        "inputTokens": 50,
+        "cacheReadTokens": 1275925,
+        "cacheCreationTokens": 22028,
+        "outputTokens": 5885
+      }
+    },
+    "source": "result-model-usage",
+    "ledgerGrossInputTokens": 1298003,
+    "ledgerAgreesWithResult": true,
+    "costUsd": 0.40348200000000006
+  },
+  "tools": {
+    "toolCalls": 24,
+    "byTool": {
+      "Bash": 17,
+      "Read": 5,
+      "Edit": 2
+    },
+    "fileReads": 5,
+    "uniqueFilesRead": 5,
+    "searches": 0,
+    "shellCommands": 17,
+    "edits": 2,
+    "webRequests": 0,
+    "subagentCalls": 0,
+    "counting": "Counts are `tool_use` blocks in the session event stream, deduplicated by block id. \"File reads\" are Read calls; \"unique files read\" are distinct Read paths; \"searches\" are Grep and Glob calls; \"shell commands\" are Bash tool invocations, each counted once regardless of how many programs the command line ran; \"edits\" are Edit, Write, MultiEdit and NotebookEdit calls. Files read through a shell command (cat, sed, head) are not counted as file reads. (summed over 1 session(s))"
+  },
+  "patch": {
+    "files": 1,
+    "sourceFiles": 1,
+    "testFiles": 0,
+    "configFiles": 0,
+    "dependencyFiles": 0,
+    "otherFiles": 0,
+    "linesAdded": 5,
+    "linesDeleted": 5,
+    "changedFiles": [
+      "src/axePuppeteer.ts"
+    ],
+    "deletedFiles": [],
+    "diff": "diff --git a/src/axePuppeteer.ts b/src/axePuppeteer.ts\nindex 6fc2ae4..c6fac05 100644\n--- a/src/axePuppeteer.ts\n+++ b/src/axePuppeteer.ts\n@@ -101,15 +101,15 @@ function normalizeContext(\n     return null\n   }\n \n-  const ctx: Axe.ElementContext = {}\n-  if (excludes.length) {\n-    ctx.exclude = excludes\n+  if (includes.length && excludes.length) {\n+    return { include: includes, exclude: excludes }\n   }\n+\n   if (includes.length) {\n-    ctx.include = includes\n+    return { include: includes }\n   }\n \n-  return ctx\n+  return { exclude: excludes }\n }\n \n export class AxePuppeteer {\n",
+    "diffTruncated": false,
+    "diffHash": "7a828b07eb91af2210a5ab87e571310ae2980fcb01f192ce0f56f9e3daa8b0de"
+  },
+  "validation": {
+    "dependencyIntegrity": {
+      "passed": true,
+      "declaredSpecifier": "4.13.0",
+      "installedVersion": "4.13.0",
+      "installSucceeded": true,
+      "details": []
+    },
+    "checks": [
+      {
+        "name": "compile (tsc)",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 4139,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc",
+        "kind": "build"
+      }
+    ],
+    "hiddenTests": [
+      {
+        "name": "context-behaviour",
+        "passed": true,
+        "exitCode": 0,
+        "spawnFailed": false,
+        "timedOut": false,
+        "durationMs": 4354,
+        "outputExcerpt": "> axe-puppeteer@1.1.0 build\n> tsc\n\ncontext-behaviour: include and exclude selectors still reach the axe run",
+        "id": "context-behaviour",
+        "description": "Through the compiled AxePuppeteer against a stub frame: an include and an exclude together both reach the axe run, each reaches it alone, and with neither the context stays null so axe scans the document. Typing the context object `any` to silence the union compiles and fails here.\n"
+      }
+    ],
+    "forbidden": [
+      {
+        "kind": "manifest-scripts-unchanged",
+        "description": "The build script the check invokes must not be rewritten.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "file-present",
+        "description": "The class the upgrade broke must still exist; it is the package's entry point.",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "kind": "pattern-not-added",
+        "description": "Silencing the union with a directive is not a migration of the context shape.",
+        "passed": true,
+        "detail": ""
+      }
+    ],
+    "success": true,
+    "failureReasons": []
+  },
+  "validity": {
+    "valid": true,
+    "infrastructureFailure": null,
+    "detail": null
+  },
+  "diagnostics": {
+    "driftIdentifiedBreakingChange": true,
+    "driftIdentifiedLocalCode": true,
+    "referencePatchFileOverlap": 1,
+    "referencePatchFiles": 1
+  },
+  "timing": {
+    "materializeMs": 1033,
+    "installMs": 7191,
+    "contextMs": 962847,
+    "agentMs": 194653,
+    "validationMs": 10598,
+    "totalMs": 1176637
+  }
+}

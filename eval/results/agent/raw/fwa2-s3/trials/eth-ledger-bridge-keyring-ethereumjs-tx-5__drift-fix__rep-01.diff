@@ -1,0 +1,193 @@
+diff --git a/package.json b/package.json
+index 289a3b7..e8981ac 100644
+--- a/package.json
++++ b/package.json
+@@ -37,14 +37,14 @@
+     "test:watch": "jest --watch"
+   },
+   "dependencies": {
+-    "@ethereumjs/rlp": "^4.0.0",
++    "@ethereumjs/rlp": "^5.0.2",
+     "@ethereumjs/tx": "5.3.0",
+-    "@ethereumjs/util": "^8.0.0",
++    "@ethereumjs/util": "^9.0.3",
+     "@metamask/eth-sig-util": "^7.0.0",
+     "hdkey": "^2.1.0"
+   },
+   "devDependencies": {
+-    "@ethereumjs/common": "^3.1.1",
++    "@ethereumjs/common": "^4.3.0",
+     "@lavamoat/allow-scripts": "^2.5.1",
+     "@ledgerhq/hw-app-eth": "^6.32.0",
+     "@ledgerhq/types-cryptoassets": "^7.6.0",
+diff --git a/src/ledger-keyring.test.ts b/src/ledger-keyring.test.ts
+index 82c1801..fcfb654 100644
+--- a/src/ledger-keyring.test.ts
++++ b/src/ledger-keyring.test.ts
+@@ -1,6 +1,6 @@
+ import { Common, Chain, Hardfork } from '@ethereumjs/common';
+ import { RLP } from '@ethereumjs/rlp';
+-import { TransactionFactory } from '@ethereumjs/tx';
++import { TransactionFactory, TypedTxData } from '@ethereumjs/tx';
+ import * as ethUtil from '@ethereumjs/util';
+ import * as sigUtil from '@metamask/eth-sig-util';
+ import EthereumTx from 'ethereumjs-tx';
+@@ -525,7 +525,7 @@ describe('LedgerKeyring', function () {
+           {
+             ...newFakeTx.toJSON(),
+             ...expectedRSV,
+-          },
++          } as TypedTxData,
+           { freeze: false },
+         );
+ 
+@@ -543,7 +543,7 @@ describe('LedgerKeyring', function () {
+             expect(params).toStrictEqual({
+               hdPath: "m/44'/60'/0'/0",
+               tx: Buffer.from(
+-                RLP.encode(newFakeTx.getMessageToSign(false)),
++                RLP.encode(newFakeTx.getMessageToSign()),
+               ).toString('hex'),
+             });
+             return expectedRSV;
+@@ -574,7 +574,7 @@ describe('LedgerKeyring', function () {
+             ...fakeTypeTwoTx.toJSON(),
+             type: fakeTypeTwoTx.type,
+             ...expectedRSV,
+-          },
++          } as TypedTxData,
+           { common: commonEIP1559, freeze: false },
+         );
+         jest
+@@ -590,7 +590,9 @@ describe('LedgerKeyring', function () {
+           .mockImplementation(async (params) => {
+             expect(params).toStrictEqual({
+               hdPath: "m/44'/60'/0'/0",
+-              tx: fakeTypeTwoTx.getMessageToSign(false).toString('hex'),
++              tx: Buffer.from(
++                fakeTypeTwoTx.getMessageToSign() as Uint8Array,
++              ).toString('hex'),
+             });
+             return expectedRSV;
+           });
+diff --git a/src/ledger-keyring.ts b/src/ledger-keyring.ts
+index c875a85..aa8663c 100644
+--- a/src/ledger-keyring.ts
++++ b/src/ledger-keyring.ts
+@@ -1,5 +1,10 @@
+ import { RLP } from '@ethereumjs/rlp';
+-import { TransactionFactory, TxData, TypedTransaction } from '@ethereumjs/tx';
++import {
++  JsonTx,
++  TransactionFactory,
++  TypedTransaction,
++  TypedTxData,
++} from '@ethereumjs/tx';
+ import * as ethUtil from '@ethereumjs/util';
+ import type { MessageTypes, TypedMessage } from '@metamask/eth-sig-util';
+ import {
+@@ -301,8 +306,9 @@ export class LedgerKeyring extends EventEmitter {
+       // transaction which is only communicated to ethereumjs-tx in this
+       // value. In newer versions the chainId is communicated via the 'Common'
+       // object.
++      // getChainId() actually returns a plain number at runtime, despite being typed as Buffer.
+       // @ts-expect-error tx.v should be a Buffer but we are assigning a string
+-      tx.v = ethUtil.bufferToHex(tx.getChainId());
++      tx.v = ethUtil.intToHex(tx.getChainId() as unknown as number);
+       // @ts-expect-error tx.r should be a Buffer but we are assigning a string
+       tx.r = '0x00';
+       // @ts-expect-error tx.s should be a Buffer but we are assigning a string
+@@ -326,26 +332,28 @@ export class LedgerKeyring extends EventEmitter {
+     // Note also that `getMessageToSign` will return valid RLP for all transaction types, whereas the
+     // `serialize` method will not for any transaction type except legacy. This is because `serialize` includes
+     // empty r, s and v values in the encoded rlp. This is why we use `getMessageToSign` here instead of `serialize`.
+-    const messageToSign = tx.getMessageToSign(false);
++    // Legacy transactions return the unencoded fields (an array) and still need to be RLP encoded,
++    // while typed transactions return the already-serialized message.
++    const messageToSign = tx.getMessageToSign();
+ 
+-    rawTxHex = Buffer.isBuffer(messageToSign)
+-      ? messageToSign.toString('hex')
+-      : Buffer.from(RLP.encode(messageToSign)).toString('hex');
++    rawTxHex = Array.isArray(messageToSign)
++      ? Buffer.from(RLP.encode(messageToSign)).toString('hex')
++      : Buffer.from(messageToSign).toString('hex');
+ 
+     return this.#signTransaction(address, rawTxHex, (payload) => {
+       // Because tx will be immutable, first get a plain javascript object that
+       // represents the transaction. Using txData here as it aligns with the
+       // nomenclature of ethereumjs/tx.
+-      const txData: TxData = tx.toJSON();
++      const txData: JsonTx = tx.toJSON();
+       // The fromTxData utility expects a type to support transactions with a type other than 0
+-      txData.type = tx.type;
++      txData.type = String(tx.type);
+       // The fromTxData utility expects v,r and s to be hex prefixed
+       txData.v = ethUtil.addHexPrefix(payload.v);
+       txData.r = ethUtil.addHexPrefix(payload.r);
+       txData.s = ethUtil.addHexPrefix(payload.s);
+       // Adopt the 'common' option from the original transaction and set the
+       // returned object to be frozen if the original is frozen.
+-      return TransactionFactory.fromTxData(txData, {
++      return TransactionFactory.fromTxData(txData as TypedTxData, {
+         common: tx.common,
+         freeze: Object.isFrozen(tx),
+       });
+@@ -597,9 +605,9 @@ export class LedgerKeyring extends EventEmitter {
+ 
+   #addressFromIndex(basePath: string, i: number) {
+     const dkey = this.hdk.derive(`${basePath}/${i}`);
+-    const address = ethUtil
+-      .publicToAddress(dkey.publicKey, true)
+-      .toString('hex');
++    const address = ethUtil.bytesToUnprefixedHex(
++      ethUtil.publicToAddress(dkey.publicKey, true),
++    );
+     return ethUtil.toChecksumAddress(`0x${address}`);
+   }
+ 
+diff --git a/yarn.lock b/yarn.lock
+index f71caad..ed43754 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -493,7 +493,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@ethereumjs/common@npm:^3.1.1, @ethereumjs/common@npm:^3.2.0":
++"@ethereumjs/common@npm:^3.2.0":
+   version: 3.2.0
+   resolution: "@ethereumjs/common@npm:3.2.0"
+   dependencies:
+@@ -512,7 +512,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@ethereumjs/rlp@npm:^4.0.0, @ethereumjs/rlp@npm:^4.0.1":
++"@ethereumjs/rlp@npm:^4.0.1":
+   version: 4.0.1
+   resolution: "@ethereumjs/rlp@npm:4.0.1"
+   bin:
+@@ -554,7 +554,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@ethereumjs/util@npm:^8.0.0, @ethereumjs/util@npm:^8.1.0":
++"@ethereumjs/util@npm:^8.1.0":
+   version: 8.1.0
+   resolution: "@ethereumjs/util@npm:8.1.0"
+   dependencies:
+@@ -1635,10 +1635,10 @@ __metadata:
+   version: 0.0.0-use.local
+   resolution: "@metamask/eth-ledger-bridge-keyring@workspace:."
+   dependencies:
+-    "@ethereumjs/common": ^3.1.1
+-    "@ethereumjs/rlp": ^4.0.0
++    "@ethereumjs/common": ^4.3.0
++    "@ethereumjs/rlp": ^5.0.2
+     "@ethereumjs/tx": 5.3.0
+-    "@ethereumjs/util": ^8.0.0
++    "@ethereumjs/util": ^9.0.3
+     "@lavamoat/allow-scripts": ^2.5.1
+     "@ledgerhq/hw-app-eth": ^6.32.0
+     "@ledgerhq/types-cryptoassets": ^7.6.0

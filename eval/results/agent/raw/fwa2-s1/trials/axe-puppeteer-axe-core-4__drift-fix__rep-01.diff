@@ -1,0 +1,26 @@
+diff --git a/src/axePuppeteer.ts b/src/axePuppeteer.ts
+index 6fc2ae4..738d9a2 100644
+--- a/src/axePuppeteer.ts
++++ b/src/axePuppeteer.ts
+@@ -101,15 +101,15 @@ function normalizeContext(
+     return null
+   }
+ 
+-  const ctx: Axe.ElementContext = {}
+-  if (excludes.length) {
+-    ctx.exclude = excludes
+-  }
+   if (includes.length) {
+-    ctx.include = includes
++    const ctx: Axe.ContextObject = { include: includes }
++    if (excludes.length) {
++      ctx.exclude = excludes
++    }
++    return ctx
+   }
+ 
+-  return ctx
++  return { exclude: excludes }
+ }
+ 
+ export class AxePuppeteer {

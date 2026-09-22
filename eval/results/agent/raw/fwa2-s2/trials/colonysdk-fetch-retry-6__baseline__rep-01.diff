@@ -1,0 +1,25 @@
+diff --git a/src/ipfs/IpfsMetadata.ts b/src/ipfs/IpfsMetadata.ts
+index 743a177..e492693 100644
+--- a/src/ipfs/IpfsMetadata.ts
++++ b/src/ipfs/IpfsMetadata.ts
+@@ -18,10 +18,16 @@ import {
+ import IpfsAdapter from './IpfsAdapter';
+ import CloudflareReadonlyAdapter from './CloudflareReadonlyAdapter';
+ 
+-const fetchRetry = wrapFetch(fetch, {
+-  headers: {
+-    Accept: 'application/json',
+-  },
++const fetchWithDefaultHeaders: typeof fetch = (input, init) =>
++  fetch(input, {
++    ...init,
++    headers: {
++      Accept: 'application/json',
++      ...init?.headers,
++    },
++  });
++
++const fetchRetry = wrapFetch(fetchWithDefaultHeaders, {
+   retryOn: [404, 503],
+   retries: 3,
+   retryDelay: 5000,

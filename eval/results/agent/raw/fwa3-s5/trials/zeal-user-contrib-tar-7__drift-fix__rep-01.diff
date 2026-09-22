@@ -1,0 +1,178 @@
+diff --git a/package.json b/package.json
+index ce4e943..a8e18f4 100644
+--- a/package.json
++++ b/package.json
+@@ -52,9 +52,8 @@
+     "@types/ini": "^1.3.31",
+     "@types/inquirer": "^9.0.6",
+     "@types/inquirer-autocomplete-prompt": "^3.0.2",
+-    "@types/node": "^20.8.7",
++    "@types/node": "^22.18.0",
+     "@types/progress": "^2.0.5",
+-    "@types/tar": "^6.1.1",
+     "@types/winreg": "^1.2.31",
+     "@typescript-eslint/eslint-plugin": "^6.8.0",
+     "@typescript-eslint/parser": "^6.8.0",
+@@ -67,7 +66,7 @@
+     "typescript": "^5.2.2"
+   },
+   "engines": {
+-    "node": ">=16"
++    "node": ">=18"
+   },
+   "np": {
+     "tests": false
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 60ebe52..d01a78f 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -25,10 +25,10 @@ importers:
+         version: 4.1.3
+       inquirer:
+         specifier: ^9.2.11
+-        version: 9.3.8(@types/node@20.19.43)
++        version: 9.3.8(@types/node@22.20.4)
+       inquirer-autocomplete-prompt:
+         specifier: ^3.0.1
+-        version: 3.0.1(inquirer@9.3.8(@types/node@20.19.43))
++        version: 3.0.1(inquirer@9.3.8(@types/node@22.20.4))
+       progress:
+         specifier: ^2.0.3
+         version: 2.0.3
+@@ -61,14 +61,11 @@ importers:
+         specifier: ^3.0.2
+         version: 3.0.3
+       '@types/node':
+-        specifier: ^20.8.7
+-        version: 20.19.43
++        specifier: ^22.18.0
++        version: 22.20.4
+       '@types/progress':
+         specifier: ^2.0.5
+         version: 2.0.7
+-      '@types/tar':
+-        specifier: ^6.1.1
+-        version: 6.1.13
+       '@types/winreg':
+         specifier: ^1.2.31
+         version: 1.2.36
+@@ -234,15 +231,15 @@ packages:
+   '@types/node@20.19.43':
+     resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
+ 
++  '@types/node@22.20.4':
++    resolution: {integrity: sha512-zJRE40jpHtKqE/C4fgHrAKQLJuSpzEnP9ff9Y7YtoR3Wd2pwqzlekDeEuUQXjRd+QCYnVnNwuJYmhdk9XV8gvA==}
++
+   '@types/progress@2.0.7':
+     resolution: {integrity: sha512-iadjw02vte8qWx7U0YM++EybBha2CQLPGu9iJ97whVgJUT5Zq9MjAPYUnbfRI2Kpehimf1QjFJYxD0t8nqzu5w==}
+ 
+   '@types/semver@7.8.0':
+     resolution: {integrity: sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ==}
+ 
+-  '@types/tar@6.1.13':
+-    resolution: {integrity: sha512-IznnlmU5f4WcGTh2ltRu/Ijpmk8wiWXfF0VA4s+HPjHZgvFggk1YaIkbo5krX/zUCzWF8N/l4+W/LNxnvAJ8nw==}
+-
+   '@types/through@0.0.33':
+     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}
+ 
+@@ -1264,10 +1261,6 @@ packages:
+   minimist@1.2.8:
+     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+ 
+-  minipass@4.2.8:
+-    resolution: {integrity: sha512-fNzuVyifolSLFL4NzpF+wEF4qrgqaaKX0haXPQEdQ7NKAN+WecoKMHV09YcuL/DHxrUsYQOK3MiuDf7Ip2OXfQ==}
+-    engines: {node: '>=8'}
+-
+   minipass@7.1.3:
+     resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
+     engines: {node: '>=16 || 14 >=14.17'}
+@@ -1826,12 +1819,12 @@ snapshots:
+ 
+   '@humanwhocodes/object-schema@2.0.3': {}
+ 
+-  '@inquirer/external-editor@1.0.3(@types/node@20.19.43)':
++  '@inquirer/external-editor@1.0.3(@types/node@22.20.4)':
+     dependencies:
+       chardet: 2.2.0
+       iconv-lite: 0.7.3
+     optionalDependencies:
+-      '@types/node': 20.19.43
++      '@types/node': 22.20.4
+ 
+   '@inquirer/figures@1.0.15': {}
+ 
+@@ -1903,17 +1896,16 @@ snapshots:
+     dependencies:
+       undici-types: 6.21.0
+ 
++  '@types/node@22.20.4':
++    dependencies:
++      undici-types: 6.21.0
++
+   '@types/progress@2.0.7':
+     dependencies:
+       '@types/node': 20.19.43
+ 
+   '@types/semver@7.8.0': {}
+ 
+-  '@types/tar@6.1.13':
+-    dependencies:
+-      '@types/node': 20.19.43
+-      minipass: 4.2.8
+-
+   '@types/through@0.0.33':
+     dependencies:
+       '@types/node': 20.19.43
+@@ -2818,18 +2810,18 @@ snapshots:
+ 
+   ini@4.1.3: {}
+ 
+-  inquirer-autocomplete-prompt@3.0.1(inquirer@9.3.8(@types/node@20.19.43)):
++  inquirer-autocomplete-prompt@3.0.1(inquirer@9.3.8(@types/node@22.20.4)):
+     dependencies:
+       ansi-escapes: 6.2.1
+       figures: 5.0.0
+-      inquirer: 9.3.8(@types/node@20.19.43)
++      inquirer: 9.3.8(@types/node@22.20.4)
+       picocolors: 1.1.1
+       run-async: 2.4.1
+       rxjs: 7.8.2
+ 
+-  inquirer@9.3.8(@types/node@20.19.43):
++  inquirer@9.3.8(@types/node@22.20.4):
+     dependencies:
+-      '@inquirer/external-editor': 1.0.3(@types/node@20.19.43)
++      '@inquirer/external-editor': 1.0.3(@types/node@22.20.4)
+       '@inquirer/figures': 1.0.15
+       ansi-escapes: 4.3.2
+       cli-width: 4.1.0
+@@ -3055,8 +3047,6 @@ snapshots:
+ 
+   minimist@1.2.8: {}
+ 
+-  minipass@4.2.8: {}
+-
+   minipass@7.1.3: {}
+ 
+   minizlib@3.1.0:
+diff --git a/src/docsets.mts b/src/docsets.mts
+index 18e0dee..5927bcc 100644
+--- a/src/docsets.mts
++++ b/src/docsets.mts
+@@ -1,6 +1,6 @@
+ import fs from 'fs-extra';
+ import { got } from 'got';
+-import tar from 'tar';
++import { extract } from 'tar';
+ import { temporaryFile } from 'tempy';
+ import { logger } from './logger.mjs';
+ import { Metadata } from './metadata.mjs';
+@@ -92,7 +92,7 @@ export async function extractDocset(tempPath: string, docsetDirectory: string):
+   logger.info(`Extracting docset to ${docsetDirectory}`);
+ 
+   fs.ensureDirSync(docsetDirectory);
+-  await tar.extract({
++  await extract({
+     file: tempPath,
+     cwd: docsetDirectory,
+     strip: 1,

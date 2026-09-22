@@ -1,0 +1,26 @@
+{
+  "version": "drift-agent-run-v1",
+  "runId": "fwa3-s1",
+  "suite": "agent-upgrade-v2",
+  "suiteStatus": "frozen",
+  "createdAt": "2026-09-21T23:53:54.012Z",
+  "command": "/Users/rudy/.nvm/versions/node/v24.20.0/bin/node /Users/rudy/Desktop/Developer/Drift-fwa/eval/src/agent/cli.ts run --suite agent-upgrade-v2 --runs 3 --conditions drift-fix --case aws-least-privilege-winston-3,axe-puppeteer-axe-core-4 --run-id fwa3-s1 --retry-infrastructure",
+  "driftCommit": "3e656fbe1284dd6ec4f5e8de17feab002d3b9eee",
+  "driftTreeDirty": false,
+  "provider": "claude-code",
+  "requestedModel": "claude-sonnet-5",
+  "requestedEffort": "high",
+  "agentCliVersion": "2.1.267 (Claude Code)",
+  "runsPerCondition": 3,
+  "conditions": [
+    "drift-fix"
+  ],
+  "caseIds": [
+    "aws-least-privilege-winston-3",
+    "axe-puppeteer-axe-core-4"
+  ],
+  "node": "v24.20.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": ""
+}
