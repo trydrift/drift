@@ -577,8 +577,12 @@ export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
     [
       '## Rules',
       '',
-      `0. You may edit ONLY these ${task.files.length} file${task.files.length === 1 ? '' : 's'}, listed above with their`,
-      '   current contents — nothing else, including generated/bundled output,',
+      // Not "listed above with their current contents": this renderer has
+      // never included file contents. The agents that get this prompt are the
+      // ones that answer in one reply, and each sends the contents in a
+      // message of its own after it.
+      `0. You may edit ONLY these ${task.files.length} file${task.files.length === 1 ? '' : 's'}, whose current contents`,
+      '   accompany this prompt — nothing else, including generated/bundled output,',
       '   lockfiles, or a file you notice is *also* broken by this upgrade. This',
       '   is enforced after you finish: an edit to any other file throws out',
       '   this whole commit\'s work. If the real fix needs a file outside this',
