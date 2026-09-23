@@ -68,9 +68,12 @@ Drift is scored against public research corpora, including two with real negativ
 
 Recall against consumer-impact corpora (BUMP, SWE-Bump, TimeMachine) is reported separately, because those are positives-only and cannot support a precision. Every number, every refusal to compute one, and the runs behind them: **[benchmarks](https://trydrift.github.io/drift/benchmarks/)**.
 
-### Does it help the agent?
+### What Fix with AI is, and is not
 
-Detection accuracy is one question. The one the product is actually for is whether Drift's research and localization, handed to a coding agent *before* it starts, let the same agent fix a real dependency upgrade with fewer input tokens and more often. That is measured by a paired benchmark with hidden compatibility tests, and only a result that passes its publication gates is quoted below. The first development run handed the agent Drift's full human report and did not help; the bounded [agent interface](docs/agent-interface.md) that replaced it is being measured on the same cases.
+Detection is one question; fixing is another. **Fix with AI** hands the upgrade to the coding agent you selected, as one session over whatever you pressed it on — the whole upgrade, one package, or one concern — and then judges the result: every file the session changed is validated on its own, and a file that breaks a rule (a protected path, a weakened test or configuration, a downgraded dependency) is reverted while the rest is kept.
+
+What it does **not** do is hand the agent Drift's findings as its instructions. Measured on real upgrades with hidden compatibility tests, findings in the prompt made the agent fix what was listed and stop looking, so a session is given the task a developer would give it. Drift's analysis stays where it belongs: in the report a human reads, and in the [agent interface](docs/agent-interface.md) an agent can query when it wants it. Drift claims no accuracy or token advantage over the same agent working alone; the paired benchmark behind that statement runs on every change to this path, and its publication gates are what keep a number off this page until one earns it.
+
 ## What Drift will not tell you
 
 - **That an upgrade is safe, without evidence.** When the API surface cannot be computed, the verdict is `insufficient-evidence`, not "clean".
