@@ -20,7 +20,7 @@
     "check:benchmark-copy": "node scripts/check-benchmark-copy.mjs"
   },
   "dependencies": {
-    "@paper-design/shaders-react": "^0.0.80",
+    "@paper-design/shaders-react": "^0.0.81",
     "next": "^16.3.5",
     "react": "^19.2.5",
     "react-dom": "^19.3.0"
