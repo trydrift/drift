@@ -6,8 +6,8 @@
     "language": "TypeScript",
     "repo": "https://github.com/supabase/supabase-js",
     "blurb": "The official Supabase client for JavaScript and TypeScript.",
-    "commit": "29b978d5da37cbb1927b1e8a8013c6f47e7223c8",
-    "capturedAt": "2026-09-21T17:27:48.745Z",
+    "commit": "54c225dacb1fc5f5a0a97c93908a46b7e8f5c9cc",
+    "capturedAt": "2026-09-23T23:04:35.735Z",
     "packagesChecked": 22,
     "candidates": 2
   },
@@ -18,8 +18,8 @@
     "language": "Python",
     "repo": "https://github.com/scrapy/scrapy",
     "blurb": "The web crawling framework that most Python scrapers are built on.",
-    "commit": "40dc142961080e37fdc2096ad1a79733bf932e45",
-    "capturedAt": "2026-09-21T17:27:49.101Z",
+    "commit": "91d87364637c1b18fd5bb21d1ed3bb356cf9b6fc",
+    "capturedAt": "2026-09-23T23:04:31.985Z",
     "packagesChecked": 33,
     "candidates": 2
   },
@@ -30,10 +30,10 @@
     "language": "Ruby",
     "repo": "https://github.com/lobsters/lobsters",
     "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
-    "commit": "0613f4d5dec85e4babcccbcfebe6782978875d29",
-    "capturedAt": "2026-09-21T17:27:54.138Z",
+    "commit": "69df721c9fe260c71c8af6550dafdd2783ad18b3",
+    "capturedAt": "2026-09-23T23:04:30.460Z",
     "packagesChecked": 37,
-    "candidates": 19
+    "candidates": 20
   },
   {
     "id": "kubernetes",
@@ -42,10 +42,10 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "cc55c969fe01716141e5471a11addded083a334e",
-    "capturedAt": "2026-09-21T17:30:09.075Z",
+    "commit": "22eedab1a20bd9baca4254b63793aebe24f6b156",
+    "capturedAt": "2026-09-23T23:06:40.397Z",
     "packagesChecked": 549,
-    "candidates": 257
+    "candidates": 268
   },
   {
     "id": "deno",
@@ -54,8 +54,8 @@
     "language": "Rust",
     "repo": "https://github.com/denoland/deno",
     "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
-    "commit": "abd22074e47c6a5cd14e9e4e84743f084aa5a575",
-    "capturedAt": "2026-09-21T17:29:10.165Z",
+    "commit": "461f32ec6174d88b7e43654a054d46d67ae2fdab",
+    "capturedAt": "2026-09-23T23:07:31.555Z",
     "packagesChecked": 208,
     "candidates": 11
   },
@@ -78,8 +78,8 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "7a27d5dde1a3b2a126e65118a37b1ee12adf41eb",
-    "capturedAt": "2026-09-21T17:28:50.598Z",
+    "commit": "807556171bcc9b4abc3a1bc42f00898dee9eb01d",
+    "capturedAt": "2026-09-23T23:05:06.139Z",
     "packagesChecked": 31,
     "candidates": 9
   },
