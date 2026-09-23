@@ -97,6 +97,19 @@ Most importantly:
 > clearly-marked `TODO(drift):` comment, and say so in the pull request
 > description. A flagged unknown is useful; a confident guess is not.
 
+**What a local agent does on your machine.** Drift asks a Fix with AI session
+to run the project's own build, typecheck and tests and to leave the repository
+working, so a CLI agent is started the way its vendor provides for an
+unattended task. The honest statement of that: the coding agent you selected
+reads and writes files and runs the project's commands on your machine, under
+your account, while the session lasts. Drift's contribution is the boundary
+around it — an isolated worktree rather than your working tree, protected paths
+it may not touch, and validation of every file it changed before anything is
+kept or committed. Web tools are never approved, so the session does not
+browse. If you would rather nothing ran locally at all, do not select a local
+agent: the Copilot cloud path and the deterministic tiers run nothing on your
+machine.
+
 ### 6 · Human review, in the editor
 
 In the VS Code extension, an agent's edits are a **proposal**. They are written

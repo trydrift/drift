@@ -109,7 +109,12 @@ the developer chose, and the rules Drift enforces afterwards. It does not get
 Drift's findings. Measured on ten real upgrades, findings in the prompt made
 the agent fix the listed items and stop. An agent that edits files in one
 reply and cannot run anything (Copilot through the editor, Ollama) gets the
-findings and the files they name, because that is all it can use.
+findings and the files they name, because that is all it can use. Each CLI
+agent is started the way its own vendor provides for running a task
+unattended, since the prompt asks it to run the project's build and tests;
+none is started with web tools approved. See
+[trust-and-safety.md](trust-and-safety.md) for what that means for the reader
+of a Drift fix.
 
 ```
 extension/src/

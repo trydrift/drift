@@ -161,7 +161,14 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     label: 'Claude Code',
     description: "Anthropic's agentic CLI. Edits files directly.",
     command: 'claude',
-    buildArgs: () => ['-p', '--permission-mode', 'acceptEdits'],
+    // Edits, and the project's own commands. The prompt asks the agent to run
+    // the build and tests, and in print mode nobody is there to approve a
+    // command, so without `Bash` it could diagnose a fix and verify none of
+    // it — measured on a real upgrade, it said so itself. It runs in Drift's
+    // isolated worktree, never the developer's tree. Web tools stay
+    // unapproved, so it cannot browse. Gemini (`--yolo`) and Codex (its
+    // workspace-write sandbox) already run commands this way.
+    buildArgs: () => ['-p', '--permission-mode', 'acceptEdits', '--allowedTools', 'Bash'],
     promptOnStdin: true,
     // Aliases, not dated ids: `--model opus` still means the current Opus a
     // year from now. Claude Code publishes no roster file to read, so this list

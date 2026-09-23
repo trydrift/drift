@@ -158,7 +158,11 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     label: 'Claude Code',
     description: "Anthropic's agentic CLI. Edits files directly.",
     command: 'claude',
-    buildArgs: () => ['-p', '--permission-mode', 'acceptEdits'],
+    // Edits, and the project's own commands — see `src/agents/cli.ts` for why
+    // an agent that cannot run the build verifies nothing. The panel's agent
+    // runs against the workspace or a disposable worktree, and web tools stay
+    // unapproved.
+    buildArgs: () => ['-p', '--permission-mode', 'acceptEdits', '--allowedTools', 'Bash'],
     promptOnStdin: true,
     // Aliases, not dated ids: `--model opus` still means the current Opus a
     // year from now. Claude Code publishes no roster file to read, so this list
