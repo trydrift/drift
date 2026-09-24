@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderAnalyzeReport } from '../dist/report/terminal-analyze.js';
+import { renderAnalyzeReport, unsettledCount } from '../dist/report/terminal-analyze.js';
 import { createPalette } from '../dist/util/terminal.js';
 
 /**
@@ -55,7 +55,7 @@ describe('the terminal report for analyze', () => {
   test('a change nothing could rule on is still shown, and not as a pass', () => {
     const out = renderAnalyzeReport(plan(), palette, 100);
 
-    assert.match(out, /could not establish whether this repository is affected \(1\)/);
+    assert.match(out, /Check before upgrading — Drift could not settle these either way \(1\)/);
     assert.match(out, /The signature of `Method` changed/);
   });
 
@@ -64,7 +64,7 @@ describe('the terminal report for analyze', () => {
     // would quietly turn a summary into a false all-clear.
     const out = renderAnalyzeReport(plan({ dispositions: [] }), palette, 100);
 
-    assert.match(out, /could not establish whether this repository is affected \(3\)/);
+    assert.match(out, /Check before upgrading — Drift could not settle these either way \(3\)/);
     assert.doesNotMatch(out, /Affects this repository/);
   });
 
@@ -100,5 +100,50 @@ describe('the terminal report for analyze', () => {
     const out = renderAnalyzeReport(plan({ impactSites: sites }), palette, 100);
 
     assert.match(out, /…and 6 more/, 'the six it did not print are still accounted for');
+  });
+});
+
+describe('a major that changed a lot, and reaches nothing anyone can point at', () => {
+  // The ordinary shape of a real scan: ajv 6 → 8 removes three dozen type
+  // exports, localization ties none of them to this repository, and the
+  // reader used to get thirty-six lines differing by an identifier.
+  const many = (n: number) =>
+    ({
+      changes: [
+        { name: 'ajv', from: '6.12.6', to: '8.20.0' },
+        { name: 'punycode', from: '2.1.1', to: '2.3.1' },
+      ],
+      breakingChanges: [
+        ...Array.from({ length: n }, (_, i) => ({ id: `ajv-${i}`, dependency: 'ajv', summary: `\`ajv.Type${i}\` is no longer exported (was an interface).` })),
+        { id: 'puny-0', dependency: 'punycode', summary: '`punycode.ucs2` moved.' },
+      ],
+      dispositions: [],
+      impactSites: [],
+      gaps: [
+        { surface: 'upstream release evidence', dependency: 'punycode' },
+        { surface: 'build, typecheck, and test' },
+      ],
+    }) as never;
+
+  test('one package contributes a few lines and a count, not a screen', () => {
+    const out = renderAnalyzeReport(many(36), palette, 100);
+
+    assert.match(out, /Check before upgrading — Drift could not settle these either way \(37\)/);
+    assert.match(out, /ajv \(36\)/, 'the package is named above its findings');
+    assert.match(out, /…and 32 more from ajv — `--markdown` lists them/);
+    assert.equal(out.split('\n').filter((l) => /is no longer exported/.test(l)).length, 4);
+    assert.match(out, /`punycode\.ucs2` moved/, 'the other package is not buried by the noisy one');
+  });
+
+  test('a gap names the package it is about', () => {
+    const out = renderAnalyzeReport(many(2), palette, 100);
+
+    assert.match(out, /upstream release evidence — punycode/);
+    assert.match(out, /· build, typecheck, and test/, 'a gap about the whole run still stands alone');
+  });
+
+  test('the count the next-step line quotes is the findings nothing ruled on', () => {
+    assert.equal(unsettledCount(many(36)), 37);
+    assert.equal(unsettledCount(plan()), 1);
   });
 });

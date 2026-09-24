@@ -19,7 +19,7 @@ import {
 import { runPipeline } from './pipeline.js';
 import { resolveBaseBranch, titleFor } from './plan/pull-request.js';
 import { renderPullRequestBody } from './report/markdown.js';
-import { renderAnalyzeReport } from './report/terminal-analyze.js';
+import { renderAnalyzeReport, unsettledCount } from './report/terminal-analyze.js';
 import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
@@ -1385,9 +1385,16 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   }
 
   if (!deepVerifyRequested) {
+    // Named for what it settles. A scan coming back mostly "could not
+    // establish" is the ordinary case on a real upgrade, and the useful next
+    // step is not for the reader to work through that list by hand: it is the
+    // one command that installs the upgrade and runs their own checks on it.
+    const unsettled = unsettledCount(result.plan);
     console.log(
       config.verify.enabled
-        ? "Static analysis only — not deeply verified. Re-run with --verify to install this change and run this project's own checks.\n"
+        ? unsettled > 0
+          ? `Static analysis only. \`drift analyze --verify\` installs this upgrade in a scratch copy and runs this project's own build and tests — settling ${unsettled === 1 ? 'the finding above that' : `all ${unsettled} findings above that`} nothing has ruled on.\n`
+          : "Static analysis only — not deeply verified. Re-run with --verify to install this change and run this project's own checks.\n"
         : 'Deep verification is disabled (verify.enabled: false in drift.yml).\n',
     );
   }
