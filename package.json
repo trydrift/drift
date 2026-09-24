@@ -1,6 +1,6 @@
 {
   "name": "@usedrift/cli",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Find which dependency upgrades affect your code, show the evidence, and prepare reviewable fixes from the command line.",
   "license": "MIT",
   "author": "Drift (https://github.com/trydrift/drift)",
