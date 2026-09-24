@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `ac9c8b852a6738755271fd8c34d5c5db3abff875` |
-| Run date | 2026-09-16T01:39:53.979Z |
+| Drift commit | `894805d24df02822345e0456d8c94fd9609c25b1` |
+| Run date | 2026-09-24T05:41:33.119Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -28,24 +28,25 @@ Read this before any rate below.
 | --- | --- |
 | Available in the dataset | 63 |
 | Selected for this run (all) | 63 |
-| Scored | 61 |
-| Excluded | 2 |
+| Scored | 60 |
+| Excluded | 3 |
 | Negative/control cases among the scored | 0 |
 
 Every exclusion, with its reason:
 
 | Reason | Cases |
 | --- | --- |
+| `reproduction-failed` | 1 |
 | `source-unavailable` | 2 |
 
 ## Results
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 42/61 (68.9%) | 57.4–80.3% |
-| consumer localization rate | 38/61 (62.3%) | 50.8–73.8% |
-| dependency-update detection rate | 61/61 (100.0%) | 100.0–100.0% |
-| false-safe verdicts | 0/61 (0.0%) | 0.0–0.0% |
+| affected-repository identification rate | 42/60 (70.0%) | 58.3–80.0% |
+| consumer localization rate | 38/60 (63.3%) | 51.7–75.0% |
+| dependency-update detection rate | 60/60 (100.0%) | 100.0–100.0% |
+| false-safe verdicts | 0/60 (0.0%) | 0.0–0.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -59,9 +60,9 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | Stage | Cases |
 | --- | ---: |
 | `verification-install-failed` | 10 |
-| `consumer-usage-not-found` | 5 |
 | `verification-inconclusive` | 4 |
-| **Total** | **19** |
+| `consumer-usage-not-found` | 4 |
+| **Total** | **18** |
 
 ### Breakdown
 
@@ -70,10 +71,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| exactVersionAdjudicated: true | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
-| label: known-breaking-upgrade | 42/61 (68.9%) | 38/61 (62.3%) | 61/61 (100.0%) |
+| exactVersionAdjudicated: true | 42/60 (70.0%) | 38/60 (63.3%) | 60/60 (100.0%) |
+| label: known-breaking-upgrade | 42/60 (70.0%) | 38/60 (63.3%) | 60/60 (100.0%) |
 | versionToIsRange: false | 3/3 (100.0%) | 2/3 (66.7%) | 3/3 (100.0%) |
-| versionToIsRange: true | 39/58 (67.2%) | 36/58 (62.1%) | 58/58 (100.0%) |
+| versionToIsRange: true | 39/57 (68.4%) | 36/57 (63.2%) | 57/57 (100.0%) |
 
 ## What is deliberately not reported
 
