@@ -1,5 +1,34 @@
 [
   {
+    "caseId": "che-incubator__chectl-execa__^8.0.1",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "che-incubator__chectl-execa__^8.0.1",
+      "repository": "https://github.com/che-incubator/chectl",
+      "commit": "5e809d2ae21a35bca1a74782fc824fd4dde05b58",
+      "baseCommit": null,
+      "dependency": "execa",
+      "fromVersion": null,
+      "toVersion": null,
+      "packageManager": "yarn",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable",
+        "manifestVersionFrom": "unavailable",
+        "exactVersionAdjudicated": "false",
+        "exactVersionResolvedBy": "none"
+      }
+    }
+  },
+  {
     "caseId": "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
     "kind": "source-unavailable",
     "reason": "commit 3d80009b32c9fe6bfe93f67ffcf396013949afaa could not be fetched from https://github.com/ayocodingit/boilerplate-express-service.git: Command failed: git fetch --quiet --depth 1 origin 3d80009b32c9fe6bfe93f67ffcf396013949afaa\nfatal: could not read Username for 'https://github.com': No such device or address\n",

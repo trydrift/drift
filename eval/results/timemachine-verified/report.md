@@ -15,8 +15,8 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `ac9c8b852a6738755271fd8c34d5c5db3abff875` |
-| Run date | 2026-09-16T01:03:34.533Z |
+| Drift commit | `894805d24df02822345e0456d8c94fd9609c25b1` |
+| Run date | 2026-09-24T04:52:31.867Z |
 | Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | linux/x64, Node v22.23.2 |
 
@@ -61,9 +61,8 @@ since it sizes what each stage can recover. Buckets sum to the total; see `impac
 | `consumer-usage-not-found` | 10 |
 | `dependency-import-not-found` | 5 |
 | `consumer-match-insufficient-confidence` | 2 |
+| `breaking-change-low-confidence` | 2 |
 | `dependency-update-not-detected` | 2 |
-| `consumer-symbol-not-resolved` | 1 |
-| `breaking-change-low-confidence` | 1 |
 | `upstream-surface-unavailable` | 1 |
 | **Total** | **22** |
 
@@ -118,7 +117,7 @@ how generously the mapping was written.
 | `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
 | `python3` | Python 3.12.3 | any Python case |
-| `uv` | uv 0.12.15 (x86_64-unknown-linux-gnu) | TimeMachine's documented environment setup |
+| `uv` | uv 0.12.18 (x86_64-unknown-linux-gnu) | TimeMachine's documented environment setup |
 | `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
