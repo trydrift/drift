@@ -775,8 +775,8 @@
     "publish:pre": "npx --yes @vscode/vsce publish --pre-release --no-dependencies"
   },
   "devDependencies": {
-    "@types/node": "^26.4.1",
-    "@types/vscode": "1.95.0",
+    "@types/node": "^26.6.2",
+    "@types/vscode": "1.138.0",
     "esbuild": "^0.28.1",
     "typescript": "^7.0.2"
   },
