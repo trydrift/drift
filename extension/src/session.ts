@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { deriveTitle } from './history.js';
+import type { Ecosystem, RemediationPlan } from '../../src/types.js';
 
 /**
  * The conversation.
@@ -184,6 +185,12 @@ export type ThreadItem =
       key?: string;
     }
   | { id: string; kind: 'packages'; headline: string; ids: string[] }
+  /**
+   * What `/recent` found, one group per dependency that moved — the same
+   * breaks, fixes and located sites the scan shows under a package, so the
+   * analysis of a change already in git is not reduced to a count of files.
+   */
+  | { id: string; kind: 'findings'; groups: FindingGroup[] }
   | {
       id: string;
       kind: 'tasks';
@@ -210,6 +217,19 @@ export type ThreadItem =
  * phase name into a badge — two controls for one question, neither of which
  * had room to say what it was offering. Now the list is the control.
  */
+/** One dependency's share of a `/recent` plan. */
+export interface FindingGroup {
+  /** Stable within a conversation; what "View diff" sends back. */
+  id: string;
+  name: string;
+  ecosystem: Ecosystem;
+  from: string;
+  to: string;
+  workspace?: string;
+  /** Only this dependency's changes, evidence and sites. */
+  plan: RemediationPlan;
+}
+
 export interface StepLogEntry {
   /** The line as shown: the phase, and its detail when there is one. */
   text: string;
@@ -825,6 +845,11 @@ export class DriftSession {
     }
 
     if (changed) this.emitter.fire();
+  }
+
+  findings(groups: readonly FindingGroup[]): void {
+    if (groups.length === 0) return;
+    this.push({ id: this.nextId(), kind: 'findings', groups: [...groups] });
   }
 
   packages(headline: string, ids: readonly string[]): void {
