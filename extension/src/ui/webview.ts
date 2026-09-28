@@ -4349,6 +4349,16 @@ function requestCandidateDetail(details) {
 /* Composer                                                            */
 /* ------------------------------------------------------------------ */
 
+/* Sending always jumps to the bottom, where the reply will appear. Scroll-hold
+   is right while reading, but a command sent from further up (a welcome button
+   above a long scan, say) would otherwise run entirely out of sight and look
+   like nothing happened. \`capture\` reads the position back from the DOM, so
+   the thread itself has to move, not just \`ui\`. */
+function followThread() {
+  if (thread) thread.scrollTop = thread.scrollHeight;
+  ui.atBottom = true;
+}
+
 function send() {
   if (!input) return;
   const text = input.value.trim();
@@ -4357,6 +4367,7 @@ function send() {
   ui.draft = '';
   grow();
   hideCommands();
+  followThread();
   save();
   vscode.postMessage({ type: 'submit', text });
 }
@@ -4646,6 +4657,7 @@ document.addEventListener('click', (event) => {
   }
   if (action === 'run') {
     lockActions(target);
+    followThread();
     vscode.postMessage({ type: 'submit', text: target.dataset.command });
     return;
   }
