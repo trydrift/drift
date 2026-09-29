@@ -6,8 +6,8 @@
     "language": "TypeScript",
     "repo": "https://github.com/supabase/supabase-js",
     "blurb": "The official Supabase client for JavaScript and TypeScript.",
-    "commit": "54c225dacb1fc5f5a0a97c93908a46b7e8f5c9cc",
-    "capturedAt": "2026-09-23T23:04:35.735Z",
+    "commit": "6d21e3fc8cd5e9cba6b6c30b75a71ffeb97b478d",
+    "capturedAt": "2026-09-29T03:51:01.760Z",
     "packagesChecked": 22,
     "candidates": 2
   },
@@ -18,9 +18,9 @@
     "language": "Python",
     "repo": "https://github.com/scrapy/scrapy",
     "blurb": "The web crawling framework that most Python scrapers are built on.",
-    "commit": "91d87364637c1b18fd5bb21d1ed3bb356cf9b6fc",
-    "capturedAt": "2026-09-23T23:04:31.985Z",
-    "packagesChecked": 33,
+    "commit": "5d789b24f994bcdfca97c34d976c73739e064849",
+    "capturedAt": "2026-09-29T03:51:09.362Z",
+    "packagesChecked": 35,
     "candidates": 2
   },
   {
@@ -30,10 +30,10 @@
     "language": "Ruby",
     "repo": "https://github.com/lobsters/lobsters",
     "blurb": "The long-running Rails community whose committed bundle makes installed Ruby identities reproducible.",
-    "commit": "69df721c9fe260c71c8af6550dafdd2783ad18b3",
-    "capturedAt": "2026-09-23T23:04:30.460Z",
+    "commit": "9adf9a180a617097e3effc17cdb6f11b58b214bf",
+    "capturedAt": "2026-09-29T03:50:56.263Z",
     "packagesChecked": 37,
-    "candidates": 20
+    "candidates": 21
   },
   {
     "id": "kubernetes",
@@ -42,10 +42,10 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "22eedab1a20bd9baca4254b63793aebe24f6b156",
-    "capturedAt": "2026-09-23T23:06:40.397Z",
-    "packagesChecked": 549,
-    "candidates": 268
+    "commit": "212d43e100c1ec5368dd8f165cc277af5f70ec9f",
+    "capturedAt": "2026-09-29T03:53:06.017Z",
+    "packagesChecked": 548,
+    "candidates": 178
   },
   {
     "id": "deno",
@@ -54,8 +54,8 @@
     "language": "Rust",
     "repo": "https://github.com/denoland/deno",
     "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
-    "commit": "461f32ec6174d88b7e43654a054d46d67ae2fdab",
-    "capturedAt": "2026-09-23T23:07:31.555Z",
+    "commit": "1b48a20f85a8164aebe4fb29ae53909136a3d777",
+    "capturedAt": "2026-09-29T03:54:03.448Z",
     "packagesChecked": 208,
     "candidates": 11
   },
@@ -66,8 +66,8 @@
     "language": "Java",
     "repo": "https://github.com/elastic/elasticsearch-java",
     "blurb": "Elasticsearch's official Java API client.",
-    "commit": "41085db2b17a86b9d882575c0935def2e8a0fe7b",
-    "capturedAt": "2026-09-21T17:28:36.263Z",
+    "commit": "f920563fb804f9a03aa9b77fbaeb21ba5bc3b3e5",
+    "capturedAt": "2026-09-29T03:52:46.202Z",
     "packagesChecked": 19,
     "candidates": 13
   },
@@ -78,8 +78,8 @@
     "language": "C++",
     "repo": "https://github.com/esphome/esphome",
     "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-    "commit": "807556171bcc9b4abc3a1bc42f00898dee9eb01d",
-    "capturedAt": "2026-09-23T23:05:06.139Z",
+    "commit": "bf7aa1dc605e3aa769c51822806b31b9bc60a533",
+    "capturedAt": "2026-09-29T03:51:43.022Z",
     "packagesChecked": 31,
     "candidates": 9
   },
@@ -114,10 +114,10 @@
     "language": "Elixir",
     "repo": "https://github.com/phoenixframework/phoenix",
     "blurb": "The web framework nearly every production Elixir application is built on.",
-    "commit": "da518c2f871c3b9049929160c91de87a323b61be",
-    "capturedAt": "2026-09-21T17:29:11.531Z",
+    "commit": "429796d9ef753c83c3ce93403371dd02ad6af80b",
+    "capturedAt": "2026-09-29T03:51:49.395Z",
     "packagesChecked": 46,
-    "candidates": 18
+    "candidates": 19
   },
   {
     "id": "starter-flutter",
@@ -174,8 +174,8 @@
     "language": "C++",
     "repo": "https://github.com/an-tao/trantor",
     "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-    "commit": "60f9c1e29a8186714c48080d085110e77caa51d2",
-    "capturedAt": "2026-09-21T17:29:12.743Z",
+    "commit": "747c2acf147b46499a8d6f3c3de0bd4b0d4fa2d9",
+    "capturedAt": "2026-09-29T03:51:49.580Z",
     "packagesChecked": 3,
     "candidates": 0
   },
