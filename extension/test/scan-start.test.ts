@@ -186,3 +186,69 @@ test('a pending scan choice blocks competing operations until the scan enters ru
   assert.equal(scanSteps.length, 1);
   assert.equal(scanSteps[0]!.state, 'done');
 });
+
+test('a scan started before the open folders are inspected waits for them instead of reporting no repository', async () => {
+  __settings.clear();
+  __settings.set('analysis.verifyMode', 'ask');
+  __settings.set('analysis.dependencyScope', 'ask');
+
+  const root = '/tmp/drift-scan-early';
+  const workspace = vscode.workspace as unknown as { workspaceFolders: unknown };
+  const folders = workspace.workspaceFolders;
+  workspace.workspaceFolders = [{ uri: { fsPath: root } }];
+
+  try {
+    const session = new DriftSession();
+    const state = new DriftState();
+    const home = new DriftHomeView(
+      vscode.Uri.file('/tmp/drift-test'),
+      state,
+      session,
+      new DriftReview(),
+      output(),
+      new MemoryMemento(),
+    );
+    const controller = home as unknown as {
+      contextFor(root: string): Promise<unknown>;
+      resolveManagers(root: string): Promise<null>;
+    };
+    const asked: string[] = [];
+    controller.contextFor = async (path) => {
+      asked.push(path);
+      return {
+        root: path,
+        info: null,
+        repo: {
+          owner: 'local',
+          repo: 'drift-scan-early',
+          baseBranch: 'working-tree',
+          beforeSha: 'WORKING_TREE',
+          afterSha: 'WORKING_TREE',
+          workspace: path,
+        },
+        config: DriftConfigSchema.parse({}),
+      };
+    };
+    controller.resolveManagers = async () => null;
+
+    // The panel's startup scan, fired while activation is still walking the folder.
+    const scan = home.scanOnStartup();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.deepEqual(asked, [], 'nothing to scan until the folders are known');
+
+    state.setRoots([{ path: root, label: 'drift-scan-early', repo: null, gitRoot: null, subprojects: [] }]);
+    await waitFor(() => questions(session).length === 1);
+    assert.deepEqual(asked, [root]);
+
+    const notices = session.snapshot().filter((item) => item.kind === 'notice');
+    assert.equal(
+      notices.some((item) => JSON.stringify(item).includes('Open a git repository')),
+      false,
+    );
+
+    session.answer(questions(session)[0]!.id, 'cancel');
+    await scan;
+  } finally {
+    workspace.workspaceFolders = folders;
+  }
+});

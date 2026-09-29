@@ -184,6 +184,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // unanswered.
   void initialise(state, home).catch((error: unknown) => {
     output.error(`Drift: startup failed: ${error instanceof Error ? error.message : String(error)}`);
+    // Release anything waiting on the first inspection — with whatever roots
+    // there are — rather than leave a scan waiting on it forever.
+    state.setRoots(state.roots);
   });
 }
 
