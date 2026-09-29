@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -532,7 +532,8 @@ Accepts every \`drift analyze\` option, plus:
 never touched — using, per commit, Drift's own deterministic codemod, then a
 validated fix plan, then an AI agent, in that order; it pushes a branch and
 opens a pull request. It never merges, never force-pushes, and never touches
-the base branch.
+the base branch. In a repository with no GitHub remote it stops at a local
+branch: the fixes are committed there and nothing is pushed.
 
 A fix plan is a migration described once, as a rule, and applied by Drift to
 every call site at once. Whatever proposed it — a cached plan, a community
@@ -2180,23 +2181,40 @@ async function fixCommand(flags: Flags): Promise<number> {
 
   const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
   const token = await resolveGitHubToken(flags);
-  const ghSignedIn = token ? false : (await hasGitHubCli()) || (await tryBrowserSignIn(logger));
 
-  if (!token && !ghSignedIn) {
+  // A repository with no GitHub remote — a fresh `git init`, a demo, a GitLab
+  // checkout — has nowhere to push and nothing to open a pull request on, but
+  // everything before that still applies: the analysis, the codemods, the fix
+  // plans and a local agent all run in a worktree. Refusing outright made the
+  // command Drift recommends after every scan a dead end on exactly the
+  // repository someone tries it on first. So the fixes land on a local branch
+  // and the output says so.
+  const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
+  const local = !slug;
+
+  // Local or not, the fixes land as commits on a branch, so there has to be a
+  // repository to put them in.
+  if (local && !(await gitRev(workspace, 'HEAD'))) {
     logger.error(
-      `Signing in to GitHub is required to push a branch and open a pull request. Run \`gh auth login\` if you ` +
-        `have the GitHub CLI installed, or set GITHUB_TOKEN / pass --token. Create a token at ` +
-        `${CREATE_TOKEN_URL} (the "repo" scope is enough).`,
+      `\`drift fix\` commits its fixes on a branch, and ${workspace} is not a git repository with a commit. ` +
+        'Run it inside one, or pass --dir <path>.',
     );
     return 1;
   }
 
-  const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
-  if (!slug) {
-    logger.error('Could not determine the repository. Pass --repo owner/name.');
-    return 1;
+  if (!local) {
+    const ghSignedIn = token ? false : (await hasGitHubCli()) || (await tryBrowserSignIn(logger));
+    if (!token && !ghSignedIn) {
+      logger.error(
+        `Signing in to GitHub is required to push a branch and open a pull request. Run \`gh auth login\` if you ` +
+          `have the GitHub CLI installed, or set GITHUB_TOKEN / pass --token. Create a token at ` +
+          `${CREATE_TOKEN_URL} (the "repo" scope is enough).`,
+      );
+      return 1;
+    }
   }
-  const [owner, repoName] = slug.split('/');
+
+  const [owner, repoName] = slug ? slug.split('/') : ['local', basename(workspace)];
   if (!owner || !repoName) {
     logger.error(`Invalid repository "${slug}". Expected owner/name.`);
     return 1;
@@ -2273,7 +2291,7 @@ async function fixCommand(flags: Flags): Promise<number> {
   }
 
   const plan = result.plan;
-  return await fixPlanAndOpenPR({ repo, plan, config, workspace, logger, flags, token });
+  return await fixPlanAndOpenPR({ repo, plan, config, workspace, logger, flags, token, local });
 }
 
 /**
@@ -2290,8 +2308,11 @@ async function fixPlanAndOpenPR(args: {
   logger: Logger;
   flags: Flags;
   token: string;
+  /** No GitHub remote: commit on a local branch, push nothing, open nothing. */
+  local?: boolean;
 }): Promise<number> {
   const { repo, plan, config, workspace, logger, flags, token } = args;
+  const local = args.local === true;
 
   const planOnly = Boolean(flags['plan']);
 
@@ -2345,6 +2366,9 @@ async function fixPlanAndOpenPR(args: {
   let pushedBranch = false;
 
   const pushWorktreeHead = async () => {
+    // Locally the commits are already on the branch the worktree was created
+    // with; it outlives the worktree, so there is nothing more to do.
+    if (local) return;
     await run('git', ['push', '-u', 'origin', `HEAD:refs/heads/${fix.branch}`], { cwd: fix.worktree });
     pushedBranch = true;
   };
@@ -2417,6 +2441,9 @@ async function fixPlanAndOpenPR(args: {
             unresolvedAgentWork = true;
             unresolvedAgentCount = Math.max(1, fix.needsAgent.length);
           }
+        } else if (isCloudFixAgent(agent) && local) {
+          logger.warn(`${agent.label} works from a GitHub branch, and this repository has no GitHub remote. Choose a local agent with --agent.`);
+          unresolvedAgentWork = true;
         } else if (isCloudFixAgent(agent)) {
           if (!pushedBranch && !fix.pushed) {
             // Cloud agents work from a remote branch. If every commit needed an
@@ -2451,6 +2478,23 @@ async function fixPlanAndOpenPR(args: {
 
     if (!fix.pushed && fix.needsAgent.length === 0) {
       logger.info('Nothing to fix.');
+      return 0;
+    }
+
+    if (local) {
+      if (fix.pushed) {
+        console.log(
+          `\nCommitted the fixes on the local branch \`${fix.branch}\`. This repository has no GitHub remote, ` +
+            'so nothing was pushed and no pull request was opened.',
+        );
+        console.log(`  See what changed:  git diff ${plan.baseBranch}...${fix.branch}`);
+        console.log(`  Take it:           git merge ${fix.branch}`);
+        console.log('  Or add a GitHub remote, check the branch out, and run:  drift pr');
+      }
+      if (unresolvedAgentWork) {
+        logger.warn('Exiting non-zero: unresolved agent work remains (see above).');
+        return 1;
+      }
       return 0;
     }
 

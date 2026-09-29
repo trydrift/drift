@@ -413,3 +413,15 @@ describe('a version Drift assumed rather than observed', () => {
     assert.doesNotMatch(text(), /0\.7\.2\?/, 'a lockfile-resolved version is stated, not qualified');
   });
 });
+
+describe('what to run next', () => {
+  test('puts the upgrade before `drift fix`, since fix needs a dependency change to work on', () => {
+    const { view, text } = harness();
+    view.report(
+      [candidate({ name: 'glob', id: 'glob', status: 'ready', impactCount: 1, impactFiles: 1, plan: { impactSites: [{ file: 'a.js', line: 1, breakingChangeId: 'x' }], evidence: [], breakingChanges: [] } })] as never,
+      () => 'glob',
+    );
+    assert.ok(text().includes('drift outdated --upgrade glob && drift fix'), text());
+    assert.ok(!text().includes('Apply the fixes and open a pull request'), text());
+  });
+});
