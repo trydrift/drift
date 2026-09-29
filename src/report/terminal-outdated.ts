@@ -333,11 +333,17 @@ export function createOutdatedView(options: {
       if (safe > 0) {
         line(c('gray', `${c.glyph('dot')} Upgrade all proven-safe packages:  ${c('cyan', 'drift upgrade')}`));
       }
-      if (first) {
+      // `drift fix` works on a dependency change, and until something is
+      // upgraded there is none — suggesting it straight after a scan sent
+      // people to "No dependency manifest changed". So the two steps are one
+      // line, in the order they have to happen.
+      if (first && actionable > 0) {
+        line(
+          c('gray', `${c.glyph('dot')} Upgrade it and fix what it breaks:  `) +
+            c('cyan', `drift outdated --upgrade ${selectorFor(first)} && drift fix`),
+        );
+      } else if (first) {
         line(c('gray', `${c.glyph('dot')} Upgrade one:  ${c('cyan', `drift outdated --upgrade ${selectorFor(first)}`)}`));
-      }
-      if (actionable > 0) {
-        line(c('gray', `${c.glyph('dot')} Apply the fixes and open a pull request:  ${c('cyan', 'drift fix')}`));
       }
       if (options.interactive && candidates.length > 0) line();
     },
