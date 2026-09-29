@@ -2192,6 +2192,16 @@ async function fixCommand(flags: Flags): Promise<number> {
   const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
   const local = !slug;
 
+  // Local or not, the fixes land as commits on a branch, so there has to be a
+  // repository to put them in.
+  if (local && !(await gitRev(workspace, 'HEAD'))) {
+    logger.error(
+      `\`drift fix\` commits its fixes on a branch, and ${workspace} is not a git repository with a commit. ` +
+        'Run it inside one, or pass --dir <path>.',
+    );
+    return 1;
+  }
+
   if (!local) {
     const ghSignedIn = token ? false : (await hasGitHubCli()) || (await tryBrowserSignIn(logger));
     if (!token && !ghSignedIn) {

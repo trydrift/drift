@@ -129,13 +129,14 @@ try {
     `analyze without a token hit a runtime/import error instead of Drift's own error path:\n${analyzeNoToken.stderr}`,
   );
 
-  // `fix` writes — it pushes a branch and opens a pull request — so it must
-  // refuse without credentials, and say why in words a user can act on.
-  log('drift fix (no token) — expect a clean refusal, no worktree created');
+  // `fix` writes — it commits on a branch, and pushes and opens a pull request
+  // when there is a GitHub remote — so outside a repository it must refuse,
+  // and say why in words a user can act on.
+  log('drift fix (no token, non-repo cwd) — expect a clean refusal, no worktree created');
   const fixNoToken = run(bin, ['fix'], { cwd: emptyDir, env });
-  assert(fixNoToken.status === 1, `fix without a token should exit 1, got ${fixNoToken.status}`);
+  assert(fixNoToken.status === 1, `fix outside a repository should exit 1, got ${fixNoToken.status}`);
   assert(
-    /Signing in to GitHub is required|Could not determine the repository/.test(
+    /Signing in to GitHub is required|is not a git repository/.test(
       fixNoToken.stderr + fixNoToken.stdout,
     ),
     `fix without a token printed an unexpected error:\n${fixNoToken.stderr}\n${fixNoToken.stdout}`,
