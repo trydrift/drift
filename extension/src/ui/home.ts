@@ -1455,6 +1455,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
+    // The panel resolves, and starts this scan, before activation has finished
+    // inspecting the open folders. An empty list then means "not looked yet",
+    // not "nothing here" — answering the second for the first told a developer
+    // with a perfectly good package.json to go open a repository.
+    if (
+      this.state.roots.length === 0 &&
+      (vscode.workspace.workspaceFolders?.length ?? 0) > 0 &&
+      vscode.workspace.isTrusted
+    ) {
+      await this.state.rootsReady;
+    }
+
     const roots = this.selectedRoots();
     if (roots.length === 0) {
       this.session.notice(

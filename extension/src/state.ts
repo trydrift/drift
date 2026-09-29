@@ -120,7 +120,25 @@ export class DriftState {
     this.setContext('drift.hasDependencyScan', this._candidates.length > 0);
   }
 
+  /**
+   * Settles once the open folders have been inspected for the first time.
+   *
+   * Activation does not wait for that inspection — it walks the repository —
+   * so the panel can be up, and its startup scan or a click on its welcome
+   * button already running, while `roots` is still empty. Anything that would
+   * read an empty list as "no repository open" waits on this instead.
+   */
+  readonly rootsReady: Promise<void>;
+  private settleRoots!: () => void;
+
+  constructor() {
+    this.rootsReady = new Promise<void>((resolve) => {
+      this.settleRoots = resolve;
+    });
+  }
+
   setRoots(roots: readonly RepoRoot[]): void {
+    this.settleRoots();
     this._roots = [...roots];
     if (this._activeRootPath && !this._roots.some((r) => r.path === this._activeRootPath)) {
       this._activeRootPath = null;
