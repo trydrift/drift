@@ -5,51 +5,52 @@
   "selected": 63,
   "attempted": 63,
   "notRun": 0,
-  "scored": 61,
+  "scored": 60,
   "excluded": {
+    "reproduction-failed": 1,
     "source-unavailable": 2
   },
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 61,
-      "denominator": 61,
+      "numerator": 60,
+      "denominator": 60,
       "value": 1
     },
     "affected-repository identification rate": {
       "numerator": 42,
-      "denominator": 61,
-      "value": 0.6885245901639344
+      "denominator": 60,
+      "value": 0.7
     },
     "consumer localization rate": {
       "numerator": 38,
-      "denominator": 61,
-      "value": 0.6229508196721312
+      "denominator": 60,
+      "value": 0.6333333333333333
     },
     "false-safe verdicts": {
       "numerator": 0,
-      "denominator": 61,
+      "denominator": 60,
       "value": 0
     }
   },
   "adjudication": {
     "dependency-update detection rate": {
-      "adjudicated": 61,
+      "adjudicated": 60,
       "notAdjudicated": 0,
       "reasons": {}
     },
     "affected-repository identification rate": {
-      "adjudicated": 61,
+      "adjudicated": 60,
       "notAdjudicated": 0,
       "reasons": {}
     },
     "consumer localization rate": {
-      "adjudicated": 61,
+      "adjudicated": 60,
       "notAdjudicated": 0,
       "reasons": {}
     },
     "false-safe verdicts": {
-      "adjudicated": 61,
+      "adjudicated": 60,
       "notAdjudicated": 0,
       "reasons": {}
     }
@@ -75,36 +76,36 @@
   "breakdown": {
     "label: known-breaking-upgrade": {
       "dependency-update detection rate": {
-        "numerator": 61,
-        "denominator": 61,
+        "numerator": 60,
+        "denominator": 60,
         "value": 1
       },
       "affected-repository identification rate": {
         "numerator": 42,
-        "denominator": 61,
-        "value": 0.6885245901639344
+        "denominator": 60,
+        "value": 0.7
       },
       "consumer localization rate": {
         "numerator": 38,
-        "denominator": 61,
-        "value": 0.6229508196721312
+        "denominator": 60,
+        "value": 0.6333333333333333
       }
     },
     "versionToIsRange: true": {
       "dependency-update detection rate": {
-        "numerator": 58,
-        "denominator": 58,
+        "numerator": 57,
+        "denominator": 57,
         "value": 1
       },
       "affected-repository identification rate": {
         "numerator": 39,
-        "denominator": 58,
-        "value": 0.6724137931034483
+        "denominator": 57,
+        "value": 0.6842105263157895
       },
       "consumer localization rate": {
         "numerator": 36,
-        "denominator": 58,
-        "value": 0.6206896551724138
+        "denominator": 57,
+        "value": 0.631578947368421
       }
     },
     "versionToIsRange: false": {
@@ -126,19 +127,19 @@
     },
     "exactVersionAdjudicated: true": {
       "dependency-update detection rate": {
-        "numerator": 61,
-        "denominator": 61,
+        "numerator": 60,
+        "denominator": 60,
         "value": 1
       },
       "affected-repository identification rate": {
         "numerator": 42,
-        "denominator": 61,
-        "value": 0.6885245901639344
+        "denominator": 60,
+        "value": 0.7
       },
       "consumer localization rate": {
         "numerator": 38,
-        "denominator": 61,
-        "value": 0.6229508196721312
+        "denominator": 60,
+        "value": 0.6333333333333333
       }
     }
   },
@@ -149,13 +150,13 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.5737704918032787,
-      "high": 0.8032786885245902,
+      "low": 0.5833333333333334,
+      "high": 0.8,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.5081967213114754,
-      "high": 0.7377049180327869,
+      "low": 0.5166666666666667,
+      "high": 0.75,
       "iterations": 2000
     },
     "false-safe verdicts": {
@@ -168,10 +169,10 @@
     "exact": 63
   },
   "affectedMisses": {
-    "total": 19,
+    "total": 18,
     "byReason": {
-      "consumer-usage-not-found": 5,
       "verification-inconclusive": 4,
+      "consumer-usage-not-found": 4,
       "verification-install-failed": 10
     },
     "unclassified": 0
