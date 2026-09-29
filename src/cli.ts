@@ -405,6 +405,10 @@ Options:
                               force flag (\`npm install --force\`). This does
                               NOT change which version is installed; only
                               --latest does that. Alias: --force
+  --all                       List every breaking change and gap under each
+                              affected package, including the ones with no
+                              use found here. By default those are one counted
+                              line, so the sites that break stay findable
   --json                      Emit the full scan result as JSON
   --log-level <level>         debug | info | warn | error. Default: info
   --log                       Persist a redacted diagnostic run log under
@@ -1662,6 +1666,7 @@ async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } 
     palette,
     status,
     interactive: canPrompt(),
+    showAll: flags.all === true,
   });
 
   // Announced up front, before the first registry request, so the command has

@@ -12,7 +12,7 @@ import { createStatusLine } from '../dist/util/status-line.js';
  * not in the output. See `src/report/terminal-outdated.ts`.
  */
 
-function harness(options: { unicode?: boolean; width?: number } = {}) {
+function harness(options: { unicode?: boolean; width?: number; showAll?: boolean } = {}) {
   const lines: string[] = [];
   const palette = createPalette({
     color: false,
@@ -25,7 +25,7 @@ function harness(options: { unicode?: boolean; width?: number } = {}) {
     stream: { write: () => true, columns: 120 } as unknown as NodeJS.WriteStream,
     out: (line) => lines.push(line),
   });
-  const view = createOutdatedView({ palette, status, interactive: false, width: options.width ?? 100 });
+  const view = createOutdatedView({ palette, status, interactive: false, showAll: options.showAll, width: options.width ?? 100 });
   return { view, lines, text: () => stripAnsi(lines.join('\n')) };
 }
 
@@ -198,6 +198,66 @@ describe('the grouped report', () => {
       out.split('\n').some((line) => line.trim() === '· graphql 17 release notes https://example.test/notes'),
       out,
     );
+  });
+
+  // A major version: one change that reaches this repository and several
+  // that nothing here was found to use. The one that reaches it used to be the
+  // last line printed, under a paragraph for each of the others.
+  const major = candidate({
+    name: 'glob',
+    id: 'glob',
+    status: 'ready',
+    impactCount: 1,
+    impactFiles: 1,
+    plan: {
+      impactSites: [
+        { file: 'src/app.js', line: 4, excerpt: "return glob.sync('**/*.js');", breakingChangeId: 'bc_sync', confidence: 'high' },
+      ],
+      evidence: [],
+      gaps: [{ surface: 'build, typecheck, and test', reason: 'No checks were run against this plan.' }],
+      breakingChanges: [
+        { id: 'bc_default', kind: 'removed-export', summary: '`glob` no longer has a default export.', confidence: 0.55 },
+        { id: 'bc_sync', kind: 'renamed-export', summary: '`glob.sync` is no longer exported. The new version exports `globSync` in its place.', confidence: 0.85 },
+        { id: 'bc_magic', kind: 'removed-export', summary: '`glob.hasMagic` is no longer exported.', confidence: 0.55 },
+      ],
+      dispositions: [
+        { changeId: 'bc_default', state: 'unknown', reason: 'impact-unresolved', sites: [], actionableSites: [] },
+        { changeId: 'bc_sync', state: 'actionable', reason: 'high-confidence-impact', sites: [], actionableSites: [] },
+        { changeId: 'bc_magic', state: 'unknown', reason: 'impact-unresolved', sites: [], actionableSites: [] },
+      ],
+    },
+  });
+
+  test('puts each site under the change it hits, with the line itself', () => {
+    const { view, text } = harness();
+    view.report([major] as never, () => 'glob');
+    const out = text();
+    const where = out.indexOf('Where it breaks');
+    assert.ok(where !== -1, out);
+    assert.ok(out.indexOf('`glob.sync` is no longer exported') > where);
+    assert.ok(out.includes("src/app.js:4  return glob.sync('**/*.js');"), out);
+  });
+
+  test('folds the changes nothing here uses into a count, without calling them safe', () => {
+    const { view, text } = harness();
+    view.report([major] as never, () => 'glob');
+    // The count wraps; what it says does not depend on where.
+    const out = text().replace(/\s+/g, ' ');
+    assert.ok(!out.includes('hasMagic'), out);
+    assert.ok(!out.includes('no longer has a default export'), out);
+    assert.ok(out.includes('2 other breaking changes with no use found here, which is not proof'), out);
+    assert.ok(out.includes('1 thing Drift could not check'), out);
+    assert.ok(out.includes('drift outdated --all'), out);
+  });
+
+  test('--all lists every folded change and gap', () => {
+    const { view, text } = harness({ showAll: true });
+    view.report([major] as never, () => 'glob');
+    const out = text();
+    assert.ok(out.includes('`glob.hasMagic` is no longer exported.'), out);
+    assert.ok(out.includes('`glob` no longer has a default export.'), out);
+    assert.ok(out.includes('build, typecheck, and test: No checks were run against this plan.'), out);
+    assert.ok(!out.includes('List them:'), out);
   });
 
   test('does not print a paragraph for every safe package', () => {

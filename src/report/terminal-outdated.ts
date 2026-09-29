@@ -40,6 +40,10 @@ import {
 } from '../util/terminal.js';
 import { registryUrl } from './registry-url.js';
 import { confidenceDisplay } from './confidence.js';
+import type { ImpactSite } from '../types.js';
+
+/** Sites listed under one breaking change before the rest are counted instead. */
+const SITES_PER_CHANGE = 5;
 
 /** How each severity is drawn: its glyph, its colour, and what it is called. */
 interface Facade {
@@ -173,6 +177,11 @@ export function createOutdatedView(options: {
   status: StatusLine;
   /** Whether the developer will be offered an upgrade prompt afterwards. */
   interactive: boolean;
+  /**
+   * `--all`: every breaking change and every gap, including the ones with no
+   * use found here. Off, those are one counted line under each package.
+   */
+  showAll?: boolean;
   width?: number;
 }): OutdatedView {
   const { palette: c, status } = options;
@@ -305,7 +314,7 @@ export function createOutdatedView(options: {
         const safeCurrentWidth = Math.max(...group.map((entry) => currentLabel(entry).length));
         const safeSelectedWidth = Math.max(...group.map((entry) => entry.selected.length));
         for (const candidate of group) {
-          if (detailed) detailedEntry(candidate, line, c, width, selectorFor, packageLink, where);
+          if (detailed) detailedEntry(candidate, line, c, width, selectorFor, packageLink, where, options.showAll === true);
           else
             line(
               `  ${padEnd(packageLink(candidate), safeNameWidth)}  ` +
@@ -370,6 +379,7 @@ function detailedEntry(
   selectorFor: (c: UpgradeCandidate) => string,
   packageLink: (c: UpgradeCandidate) => string,
   where: (c: UpgradeCandidate) => string,
+  showAll: boolean,
 ): void {
   const from = candidate.assumed ? `${candidate.current}?` : candidate.current;
   const target =
@@ -381,26 +391,115 @@ function detailedEntry(
   line(c('gray', `    ${candidate.ecosystem} ${c.glyph('dot')} ${where(candidate)}`));
   if (candidate.summary) line(`    ${wrap(candidate.summary, width - 4, '    ')}`);
 
-  for (const change of candidate.plan?.breakingChanges ?? []) {
-    line(`    ${change.kind}`);
-    line(`    ${confidenceDisplay(change).text}`);
-    line(`    ${wrap(change.summary, width - 4, '    ')}`);
-    const disposition = candidate.plan?.dispositions?.find((entry) => entry.changeId === change.id);
-    if (disposition && (disposition.state === 'review-only' || disposition.state === 'unknown')) {
-      line(c('cyan', `    ${disposition.state}: ${disposition.reason}`));
-    }
+  const plan = candidate.plan;
+  const changes = plan?.breakingChanges ?? [];
+  const sites = plan?.impactSites ?? [];
+  const dispositionOf = (id: string) => plan?.dispositions?.find((entry) => entry.changeId === id);
+
+  // Where it breaks, first. Every site under the change it hits, with the line
+  // itself, because the site is what someone opens next and it used to be the
+  // last thing printed, under a paragraph per breaking change — most of which
+  // reach nothing here.
+  if (sites.length > 0) {
+    const fileCount = new Set(sites.map((site) => site.file)).size;
     line();
+    line(
+      `    ${c('bold', 'Where it breaks')}` +
+        c('gray', `  ${sites.length} site${sites.length === 1 ? '' : 's'} in ${fileCount} file${fileCount === 1 ? '' : 's'}`),
+    );
+    const byChange = new Map<string, ImpactSite[]>();
+    for (const site of sites) (byChange.get(site.breakingChangeId) ?? byChange.set(site.breakingChangeId, []).get(site.breakingChangeId)!).push(site);
+    for (const [changeId, changeSites] of byChange) {
+      const change = changes.find((entry) => entry.id === changeId);
+      line();
+      if (change) {
+        line(`      ${wrap(change.summary, width - 6, '      ')}`);
+        line(c('gray', `      ${change.kind} ${c.glyph('dot')} ${confidenceDisplay(change).text}`));
+      }
+      const shown = showAll ? changeSites : changeSites.slice(0, SITES_PER_CHANGE);
+      for (const site of shown) {
+        // A manifest site is where the developer edits, not where their code
+        // calls the changed API — a dependency-convergence or enforcer break
+        // has no call site at all. Saying so is the whole reason `siteKind`
+        // exists; rendering it as an ordinary impact site would put the
+        // distinction back.
+        const declarationOnly = site.siteKind === 'manifest';
+        const location = c('cyan', `${site.file}:${site.line}`);
+        line(
+          `        ${location}` +
+            (declarationOnly
+              ? c('gray', '  — the declaration, not a call site')
+              : site.excerpt
+                ? `  ${c('gray', truncate(site.excerpt, Math.max(20, width - 12 - displayWidth(`${site.file}:${site.line}`)), c))}`
+                : ''),
+        );
+      }
+      if (changeSites.length > shown.length) {
+        line(c('gray', `        and ${changeSites.length - shown.length} more (--all lists them)`));
+      }
+    }
   }
 
+  // What Drift could not settle either way but found evidence for: a change
+  // matched only weakly, or a runtime requirement it could not check against
+  // this repository. Short, because each is one decision.
   const unresolvedRuntime = candidate.runtimeAnalyses?.filter(
     (analysis) => analysis.state === 'unknown' || analysis.state === 'partial',
   ) ?? [];
-  for (const analysis of unresolvedRuntime) {
-    line(c('cyan', `    Runtime ${analysis.runtime}: ${analysis.statement ?? analysis.reason}`));
+  const reviewOnly = changes.filter(
+    (change) =>
+      !sites.some((site) => site.breakingChangeId === change.id) &&
+      dispositionOf(change.id)?.state === 'review-only' &&
+      // The runtime analysis below says the same thing with the repository's
+      // side of it, so the bare upstream requirement would be a second copy.
+      !(change.kind === 'runtime-requirement' && unresolvedRuntime.length > 0),
+  );
+  if (unresolvedRuntime.length > 0 || reviewOnly.length > 0) {
+    line();
+    line(`    ${c('bold', 'Needs review')}`);
+    for (const analysis of unresolvedRuntime) {
+      line(c('cyan', `      ${wrap(`${analysis.runtime}: ${analysis.statement ?? analysis.reason}`, width - 6, '      ')}`));
+    }
+    for (const change of reviewOnly) {
+      line(c('cyan', `      ${wrap(change.summary, width - 6, '      ')}`));
+    }
   }
 
-  for (const gap of candidate.plan?.gaps ?? []) {
-    line(c('cyan', `    Gap · ${gap.surface}: ${gap.reason}`));
+  // Everything else Drift found upstream and did not find used here. Folded
+  // to a count by default: on a major version it is most of the list, and it
+  // buried the one site that mattered. The count keeps the claim honest — a
+  // search that found nothing is not proof of safety, so it is never dropped
+  // silently — and `--all` prints each one with why it is unresolved.
+  const rest = changes.filter(
+    (change) => !sites.some((site) => site.breakingChangeId === change.id) && !reviewOnly.includes(change) &&
+      !(change.kind === 'runtime-requirement' && unresolvedRuntime.length > 0),
+  );
+  const gaps = plan?.gaps ?? [];
+  if (showAll) {
+    if (rest.length > 0) {
+      line();
+      line(`    ${c('bold', 'No use found here')}` + c('gray', '  a search that found nothing, not proof'));
+      for (const change of rest) {
+        const disposition = dispositionOf(change.id);
+        line(
+          `      ${wrap(change.summary, width - 6, '      ')}` +
+            c('gray', `  ${c.glyph('dot')} ${change.kind}${disposition ? ` ${c.glyph('dot')} ${disposition.reason}` : ''}`),
+        );
+      }
+    }
+    if (gaps.length > 0) {
+      line();
+      line(`    ${c('bold', 'What Drift could not check')}`);
+      for (const gap of gaps) line(c('cyan', `      ${wrap(`${gap.surface}: ${gap.reason}`, width - 6, '      ')}`));
+    }
+  } else if (rest.length > 0 || gaps.length > 0) {
+    const parts = [
+      rest.length > 0 ? `${rest.length} other breaking change${rest.length === 1 ? '' : 's'} with no use found here, which is not proof` : '',
+      gaps.length > 0 ? `${gaps.length} thing${gaps.length === 1 ? '' : 's'} Drift could not check` : '',
+    ].filter(Boolean);
+    line();
+    line(c('gray', `    ${wrap(`${parts.join(` ${c.glyph('dot')} `)}.`, width - 4, '    ')}`));
+    line(c('gray', `    List them:  ${c('cyan', 'drift outdated --all')}`));
   }
 
   // What was actually run, and what it said. A prediction and a measurement
@@ -417,30 +516,7 @@ function detailedEntry(
     }
   }
 
-  // The files, not the count. "12 sites in 4 files" is a number; the four
-  // paths are the thing someone opens next.
-  const files = [...new Set((candidate.plan?.impactSites ?? []).map((site) => site.file))];
-  if (files.length > 0) {
-    const shown = files.slice(0, 5);
-    for (const file of shown) {
-      const sites = (candidate.plan?.impactSites ?? []).filter((site) => site.file === file);
-      const first = sites[0];
-      // A manifest site is where the developer edits, not where their code
-      // calls the changed API — a dependency-convergence or enforcer break has
-      // no call site at all. Saying so is the whole reason `siteKind` exists;
-      // rendering it as an ordinary impact site would put the distinction back.
-      const declarationOnly = sites.every((site) => site.siteKind === 'manifest');
-      line(
-        `    ${c('cyan', first ? `${file}:${first.line}` : file)}` +
-          c('gray', sites.length > 1 ? `  (${sites.length} sites)` : '') +
-          (declarationOnly ? c('gray', '  — the declaration, not a call site') : ''),
-      );
-    }
-    if (files.length > shown.length) {
-      line(c('gray', `    and ${files.length - shown.length} more file${files.length - shown.length === 1 ? '' : 's'}`));
-    }
-  }
-
+  line();
   // Where the claim came from. An upgrade report that cannot be checked is an
   // opinion, and the link is what makes it something else.
   const cited = (candidate.plan?.evidence ?? []).filter((entry) => entry.url).slice(0, 2);
