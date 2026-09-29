@@ -421,6 +421,9 @@ function renderItem(item: ThreadItem, vm: ViewModel): string {
     case 'packages':
       return renderPackages(item, vm);
 
+    case 'findings':
+      return renderFindings(item);
+
     case 'tasks':
       return renderTasks(item);
 
@@ -1034,6 +1037,70 @@ function renderQuestion(item: Extract<ThreadItem, { kind: 'question' }>): string
  * widgets that happen to be stacked. Rows carry no borders of their own; the
  * card supplies the frame.
  */
+/**
+ * What `/recent` found, per dependency that moved: every break with its fix
+ * and the exact lines it reaches, through the same renderer the scan uses
+ * under a package. The dependency this commit already moved has no target
+ * to pick or upgrade to, so none of the scan's install controls appear.
+ */
+function renderFindings(item: Extract<ThreadItem, { kind: 'findings' }>): string {
+  const rows = item.groups.map((group) => {
+    const plan = group.plan;
+    const sites = plan.impactSites.length;
+    const files = new Set(plan.impactSites.map((site) => site.file)).size;
+    const dispositions = plan.dispositions ?? [];
+    const severity = sites > 0
+      ? 'affected'
+      : dispositions.some((d) => d.state === 'review-only')
+        ? 'review-required'
+        : dispositions.length > 0 && dispositions.every((d) => d.state === 'unaffected')
+          ? 'clean'
+          : 'localization-incomplete';
+    const verdict = sites > 0
+      ? `${files} file${files === 1 ? '' : 's'} · ${sites} site${sites === 1 ? '' : 's'}`
+      : severity === 'review-required'
+        ? 'Review'
+        : severity === 'clean'
+          ? 'Not affected'
+          : 'Not established';
+    const ref: PackageRef = {
+      id: group.id,
+      name: group.name,
+      ecosystem: group.ecosystem,
+      current: group.from,
+      selected: group.to,
+    };
+    const breaks = plan.breakingChanges.length;
+
+    return `<details class="pkg ${severity}" data-key="finding:${escapeAttr(group.id)}" ${sites > 0 ? 'open' : ''}>
+      <summary>
+        <span class="dot ${severity}"></span>
+        <span class="pkg-name">
+          <b>${escapeHtml(group.name)}</b>
+          ${group.workspace ? `<span class="kind">${escapeHtml(group.workspace)}</span>` : ''}
+          <span class="versions">${escapeHtml(group.from)} <span class="arrow">→</span> ${escapeHtml(group.to)}</span>
+        </span>
+        <span class="verdict ${severity}">${escapeHtml(verdict)}</span>
+      </summary>
+      <div class="pkg-body">
+        <p class="verdict-long">${breaks} breaking change${breaks === 1 ? '' : 's'} upstream${
+          sites > 0 ? `; ${sites === 1 ? 'this one reaches' : 'these reach'} your code.` : '.'
+        }</p>
+        ${renderCandidateDetail(ref, plan)}
+      </div>
+    </details>`;
+  });
+
+  return `<div class="turn assistant">
+    <div class="card packages">
+      <div class="card-head">
+        <span class="card-title">${ICON_PACKAGE}<b>What changed</b></span>
+      </div>
+      <div class="pkg-list">${rows.join('')}</div>
+    </div>
+  </div>`;
+}
+
 function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: ViewModel): string {
   const candidates = item.ids.map((id) => vm.candidates[id]).filter((c): c is UpgradeCandidate => Boolean(c));
   if (candidates.length === 0) {
@@ -1704,7 +1771,10 @@ function toolRequestReason(id: string): string {
   return 'Optional helper: lets Drift gather stronger evidence for this upgrade.';
 }
 
-function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan, lazySections = false): string {
+/** What the finding renderers read about the package — a scan candidate, or one dependency of a `/recent` plan. */
+type PackageRef = Pick<UpgradeCandidate, 'id' | 'name' | 'ecosystem' | 'current' | 'selected'>;
+
+function renderCandidateDetail(candidate: PackageRef, plan: RemediationPlan, lazySections = false): string {
   const matched = plan.breakingChanges.filter((change) =>
     plan.impactSites.some((site) => site.breakingChangeId === change.id),
   );
@@ -1737,7 +1807,7 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
 }
 
 function renderBreak(
-  candidate: UpgradeCandidate,
+  candidate: PackageRef,
   change: BreakingChange,
   plan: RemediationPlan,
   expanded: boolean,
@@ -1799,7 +1869,7 @@ function renderBreak(
 }
 
 /** The package coordinates any before/after under this candidate can be diffed against. */
-function diffContextFor(candidate: UpgradeCandidate, symbol?: string): DiffContext {
+function diffContextFor(candidate: PackageRef, symbol?: string): DiffContext {
   return {
     language: languageForEcosystem(candidate.ecosystem),
     source: {
@@ -1821,7 +1891,7 @@ function diffContextFor(candidate: UpgradeCandidate, symbol?: string): DiffConte
  * actually has — fetches the two published versions and opens them in the
  * editor's own diff view, rather than asking the reader to go find them.
  */
-function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence[], lazy = false): string {
+function renderEvidence(candidate: PackageRef, evidence: readonly Evidence[], lazy = false): string {
   return `<div class="evidence">
     ${evidence
       .map((entry) => renderEvidenceEntry(candidate, entry, lazy))
@@ -1829,7 +1899,7 @@ function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence
   </div>`;
 }
 
-function renderEvidenceEntry(candidate: UpgradeCandidate, entry: Evidence, lazy = false): string {
+function renderEvidenceEntry(candidate: PackageRef, entry: Evidence, lazy = false): string {
   return `<details data-key="ev:${escapeAttr(entry.id)}"${lazy ? ` data-detail-section="evidence:${escapeAttr(entry.id)}"` : ''}>
           <summary>
             <span class="source">${escapeHtml(entry.source)}</span>
@@ -4349,6 +4419,16 @@ function requestCandidateDetail(details) {
 /* Composer                                                            */
 /* ------------------------------------------------------------------ */
 
+/* Sending always jumps to the bottom, where the reply will appear. Scroll-hold
+   is right while reading, but a command sent from further up (a welcome button
+   above a long scan, say) would otherwise run entirely out of sight and look
+   like nothing happened. \`capture\` reads the position back from the DOM, so
+   the thread itself has to move, not just \`ui\`. */
+function followThread() {
+  if (thread) thread.scrollTop = thread.scrollHeight;
+  ui.atBottom = true;
+}
+
 function send() {
   if (!input) return;
   const text = input.value.trim();
@@ -4357,6 +4437,7 @@ function send() {
   ui.draft = '';
   grow();
   hideCommands();
+  followThread();
   save();
   vscode.postMessage({ type: 'submit', text });
 }
@@ -4646,6 +4727,7 @@ document.addEventListener('click', (event) => {
   }
   if (action === 'run') {
     lockActions(target);
+    followThread();
     vscode.postMessage({ type: 'submit', text: target.dataset.command });
     return;
   }

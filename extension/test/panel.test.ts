@@ -12,6 +12,7 @@ import {
   type ViewModel,
 } from '../src/ui/webview.js';
 import type { TaskGroup } from '../src/session.js';
+import { findingGroupsOf } from '../src/findings.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
 import type { RemediationPlan } from '../../src/types.js';
@@ -2306,4 +2307,55 @@ describe('Quick Scan vs Deep Verification', () => {
     );
     assert.match(someEligible, /data-action="verifyAll"/);
   });
+});
+
+test('`/recent` shows each break, its fix and the lines it reaches — not just a file count', () => {
+  const p = plan({
+    changes: [
+      { name: 'glob', ecosystem: 'npm', from: '8.1.0', to: '13.0.6', kind: 'runtime', bump: 'major', manifestPath: 'package.json' },
+      { name: 'quiet', ecosystem: 'npm', from: '1.0.0', to: '1.0.1', kind: 'runtime', bump: 'patch', manifestPath: 'package.json' },
+    ],
+    breakingChanges: [
+      {
+        id: 'glob-sync',
+        dependency: 'glob',
+        kind: 'removed-export',
+        summary: '`glob.sync` is no longer exported',
+        remediation: 'Import `globSync` instead.',
+        symbols: ['glob.sync'],
+        citations: ['glob-types'],
+        confidence: 'high',
+      } as never,
+      {
+        id: 'glob-default',
+        dependency: 'glob',
+        kind: 'removed-export',
+        summary: '`glob` no longer has a default export',
+        remediation: 'Use the named exports.',
+        symbols: ['glob'],
+        citations: [],
+        confidence: 'medium',
+      } as never,
+    ],
+    evidence: [
+      { id: 'glob-types', source: 'types-diff', dependency: 'glob', title: 'Type declarations', content: 'd.ts diff', weight: 1 } as never,
+      { id: 'quiet-log', source: 'changelog', dependency: 'quiet', title: 'Changelog', content: 'nothing', weight: 0.5 } as never,
+    ],
+    impactSites: [
+      { breakingChangeId: 'glob-sync', file: 'src/app.js', line: 4, excerpt: 'glob.sync("*.js")', matchedSymbol: 'glob.sync', confidence: 'high' },
+    ],
+  });
+
+  const groups = findingGroupsOf(p, 'r1');
+  assert.equal(groups.length, 1, 'a dependency with no breaking changes has nothing to show');
+  assert.equal(groups[0]!.plan.evidence.some((e) => e.id === 'quiet-log'), false, 'evidence stays with its own dependency');
+
+  const html = renderBody(model({ thread: [{ id: 'i1', kind: 'findings', groups }] }));
+  assert.match(html, /glob<\/b>/);
+  assert.match(html, /8\.1\.0 <span class="arrow">→<\/span> 13\.0\.6/);
+  assert.match(html, /1 file · 1 site/);
+  assert.match(html, /data-action="openFile" data-file="src\/app\.js" data-line="4"/);
+  assert.match(html, /globSync/, 'the fix is shown');
+  assert.match(html, /1 upstream change with no local match found/);
+  assert.doesNotMatch(html, /data-action="pickVersion"|data-action="upgrade"/, 'the change is already in git; nothing to install');
 });

@@ -6,7 +6,10 @@ type Controller = {
   sendBody(surface: never, body: string): void;
 };
 
-const controller = DriftHomeView.prototype as unknown as Controller;
+// The real methods, with only the output channel a stall reports to stubbed.
+const controller = Object.assign(Object.create(DriftHomeView.prototype), {
+  output: { warn() {}, info() {} },
+}) as unknown as Controller;
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function surface(postMessage: (message: unknown) => Promise<boolean>) {

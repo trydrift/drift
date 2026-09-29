@@ -22,6 +22,7 @@ import type { NestedProject } from '../../../src/detect/nested.js';
 import {
   DriftSession,
   type Attachment,
+  type FindingGroup,
   type SessionBranchMode,
   type SessionCommitMode,
   type SessionEffort,
@@ -89,6 +90,7 @@ import { runRepoDiagnostic } from '../run-diagnostics.js';
 import { countWork, startSpan } from '../../../src/util/diagnostics.js';
 import { clearHttpCache } from '../../../src/util/http.js';
 import { chunkDetail, takeCandidateSummaryBatch } from './update-protocol.js';
+import { findingGroupsOf } from '../findings.js';
 import {
   makeNonce,
   renderBody,
@@ -485,6 +487,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           this.sendBody(surface, renderBody(this.viewModel()));
           return;
         }
+        // Anything the renderer sends proves it is alive and consuming, so a
+        // surface given up on after two lost acknowledgements — usually an
+        // extension host blocked past the ack timeout, not a dead webview —
+        // gets the latest state again instead of staying frozen until a
+        // reload nothing ever triggers. Before this, a click ran its command
+        // and the panel never showed any of it.
+        if (surface.stalled && message.type !== 'uiAck') {
+          surface.stalled = false;
+          surface.resyncAttempted = false;
+          surface.postFailures = 0;
+          surface.pendingBody = null;
+          this.output.info('Drift: panel updates resumed after a stall.');
+          this.sendBody(surface, renderBody(this.viewModel()));
+        }
         if (message.type === 'uiAck') {
           if (surface.awaitingSequence !== message.sequence) return;
           if (surface.ackTimer) clearTimeout(surface.ackTimer);
@@ -852,18 +868,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
       case 'openVersionDiff': {
         const candidate = this.candidates.get(message.id);
-        if (!candidate) {
+        // `/recent` findings are not scan candidates, but carry the same
+        // coordinates and the same "View diff" button.
+        const finding = candidate ? undefined : this.findingGroup(message.id);
+        const source = candidate
+          ? { ecosystem: candidate.ecosystem, name: candidate.name, from: candidate.current, to: candidate.selected }
+          : finding
+            ? { ecosystem: finding.ecosystem, name: finding.name, from: finding.from, to: finding.to }
+            : null;
+        if (!source) {
           this.output.warn(`Drift: "View diff" was clicked for a package no longer on the list (${message.id}).`);
           return;
         }
         try {
-          await openPackageVersionDiff({
-            ecosystem: candidate.ecosystem,
-            name: candidate.name,
-            from: candidate.current,
-            to: candidate.selected,
-            output: this.output,
-          });
+          await openPackageVersionDiff({ ...source, output: this.output });
         } finally {
           this.render();
         }
@@ -1837,10 +1855,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         );
       } else {
         this.session.say(
-          `**${files} file${files === 1 ? '' : 's'}** in this repository use an API that changed, across ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'} — static analysis only, not deeply verified. Say \`/fix\` and **${this.agentLabel()}** will work through them, one commit per concern.`,
+          `**${files} file${files === 1 ? '' : 's'}** in this repository ${files === 1 ? 'uses' : 'use'} an API that changed, across ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'} — static analysis only, not deeply verified. Say \`/fix\` and **${this.agentLabel()}** will work through them, one commit per concern.`,
           deepVerifyAction,
         );
       }
+
+      // The verdict above is a count; this is what it counted — each break,
+      // its fix, and the exact lines — shown the way the scan shows a package.
+      this.session.findings(findingGroupsOf(plan, `recent-${Date.now().toString(36)}`));
     });
   }
 
@@ -5692,6 +5714,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
   }
 
+  /** A `/recent` finding group anywhere in the open conversation, by id. */
+  private findingGroup(id: string): FindingGroup | undefined {
+    for (const item of this.session.thread) {
+      if (item.kind !== 'findings') continue;
+      const group = item.groups.find((entry) => entry.id === id);
+      if (group) return group;
+    }
+    return undefined;
+  }
+
   private busyMessage(): string {
     return this.cancellable
       ? 'Already working — stop the current run first.'
@@ -5996,6 +6028,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (surface.postFailures >= 2) {
       surface.awaitingSequence = null;
       surface.stalled = true;
+      this.output.warn('Drift: the panel rejected two updates in a row; holding the latest until it responds.');
       return;
     }
 
@@ -6028,6 +6061,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         // not consuming. Retain one latest state and wait for a webview reload.
         surface.stalled = true;
         surface.pendingBody = latest;
+        this.output.warn('Drift: the panel did not acknowledge two updates in a row; holding the latest until it responds.');
       }
     }, 2_000);
   }
