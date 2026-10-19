@@ -6,11 +6,11 @@
   "language": "Python",
   "repo": "https://github.com/scrapy/scrapy",
   "blurb": "The web crawling framework that most Python scrapers are built on.",
-  "capturedAt": "2026-09-23T23:04:31.985Z",
-  "commit": "91d87364637c1b18fd5bb21d1ed3bb356cf9b6fc",
+  "capturedAt": "2026-10-19T09:56:43.141Z",
+  "commit": "8fbc11e10e717bfa7328a344a23c67f14b2f6c03",
   "engine": "4a6cacb429e65a6e",
-  "durationMs": 4174,
-  "packagesChecked": 33,
+  "durationMs": 3817,
+  "packagesChecked": 34,
   "manifests": [
     "pyproject.toml",
     "docs/requirements.in"
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 47,
+      "at": 48,
       "phase": "Looking for manifests",
       "detail": "scrapy/scrapy",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "progress",
-      "at": 55,
+      "at": 54,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
@@ -53,15 +53,15 @@
       "type": "candidate-upsert",
       "at": 59,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
+        "id": "docs/requirements.in#h2@4.4.1",
         "name": "h2",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "4.4.1",
+        "latest": "4.4.1",
+        "selected": "4.4.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -97,15 +97,15 @@
       "type": "candidate-upsert",
       "at": 59,
       "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
+        "id": "docs/requirements.in#pydantic@2.14.1",
         "name": "pydantic",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
+        "current": "2.14.1",
+        "latest": "2.14.1",
+        "selected": "2.14.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -403,10 +403,186 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 346,
+      "at": 59,
       "candidate": {
-        "id": "pyproject.toml#cssselect@1.5.0",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 225,
+      "candidate": {
+        "id": "pyproject.toml#pydispatcher@3.0.0a2",
+        "name": "pydispatcher",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "3.0.0a2",
+        "latest": "3.0.0a2",
+        "selected": "3.0.0a2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 235,
+      "candidate": {
+        "id": "pyproject.toml#formerly@0.1.0",
+        "name": "formerly",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.1.0",
+        "latest": "0.1.0",
+        "selected": "0.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 243,
+      "candidate": {
+        "id": "pyproject.toml#cssselect@1.6.0",
         "name": "cssselect",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.6.0",
+        "latest": "1.6.0",
+        "selected": "1.6.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 256,
+      "candidate": {
+        "id": "pyproject.toml#itemloaders@1.5.0",
+        "name": "itemloaders",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
@@ -447,271 +623,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 347,
-      "candidate": {
-        "id": "pyproject.toml#service-identity@26.1.0",
-        "name": "service-identity",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "26.1.0",
-        "latest": "26.1.0",
-        "selected": "26.1.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 350,
-      "candidate": {
-        "id": "pyproject.toml#itemloaders@1.4.0",
-        "name": "itemloaders",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.0",
-        "selected": "1.4.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 350,
-      "candidate": {
-        "id": "pyproject.toml#protego@0.7.0",
-        "name": "protego",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.7.0",
-        "latest": "0.7.0",
-        "selected": "0.7.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 363,
-      "candidate": {
-        "id": "pyproject.toml#queuelib@1.10.0",
-        "name": "queuelib",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 368,
-      "candidate": {
-        "id": "pyproject.toml#parsel@1.11.0",
-        "name": "parsel",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.11.0",
-        "latest": "1.11.0",
-        "selected": "1.11.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 400,
-      "candidate": {
-        "id": "pyproject.toml#itemadapter@0.13.1",
-        "name": "itemadapter",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.13.1",
-        "latest": "0.13.1",
-        "selected": "0.13.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 404,
+      "at": 264,
       "candidate": {
         "id": "pyproject.toml#defusedxml@0.8.0rc2",
         "name": "defusedxml",
@@ -755,17 +667,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 416,
+      "at": 282,
       "candidate": {
-        "id": "pyproject.toml#pydispatcher@2.0.9a1",
-        "name": "pydispatcher",
+        "id": "pyproject.toml#parsel@1.12.1",
+        "name": "parsel",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.0.9a1",
-        "latest": "2.0.9a1",
-        "selected": "2.0.9a1",
+        "current": "1.12.1",
+        "latest": "1.12.1",
+        "selected": "1.12.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -799,17 +711,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 420,
+      "at": 285,
       "candidate": {
-        "id": "pyproject.toml#pypydispatcher@2.1.2",
-        "name": "pypydispatcher",
+        "id": "pyproject.toml#protego@0.7.0",
+        "name": "protego",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "2.1.2",
-        "latest": "2.1.2",
-        "selected": "2.1.2",
+        "current": "0.7.0",
+        "latest": "0.7.0",
+        "selected": "0.7.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -843,7 +755,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 424,
+      "at": 291,
       "candidate": {
         "id": "pyproject.toml#packaging@26.3",
         "name": "packaging",
@@ -887,17 +799,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 431,
+      "at": 292,
       "candidate": {
-        "id": "pyproject.toml#tldextract@5.3.2",
-        "name": "tldextract",
+        "id": "pyproject.toml#itemadapter@0.13.1",
+        "name": "itemadapter",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "5.3.2",
-        "latest": "5.3.2",
-        "selected": "5.3.2",
+        "current": "0.13.1",
+        "latest": "0.13.1",
+        "selected": "0.13.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -931,7 +843,227 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 443,
+      "at": 305,
+      "candidate": {
+        "id": "pyproject.toml#queuelib@1.10.0",
+        "name": "queuelib",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 307,
+      "candidate": {
+        "id": "pyproject.toml#service-identity@26.1.0",
+        "name": "service-identity",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "26.1.0",
+        "latest": "26.1.0",
+        "selected": "26.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 309,
+      "candidate": {
+        "id": "pyproject.toml#aioftp@0.28.3",
+        "name": "aioftp",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.28.3",
+        "latest": "0.28.3",
+        "selected": "0.28.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 326,
+      "candidate": {
+        "id": "pyproject.toml#tldextract@5.4.0",
+        "name": "tldextract",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "5.4.0",
+        "latest": "5.4.0",
+        "selected": "5.4.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 328,
+      "candidate": {
+        "id": "pyproject.toml#typing-extensions@4.16.0",
+        "name": "typing-extensions",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "4.16.0",
+        "latest": "4.16.0",
+        "selected": "4.16.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 331,
       "candidate": {
         "id": "pyproject.toml#pyopenssl@26.4.0",
         "name": "pyopenssl",
@@ -975,227 +1107,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 449,
-      "candidate": {
-        "id": "pyproject.toml#platformdirs@4.11.12",
-        "name": "platformdirs",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "4.11.12",
-        "latest": "4.11.12",
-        "selected": "4.11.12",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 451,
-      "candidate": {
-        "id": "pyproject.toml#w3lib@2.4.1",
-        "name": "w3lib",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.4.1",
-        "latest": "2.4.1",
-        "selected": "2.4.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 466,
-      "candidate": {
-        "id": "docs/requirements.in#sphinx-scrapy@0.6.1",
-        "name": "sphinx-scrapy",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "0.6.1",
-        "latest": "0.6.1",
-        "selected": "0.6.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 519,
-      "candidate": {
-        "id": "pyproject.toml#twisted@26.4.0",
-        "name": "twisted",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "26.4.0",
-        "latest": "26.4.0",
-        "selected": "26.4.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 554,
-      "candidate": {
-        "id": "pyproject.toml#brotlicffi@1.2.0.2",
-        "name": "brotlicffi",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.2.0.2",
-        "latest": "1.2.0.2",
-        "selected": "1.2.0.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 564,
+      "at": 355,
       "candidate": {
         "id": "pyproject.toml#brotli@1.2.0",
         "name": "brotli",
@@ -1239,17 +1151,149 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 712,
+      "at": 373,
       "candidate": {
-        "id": "pyproject.toml#backports-zstd@1.7.0",
+        "id": "pyproject.toml#platformdirs@4.13.5",
+        "name": "platformdirs",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "4.13.5",
+        "latest": "4.13.5",
+        "selected": "4.13.5",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 405,
+      "candidate": {
+        "id": "pyproject.toml#twisted@26.4.0",
+        "name": "twisted",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "26.4.0",
+        "latest": "26.4.0",
+        "selected": "26.4.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 422,
+      "candidate": {
+        "id": "pyproject.toml#w3lib@2.5.0",
+        "name": "w3lib",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.0",
+        "latest": "2.5.0",
+        "selected": "2.5.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 635,
+      "candidate": {
+        "id": "pyproject.toml#backports-zstd@1.8.0",
         "name": "backports-zstd",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "1.7.0",
-        "latest": "1.7.0",
-        "selected": "1.7.0",
+        "current": "1.8.0",
+        "latest": "1.8.0",
+        "selected": "1.8.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1283,17 +1327,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1134,
+      "at": 935,
       "candidate": {
-        "id": "pyproject.toml#charset-normalizer@3.5.1",
+        "id": "pyproject.toml#charset-normalizer@3.5.2",
         "name": "charset-normalizer",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "3.5.1",
-        "latest": "3.5.1",
-        "selected": "3.5.1",
+        "current": "3.5.2",
+        "latest": "3.5.2",
+        "selected": "3.5.2",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1327,17 +1371,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1282,
+      "at": 973,
       "candidate": {
-        "id": "pyproject.toml#zope-interface@8.6",
+        "id": "pyproject.toml#zope-interface@8.7",
         "name": "zope-interface",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "8.6",
-        "latest": "8.6",
-        "selected": "8.6",
+        "current": "8.7",
+        "latest": "8.7",
+        "selected": "8.7",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1371,17 +1415,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1959,
+      "at": 1433,
       "candidate": {
-        "id": "pyproject.toml#cryptography@50.0.1",
+        "id": "pyproject.toml#cryptography@50.0.2",
         "name": "cryptography",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "50.0.1",
-        "latest": "50.0.1",
-        "selected": "50.0.1",
+        "current": "50.0.2",
+        "latest": "50.0.2",
+        "selected": "50.0.2",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1415,7 +1459,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2472,
+      "at": 1863,
       "candidate": {
         "id": "pyproject.toml#lxml@7.0.0b1",
         "name": "lxml",
@@ -1459,7 +1503,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2794,
+      "at": 2418,
       "candidate": {
         "id": "pyproject.toml#aiohttp@4.0.0a1",
         "name": "aiohttp",
@@ -1503,33 +1547,33 @@
     },
     {
       "type": "progress",
-      "at": 2794,
+      "at": 2418,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
-      "total": 33
+      "total": 34
     },
     {
       "type": "progress",
-      "at": 2794,
+      "at": 2418,
       "phase": "Checking registries",
-      "detail": "33 direct dependencies",
+      "detail": "34 direct dependencies",
       "done": 0,
-      "total": 33
+      "total": 34
     },
     {
       "type": "candidate-upsert",
-      "at": 2794,
+      "at": 2418,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
+        "id": "docs/requirements.in#h2@4.4.1",
         "name": "h2",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "4.4.1",
+        "latest": "4.4.1",
+        "selected": "4.4.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1563,17 +1607,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2794,
+      "at": 2418,
       "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
+        "id": "docs/requirements.in#pydantic@2.14.1",
         "name": "pydantic",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
+        "current": "2.14.1",
+        "latest": "2.14.1",
+        "selected": "2.14.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -1607,7 +1651,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2418,
       "candidate": {
         "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0",
         "name": "scrapy-spider-metadata",
@@ -1651,7 +1695,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2418,
       "candidate": {
         "id": "docs/requirements.in#sphinx@9.1.0",
         "name": "sphinx",
@@ -1695,7 +1739,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2418,
       "candidate": {
         "id": "docs/requirements.in#sphinx-notfound-page@1.1.0",
         "name": "sphinx-notfound-page",
@@ -1739,7 +1783,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2418,
       "candidate": {
         "id": "docs/requirements.in#sphinx-reredirects@1.1.0",
         "name": "sphinx-reredirects",
@@ -1783,7 +1827,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2419,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0",
         "name": "sphinx-rtd-theme",
@@ -1827,7 +1871,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2419,
       "candidate": {
         "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0",
         "name": "sphinx-rtd-dark-mode",
@@ -1871,10 +1915,186 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
+      "at": 2419,
       "candidate": {
-        "id": "pyproject.toml#cssselect@1.5.0",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
+        "ecosystem": "pypi",
+        "manifestPath": "docs/requirements.in",
+        "workspace": "docs",
+        "workspaceName": null,
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#pydispatcher@3.0.0a2",
+        "name": "pydispatcher",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "3.0.0a2",
+        "latest": "3.0.0a2",
+        "selected": "3.0.0a2",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#formerly@0.1.0",
+        "name": "formerly",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.1.0",
+        "latest": "0.1.0",
+        "selected": "0.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#cssselect@1.6.0",
         "name": "cssselect",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.6.0",
+        "latest": "1.6.0",
+        "selected": "1.6.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#itemloaders@1.5.0",
+        "name": "itemloaders",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
@@ -1915,271 +2135,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2795,
-      "candidate": {
-        "id": "pyproject.toml#service-identity@26.1.0",
-        "name": "service-identity",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "26.1.0",
-        "latest": "26.1.0",
-        "selected": "26.1.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2795,
-      "candidate": {
-        "id": "pyproject.toml#itemloaders@1.4.0",
-        "name": "itemloaders",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.4.0",
-        "latest": "1.4.0",
-        "selected": "1.4.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2795,
-      "candidate": {
-        "id": "pyproject.toml#protego@0.7.0",
-        "name": "protego",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.7.0",
-        "latest": "0.7.0",
-        "selected": "0.7.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2795,
-      "candidate": {
-        "id": "pyproject.toml#queuelib@1.10.0",
-        "name": "queuelib",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.10.0",
-        "latest": "1.10.0",
-        "selected": "1.10.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2795,
-      "candidate": {
-        "id": "pyproject.toml#parsel@1.11.0",
-        "name": "parsel",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.11.0",
-        "latest": "1.11.0",
-        "selected": "1.11.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2796,
-      "candidate": {
-        "id": "pyproject.toml#itemadapter@0.13.1",
-        "name": "itemadapter",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "0.13.1",
-        "latest": "0.13.1",
-        "selected": "0.13.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2796,
+      "at": 2419,
       "candidate": {
         "id": "pyproject.toml#defusedxml@0.8.0rc2",
         "name": "defusedxml",
@@ -2222,200 +2178,187 @@
       }
     },
     {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#parsel@1.12.1",
+        "name": "parsel",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.12.1",
+        "latest": "1.12.1",
+        "selected": "1.12.1",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#protego@0.7.0",
+        "name": "protego",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.7.0",
+        "latest": "0.7.0",
+        "selected": "0.7.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
       "type": "candidate-drop",
-      "at": 2796,
-      "id": "pyproject.toml#cssselect@1.5.0"
+      "at": 2419,
+      "id": "pyproject.toml#pydispatcher@3.0.0a2"
     },
     {
       "type": "progress",
-      "at": 2796,
+      "at": 2419,
       "phase": "Up to date",
-      "detail": "cssselect@1.5.0",
+      "detail": "pydispatcher@3.0.0a2",
       "done": 1,
-      "total": 33
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2796,
-      "id": "pyproject.toml#service-identity@26.1.0"
+      "at": 2419,
+      "id": "pyproject.toml#formerly@0.1.0"
     },
     {
       "type": "progress",
-      "at": 2796,
+      "at": 2419,
       "phase": "Up to date",
-      "detail": "service-identity@26.1.0",
+      "detail": "formerly@0.1.0",
       "done": 2,
-      "total": 33
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2796,
-      "id": "pyproject.toml#itemloaders@1.4.0"
+      "at": 2419,
+      "id": "pyproject.toml#cssselect@1.6.0"
     },
     {
       "type": "progress",
-      "at": 2796,
+      "at": 2419,
       "phase": "Up to date",
-      "detail": "itemloaders@1.4.0",
+      "detail": "cssselect@1.6.0",
       "done": 3,
-      "total": 33
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2796,
-      "id": "pyproject.toml#protego@0.7.0"
+      "at": 2419,
+      "id": "pyproject.toml#itemloaders@1.5.0"
     },
     {
       "type": "progress",
-      "at": 2796,
+      "at": 2419,
       "phase": "Up to date",
-      "detail": "protego@0.7.0",
+      "detail": "itemloaders@1.5.0",
       "done": 4,
-      "total": 33
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2796,
-      "id": "pyproject.toml#queuelib@1.10.0"
-    },
-    {
-      "type": "progress",
-      "at": 2796,
-      "phase": "Up to date",
-      "detail": "queuelib@1.10.0",
-      "done": 5,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2796,
-      "id": "pyproject.toml#parsel@1.11.0"
-    },
-    {
-      "type": "progress",
-      "at": 2796,
-      "phase": "Up to date",
-      "detail": "parsel@1.11.0",
-      "done": 6,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2796,
-      "id": "pyproject.toml#itemadapter@0.13.1"
-    },
-    {
-      "type": "progress",
-      "at": 2796,
-      "phase": "Up to date",
-      "detail": "itemadapter@0.13.1",
-      "done": 7,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2796,
+      "at": 2419,
       "id": "pyproject.toml#defusedxml@0.8.0rc2"
     },
     {
       "type": "progress",
-      "at": 2796,
+      "at": 2419,
       "phase": "Up to date",
       "detail": "defusedxml@0.8.0rc2",
-      "done": 8,
-      "total": 33
+      "done": 5,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2419,
+      "id": "pyproject.toml#parsel@1.12.1"
+    },
+    {
+      "type": "progress",
+      "at": 2419,
+      "phase": "Up to date",
+      "detail": "parsel@1.12.1",
+      "done": 6,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2419,
+      "id": "pyproject.toml#protego@0.7.0"
+    },
+    {
+      "type": "progress",
+      "at": 2419,
+      "phase": "Up to date",
+      "detail": "protego@0.7.0",
+      "done": 7,
+      "total": 34
     },
     {
       "type": "candidate-upsert",
-      "at": 2796,
-      "candidate": {
-        "id": "pyproject.toml#pydispatcher@2.0.9a1",
-        "name": "pydispatcher",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.0.9a1",
-        "latest": "2.0.9a1",
-        "selected": "2.0.9a1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2796,
-      "candidate": {
-        "id": "pyproject.toml#pypydispatcher@2.1.2",
-        "name": "pypydispatcher",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.1.2",
-        "latest": "2.1.2",
-        "selected": "2.1.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2796,
+      "at": 2419,
       "candidate": {
         "id": "pyproject.toml#packaging@26.3",
         "name": "packaging",
@@ -2459,17 +2402,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2796,
+      "at": 2419,
       "candidate": {
-        "id": "pyproject.toml#tldextract@5.3.2",
-        "name": "tldextract",
+        "id": "pyproject.toml#itemadapter@0.13.1",
+        "name": "itemadapter",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "5.3.2",
-        "latest": "5.3.2",
-        "selected": "5.3.2",
+        "current": "0.13.1",
+        "latest": "0.13.1",
+        "selected": "0.13.1",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -2503,7 +2446,318 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2796,
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#queuelib@1.10.0",
+        "name": "queuelib",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "1.10.0",
+        "latest": "1.10.0",
+        "selected": "1.10.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#service-identity@26.1.0",
+        "name": "service-identity",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "26.1.0",
+        "latest": "26.1.0",
+        "selected": "26.1.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#aioftp@0.28.3",
+        "name": "aioftp",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "0.28.3",
+        "latest": "0.28.3",
+        "selected": "0.28.3",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#tldextract@5.4.0",
+        "name": "tldextract",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "5.4.0",
+        "latest": "5.4.0",
+        "selected": "5.4.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2419,
+      "candidate": {
+        "id": "pyproject.toml#typing-extensions@4.16.0",
+        "name": "typing-extensions",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "4.16.0",
+        "latest": "4.16.0",
+        "selected": "4.16.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#packaging@26.3"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "packaging@26.3",
+      "done": 8,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#itemadapter@0.13.1"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "itemadapter@0.13.1",
+      "done": 9,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#queuelib@1.10.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "queuelib@1.10.0",
+      "done": 10,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#service-identity@26.1.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "service-identity@26.1.0",
+      "done": 11,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#aioftp@0.28.3"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "aioftp@0.28.3",
+      "done": 12,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#tldextract@5.4.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "tldextract@5.4.0",
+      "done": 13,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#typing-extensions@4.16.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "typing-extensions@4.16.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2420,
       "candidate": {
         "id": "pyproject.toml#pyopenssl@26.4.0",
         "name": "pyopenssl",
@@ -2547,331 +2801,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2796,
-      "candidate": {
-        "id": "pyproject.toml#platformdirs@4.11.12",
-        "name": "platformdirs",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "4.11.12",
-        "latest": "4.11.12",
-        "selected": "4.11.12",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2796,
-      "candidate": {
-        "id": "pyproject.toml#w3lib@2.4.1",
-        "name": "w3lib",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "2.4.1",
-        "latest": "2.4.1",
-        "selected": "2.4.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2796,
-      "candidate": {
-        "id": "docs/requirements.in#sphinx-scrapy@0.6.1",
-        "name": "sphinx-scrapy",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "0.6.1",
-        "latest": "0.6.1",
-        "selected": "0.6.1",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "pyproject.toml#pydispatcher@2.0.9a1"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "pydispatcher@2.0.9a1",
-      "done": 9,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "pyproject.toml#pypydispatcher@2.1.2"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "pypydispatcher@2.1.2",
-      "done": 10,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "pyproject.toml#packaging@26.3"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "packaging@26.3",
-      "done": 11,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "pyproject.toml#tldextract@5.3.2"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "tldextract@5.3.2",
-      "done": 12,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "pyproject.toml#pyopenssl@26.4.0"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "pyopenssl@26.4.0",
-      "done": 13,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "pyproject.toml#platformdirs@4.11.12"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "platformdirs@4.11.12",
-      "done": 14,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "pyproject.toml#w3lib@2.4.1"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "w3lib@2.4.1",
-      "done": 15,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2797,
-      "id": "docs/requirements.in#sphinx-scrapy@0.6.1"
-    },
-    {
-      "type": "progress",
-      "at": 2797,
-      "phase": "Up to date",
-      "detail": "sphinx-scrapy@0.6.1",
-      "done": 16,
-      "total": 33
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2797,
-      "candidate": {
-        "id": "pyproject.toml#twisted@26.4.0",
-        "name": "twisted",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "26.4.0",
-        "latest": "26.4.0",
-        "selected": "26.4.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2797,
-      "candidate": {
-        "id": "pyproject.toml#brotlicffi@1.2.0.2",
-        "name": "brotlicffi",
-        "ecosystem": "pypi",
-        "manifestPath": "pyproject.toml",
-        "workspace": "",
-        "workspaceName": null,
-        "current": "1.2.0.2",
-        "latest": "1.2.0.2",
-        "selected": "1.2.0.2",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Asking PyPI what has been published",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2797,
+      "at": 2420,
       "candidate": {
         "id": "pyproject.toml#brotli@1.2.0",
         "name": "brotli",
@@ -2915,17 +2845,149 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2797,
+      "at": 2420,
       "candidate": {
-        "id": "pyproject.toml#backports-zstd@1.7.0",
+        "id": "pyproject.toml#platformdirs@4.13.5",
+        "name": "platformdirs",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "4.13.5",
+        "latest": "4.13.5",
+        "selected": "4.13.5",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2420,
+      "candidate": {
+        "id": "pyproject.toml#twisted@26.4.0",
+        "name": "twisted",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "26.4.0",
+        "latest": "26.4.0",
+        "selected": "26.4.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2420,
+      "candidate": {
+        "id": "pyproject.toml#w3lib@2.5.0",
+        "name": "w3lib",
+        "ecosystem": "pypi",
+        "manifestPath": "pyproject.toml",
+        "workspace": "",
+        "workspaceName": null,
+        "current": "2.5.0",
+        "latest": "2.5.0",
+        "selected": "2.5.0",
+        "safeLatest": null,
+        "publishedVersions": [],
+        "provenance": {
+          "kind": "runtime",
+          "source": "manifest"
+        },
+        "status": "pending",
+        "phase": "Asking PyPI what has been published",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "hasCompatibilityEvidence": null,
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "pending",
+        "independentActionableFindingCount": 0,
+        "actionableImpactCount": 0,
+        "actionableImpactFiles": 0,
+        "runtimeDeclarationSiteCount": 0,
+        "sourceCoverage": null,
+        "surfaceAssessment": null,
+        "runtimeChanges": [],
+        "dispositions": [],
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2420,
+      "candidate": {
+        "id": "pyproject.toml#backports-zstd@1.8.0",
         "name": "backports-zstd",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "1.7.0",
-        "latest": "1.7.0",
-        "selected": "1.7.0",
+        "current": "1.8.0",
+        "latest": "1.8.0",
+        "selected": "1.8.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -2959,17 +3021,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2797,
+      "at": 2420,
       "candidate": {
-        "id": "pyproject.toml#charset-normalizer@3.5.1",
+        "id": "pyproject.toml#charset-normalizer@3.5.2",
         "name": "charset-normalizer",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "3.5.1",
-        "latest": "3.5.1",
-        "selected": "3.5.1",
+        "current": "3.5.2",
+        "latest": "3.5.2",
+        "selected": "3.5.2",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3002,18 +3064,109 @@
       }
     },
     {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#pyopenssl@26.4.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "pyopenssl@26.4.0",
+      "done": 15,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#brotli@1.2.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "brotli@1.2.0",
+      "done": 16,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#platformdirs@4.13.5"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "platformdirs@4.13.5",
+      "done": 17,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#twisted@26.4.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "twisted@26.4.0",
+      "done": 18,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#w3lib@2.5.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "w3lib@2.5.0",
+      "done": 19,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#backports-zstd@1.8.0"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "backports-zstd@1.8.0",
+      "done": 20,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2420,
+      "id": "pyproject.toml#charset-normalizer@3.5.2"
+    },
+    {
+      "type": "progress",
+      "at": 2420,
+      "phase": "Up to date",
+      "detail": "charset-normalizer@3.5.2",
+      "done": 21,
+      "total": 34
+    },
+    {
       "type": "candidate-upsert",
-      "at": 2797,
+      "at": 2420,
       "candidate": {
-        "id": "pyproject.toml#zope-interface@8.6",
+        "id": "pyproject.toml#zope-interface@8.7",
         "name": "zope-interface",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "8.6",
-        "latest": "8.6",
-        "selected": "8.6",
+        "current": "8.7",
+        "latest": "8.7",
+        "selected": "8.7",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3047,17 +3200,17 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2797,
+      "at": 2420,
       "candidate": {
-        "id": "pyproject.toml#cryptography@50.0.1",
+        "id": "pyproject.toml#cryptography@50.0.2",
         "name": "cryptography",
         "ecosystem": "pypi",
         "manifestPath": "pyproject.toml",
         "workspace": "",
         "workspaceName": null,
-        "current": "50.0.1",
-        "latest": "50.0.1",
-        "selected": "50.0.1",
+        "current": "50.0.2",
+        "latest": "50.0.2",
+        "selected": "50.0.2",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3091,7 +3244,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 2797,
+      "at": 2420,
       "candidate": {
         "id": "pyproject.toml#lxml@7.0.0b1",
         "name": "lxml",
@@ -3134,112 +3287,8 @@
       }
     },
     {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#twisted@26.4.0"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "twisted@26.4.0",
-      "done": 17,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#brotlicffi@1.2.0.2"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "brotlicffi@1.2.0.2",
-      "done": 18,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#brotli@1.2.0"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "brotli@1.2.0",
-      "done": 19,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#backports-zstd@1.7.0"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "backports-zstd@1.7.0",
-      "done": 20,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#charset-normalizer@3.5.1"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "charset-normalizer@3.5.1",
-      "done": 21,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#zope-interface@8.6"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "zope-interface@8.6",
-      "done": 22,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#cryptography@50.0.1"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "cryptography@50.0.1",
-      "done": 23,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2798,
-      "id": "pyproject.toml#lxml@7.0.0b1"
-    },
-    {
-      "type": "progress",
-      "at": 2798,
-      "phase": "Up to date",
-      "detail": "lxml@7.0.0b1",
-      "done": 24,
-      "total": 33
-    },
-    {
       "type": "candidate-upsert",
-      "at": 2798,
+      "at": 2420,
       "candidate": {
         "id": "pyproject.toml#aiohttp@4.0.0a1",
         "name": "aiohttp",
@@ -3283,171 +3332,163 @@
     },
     {
       "type": "candidate-drop",
-      "at": 2798,
+      "at": 2421,
+      "id": "pyproject.toml#zope-interface@8.7"
+    },
+    {
+      "type": "progress",
+      "at": 2421,
+      "phase": "Up to date",
+      "detail": "zope-interface@8.7",
+      "done": 22,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2421,
+      "id": "pyproject.toml#cryptography@50.0.2"
+    },
+    {
+      "type": "progress",
+      "at": 2421,
+      "phase": "Up to date",
+      "detail": "cryptography@50.0.2",
+      "done": 23,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2421,
+      "id": "pyproject.toml#lxml@7.0.0b1"
+    },
+    {
+      "type": "progress",
+      "at": 2421,
+      "phase": "Up to date",
+      "detail": "lxml@7.0.0b1",
+      "done": 24,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2421,
       "id": "pyproject.toml#aiohttp@4.0.0a1"
     },
     {
       "type": "progress",
-      "at": 2798,
+      "at": 2421,
       "phase": "Up to date",
       "detail": "aiohttp@4.0.0a1",
       "done": 25,
-      "total": 33
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2827,
-      "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0"
-    },
-    {
-      "type": "progress",
-      "at": 2827,
-      "phase": "Up to date",
-      "detail": "scrapy-spider-metadata@0.2.0",
-      "done": 26,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2828,
-      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
-    },
-    {
-      "type": "progress",
-      "at": 2828,
-      "phase": "Up to date",
-      "detail": "sphinx-notfound-page@1.1.0",
-      "done": 27,
-      "total": 33
-    },
-    {
-      "type": "candidate-drop",
-      "at": 2829,
+      "at": 2461,
       "id": "docs/requirements.in#sphinx-reredirects@1.1.0"
     },
     {
       "type": "progress",
-      "at": 2829,
+      "at": 2461,
       "phase": "Up to date",
       "detail": "sphinx-reredirects@1.1.0",
-      "done": 28,
-      "total": 33
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2832,
-      "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.4.1",
-        "selected": "4.4.1",
-        "safeLatest": null,
-        "publishedVersions": [
-          "4.4.1",
-          "4.4.0"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2832,
-      "phase": "Outdated",
-      "detail": "h2 4.3.0 → 4.4.1",
-      "done": 29,
-      "total": 33
+      "done": 26,
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2833,
-      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
+      "at": 2462,
+      "id": "docs/requirements.in#sphinx-notfound-page@1.1.0"
     },
     {
       "type": "progress",
-      "at": 2833,
+      "at": 2462,
       "phase": "Up to date",
-      "detail": "sphinx-rtd-dark-mode@1.3.0",
-      "done": 30,
-      "total": 33
+      "detail": "sphinx-notfound-page@1.1.0",
+      "done": 27,
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2834,
+      "at": 2466,
+      "id": "docs/requirements.in#h2@4.4.1"
+    },
+    {
+      "type": "progress",
+      "at": 2466,
+      "phase": "Up to date",
+      "detail": "h2@4.4.1",
+      "done": 28,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2469,
       "id": "docs/requirements.in#sphinx-rtd-theme@3.1.0"
     },
     {
       "type": "progress",
-      "at": 2834,
+      "at": 2469,
       "phase": "Up to date",
       "detail": "sphinx-rtd-theme@3.1.0",
-      "done": 31,
-      "total": 33
+      "done": 29,
+      "total": 34
     },
     {
       "type": "candidate-drop",
-      "at": 2848,
+      "at": 2526,
+      "id": "docs/requirements.in#scrapy-spider-metadata@0.2.0"
+    },
+    {
+      "type": "progress",
+      "at": 2526,
+      "phase": "Up to date",
+      "detail": "scrapy-spider-metadata@0.2.0",
+      "done": 30,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2529,
       "id": "docs/requirements.in#sphinx@9.1.0"
     },
     {
       "type": "progress",
-      "at": 2848,
+      "at": 2529,
       "phase": "Up to date",
       "detail": "sphinx@9.1.0",
+      "done": 31,
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2530,
+      "id": "docs/requirements.in#sphinx-rtd-dark-mode@1.3.0"
+    },
+    {
+      "type": "progress",
+      "at": 2530,
+      "phase": "Up to date",
+      "detail": "sphinx-rtd-dark-mode@1.3.0",
       "done": 32,
-      "total": 33
+      "total": 34
     },
     {
       "type": "candidate-upsert",
-      "at": 2903,
+      "at": 2543,
       "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.13.5",
-        "selected": "2.13.5",
+        "current": "0.13.0",
+        "latest": "0.14.0",
+        "selected": "0.14.0",
         "safeLatest": null,
         "publishedVersions": [
-          "2.13.5",
-          "2.13.4",
-          "2.13.3",
-          "2.13.2",
-          "2.13.1",
-          "2.13.0"
+          "0.14.0"
         ],
         "provenance": {
           "kind": "runtime",
@@ -3480,33 +3521,46 @@
     },
     {
       "type": "progress",
-      "at": 2903,
+      "at": 2543,
       "phase": "Outdated",
-      "detail": "pydantic 2.12.5 → 2.13.5",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 33,
-      "total": 33
+      "total": 34
+    },
+    {
+      "type": "candidate-drop",
+      "at": 2664,
+      "id": "docs/requirements.in#pydantic@2.14.1"
     },
     {
       "type": "progress",
-      "at": 2903,
+      "at": 2664,
+      "phase": "Up to date",
+      "detail": "pydantic@2.14.1",
+      "done": 34,
+      "total": 34
+    },
+    {
+      "type": "progress",
+      "at": 2665,
       "phase": "Reading release notes and changelog",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 2903,
+      "at": 2665,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3540,25 +3594,25 @@
     },
     {
       "type": "progress",
-      "at": 2904,
+      "at": 2665,
       "phase": "Checking package metadata",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 2904,
+      "at": 2665,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3592,129 +3646,25 @@
     },
     {
       "type": "progress",
-      "at": 2904,
-      "phase": "Reading release notes and changelog",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2904,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2904,
-      "phase": "Checking package metadata",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2904,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking package metadata",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2904,
+      "at": 2666,
       "phase": "Checking repository status",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 2904,
+      "at": 2666,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3748,85 +3698,33 @@
     },
     {
       "type": "progress",
-      "at": 2904,
-      "phase": "Checking repository status",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2904,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking repository status",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2960,
+      "at": 2725,
       "phase": "Indexing your code",
-      "detail": "514 files indexed · 33 direct dependencies to check",
+      "detail": "546 files indexed · 34 direct dependencies to check",
       "done": 0,
-      "total": 33
+      "total": 34
     },
     {
       "type": "progress",
-      "at": 3150,
+      "at": 2919,
       "phase": "Checking security advisories",
-      "detail": "pydantic 2.12.5 → 2.13.5",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3150,
+      "at": 2919,
       "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3860,77 +3758,25 @@
     },
     {
       "type": "progress",
-      "at": 3151,
-      "phase": "Checking security advisories",
-      "detail": "h2 4.3.0 → 4.4.1",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3151,
-      "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3258,
+      "at": 2919,
       "phase": "Checking license",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3258,
+      "at": 2919,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -3964,77 +3810,25 @@
     },
     {
       "type": "progress",
-      "at": 3260,
-      "phase": "Checking license",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 0,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 3260,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3524,
+      "at": 3453,
       "phase": "Comparing the public API surface",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3524,
+      "at": 3453,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -4068,25 +3862,25 @@
     },
     {
       "type": "progress",
-      "at": 3525,
+      "at": 3774,
       "phase": "Reading release notes and changelog",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3525,
+      "at": 3774,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -4120,25 +3914,25 @@
     },
     {
       "type": "progress",
-      "at": 3525,
+      "at": 3774,
       "phase": "Comparing the public API surface",
-      "detail": "h2 4.3.0 → 4.4.1 · 2 evidence sources",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0 · 1 evidence source",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3525,
+      "at": 3774,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -4172,25 +3966,25 @@
     },
     {
       "type": "progress",
-      "at": 3526,
-      "phase": "Searching your code for 1 breaking change",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "at": 3774,
+      "phase": "No breaking changes to look for",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3526,
+      "at": 3774,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -4198,7 +3992,7 @@
           "source": "manifest"
         },
         "status": "pending",
-        "phase": "Searching your code for 1 breaking change",
+        "phase": "No breaking changes to look for",
         "risk": "unknown",
         "summary": "",
         "recommendation": null,
@@ -4224,25 +4018,25 @@
     },
     {
       "type": "progress",
-      "at": 3579,
+      "at": 3775,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3579,
+      "at": 3775,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -4276,25 +4070,25 @@
     },
     {
       "type": "progress",
-      "at": 3640,
+      "at": 3817,
       "phase": "Checking maintenance signals",
-      "detail": "h2 4.3.0 → 4.4.1",
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0",
       "done": 0,
-      "total": 2
+      "total": 1
     },
     {
       "type": "candidate-upsert",
-      "at": 3640,
+      "at": 3817,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.3.0",
-        "selected": "4.3.0",
+        "current": "0.13.0",
+        "latest": "0.13.0",
+        "selected": "0.13.0",
         "safeLatest": null,
         "publishedVersions": [],
         "provenance": {
@@ -4328,46 +4122,34 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 3641,
+      "at": 3817,
       "candidate": {
-        "id": "docs/requirements.in#h2@4.3.0",
-        "name": "h2",
+        "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+        "name": "sphinx-scrapy",
         "ecosystem": "pypi",
         "manifestPath": "docs/requirements.in",
         "workspace": "docs",
         "workspaceName": null,
-        "current": "4.3.0",
-        "latest": "4.4.1",
-        "selected": "4.4.1",
+        "current": "0.13.0",
+        "latest": "0.14.0",
+        "selected": "0.14.0",
         "safeLatest": null,
         "publishedVersions": [
-          "4.4.1",
-          "4.4.0"
+          "0.14.0"
         ],
         "provenance": {
           "kind": "runtime",
           "source": "manifest"
         },
-        "status": "ready",
+        "status": "clean",
         "phase": null,
         "risk": "none",
-        "summary": "Upgrade recommended. Fixes 1 known vulnerability.",
-        "recommendation": "upgrade-recommended",
+        "summary": "Safe to upgrade. No breaking changes found for this version of sphinx-scrapy.",
+        "recommendation": "safe-to-upgrade",
         "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": "compatible",
-        "runtimeAnalyses": [
-          {
-            "changeId": "bc_e86ad95784",
-            "runtime": "python",
-            "state": "compatible",
-            "reason": "satisfies",
-            "siteCount": 0,
-            "declarationCount": 10,
-            "unresolvedCount": 0,
-            "statement": "Upstream requires Python >=3.10; this repository declares Python 3.14 in .github/workflows/ci.yml, 3.10 in .github/workflows/ci.yml, 3.13 in .github/workflows/ci.yml, 7.3.20 in .github/workflows/ci.yml, 3.14 in .github/workflows/codspeed.yml, 3.14 in .github/workflows/publish.yml, 3.15 in .github/workflows/tests-vcs-deps.yml, 3.14 in .github/workflows/upgrade-ci-pins.yml, which satisfies it."
-          }
-        ],
-        "severity": "upstream-only",
+        "runtimeCompatibility": null,
+        "runtimeAnalyses": [],
+        "severity": "clean",
         "independentActionableFindingCount": 0,
         "actionableImpactCount": 0,
         "actionableImpactFiles": 0,
@@ -4375,443 +4157,13 @@
         "sourceCoverage": {
           "localizationRan": true,
           "localizationComplete": true,
-          "sourceFilesDiscovered": 507,
-          "sourceFilesIndexed": 507,
+          "sourceFilesDiscovered": 538,
+          "sourceFilesIndexed": 538,
           "sourceTruncated": false,
           "generatedFilesSkipped": 0,
           "oversizedSourceSkipped": 0,
-          "runtimeConfigsDiscovered": 7,
-          "runtimeConfigsIndexed": 7,
-          "runtimeConfigComplete": true
-        },
-        "surfaceAssessment": {
-          "available": true,
-          "inspection": "succeeded",
-          "tool": "python ast"
-        },
-        "runtimeChanges": [
-          {
-            "id": "bc_e86ad95784",
-            "runtime": "python"
-          }
-        ],
-        "dispositions": [
-          {
-            "changeId": "bc_e86ad95784",
-            "state": "unaffected",
-            "reason": "runtime-compatible",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": "compatible"
-          }
-        ],
-        "breakingCount": 1,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 2,
-        "gaps": [],
-        "breaking": [
-          {
-            "kind": "runtime-requirement",
-            "summary": "Minimum python version is now >=3.10",
-            "remediation": "Minimum python version is now >=3.10. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
-            "confidence": "low",
-            "runtime": {
-              "kind": "minimum-runtime",
-              "runtime": "python",
-              "requirement": ">=3.10",
-              "sourceText": "requires Python >=3.10"
-            },
-            "overall": {
-              "score": 40,
-              "band": "low",
-              "label": "Not very confident"
-            },
-            "symbols": [
-              "Python"
-            ],
-            "evidence": [
-              {
-                "source": "registry-metadata",
-                "title": "h2@4.4.1 requires Python >=3.10",
-                "url": null,
-                "locator": null
-              }
-            ],
-            "sites": []
-          }
-        ]
-      }
-    },
-    {
-      "type": "progress",
-      "at": 3641,
-      "phase": "Checked",
-      "detail": "h2 4.3.0 → 4.4.1 · safe for your code · 1 upstream change, none used here",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "progress",
-      "at": 4058,
-      "phase": "Comparing the public API surface",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4058,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4103,
-      "phase": "Reading release notes and changelog",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4103,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4103,
-      "phase": "Comparing the public API surface",
-      "detail": "pydantic 2.12.5 → 2.13.5 · 6 evidence sources",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4103,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4109,
-      "phase": "Searching your code for 13 breaking changes",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4109,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Searching your code for 13 breaking changes",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4128,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4128,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 4170,
-      "phase": "Checking maintenance signals",
-      "detail": "pydantic 2.12.5 → 2.13.5",
-      "done": 1,
-      "total": 2
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4170,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.12.5",
-        "selected": "2.12.5",
-        "safeLatest": null,
-        "publishedVersions": [],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "hasCompatibilityEvidence": null,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "pending",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": null,
-        "surfaceAssessment": null,
-        "runtimeChanges": [],
-        "dispositions": [],
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 4174,
-      "candidate": {
-        "id": "docs/requirements.in#pydantic@2.12.5",
-        "name": "pydantic",
-        "ecosystem": "pypi",
-        "manifestPath": "docs/requirements.in",
-        "workspace": "docs",
-        "workspaceName": null,
-        "current": "2.12.5",
-        "latest": "2.13.5",
-        "selected": "2.13.5",
-        "safeLatest": null,
-        "publishedVersions": [
-          "2.13.5",
-          "2.13.4",
-          "2.13.3",
-          "2.13.2",
-          "2.13.1",
-          "2.13.0"
-        ],
-        "provenance": {
-          "kind": "runtime",
-          "source": "manifest"
-        },
-        "status": "ready",
-        "phase": null,
-        "risk": "low",
-        "summary": "Upgrade after review. 13 upstream API breaking changes, no usage of the changed parts located in this repository — review before upgrading.",
-        "recommendation": "upgrade-after-review",
-        "hasCompatibilityEvidence": true,
-        "runtimeCompatibility": null,
-        "runtimeAnalyses": [],
-        "severity": "review-required",
-        "independentActionableFindingCount": 0,
-        "actionableImpactCount": 0,
-        "actionableImpactFiles": 0,
-        "runtimeDeclarationSiteCount": 0,
-        "sourceCoverage": {
-          "localizationRan": true,
-          "localizationComplete": true,
-          "sourceFilesDiscovered": 507,
-          "sourceFilesIndexed": 507,
-          "sourceTruncated": false,
-          "generatedFilesSkipped": 0,
-          "oversizedSourceSkipped": 0,
-          "runtimeConfigsDiscovered": 7,
-          "runtimeConfigsIndexed": 7,
+          "runtimeConfigsDiscovered": 8,
+          "runtimeConfigsIndexed": 8,
           "runtimeConfigComplete": true
         },
         "surfaceAssessment": {
@@ -4820,259 +4172,52 @@
           "tool": "python ast"
         },
         "runtimeChanges": [],
-        "dispositions": [
-          {
-            "changeId": "bc_4707ddadd5",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4be5f5814b",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_b7ef72fa98",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4b744c2089",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_1f709ce7ef",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_fa4b742041",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_5044d67483",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_4c19332ce7",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_43c9492eeb",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_f360ae78a4",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_ed3443efe8",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_da66d640ae",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          },
-          {
-            "changeId": "bc_22cde557b2",
-            "state": "unknown",
-            "reason": "impact-unresolved",
-            "siteCount": 0,
-            "actionableSiteCount": 0,
-            "runtimeState": null
-          }
-        ],
-        "breakingCount": 13,
+        "dispositions": [],
+        "breakingCount": 0,
         "impactCount": 0,
         "impactFiles": 0,
-        "evidenceCount": 6,
+        "evidenceCount": 1,
         "gaps": [],
-        "breaking": [
-          {
-            "kind": "behaviour-change",
-            "summary": "`parse_raw` is now deprecated",
-            "remediation": "Behaviour changed: `parse_raw` is now deprecated. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "parse_raw"
-            ],
-            "evidence": [
-              {
-                "source": "migration-guide",
-                "title": "pydantic migration guide (docs/migration.md)",
-                "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-                "locator": "docs/migration.md"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "behaviour-change",
-            "summary": "`__root__` no longer support the `arbitrary_types_allowed`",
-            "remediation": "Behaviour changed: `__root__` no longer support the `arbitrary_types_allowed`. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "__root__"
-            ],
-            "evidence": [
-              {
-                "source": "migration-guide",
-                "title": "pydantic migration guide (docs/migration.md)",
-                "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-                "locator": "docs/migration.md"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "removed-export",
-            "summary": "`GetterDict` was removed",
-            "remediation": "`GetterDict` was removed from `pydantic`. Replace every usage. Verify against the installed version's actual exports before choosing a replacement — the changelog may be incomplete.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "GetterDict"
-            ],
-            "evidence": [
-              {
-                "source": "migration-guide",
-                "title": "pydantic migration guide (docs/migration.md)",
-                "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-                "locator": "docs/migration.md"
-              }
-            ],
-            "sites": []
-          },
-          {
-            "kind": "behaviour-change",
-            "summary": "`pydantic.generics.GenericModel` no longer necessary, and has been removed",
-            "remediation": "Behaviour changed: `pydantic.generics.GenericModel` no longer necessary, and has been removed. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-            "confidence": "medium",
-            "runtime": null,
-            "overall": {
-              "score": 55,
-              "band": "medium",
-              "label": "Fairly confident"
-            },
-            "symbols": [
-              "pydantic.generics.GenericModel"
-            ],
-            "evidence": [
-              {
-                "source": "migration-guide",
-                "title": "pydantic migration guide (docs/migration.md)",
-                "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-                "locator": "docs/migration.md"
-              }
-            ],
-            "sites": []
-          }
-        ]
+        "breaking": []
       }
     },
     {
       "type": "progress",
-      "at": 4174,
+      "at": 3817,
       "phase": "Checked",
-      "detail": "pydantic 2.12.5 → 2.13.5 · review required · 13 breaking changes upstream; drift found no usage in this repository but could not prove none — verify before upgrading",
-      "done": 2,
-      "total": 2
+      "detail": "sphinx-scrapy 0.13.0 → 0.14.0 · safe for your code · no breaking changes found — not deeply verified",
+      "done": 1,
+      "total": 1
     }
   ],
   "candidates": [
     {
-      "id": "docs/requirements.in#pydantic@2.12.5",
-      "name": "pydantic",
+      "id": "docs/requirements.in#sphinx-scrapy@0.13.0",
+      "name": "sphinx-scrapy",
       "ecosystem": "pypi",
       "manifestPath": "docs/requirements.in",
       "workspace": "docs",
       "workspaceName": null,
-      "current": "2.12.5",
-      "latest": "2.13.5",
-      "selected": "2.13.5",
+      "current": "0.13.0",
+      "latest": "0.14.0",
+      "selected": "0.14.0",
       "safeLatest": null,
       "publishedVersions": [
-        "2.13.5",
-        "2.13.4",
-        "2.13.3",
-        "2.13.2",
-        "2.13.1",
-        "2.13.0"
+        "0.14.0"
       ],
       "provenance": {
         "kind": "runtime",
         "source": "manifest"
       },
-      "status": "ready",
+      "status": "clean",
       "phase": null,
-      "risk": "low",
-      "summary": "Upgrade after review. 13 upstream API breaking changes, no usage of the changed parts located in this repository — review before upgrading.",
-      "recommendation": "upgrade-after-review",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of sphinx-scrapy.",
+      "recommendation": "safe-to-upgrade",
       "hasCompatibilityEvidence": true,
       "runtimeCompatibility": null,
       "runtimeAnalyses": [],
-      "severity": "review-required",
+      "severity": "clean",
       "independentActionableFindingCount": 0,
       "actionableImpactCount": 0,
       "actionableImpactFiles": 0,
@@ -5080,13 +4225,13 @@
       "sourceCoverage": {
         "localizationRan": true,
         "localizationComplete": true,
-        "sourceFilesDiscovered": 507,
-        "sourceFilesIndexed": 507,
+        "sourceFilesDiscovered": 538,
+        "sourceFilesIndexed": 538,
         "sourceTruncated": false,
         "generatedFilesSkipped": 0,
         "oversizedSourceSkipped": 0,
-        "runtimeConfigsDiscovered": 7,
-        "runtimeConfigsIndexed": 7,
+        "runtimeConfigsDiscovered": 8,
+        "runtimeConfigsIndexed": 8,
         "runtimeConfigComplete": true
       },
       "surfaceAssessment": {
@@ -5095,328 +4240,13 @@
         "tool": "python ast"
       },
       "runtimeChanges": [],
-      "dispositions": [
-        {
-          "changeId": "bc_4707ddadd5",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_4be5f5814b",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_b7ef72fa98",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_4b744c2089",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_1f709ce7ef",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_fa4b742041",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_5044d67483",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_4c19332ce7",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_43c9492eeb",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_f360ae78a4",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_ed3443efe8",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_da66d640ae",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        },
-        {
-          "changeId": "bc_22cde557b2",
-          "state": "unknown",
-          "reason": "impact-unresolved",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": null
-        }
-      ],
-      "breakingCount": 13,
+      "dispositions": [],
+      "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
-      "evidenceCount": 6,
+      "evidenceCount": 1,
       "gaps": [],
-      "breaking": [
-        {
-          "kind": "behaviour-change",
-          "summary": "`parse_raw` is now deprecated",
-          "remediation": "Behaviour changed: `parse_raw` is now deprecated. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-          "confidence": "medium",
-          "runtime": null,
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "parse_raw"
-          ],
-          "evidence": [
-            {
-              "source": "migration-guide",
-              "title": "pydantic migration guide (docs/migration.md)",
-              "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-              "locator": "docs/migration.md"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "behaviour-change",
-          "summary": "`__root__` no longer support the `arbitrary_types_allowed`",
-          "remediation": "Behaviour changed: `__root__` no longer support the `arbitrary_types_allowed`. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-          "confidence": "medium",
-          "runtime": null,
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "__root__"
-          ],
-          "evidence": [
-            {
-              "source": "migration-guide",
-              "title": "pydantic migration guide (docs/migration.md)",
-              "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-              "locator": "docs/migration.md"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "removed-export",
-          "summary": "`GetterDict` was removed",
-          "remediation": "`GetterDict` was removed from `pydantic`. Replace every usage. Verify against the installed version's actual exports before choosing a replacement — the changelog may be incomplete.",
-          "confidence": "medium",
-          "runtime": null,
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "GetterDict"
-          ],
-          "evidence": [
-            {
-              "source": "migration-guide",
-              "title": "pydantic migration guide (docs/migration.md)",
-              "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-              "locator": "docs/migration.md"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "behaviour-change",
-          "summary": "`pydantic.generics.GenericModel` no longer necessary, and has been removed",
-          "remediation": "Behaviour changed: `pydantic.generics.GenericModel` no longer necessary, and has been removed. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-          "confidence": "medium",
-          "runtime": null,
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "pydantic.generics.GenericModel"
-          ],
-          "evidence": [
-            {
-              "source": "migration-guide",
-              "title": "pydantic migration guide (docs/migration.md)",
-              "url": "https://github.com/pydantic/pydantic/blob/main/docs/migration.md",
-              "locator": "docs/migration.md"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "id": "docs/requirements.in#h2@4.3.0",
-      "name": "h2",
-      "ecosystem": "pypi",
-      "manifestPath": "docs/requirements.in",
-      "workspace": "docs",
-      "workspaceName": null,
-      "current": "4.3.0",
-      "latest": "4.4.1",
-      "selected": "4.4.1",
-      "safeLatest": null,
-      "publishedVersions": [
-        "4.4.1",
-        "4.4.0"
-      ],
-      "provenance": {
-        "kind": "runtime",
-        "source": "manifest"
-      },
-      "status": "ready",
-      "phase": null,
-      "risk": "none",
-      "summary": "Upgrade recommended. Fixes 1 known vulnerability.",
-      "recommendation": "upgrade-recommended",
-      "hasCompatibilityEvidence": true,
-      "runtimeCompatibility": "compatible",
-      "runtimeAnalyses": [
-        {
-          "changeId": "bc_e86ad95784",
-          "runtime": "python",
-          "state": "compatible",
-          "reason": "satisfies",
-          "siteCount": 0,
-          "declarationCount": 10,
-          "unresolvedCount": 0,
-          "statement": "Upstream requires Python >=3.10; this repository declares Python 3.14 in .github/workflows/ci.yml, 3.10 in .github/workflows/ci.yml, 3.13 in .github/workflows/ci.yml, 7.3.20 in .github/workflows/ci.yml, 3.14 in .github/workflows/codspeed.yml, 3.14 in .github/workflows/publish.yml, 3.15 in .github/workflows/tests-vcs-deps.yml, 3.14 in .github/workflows/upgrade-ci-pins.yml, which satisfies it."
-        }
-      ],
-      "severity": "upstream-only",
-      "independentActionableFindingCount": 0,
-      "actionableImpactCount": 0,
-      "actionableImpactFiles": 0,
-      "runtimeDeclarationSiteCount": 0,
-      "sourceCoverage": {
-        "localizationRan": true,
-        "localizationComplete": true,
-        "sourceFilesDiscovered": 507,
-        "sourceFilesIndexed": 507,
-        "sourceTruncated": false,
-        "generatedFilesSkipped": 0,
-        "oversizedSourceSkipped": 0,
-        "runtimeConfigsDiscovered": 7,
-        "runtimeConfigsIndexed": 7,
-        "runtimeConfigComplete": true
-      },
-      "surfaceAssessment": {
-        "available": true,
-        "inspection": "succeeded",
-        "tool": "python ast"
-      },
-      "runtimeChanges": [
-        {
-          "id": "bc_e86ad95784",
-          "runtime": "python"
-        }
-      ],
-      "dispositions": [
-        {
-          "changeId": "bc_e86ad95784",
-          "state": "unaffected",
-          "reason": "runtime-compatible",
-          "siteCount": 0,
-          "actionableSiteCount": 0,
-          "runtimeState": "compatible"
-        }
-      ],
-      "breakingCount": 1,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [],
-      "breaking": [
-        {
-          "kind": "runtime-requirement",
-          "summary": "Minimum python version is now >=3.10",
-          "remediation": "Minimum python version is now >=3.10. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
-          "confidence": "low",
-          "runtime": {
-            "kind": "minimum-runtime",
-            "runtime": "python",
-            "requirement": ">=3.10",
-            "sourceText": "requires Python >=3.10"
-          },
-          "overall": {
-            "score": 40,
-            "band": "low",
-            "label": "Not very confident"
-          },
-          "symbols": [
-            "Python"
-          ],
-          "evidence": [
-            {
-              "source": "registry-metadata",
-              "title": "h2@4.4.1 requires Python >=3.10",
-              "url": null,
-              "locator": null
-            }
-          ],
-          "sites": []
-        }
-      ]
+      "breaking": []
     }
   ]
 }
