@@ -26,12 +26,12 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
-    "@types/node": "^26.4.1",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.7",
-    "playwright-core": "^1.63.0",
-    "postcss": "^8.5.28",
+    "playwright-core": "^1.65.0",
+    "postcss": "^8.5.32",
     "tailwindcss": "^4.2.2",
     "typescript": "^7.0.2"
   }
